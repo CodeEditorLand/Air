@@ -28,11 +28,11 @@
 		"@codeeditorland/common": "0.0.6"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "4.20241018.0",
+		"@cloudflare/workers-types": "4.20241022.0",
 		"@playform/build": "0.1.8",
-		"@types/dotenv": "8.2.0",
-		"miniflare": "3.20241011.0",
-		"wrangler": "3.81.0"
+		"@types/dotenv": "8.2.3",
+		"miniflare": "3.20241018.0",
+		"wrangler": "3.82.0"
 	},
 	"publishConfig": {
 		"access": "public",
