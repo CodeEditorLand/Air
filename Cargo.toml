@@ -19,6 +19,7 @@ tokio-tungstenite = "0.24.0"
 
 # Development
 tokio-console = { version = "0.1.13", optional = true }
+unbug = { version = "0.2.0", features = ["enable"] }
 
 [[example]]
 name = "Sequence"
@@ -60,3 +61,6 @@ include = [
 
 [features]
 Development = ["tokio-console"]
+
+default = []
+Debug = ["unbug/enable"]
