@@ -4,9 +4,7 @@ import type Interface from "../Interface/Response.js";
  * @module Response
  *
  */
-export default (async (
-	...[Message = null, Status = 200]
-) =>
+export default (async (...[Message = null, Status = 200]) =>
 	new Response(JSON.stringify(Message), {
 		status: Status,
 		headers: {
