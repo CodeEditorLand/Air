@@ -6,6 +6,8 @@ import type { KVNamespace } from "@cloudflare/workers-types/experimental/index.j
  */
 export default interface Interface {
 	HTML: KVNamespace;
+
 	CSS: KVNamespace;
+
 	TypeScript: KVNamespace;
 }
