@@ -34,6 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 	};
 
 	let Site = Arc::new(SimpleSite);
+
 	let Sequence = Arc::new(Sequence::Struct::New(Site, Production.clone(), Life));
 
 	// Channel for sending action results
@@ -51,6 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 			while !Sequence.Time.Get().await {
 				if let Some(action) = Sequence.Production.Do().await {
 					let result = Sequence.Site.Receive(action, &Sequence.Life).await;
+
 					tx.send(result).unwrap();
 				}
 			}
