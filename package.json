@@ -25,7 +25,7 @@
 		"prepublishOnly": "Build 'Ts/**/*.ts'"
 	},
 	"dependencies": {
-		"@codeeditorland/common": "0.0.1"
+		"@codeeditorland/common": "0.0.6"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "4.20241205.0",
