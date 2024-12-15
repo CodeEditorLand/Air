@@ -153,15 +153,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 use std::sync::Arc;
 
-use async_trait::async_trait;
-use rand::seq::SliceRandom;
-use serde_json::{json, Value};
-use tokio::{
-	fs::{File, OpenOptions},
-	io::{AsyncReadExt, AsyncWriteExt},
-	sync::Mutex,
-	time::{sleep, Duration},
-};
 use Echo::{
 	Enum::Sequence::Action::Error::Enum as Error,
 	Struct::Sequence::{
@@ -170,6 +161,15 @@ use Echo::{
 		Life::Struct as Life,
 	},
 	Trait::Sequence::Site::Trait as Worker,
+};
+use async_trait::async_trait;
+use rand::seq::SliceRandom;
+use serde_json::{Value, json};
+use tokio::{
+	fs::{File, OpenOptions},
+	io::{AsyncReadExt, AsyncWriteExt},
+	sync::Mutex,
+	time::{Duration, sleep},
 };
 
 pub mod Common;

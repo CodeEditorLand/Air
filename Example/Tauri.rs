@@ -123,17 +123,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 use std::sync::Arc;
 
-use serde_json::{json, Value};
+use Echo::{
+	Enum::Sequence::Action::Error::Enum as Error,
+	Struct::Sequence::{self, Action, Life::Struct as Life, Plan},
+	Trait::Sequence::Site,
+};
+use serde_json::{Value, json};
 use tokio::{
 	fs::{File, OpenOptions},
 	io::{AsyncReadExt, AsyncWriteExt},
 	sync::mpsc,
 	task::JoinSet,
-};
-use Echo::{
-	Enum::Sequence::Action::Error::Enum as Error,
-	Struct::Sequence::{self, Action, Life::Struct as Life, Plan},
-	Trait::Sequence::Site,
 };
 
 pub mod Common;

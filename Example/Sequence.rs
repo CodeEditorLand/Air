@@ -74,12 +74,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 	Ok(())
 }
 
-use dashmap::DashMap;
-use serde_json::{json, Value};
-use tokio::{
-	fs::{File, OpenOptions},
-	io::{AsyncReadExt, AsyncWriteExt},
-};
 use Echo::{
 	Enum::Sequence::Action::Error::Enum as Error,
 	Struct::Sequence::{
@@ -88,6 +82,12 @@ use Echo::{
 		Life::Struct as Life,
 	},
 	Trait::Sequence::Site::Trait as Site,
+};
+use dashmap::DashMap;
+use serde_json::{Value, json};
+use tokio::{
+	fs::{File, OpenOptions},
+	io::{AsyncReadExt, AsyncWriteExt},
 };
 
 pub mod Common;
