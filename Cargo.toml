@@ -63,4 +63,3 @@ include = [
 Development = ["tokio-console"]
 
 default = []
-Debug = ["unbug/enable"]
