@@ -19,7 +19,7 @@ tokio-tungstenite = "0.24.0"
 
 # Development
 tokio-console = { version = "0.1.13", optional = true }
-unbug = { version = "0.4.0", features = ["enable"] }
+unbug = { version = "0.4.0" }
 
 [[example]]
 name = "Sequence"
