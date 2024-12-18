@@ -4,7 +4,7 @@ toml = { version = "0.8.19" }
 
 [dependencies]
 async-trait = "0.1.83"
-config = { version = "0.14.1" }
+config = { version = "0.15.0" }
 dashmap = { version = "6.1.0" }
 env_logger = { version = "0.11.5" }
 futures = { version = "0.3.31" }
@@ -13,9 +13,9 @@ metrics = { version = "0.24.1" }
 rand = { version = "0.8.5" }
 serde = { version = "1.0.216", features = ["derive"] }
 serde_json = { version = "1.0.133" }
-thiserror = { version = "2.0.6" }
+thiserror = { version = "2.0.7" }
 tokio = { version = "1.42.0", features = ["full"] }
-tokio-tungstenite = "0.24.0"
+tokio-tungstenite = "0.26.0"
 
 # Development
 tokio-console = { version = "0.1.13", optional = true }
