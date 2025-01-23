@@ -12,7 +12,7 @@ log = { version = "0.4.25" }
 metrics = { version = "0.24.1" }
 rand = { version = "0.8.5" }
 serde = { version = "1.0.217", features = ["derive"] }
-serde_json = { version = "1.0.135" }
+serde_json = { version = "1.0.137" }
 thiserror = { version = "2.0.11" }
 tokio = { version = "1.43.0", features = ["full"] }
 tokio-tungstenite = "0.26.1"
