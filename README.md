@@ -1,4 +1,4 @@
-# 📣 [Echo] — Asynchronous Action Processing System
+# [Echo] 📣 Asynchronous Action Processing System
 
 `Echo` is a Rust library designed for managing and executing asynchronous
 actions efficiently. It leverages a worker-stealer pattern and asynchronous
@@ -36,7 +36,7 @@ metadata management, function planning, and error handling.
 -   **Serialization:** Actions can be serialized and deserialized for
     persistence or network transfer (in progress).
 
-## 🚀 Installation
+## Installation 🚀
 
 To get started with `Echo`, follow these steps:
 
@@ -360,7 +360,7 @@ sequenceDiagram
     Note right of Client: Returns the result of the action execution, which can be a success or an error
 ```
 
-## 🤝 Contributing
+## Contributing 🤝
 
 Contributions are welcome! Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for
 guidelines and feel free to submit a Pull Request.
