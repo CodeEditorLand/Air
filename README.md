@@ -20,7 +20,7 @@ function planning, and robust error handling.
 asynchronously. It's designed to handle complex workflows with features like
 metadata management, function planning, and error handling.
 
-## Features
+## Feature
 
 -   **Asynchronous Operations:** Built with Rust's async/await syntax for
     non-blocking execution.
