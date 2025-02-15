@@ -15,10 +15,8 @@ serde = { version = "1.0.217", features = ["derive"] }
 serde_json = { version = "1.0.138" }
 thiserror = { version = "2.0.11" }
 tokio = { version = "1.43.0", features = ["full"] }
-tokio-tungstenite = "0.26.1"
-
-# Development
 tokio-console = { version = "0.1.13", optional = true }
+tokio-tungstenite = "0.26.1"
 unbug = { version = "0.4.0" }
 
 [[example]]
@@ -33,6 +31,10 @@ path = "Example/WorkSteal.rs"
 name = "Tauri"
 path = "Example/Tauri.rs"
 
+[features]
+Development = ["tokio-console"]
+default = []
+
 [lib]
 crate-type = ["rlib"]
 name = "Echo"
@@ -44,12 +46,7 @@ autobins = false
 autoexamples = false
 autotests = false
 description = "Echo 📣"
-license-file = "LICENSE"
-name = "Echo"
-repository = "https://github.com/CodeEditorLand/Echo"
-version = "0.0.1"
 edition = "2021"
-publish = false
 include = [
 	"Source/**/*",
 	"LICENSE",
@@ -58,8 +55,8 @@ include = [
 	"build.rs",
 	"Cargo.toml",
 ]
-
-[features]
-Development = ["tokio-console"]
-
-default = []
+license-file = "LICENSE"
+name = "Echo"
+publish = false
+repository = "https://github.com/CodeEditorLand/Echo"
+version = "0.0.1"
