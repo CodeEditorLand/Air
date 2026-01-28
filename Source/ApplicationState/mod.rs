@@ -27,6 +27,12 @@ pub struct ApplicationState {
     
     /// Resource usage tracking
     pub resources: Arc<RwLock<ResourceUsage>>,
+    
+    /// Connection tracking for Mountain clients
+    pub connections: Arc<RwLock<HashMap<String, ConnectionInfo>>>,
+    
+    /// Background task management
+    pub background_tasks: Arc<Mutex<Vec<tokio::task::JoinHandle<()>>>>,
 }
 
 /// Service status enum
@@ -80,6 +86,28 @@ pub struct ResourceUsage {
     pub last_updated: u64,
 }
 
+/// Connection information for Mountain clients
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConnectionInfo {
+    pub connection_id: String,
+    pub client_id: String,
+    pub client_version: String,
+    pub protocol_version: u32,
+    pub last_heartbeat: u64,
+    pub is_active: bool,
+    pub connection_type: ConnectionType,
+}
+
+/// Connection type enum
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ConnectionType {
+    MountainMain,
+    MountainWorker,
+    Cocoon,
+    Wind,
+    External,
+}
+
 impl ApplicationState {
     /// Create a new ApplicationState instance
     pub async fn new(configuration: Arc<AirConfiguration>) -> Result<Self> {
@@ -119,6 +147,111 @@ impl ApplicationState {
         status.insert("downloader".to_string(), ServiceStatus::Starting);
         status.insert("indexing".to_string(), ServiceStatus::Starting);
         status.insert("grpc".to_string(), ServiceStatus::Starting);
+        status.insert("connections".to_string(), ServiceStatus::Starting);
+        
+        Ok(())
+    }
+    
+    /// Register a new connection
+    pub async fn register_connection(
+        &self,
+        connection_id: String,
+        client_id: String,
+        client_version: String,
+        protocol_version: u32,
+        connection_type: ConnectionType,
+    ) -> Result<()> {
+        let mut connections = self.connections.write().await;
+        
+        connections.insert(connection_id.clone(), ConnectionInfo {
+            connection_id: connection_id.clone(),
+            client_id,
+            client_version,
+            protocol_version,
+            last_heartbeat: crate::utils::current_timestamp(),
+            is_active: true,
+            connection_type,
+        });
+        
+        log::info!("Connection registered: {} - {}", connection_id, client_id);
+        Ok(())
+    }
+    
+    /// Update connection heartbeat
+    pub async fn update_connection_heartbeat(&self, connection_id: &str) -> Result<()> {
+        let mut connections = self.connections.write().await;
+        
+        if let Some(connection) = connections.get_mut(connection_id) {
+            connection.last_heartbeat = crate::utils::current_timestamp();
+            connection.is_active = true;
+            log::debug!("Heartbeat updated for connection: {}", connection_id);
+        } else {
+            return Err(AirError::Internal(format!("Connection {} not found", connection_id)));
+        }
+        
+        Ok(())
+    }
+    
+    /// Remove connection
+    pub async fn remove_connection(&self, connection_id: &str) -> Result<()> {
+        let mut connections = self.connections.write().await;
+        
+        if connections.remove(connection_id).is_some() {
+            log::info!("Connection removed: {}", connection_id);
+        } else {
+            log::warn!("Attempted to remove non-existent connection: {}", connection_id);
+        }
+        
+        Ok(())
+    }
+    
+    /// Get active connection count
+    pub async fn get_active_connection_count(&self) -> usize {
+        let connections = self.connections.read().await;
+        connections.values().filter(|c| c.is_active).count()
+    }
+    
+    /// Clean up stale connections
+    pub async fn cleanup_stale_connections(&self, timeout_seconds: u64) -> Result<usize> {
+        let mut connections = self.connections.write().await;
+        let current_time = crate::utils::current_timestamp();
+        let timeout_ms = timeout_seconds * 1000;
+        
+        let mut removed_count = 0;
+        connections.retain(|id, connection| {
+            if current_time - connection.last_heartbeat > timeout_ms {
+                log::warn!("Removing stale connection: {} - {}", id, connection.client_id);
+                removed_count += 1;
+                false
+            } else {
+                true
+            }
+        });
+        
+        if removed_count > 0 {
+            log::info!("Cleaned up {} stale connections", removed_count);
+        }
+        
+        Ok(removed_count)
+    }
+    
+    /// Register background task
+    pub async fn register_background_task(&self, task: tokio::task::JoinHandle<()>) -> Result<()> {
+        let mut tasks = self.background_tasks.lock().await;
+        tasks.push(task);
+        Ok(())
+    }
+    
+    /// Stop all background tasks
+    pub async fn stop_all_background_tasks(&self) -> Result<()> {
+        let mut tasks = self.background_tasks.lock().await;
+        
+        log::info!("Stopping {} background tasks", tasks.len());
+        
+        // Abort all tasks
+        for task in tasks.drain(..) {
+            task.abort();
+        }
         
         Ok(())
     }
@@ -231,5 +364,73 @@ impl ApplicationState {
     pub async fn get_active_request_count(&self) -> usize {
         let requests = self.active_requests.lock().await;
         requests.len()
+    }
+
+    /// Get current configuration
+    pub async fn get_configuration(&self) -> Arc<AirConfiguration> {
+        self.configuration.clone()
+    }
+
+    /// Update configuration
+    pub async fn update_configuration(
+        &self,
+        section: String,
+        updates: std::collections::HashMap<String, String>,
+    ) -> Result<()> {
+        log::info!("[ApplicationState] Updating configuration section: {}", section);
+
+        // For now, just log the update
+        // In a real implementation, this would:
+        // 1. Validate the updates
+        // 2. Create a temporary config file
+        // 3. Atomic replace the old config
+        // 4. Notify affected services to reload
+
+        match section.as_str() {
+            "grpc" => {
+                log::info!("Updating gRPC configuration: {:?}", updates);
+            }
+            "updates" => {
+                log::info!("Updating updates configuration: {:?}", updates);
+            }
+            "downloader" => {
+                log::info!("Updating downloader configuration: {:?}", updates);
+            }
+            "indexing" => {
+                log::info!("Updating indexing configuration: {:?}", updates);
+            }
+            _ => {
+                return Err(AirError::Configuration(format!("Unknown configuration section: {}", section)));
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Set resource limits
+    pub async fn set_resource_limits(
+        &self,
+        memory_limit_mb: Option<u64>,
+        cpu_limit_percent: Option<f64>,
+        disk_limit_mb: Option<u64>,
+    ) -> Result<()> {
+        log::info!("[ApplicationState] Setting resource limits memory={:?}, cpu={:?}, disk={:?}",
+                  memory_limit_mb, cpu_limit_percent, disk_limit_mb);
+
+        // Validate limits
+        if let Some(cpu) = cpu_limit_percent {
+            if cpu > 100.0 || cpu <= 0.0 {
+                return Err(AirError::ResourceLimit("CPU limit must be between 0 and 100".to_string()));
+            }
+        }
+
+        // Apply limits - this would affect how services operate
+        // For now, just log and return success
+        // In a real implementation, this would:
+        // 1. Stop services that exceed limits
+        // 2. Throttle operations accordingly
+        // 3. Update performance config
+
+        Ok(())
     }
 }

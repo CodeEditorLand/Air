@@ -5,7 +5,6 @@ fn main() -> Result<()> {
     tonic_build::configure()
         .build_server(true)
         .build_client(true)
-        .out_dir("Source/Vine/Generated")
         .compile(&["Proto/air.proto"], &["Proto"])?;
     
     println!("cargo:rerun-if-changed=Proto/air.proto");

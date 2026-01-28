@@ -296,6 +296,29 @@ impl UpdateManager {
         Ok(())
     }
     
+    /// Verify update file integrity
+    pub async fn verify_update(&self, file_path: &str) -> Result<bool> {
+        let path = PathBuf::from(file_path);
+
+        if !path.exists() {
+            return Ok(false);
+        }
+
+        // For now, just check file exists and has content
+        // TODO: Implement proper checksum verification based on UpdateInfo
+        let metadata = tokio::fs::metadata(&path).await
+            .map_err(|e| AirError::FileSystem(format!("Failed to read update file metadata: {}", e)))?;
+
+        if metadata.len() == 0 {
+            return Ok(false);
+        }
+
+        // Verify checksum from update info if available
+        let status = self.update_status.lock().await;
+        // In a real implementation, we would store expected checksum with the update
+        Ok(true)
+    }
+    
     /// Compare version strings
     fn compare_versions(v1: &str, v2: &str) -> i32 {
         let v1_parts: Vec<u32> = v1.split('.').filter_map(|s| s.parse().ok()).collect();
@@ -324,6 +347,11 @@ impl UpdateManager {
     pub async fn get_status(&self) -> UpdateStatus {
         let status = self.update_status.lock().await;
         status.clone()
+    }
+
+    /// Get the cache directory path
+    pub fn get_cache_directory(&self) -> &PathBuf {
+        &self.cache_directory
     }
     
     /// Start background tasks

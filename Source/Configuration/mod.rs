@@ -158,7 +158,7 @@ impl Default for AirConfiguration {
     fn default() -> Self {
         Self {
             grpc: GrpcConfig {
-                bind_address: "[::1]:50052".to_string(),
+                bind_address: "[::1]:50053".to_string(),
                 max_connections: 100,
                 request_timeout_secs: 30,
             },

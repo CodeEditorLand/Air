@@ -29,8 +29,8 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Default configuration file name
 pub const DEFAULT_CONFIG_FILE: &str = "air.toml";
 
-/// Default gRPC bind address
-pub const DEFAULT_BIND_ADDRESS: &str = "[::1]:50052";
+/// Default gRPC bind address (Note: Moved to port 50053 to avoid conflict with Cocoon which uses 50052)
+pub const DEFAULT_BIND_ADDRESS: &str = "[::1]:50053";
 
 /// Protocol version for Mountain-Air communication
 pub const PROTOCOL_VERSION: u32 = 1;
@@ -58,6 +58,18 @@ pub enum AirError {
     
     #[error("Internal error: {0}")]
     Internal(String),
+    
+    #[error("Resource limit exceeded: {0}")]
+    ResourceLimit(String),
+    
+    #[error("Service unavailable: {0}")]
+    ServiceUnavailable(String),
+    
+    #[error("Validation error: {0}")]
+    Validation(String),
+    
+    #[error("Timeout error: {0}")]
+    Timeout(String),
 }
 
 impl From<config::ConfigError> for AirError {

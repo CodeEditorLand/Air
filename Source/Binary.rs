@@ -17,7 +17,7 @@
 
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 use log::{debug, error, info, warn};
-use tokio::signal;
+use tokio::{signal, time::interval};
 
 use crate::{
     ApplicationState::ApplicationState,
@@ -27,6 +27,7 @@ use crate::{
     Indexing::FileIndexer,
     Updates::UpdateManager,
     Vine::Server::AirVinegRPCService,
+    Vine::Generated::AirServiceServer,
 };
 
 mod ApplicationState;
@@ -196,7 +197,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     TraceStep!("[Boot] [Vine] Initializing gRPC server...");
     
     let bind_addr: SocketAddr = bind_address
-        .unwrap_or_else(|| "[::1]:50052".to_string())
+        .unwrap_or_else(|| "[::1]:50053".to_string())
         .parse()?;
     
     let vine_service = AirVinegRPCService::new(
@@ -209,8 +210,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     let server = tonic::transport::Server::builder()
         .add_service(AirServiceServer::new(vine_service))
+        .serve(bind_addr);
     
     info!("[Boot] [Vine] gRPC server configured on {}", bind_addr);
+    
+    // Start connection monitoring background task
+    let connection_monitor_handle = tokio::spawn({
+        let app_state = app_state.clone();
+        async move {
+            let mut interval = interval(Duration::from_secs(60)); // Check every minute
+            loop {
+                interval.tick().await;
+                
+                // Update resource usage
+                if let Err(e) = app_state.update_resource_usage().await {
+                    warn!("[ConnectionMonitor] Failed to update resource usage: {}", e);
+                }
+                
+                // Clean up stale connections (5 minute timeout)
+                if let Err(e) = app_state.cleanup_stale_connections(300).await {
+                    warn!("[ConnectionMonitor] Failed to cleanup stale connections: {}", e);
+                }
+                
+                debug!("[ConnectionMonitor] Active connections: {}", app_state.get_active_connection_count().await);
+            }
+        }
+    });
+    
+    // Register background task
+    app_state.register_background_task(connection_monitor_handle).await
+        .map_err(|e| format!("Failed to register connection monitor: {}", e))?;
     
     // -------------------------------------------------------------------------
     // [Boot] [Startup] Start services
@@ -248,6 +277,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // -------------------------------------------------------------------------
     info!("[Shutdown] Initiating graceful shutdown...");
     
+    // Stop all background tasks
+    if let Err(e) = app_state.stop_all_background_tasks().await {
+        error!("[Shutdown] Failed to stop background tasks: {}", e);
+    }
+    
     // Stop background services
     auth_service.stop_background_tasks().await;
     update_manager.stop_background_tasks().await;
@@ -261,6 +295,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         download_handle,
         indexing_handle
     );
+    
+    // Log final statistics
+    let metrics = app_state.get_metrics().await;
+    let resources = app_state.get_resource_usage().await;
+    
+    info!("[Shutdown] Final statistics - Requests: {} successful, {} failed", 
+          metrics.successful_requests, metrics.failed_requests);
+    info!("[Shutdown] Final resource usage - Memory: {:.1}MB, CPU: {:.1}%", 
+          resources.memory_usage_mb, resources.cpu_usage_percent);
     
     info!("[Shutdown] All services stopped");
     info!("[Shutdown] Air Daemon 🪁 has shut down gracefully");

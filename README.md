@@ -154,11 +154,16 @@ phase.
 1. **Spawn:** `Mountain` detects if `Air` is running. If not, it spawns the
    binary.
 2. **Connect:** `Mountain` establishes a Vine (gRPC) connection to `Air`'s local
-   port.
+   port `[::1]:50053` (reserved for Air, separate from Cocoon's port 50052).
 3. **Delegate:** When a user requests an update or a large download, `Mountain`
    sends a command to `Air` and immediately returns control to the user.
 4. **Monitor:** `Air` emits progress events back to `Mountain` to update the UI
    status bars.
+
+### Port Allocation
+
+- **Air**: Port `50053` (Vine/air.proto protocol - Air daemon services)
+- **Cocoon**: Port `50052` (Vine.proto protocol - VS Code extension hosting)
 
 ---
 
