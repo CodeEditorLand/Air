@@ -13,11 +13,21 @@ use tonic::{Request, Response, Status};
 use crate::{
     ApplicationState::ApplicationState,
     Authentication::AuthenticationService,
-    Downloader::DownloadManager,
-    Indexing::FileIndexer,
-    Updates::UpdateManager,
+    Downloader::{DownloadManager, DownloadResult},
+    Indexing::{FileIndexer, IndexResult},
+    Updates::{UpdateManager, UpdateInfo},
     Result,
     utils::{generate_request_id, current_timestamp},
+};
+
+use super::super::Generated::{
+    AuthenticationRequest, AuthenticationResponse,
+    UpdateCheckRequest, UpdateCheckResponse,
+    DownloadRequest, DownloadResponse,
+    IndexRequest, IndexResponse,
+    StatusRequest, StatusResponse,
+    HealthCheckRequest, HealthCheckResponse,
+    AirService,
 };
 
 /// The concrete implementation of the Air gRPC service
@@ -60,12 +70,12 @@ impl AirVinegRPCService {
 }
 
 #[tonic::async_trait]
-impl crate::Vine::Generated::air_service_server::AirService for AirVinegRPCService {
+impl AirService for AirVinegRPCService {
     /// Handle authentication requests from Mountain
     async fn authenticate(
         &self,
-        request: Request<crate::Vine::Generated::AuthenticationRequest>,
-    ) -> Result<Response<crate::Vine::Generated::AuthenticationResponse>, Status> {
+        request: Request<AuthenticationRequest>,
+    ) -> std::result::Result<Response<AuthenticationResponse>, Status> {
         let request_data = request.into_inner();
         let request_id = request_data.request_id;
         
@@ -112,8 +122,8 @@ impl crate::Vine::Generated::air_service_server::AirService for AirVinegRPCServi
     /// Handle update check requests from Mountain
     async fn check_for_updates(
         &self,
-        request: Request<crate::Vine::Generated::UpdateCheckRequest>,
-    ) -> Result<Response<crate::Vine::Generated::UpdateCheckResponse>, Status> {
+        request: Request<UpdateCheckRequest>,
+    ) -> std::result::Result<Response<UpdateCheckResponse>, Status> {
         let request_data = request.into_inner();
         let request_id = request_data.request_id;
         
@@ -160,8 +170,8 @@ impl crate::Vine::Generated::air_service_server::AirService for AirVinegRPCServi
     /// Handle download requests from Mountain
     async fn download_file(
         &self,
-        request: Request<crate::Vine::Generated::DownloadRequest>,
-    ) -> Result<Response<crate::Vine::Generated::DownloadResponse>, Status> {
+        request: Request<DownloadRequest>,
+    ) -> std::result::Result<Response<DownloadResponse>, Status> {
         let request_data = request.into_inner();
         let request_id = request_data.request_id;
         
@@ -212,8 +222,8 @@ impl crate::Vine::Generated::air_service_server::AirService for AirVinegRPCServi
     /// Handle file indexing requests from Mountain
     async fn index_files(
         &self,
-        request: Request<crate::Vine::Generated::IndexRequest>,
-    ) -> Result<Response<crate::Vine::Generated::IndexResponse>, Status> {
+        request: Request<IndexRequest>,
+    ) -> std::result::Result<Response<IndexResponse>, Status> {
         let request_data = request.into_inner();
         let request_id = request_data.request_id;
         
@@ -261,8 +271,8 @@ impl crate::Vine::Generated::air_service_server::AirService for AirVinegRPCServi
     /// Handle status check requests from Mountain
     async fn get_status(
         &self,
-        request: Request<crate::Vine::Generated::StatusRequest>,
-    ) -> Result<Response<crate::Vine::Generated::StatusResponse>, Status> {
+        request: Request<StatusRequest>,
+    ) -> std::result::Result<Response<StatusResponse>, Status> {
         let request_data = request.into_inner();
         
         debug!("[AirVinegRPCService] Status request received");
@@ -286,8 +296,8 @@ impl crate::Vine::Generated::air_service_server::AirService for AirVinegRPCServi
     /// Handle service health check
     async fn health_check(
         &self,
-        _request: Request<crate::Vine::Generated::HealthCheckRequest>,
-    ) -> Result<Response<crate::Vine::Generated::HealthCheckResponse>, Status> {
+        _request: Request<HealthCheckRequest>,
+    ) -> std::result::Result<Response<HealthCheckResponse>, Status> {
         debug!("[AirVinegRPCService] Health check request received");
         
         Ok(Response::new(crate::Vine::Generated::HealthCheckResponse {

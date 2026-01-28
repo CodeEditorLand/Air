@@ -8,8 +8,9 @@ use std::{collections::HashMap, sync::Arc};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, RwLock};
+use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 
-use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::expand_path};
+use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::ConfigurationManager};
 
 /// Authentication service implementation
 pub struct AuthenticationService {
@@ -68,7 +69,7 @@ impl AuthenticationService {
         let config = &app_state.configuration.authentication;
         
         // Expand credentials path
-        let credentials_path = expand_path(&config.credentials_path)?;
+        let credentials_path = ConfigurationManager::expand_path(&config.credentials_path)?;
         
         // Load or create credentials store
         let credentials_store = Self::load_credentials_store(&credentials_path).await?;
@@ -162,9 +163,8 @@ impl AuthenticationService {
         let signature = crypto_keys.signing_key.sign(payload.as_bytes());
         
         // Encode token
-        let token = base64::encode_config(
-            format!("{}:{}", payload, base64::encode_config(signature.as_ref(), base64::URL_SAFE)),
-            base64::URL_SAFE
+        let token = URL_SAFE.encode(
+            format!("{}:{}", payload, URL_SAFE.encode(signature.as_ref()))
         );
         
         Ok(token)
@@ -197,14 +197,14 @@ impl AuthenticationService {
             *byte ^= crypto_keys.encryption_key[i % crypto_keys.encryption_key.len()];
         }
         
-        Ok(base64::encode(&encrypted))
+        Ok(URL_SAFE.encode(&encrypted))
     }
     
     /// Decrypt password
     async fn decrypt_password(&self, encrypted_password: &str) -> Result<String> {
         let crypto_keys = self.crypto_keys.lock().await;
         
-        let encrypted_bytes = base64::decode(encrypted_password)
+        let encrypted_bytes = URL_SAFE.decode(encrypted_password)
             .map_err(|e| AirError::Authentication(format!("Failed to decode password: {}", e)))?;
         
         // Simple XOR decryption
@@ -268,7 +268,7 @@ impl AuthenticationService {
         
         // Generate encryption key
         let mut encryption_key = [0u8; 32];
-        ring::rand::generate_entropy_fill(&mut encryption_key)
+        ring::rand::SystemRandom::new().fill(&mut encryption_key)
             .map_err(|e| AirError::Authentication(format!("Failed to generate encryption key: {}", e)))?;
         
         Ok(CryptoKeys {
@@ -290,7 +290,7 @@ impl AuthenticationService {
     
     /// Background task for session cleanup
     async fn background_task(&self) {
-        let interval = tokio::time::interval(tokio::time::Duration::from_secs(300)); // 5 minutes
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(300)); // 5 minutes
         
         loop {
             interval.tick().await;

@@ -208,8 +208,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     
     let server = tonic::transport::Server::builder()
-        .add_service(crate::Vine::Generated::air_service_server::AirServiceServer::new(vine_service))
-        .serve(bind_addr);
+        .add_service(AirServiceServer::new(vine_service))
     
     info!("[Boot] [Vine] gRPC server configured on {}", bind_addr);
     

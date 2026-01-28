@@ -7,7 +7,7 @@ use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, RwLock};
 
-use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::expand_path};
+use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::ConfigurationManager};
 
 /// File indexer implementation
 pub struct FileIndexer {
@@ -79,7 +79,7 @@ impl FileIndexer {
         let config = &app_state.configuration.indexing;
         
         // Expand index directory path
-        let index_directory = expand_path(&config.index_directory)?;
+        let index_directory = ConfigurationManager::expand_path(&config.index_directory)?;
         
         // Create index directory if it doesn't exist
         tokio::fs::create_dir_all(&index_directory).await

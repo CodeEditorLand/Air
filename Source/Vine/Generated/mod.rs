@@ -101,12 +101,3 @@ pub trait AirService {
 }
 
 // Re-export commonly used types
-pub use air_service_server::{AirService, AirServiceServer};
-pub use {
-    AuthenticationRequest, AuthenticationResponse,
-    UpdateCheckRequest, UpdateCheckResponse,
-    DownloadRequest, DownloadResponse,
-    IndexRequest, IndexResponse,
-    StatusRequest, StatusResponse,
-    HealthCheckRequest, HealthCheckResponse,
-};

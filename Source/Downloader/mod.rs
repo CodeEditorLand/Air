@@ -7,8 +7,9 @@
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, RwLock};
+use tokio_stream::StreamExt;
 
-use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::expand_path};
+use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::ConfigurationManager};
 
 /// Download manager implementation
 pub struct DownloadManager {
@@ -63,7 +64,7 @@ impl DownloadManager {
         let config = &app_state.configuration.downloader;
         
         // Expand cache directory path
-        let cache_directory = expand_path(&config.cache_directory)?;
+        let cache_directory = ConfigurationManager::expand_path(&config.cache_directory)?;
         
         // Create cache directory if it doesn't exist
         tokio::fs::create_dir_all(&cache_directory).await
@@ -332,7 +333,7 @@ impl DownloadManager {
     
     /// Background task for cleanup
     async fn background_task(&self) {
-        let interval = tokio::time::interval(tokio::time::Duration::from_secs(60)); // 1 minute
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(60)); // 1 minute
         
         loop {
             interval.tick().await;

@@ -6,8 +6,9 @@
 use std::{path::PathBuf, sync::Arc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
+use tokio_stream::StreamExt;
 
-use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::expand_path};
+use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::ConfigurationManager};
 
 /// Update manager implementation
 pub struct UpdateManager {
@@ -60,7 +61,7 @@ impl UpdateManager {
         let config = &app_state.configuration.updates;
         
         // Expand cache directory path
-        let cache_directory = expand_path(&config.cache_directory)?;
+        let cache_directory = ConfigurationManager::expand_path(&config.downloader.cache_directory)?;
         
         // Create cache directory if it doesn't exist
         tokio::fs::create_dir_all(&cache_directory).await

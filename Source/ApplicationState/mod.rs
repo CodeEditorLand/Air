@@ -6,6 +6,7 @@
 use std::{collections::HashMap, sync::Arc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, RwLock};
+use systemstat::System;
 
 use crate::{Configuration::AirConfiguration, Result, AirError};
 

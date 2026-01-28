@@ -4,6 +4,7 @@
 
 use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
+use toml;
 
 use crate::{Result, AirError, DEFAULT_CONFIG_FILE};
 
