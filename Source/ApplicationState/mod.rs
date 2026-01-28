@@ -198,16 +198,15 @@ impl ApplicationState {
         let mut resources = self.resources.write().await;
         
         // Use systemstat to get actual system metrics
-        if let Ok(sys) = systemstat::System::new() {
-            if let Ok(memory) = sys.memory() {
-                resources.memory_usage_mb = (memory.total.as_u64() - memory.free.as_u64()) as f64 / 1024.0 / 1024.0;
-            }
-            
-            if let Ok(cpu) = sys.cpu_load_aggregate() {
-                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-                if let Ok(cpu) = cpu.done() {
-                    resources.cpu_usage_percent = (cpu.user + cpu.nice + cpu.system) * 100.0;
-                }
+        let sys = System::new();
+        if let Ok(memory) = sys.memory() {
+            resources.memory_usage_mb = (memory.total.as_u64() - memory.free.as_u64()) as f64 / 1024.0 / 1024.0;
+        }
+        
+        if let Ok(cpu) = sys.cpu_load_aggregate() {
+            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+            if let Ok(cpu) = cpu.done() {
+                resources.cpu_usage_percent = (cpu.user + cpu.nice + cpu.system) * 100.0;
             }
         }
         

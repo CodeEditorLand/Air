@@ -15,7 +15,7 @@ pub mod Updates;
 pub mod Vine;
 
 // Re-export commonly used types
-pub use ApplicationState::ApplicationState;
+
 pub use Authentication::AuthenticationService;
 pub use Configuration::ConfigurationManager;
 pub use Downloader::DownloadManager;

@@ -268,7 +268,7 @@ impl AuthenticationService {
         
         // Generate encryption key
         let mut encryption_key = [0u8; 32];
-        ring::rand::SystemRandom::new().fill(&mut encryption_key)
+        ring::rand::SystemRandom::new().fill(&mut encryption_key).map_err(|e| AirError::Authentication(format!("Failed to generate encryption key: {}", e)))
             .map_err(|e| AirError::Authentication(format!("Failed to generate encryption key: {}", e)))?;
         
         Ok(CryptoKeys {

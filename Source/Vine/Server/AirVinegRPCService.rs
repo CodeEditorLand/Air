@@ -69,7 +69,6 @@ impl AirVinegRPCService {
     }
 }
 
-#[tonic::async_trait]
 impl AirService for AirVinegRPCService {
     /// Handle authentication requests from Mountain
     async fn authenticate(

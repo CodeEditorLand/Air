@@ -6,7 +6,7 @@
 use std::{path::PathBuf, sync::Arc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
-use tokio_stream::StreamExt;
+use futures::StreamExt;
 
 use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::ConfigurationManager};
 
