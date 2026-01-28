@@ -297,17 +297,13 @@ impl UpdateManager {
     }
     
     /// Verify update file integrity
-    pub async fn verify_update(&self, file_path: &str) -> Result<bool> {
+    pub async fn verify_update(&self, file_path: &str, update_info: Option<&UpdateInfo>) -> Result<bool> {
         let path = PathBuf::from(file_path);
 
         if !path.exists() {
             return Ok(false);
         }
 
-        // For now, just check file exists and has content
-        // TODO: Implement proper checksum verification based on UpdateInfo
-        // This requires access to update_info which isn't available in this context
-        // Checksum verification should be implemented when UpdateInfo is available
         let metadata = tokio::fs::metadata(&path).await
             .map_err(|e| AirError::FileSystem(format!("Failed to read update file metadata: {}", e)))?;
 
@@ -315,10 +311,46 @@ impl UpdateManager {
             return Ok(false);
         }
 
-        // Verify checksum from update info if available
-        let status = self.update_status.lock().await;
-        // In a real implementation, we would store expected checksum with the update
+        // Verify checksum if UpdateInfo is provided
+        if let Some(info) = update_info {
+            if !info.checksum.is_empty() {
+                let actual_checksum = self.calculate_file_checksum(&path).await?;
+                if actual_checksum != info.checksum {
+                    return Err(AirError::Configuration(
+                        format!("Checksum verification failed: expected {}, got {}", 
+                               info.checksum, actual_checksum)
+                    ));
+                }
+            }
+        }
+
         Ok(true)
+    }
+    
+    /// Calculate SHA256 checksum of a file
+    async fn calculate_file_checksum(&self, path: &PathBuf) -> Result<String> {
+        use sha2::{Sha256, Digest};
+        use tokio::io::AsyncReadExt;
+        
+        let mut file = tokio::fs::File::open(path).await
+            .map_err(|e| AirError::FileSystem(format!("Failed to open file for checksum: {}", e)))?;
+        
+        let mut hasher = Sha256::new();
+        let mut buffer = vec![0u8; 8192];
+        
+        loop {
+            let bytes_read = file.read(&mut buffer).await
+                .map_err(|e| AirError::FileSystem(format!("Failed to read file for checksum: {}", e)))?;
+            
+            if bytes_read == 0 {
+                break;
+            }
+            
+            hasher.update(&buffer[..bytes_read]);
+        }
+        
+        let result = hasher.finalize();
+        Ok(format!("{:x}", result))
     }
     
     /// Compare version strings
