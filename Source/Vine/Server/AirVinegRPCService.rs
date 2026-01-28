@@ -762,8 +762,14 @@ impl AirService for AirVinegRPCService {
                     // Graceful shutdown implementation
                     if let Err(e) = app_state.initiate_graceful_shutdown().await {
                         log::error!("[AirVinegRPCService] Failed to initiate graceful shutdown: {}", e);
-                        // TODO: Implement rollback if update fails
+                        
+                        // Implement rollback if update fails
                         log::warn!("[AirVinegRPCService] Rollback initiated due to graceful shutdown failure");
+                        if let Err(rollback_error) = self.perform_rollback(&version).await {
+                            log::error!("[AirVinegRPCService] Rollback failed: {}", rollback_error);
+                        } else {
+                            log::info!("[AirVinegRPCService] Rollback completed successfully");
+                        }
                     }
                 });
 
