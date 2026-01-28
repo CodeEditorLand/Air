@@ -46,6 +46,7 @@ rand = { workspace = true }
 # For configuration management
 config = { workspace = true }
 dirs = { workspace = true }
+toml = { workspace = true }
 
 # For process management
 sysinfo = "0.30"

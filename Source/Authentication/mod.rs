@@ -9,6 +9,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, RwLock};
 use base64::{engine::general_purpose::URL_SAFE, Engine as _};
+use ring::rand::SecureRandom;
 
 use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::ConfigurationManager};
 

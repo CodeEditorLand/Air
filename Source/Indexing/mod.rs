@@ -109,7 +109,7 @@ impl FileIndexer {
         
         log::info!("[FileIndexer] Starting directory index: {}", path);
         
-        let directory_path = expand_path(&path)?;
+        let directory_path = ConfigurationManager::expand_path(&path)?;
         
         if !directory_path.exists() {
             return Err(AirError::FileSystem(format!("Directory does not exist: {}", path)));
@@ -351,7 +351,7 @@ impl FileIndexer {
     
     /// Get file information
     pub async fn get_file_info(&self, path: String) -> Result<Option<FileMetadata>> {
-        let file_path = expand_path(&path)?;
+        let file_path = ConfigurationManager::expand_path(&path)?;
         let index = self.file_index.read().await;
         
         Ok(index.files.get(&file_path).cloned())

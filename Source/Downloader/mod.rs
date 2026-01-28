@@ -107,7 +107,7 @@ impl DownloadManager {
             let filename = url.split('/').last().unwrap_or("download.bin");
             self.cache_directory.join(filename)
         } else {
-            expand_path(&destination_path)?
+            ConfigurationManager::expand_path(&destination_path)?
         };
         
         // Register download

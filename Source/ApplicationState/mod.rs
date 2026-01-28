@@ -6,7 +6,7 @@
 use std::{collections::HashMap, sync::Arc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, RwLock};
-use systemstat::System;
+use systemstat::{System, Platform};
 
 use crate::{Configuration::AirConfiguration, Result, AirError};
 
@@ -206,7 +206,7 @@ impl ApplicationState {
         if let Ok(cpu) = sys.cpu_load_aggregate() {
             tokio::time::sleep(std::time::Duration::from_secs(1)).await;
             if let Ok(cpu) = cpu.done() {
-                resources.cpu_usage_percent = (cpu.user + cpu.nice + cpu.system) * 100.0;
+                    resources.cpu_usage_percent = (cpu.user + cpu.nice + cpu.system) as f64 * 100.0;
             }
         }
         
