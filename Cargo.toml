@@ -23,6 +23,7 @@ path = "Source/Binary.rs"
 [dependencies]
 tokio = { version = "1.49.0", features = ["full"] }
 tonic = { version = "0.14.2", features = ["transport", "codegen"] }
+tokio-stream = { version = "0.1", features = ["net"] }
 prost = "0.14.3"
 tonic-prost = "0.14.2"
 serde = { version = "1.0.228", features = ["derive"] }

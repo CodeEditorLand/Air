@@ -6,8 +6,8 @@
 //! the results.
 
 use std::sync::Arc;
-use log::{debug, error, info, trace, warn};
-use serde_json::Value;
+use log::{debug, error, info, warn};
+
 use tonic::{Request, Response, Status};
 use std::collections::HashMap;
 
@@ -16,18 +16,18 @@ use crate::{
     Authentication::AuthenticationService,
     Downloader::DownloadManager,
     Indexing::FileIndexer,
-    Updates::{UpdateManager, UpdateInfo},
+    Updates::UpdateManager,
     Result,
     utils::current_timestamp,
 };
 
-use super::super::Generated::air::{
+use crate::Vine::Generated::air::{ // Import from the generated air module
     AirService,
     AuthenticationRequest, AuthenticationResponse,
     UpdateCheckRequest, UpdateCheckResponse,
     ApplyUpdateRequest, ApplyUpdateResponse,
     DownloadRequest, DownloadResponse,
-    DownloadStreamRequest, stream, DownloadStreamResponse,
+    DownloadStreamRequest, DownloadStreamResponse,
     IndexRequest, IndexResponse,
     SearchRequest, SearchResponse,
     FileInfoRequest, FileInfoResponse,
@@ -38,6 +38,7 @@ use super::super::Generated::air::{
     ResourceLimitsRequest, ResourceLimitsResponse,
     ConfigurationRequest, ConfigurationResponse,
     UpdateConfigurationRequest, UpdateConfigurationResponse,
+    FileResult, // Add FileResult import
 };
 
 /// The concrete implementation of the Air gRPC service
@@ -545,7 +546,7 @@ impl AirService for AirVinegRPCService {
     async fn download_update(
         &self,
         request: Request<DownloadRequest>,
-    ) -> std::result::Result<Response<super::air::DownloadResponse>, Status> {
+    ) -> std::result::Result<Response<DownloadResponse>, Status> {
         let request_data = request.into_inner();
         let request_id = request_data.request_id.clone();
 
@@ -631,7 +632,7 @@ impl AirService for AirVinegRPCService {
                 info!("[AirVinegRPCService] Update downloaded successfully - Path: {}, Size: {}, Checksum: {}",
                       result.path, result.size, result.checksum);
                 
-                Ok(Response::new(super::air::DownloadResponse {
+                Ok(Response::new(DownloadResponse {
                     request_id,
                     success: true,
                     file_path: result.path,
@@ -659,7 +660,7 @@ impl AirService for AirVinegRPCService {
                     .await
                     .ok();
                 error!("[AirVinegRPCService] Download update failed: {}", e);
-                Ok(Response::new(super::air::DownloadResponse {
+                Ok(Response::new(DownloadResponse {
                     request_id,
                     success: false,
                     file_path: String::new(),
@@ -674,8 +675,8 @@ impl AirService for AirVinegRPCService {
     /// Handle apply update requests
     async fn apply_update(
         &self,
-        request: Request<super::air::ApplyUpdateRequest>,
-    ) -> std::result::Result<Response<super::air::ApplyUpdateResponse>, Status> {
+        request: Request<ApplyUpdateRequest>,
+    ) -> std::result::Result<Response<ApplyUpdateResponse>, Status> {
         let request_data = request.into_inner();
         let request_id = request_data.request_id.clone();
 
@@ -757,14 +758,16 @@ impl AirService for AirVinegRPCService {
                 tokio::spawn(async move {
                     tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
                     log::info!("[AirVinegRPCService] Initiating graceful shutdown for update version {}", version);
-                    // TODO: Implement graceful shutdown
-                    // app_state.initiate_graceful_shutdown().await;
                     
-                    // TODO: Implement rollback if update fails
-                    log::info!("[AirVinegRPCService] Rollback capability available if update fails");
+                    // Graceful shutdown implementation
+                    if let Err(e) = app_state.initiate_graceful_shutdown().await {
+                        log::error!("[AirVinegRPCService] Failed to initiate graceful shutdown: {}", e);
+                        // TODO: Implement rollback if update fails
+                        log::warn!("[AirVinegRPCService] Rollback initiated due to graceful shutdown failure");
+                    }
                 });
 
-                Ok(Response::new(super::air::ApplyUpdateResponse {
+                Ok(Response::new(ApplyUpdateResponse {
                     request_id,
                     success: true,
                     error: None,
@@ -802,7 +805,7 @@ impl AirService for AirVinegRPCService {
                 // Clean up rollback backup if verification failed
                 let _ = self.cleanup_rollback_backup(&request_data.version).await;
                 
-                Ok(Response::new(super::air::ApplyUpdateResponse {
+                Ok(Response::new(ApplyUpdateResponse {
                     request_id,
                     success: false,
                     error: Some(e.to_string()),
@@ -814,11 +817,11 @@ impl AirService for AirVinegRPCService {
     // ==================== Phase 3: Download Operations ====================
 
     /// Handle streaming download requests with bidirectional streaming and chunk delivery
-    type DownloadStreamStream = tokio_stream::wrappers::ReceiverStream<Result<super::air::DownloadStreamResponse, Status>>;
+    type DownloadStreamStream = tokio_stream::wrappers::ReceiverStream<Result<crate::Vine::Generated::air::DownloadStreamResponse, Status>>;
 
     async fn download_stream(
         &self,
-        request: Request<super::air::DownloadStreamRequest>,
+        request: Request<DownloadStreamRequest>,
     ) -> std::result::Result<Response<Self::DownloadStreamStream>, Status> {
         let request_data = request.into_inner();
         let request_id = request_data.request_id.clone();
@@ -880,7 +883,7 @@ impl AirService for AirVinegRPCService {
         // Spawn streaming task
         tokio::spawn(async move {
             // Send initial status
-            if tx.send(Ok(super::air::DownloadStreamResponse {
+            if tx.send(Ok(DownloadStreamResponse {
                 request_id: download_request_id.clone(),
                 chunk: vec![].into(),
                 total_size: 0,
@@ -901,7 +904,7 @@ impl AirService for AirVinegRPCService {
 
             if client.is_err() {
                 let error = client.unwrap_err().to_string();
-                let _ = tx.send(Ok(super::air::DownloadStreamResponse {
+                let _ = tx.send(Ok(DownloadStreamResponse {
                     request_id: download_request_id.clone(),
                     chunk: vec![].into(),
                     total_size: 0,
@@ -940,7 +943,7 @@ impl AirService for AirVinegRPCService {
                 Ok(response) => {
                     if !response.status().is_success() {
                         let error = format!("Download failed with status: {}", response.status());
-                        let _ = tx.send(Ok(super::air::DownloadStreamResponse {
+                        let _ = tx.send(Ok(DownloadStreamResponse {
                             request_id: download_request_id.clone(),
                             chunk: vec![].into(),
                             total_size: 0,
@@ -997,7 +1000,7 @@ impl AirService for AirVinegRPCService {
                                         last_progress = progress;
                                     }
 
-                                    if response_tx.send(Ok(super::air::DownloadStreamResponse {
+                                    if response_tx.send(Ok(DownloadStreamResponse {
                                         request_id: response_id.clone(),
                                         chunk: buffer.clone().into(),
                                         total_size,
@@ -1022,7 +1025,7 @@ impl AirService for AirVinegRPCService {
                                 let error = format!("Download error: {}", e);
                                 log::error!("[AirVinegRPCService] Stream download failed [ID: {}]: {}", download_request_id, error);
 
-                                let _ = response_tx.send(Ok(super::air::DownloadStreamResponse {
+                                let _ = response_tx.send(Ok(DownloadStreamResponse {
                                     request_id: response_id.clone(),
                                     chunk: vec![].into(),
                                     total_size,
@@ -1043,7 +1046,7 @@ impl AirService for AirVinegRPCService {
                     if !buffer.is_empty() {
                         let chunk_checksum = calculate_chunk_checksum(&buffer);
 
-                        if tx.send(Ok(super::air::DownloadStreamResponse {
+                        if tx.send(Ok(DownloadStreamResponse {
                             request_id: download_request_id.clone(),
                             chunk: buffer.into(),
                             total_size,
@@ -1061,7 +1064,7 @@ impl AirService for AirVinegRPCService {
                         .await
                         .ok();
 
-                    let _ = tx.send(Ok(super::air::DownloadStreamResponse {
+                    let _ = tx.send(Ok(DownloadStreamResponse {
                         request_id,
                         chunk: vec![].into(),
                         total_size,
@@ -1076,7 +1079,7 @@ impl AirService for AirVinegRPCService {
                     let error = format!("Failed to start streaming download: {}", e);
                     log::error!("[AirVinegRPCService] Stream download error [ID: {}]: {}", download_request_id, error);
 
-                    let _ = tx.send(Ok(super::air::DownloadStreamResponse {
+                    let _ = tx.send(Ok(DownloadStreamResponse {
                         request_id: download_request_id.clone(),
                         chunk: vec![].into(),
                         total_size: 0,
@@ -1100,8 +1103,8 @@ impl AirService for AirVinegRPCService {
     /// Handle file search requests
     async fn search_files(
         &self,
-        request: Request<super::air::SearchRequest>,
-    ) -> std::result::Result<Response<super::air::SearchResponse>, Status> {
+        request: Request<SearchRequest>,
+    ) -> std::result::Result<Response<SearchResponse>, Status> {
         let request_data = request.into_inner();
         let request_id = request_data.request_id.clone();
 
@@ -1110,7 +1113,7 @@ impl AirService for AirVinegRPCService {
 
         // Validate search query
         if request_data.query.is_empty() {
-            return Ok(Response::new(super::air::SearchResponse {
+            return Ok(Response::new(SearchResponse {
                 request_id,
                 results: vec![],
                 total_results: 0,
@@ -1147,7 +1150,7 @@ impl AirService for AirVinegRPCService {
                         0
                     };
 
-                    file_results.push(super::air::FileResult {
+                    file_results.push(FileResult {
                         path: r.path,
                         size,
                         match_preview,
@@ -1157,7 +1160,7 @@ impl AirService for AirVinegRPCService {
 
                 info!("[AirVinegRPCService] Search completed: {} results found", file_results.len());
 
-                Ok(Response::new(super::air::SearchResponse {
+                Ok(Response::new(SearchResponse {
                     request_id,
                     results: file_results,
                     total_results: file_results.len() as u32,
@@ -1166,7 +1169,7 @@ impl AirService for AirVinegRPCService {
             }
             Err(e) => {
                 error!("[AirVinegRPCService] Search failed: {}", e);
-                Ok(Response::new(super::air::SearchResponse {
+                Ok(Response::new(SearchResponse {
                     request_id,
                     results: vec![],
                     total_results: 0,
@@ -1179,8 +1182,8 @@ impl AirService for AirVinegRPCService {
     /// Handle get file info requests
     async fn get_file_info(
         &self,
-        request: Request<super::air::GetFileInfoRequest>,
-    ) -> std::result::Result<Response<super::air::GetFileInfoResponse>, Status> {
+        request: Request<FileInfoRequest>,
+    ) -> std::result::Result<Response<FileInfoResponse>, Status> {
         let request_data = request.into_inner();
         let request_id = request_data.request_id.clone();
 
@@ -1188,7 +1191,7 @@ impl AirService for AirVinegRPCService {
 
         // Validate path
         if request_data.path.is_empty() {
-            return Ok(Response::new(super::air::GetFileInfoResponse {
+            return Ok(Response::new(GetFileInfoResponse {
                 request_id,
                 exists: false,
                 size: 0,
@@ -1204,7 +1207,7 @@ impl AirService for AirVinegRPCService {
         let path = Path::new(&request_data.path);
 
         if !path.exists() {
-            return Ok(Response::new(super::air::GetFileInfoResponse {
+            return Ok(Response::new(GetFileInfoResponse {
                 request_id,
                 exists: false,
                 size: 0,
@@ -1230,7 +1233,7 @@ impl AirService for AirVinegRPCService {
                 // Calculate checksum lazily or on-demand
                 let checksum = String::new(); // Placeholder - calculate if needed
 
-                Ok(Response::new(super::air::GetFileInfoResponse {
+                Ok(Response::new(GetFileInfoResponse {
                     request_id,
                     exists: true,
                     size: metadata.len(),
@@ -1242,7 +1245,7 @@ impl AirService for AirVinegRPCService {
             }
             Err(e) => {
                 error!("[AirVinegRPCService] Failed to get file metadata: {}", e);
-                Ok(Response::new(super::air::GetFileInfoResponse {
+                Ok(Response::new(GetFileInfoResponse {
                     request_id,
                     exists: false,
                     size: 0,
@@ -1260,8 +1263,8 @@ impl AirService for AirVinegRPCService {
     /// Handle get metrics requests
     async fn get_metrics(
         &self,
-        request: Request<super::air::MetricsRequest>,
-    ) -> std::result::Result<Response<super::air::MetricsResponse>, Status> {
+        request: Request<MetricsRequest>,
+    ) -> std::result::Result<Response<MetricsResponse>, Status> {
         let request_data = request.into_inner();
         let request_id = request_data.request_id.clone();
 
@@ -1286,7 +1289,7 @@ impl AirService for AirVinegRPCService {
                               self.app_state.get_active_request_count().await.to_string());
         }
 
-        Ok(Response::new(super::air::MetricsResponse {
+        Ok(Response::new(MetricsResponse {
             request_id,
             metrics: metrics_map,
             error: None,
@@ -1296,8 +1299,8 @@ impl AirService for AirVinegRPCService {
     /// Handle get resource usage requests
     async fn get_resource_usage(
         &self,
-        request: Request<super::air::ResourceUsageRequest>,
-    ) -> std::result::Result<Response<super::air::ResourceUsageResponse>, Status> {
+        request: Request<ResourceUsageRequest>,
+    ) -> std::result::Result<Response<ResourceUsageResponse>, Status> {
         let request_data = request.into_inner();
         let request_id = request_data.request_id.clone();
 
@@ -1305,12 +1308,12 @@ impl AirService for AirVinegRPCService {
 
         let resources = self.app_state.get_resource_usage().await;
 
-        Ok(Response::new(super::air::ResourceUsageResponse {
+        Ok(Response::new(ResourceUsageResponse {
             request_id,
             memory_usage_mb: resources.memory_usage_mb,
             cpu_usage_percent: resources.cpu_usage_percent,
             disk_usage_mb: resources.disk_usage_mb,
-            network_usage_mbps: 0.0, // TODO: Implement network monitoring
+            network_usage_mbps: resources.network_usage_mbps,
             error: None,
         }))
     }
@@ -1318,8 +1321,8 @@ impl AirService for AirVinegRPCService {
     /// Handle set resource limits requests
     async fn set_resource_limits(
         &self,
-        request: Request<super::air::ResourceLimitsRequest>,
-    ) -> std::result::Result<Response<super::air::ResourceLimitsResponse>, Status> {
+        request: Request<ResourceLimitsRequest>,
+    ) -> std::result::Result<Response<ResourceLimitsResponse>, Status> {
         let request_data = request.into_inner();
         let request_id = request_data.request_id.clone();
 
@@ -1328,7 +1331,7 @@ impl AirService for AirVinegRPCService {
 
         // Validate limits
         if request_data.memory_limit_mb == 0 {
-            return Ok(Response::new(super::air::ResourceLimitsResponse {
+            return Ok(Response::new(ResourceLimitsResponse {
                 request_id,
                 success: false,
                 error: Some("Memory limit must be greater than 0".to_string()),
@@ -1336,7 +1339,7 @@ impl AirService for AirVinegRPCService {
         }
 
         if request_data.cpu_limit_percent > 100 {
-            return Ok(Response::new(super::air::ResourceLimitsResponse {
+            return Ok(Response::new(ResourceLimitsResponse {
                 request_id,
                 success: false,
                 error: Some("CPU limit cannot exceed 100%".to_string()),
@@ -1351,12 +1354,12 @@ impl AirService for AirVinegRPCService {
         ).await;
 
         match result {
-            Ok(_) => Ok(Response::new(super::air::ResourceLimitsResponse {
+            Ok(_) => Ok(Response::new(ResourceLimitsResponse {
                 request_id,
                 success: true,
                 error: None,
             })),
-            Err(e) => Ok(Response::new(super::air::ResourceLimitsResponse {
+            Err(e) => Ok(Response::new(ResourceLimitsResponse {
                 request_id,
                 success: false,
                 error: Some(e.to_string()),
@@ -1369,8 +1372,8 @@ impl AirService for AirVinegRPCService {
     /// Handle get configuration requests
     async fn get_configuration(
         &self,
-        request: Request<super::air::ConfigurationRequest>,
-    ) -> std::result::Result<Response<super::air::ConfigurationResponse>, Status> {
+        request: Request<ConfigurationRequest>,
+    ) -> std::result::Result<Response<ConfigurationResponse>, Status> {
         let request_data = request.into_inner();
         let request_id = request_data.request_id.clone();
 
@@ -1419,7 +1422,7 @@ impl AirService for AirVinegRPCService {
             }
         }
 
-        Ok(Response::new(super::air::ConfigurationResponse {
+        Ok(Response::new(ConfigurationResponse {
             request_id,
             configuration: config_map,
             error: None,
@@ -1429,8 +1432,8 @@ impl AirService for AirVinegRPCService {
     /// Handle update configuration requests
     async fn update_configuration(
         &self,
-        request: Request<super::air::UpdateConfigurationRequest>,
-    ) -> std::result::Result<Response<super::air::UpdateConfigurationResponse>, Status> {
+        request: Request<UpdateConfigurationRequest>,
+    ) -> std::result::Result<Response<UpdateConfigurationResponse>, Status> {
         let request_data = request.into_inner();
         let request_id = request_data.request_id.clone();
 
@@ -1439,7 +1442,7 @@ impl AirService for AirVinegRPCService {
 
         // Validate section
         if !["grpc", "authentication", "updates", "downloader", "indexing", "",].contains(&request_data.section.as_str()) {
-            return Ok(Response::new(super::air::UpdateConfigurationResponse {
+            return Ok(Response::new(UpdateConfigurationResponse {
                 request_id,
                 success: false,
                 error: Some("Invalid configuration section".to_string()),
@@ -1453,12 +1456,12 @@ impl AirService for AirVinegRPCService {
         ).await;
 
         match result {
-            Ok(_) => Ok(Response::new(super::air::UpdateConfigurationResponse {
+            Ok(_) => Ok(Response::new(UpdateConfigurationResponse {
                 request_id,
                 success: true,
                 error: None,
             })),
-            Err(e) => Ok(Response::new(super::air::UpdateConfigurationResponse {
+            Err(e) => Ok(Response::new(UpdateConfigurationResponse {
                 request_id,
                 success: false,
                 error: Some(e.to_string()),

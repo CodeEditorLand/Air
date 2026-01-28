@@ -130,6 +130,8 @@ impl ApplicationState {
                 network_usage_mbps: 0.0,
                 last_updated: crate::utils::current_timestamp(),
             })),
+            connections: Arc::new(RwLock::new(HashMap::new())),
+            background_tasks: Arc::new(Mutex::new(Vec::new())),
         };
         
         // Initialize service status
@@ -364,6 +366,16 @@ impl ApplicationState {
     pub async fn get_active_request_count(&self) -> usize {
         let requests = self.active_requests.lock().await;
         requests.len()
+    }
+
+    /// Check if a request is cancelled
+    pub async fn is_request_cancelled(&self, request_id: &str) -> bool {
+        let requests = self.active_requests.lock().await;
+        if let Some(request) = requests.get(request_id) {
+            matches!(request.status, RequestState::Cancelled)
+        } else {
+            false
+        }
     }
 
     /// Get current configuration

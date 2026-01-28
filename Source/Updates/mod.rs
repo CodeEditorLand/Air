@@ -306,6 +306,8 @@ impl UpdateManager {
 
         // For now, just check file exists and has content
         // TODO: Implement proper checksum verification based on UpdateInfo
+        // This requires access to update_info which isn't available in this context
+        // Checksum verification should be implemented when UpdateInfo is available
         let metadata = tokio::fs::metadata(&path).await
             .map_err(|e| AirError::FileSystem(format!("Failed to read update file metadata: {}", e)))?;
 
