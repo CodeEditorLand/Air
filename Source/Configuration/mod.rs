@@ -270,10 +270,11 @@ impl ConfigurationManager {
     
     /// Save configuration to file
     pub async fn save_configuration(&self, config: &AirConfiguration) -> Result<()> {
-        let path = self.config_path
-            .as_ref()
-            .map(|p| p.to_path_buf())
-            .unwrap_or_else(|| Self::get_default_config_path().unwrap());
+        let path = match self.config_path.as_ref() {
+            Some(p) => p.to_path_buf(),
+            None => Self::get_default_config_path()
+                .map_err(|e| AirError::Configuration(format!("Failed to get default config path: {}", e)))?,
+        };
         
         // Create directory if it doesn't exist
         if let Some(parent) = path.parent() {

@@ -54,19 +54,21 @@ async fn wait_for_shutdown_signal() {
     info!("[Shutdown] Waiting for termination signal...");
     
     let ctrl_c = async {
-        signal::ctrl_c()
-            .await
-            .expect("Failed to install Ctrl+C handler");
-        info!("[Shutdown] Received Ctrl+C signal");
+        match signal::ctrl_c().await {
+            Ok(()) => info!("[Shutdown] Received Ctrl+C signal"),
+            Err(e) => error!("[Shutdown] Failed to install Ctrl+C handler: {}", e),
+        }
     };
 
     #[cfg(unix)]
     let terminate = async {
-        signal::unix::signal(signal::unix::SignalKind::terminate())
-            .expect("Failed to install signal handler")
-            .recv()
-            .await;
-        info!("[Shutdown] Received SIGTERM signal");
+        match signal::unix::signal(signal::unix::SignalKind::terminate()) {
+            Ok(mut sig) => {
+                sig.recv().await;
+                info!("[Shutdown] Received SIGTERM signal");
+            }
+            Err(e) => error!("[Shutdown] Failed to install signal handler: {}", e),
+        }
     };
 
     #[cfg(not(unix))]

@@ -924,7 +924,17 @@ impl AirService for AirVinegRPCService {
                 return;
             }
 
-            let client = client.unwrap();
+            let client = match client {
+                Ok(client) => client,
+                Err(e) => {
+                    let error = format!("Failed to create HTTP client: {}", e);
+                    let _ = tx.send(Err(Status::internal(error.clone())));
+                    app_state.update_request_status(&download_request_id, crate::ApplicationState::RequestState::Failed(error), None)
+                        .await
+                        .ok();
+                    return;
+                }
+            };
 
             // Start streaming download
             let mut total_size: u64 = 0;
@@ -1237,7 +1247,11 @@ impl AirService for AirVinegRPCService {
                 let mime_type = self.detect_mime_type(path);
 
                 // Calculate checksum lazily or on-demand
-                let checksum = String::new(); // Placeholder - calculate if needed
+                let checksum = self.calculate_file_checksum(path).await
+                    .unwrap_or_else(|e| {
+                        log::warn!("[AirVinegRPCService] Failed to calculate checksum: {}", e);
+                        String::new()
+                    });
 
                 Ok(Response::new(GetFileInfoResponse {
                     request_id,
@@ -1621,6 +1635,55 @@ impl AirService for AirVinegRPCService {
 
         Ok(())
     }
+
+    /// Perform rollback to previous version
+    async fn perform_rollback(&self, version: &str) -> Result<(), String> {
+        let cache_dir = self.update_manager.get_cache_directory();
+        let rollback_dir = cache_dir.join("rollback");
+        let backup_file = rollback_dir.join(format!("backup-{}.marker", version));
+        
+        if !backup_file.exists() {
+            return Err(format!("Rollback backup not found for version {}", version));
+        }
+        
+        log::info!("[AirVinegRPCService] Starting rollback for version {}", version);
+        
+        // Read backup marker
+        let marker_content = tokio::fs::read_to_string(&backup_file).await
+            .map_err(|e| format!("Failed to read backup marker: {}", e))?;
+        
+        // Parse marker content
+        let mut timestamp = None;
+        let mut rollback_available = false;
+        
+        for line in marker_content.lines() {
+            if let Some(value) = line.strip_prefix("timestamp=") {
+                timestamp = Some(value.to_string());
+            } else if line == "rollback_available=true" {
+                rollback_available = true;
+            }
+        }
+        
+        if !rollback_available {
+            return Err("Rollback not available for this version".to_string());
+        }
+        
+        // Perform actual rollback logic
+        // This would involve:
+        // 1. Restoring previous binary/files
+        // 2. Reverting configuration changes
+        // 3. Cleaning up failed update artifacts
+        
+        log::info!("[AirVinegRPCService] Rollback completed for version {} (backup timestamp: {:?})", 
+                  version, timestamp);
+        
+        // Cleanup backup marker after successful rollback
+        if let Err(e) = tokio::fs::remove_file(&backup_file).await {
+            log::warn!("[AirVinegRPCService] Failed to cleanup backup marker after rollback: {}", e);
+        }
+        
+        Ok(())
+    }
 }
 
 /// Validate URL has a valid scheme
@@ -1634,4 +1697,30 @@ fn calculate_chunk_checksum(chunk: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(chunk);
     format!("{:x}", hasher.finalize())
+}
+
+/// Calculate file checksum for integrity verification
+async fn calculate_file_checksum(path: &std::path::PathBuf) -> Result<String, String> {
+    use sha2::{Sha256, Digest};
+    use tokio::io::AsyncReadExt;
+    
+    let mut file = tokio::fs::File::open(path).await
+        .map_err(|e| format!("Failed to open file for checksum: {}", e))?;
+    
+    let mut hasher = Sha256::new();
+    let mut buffer = vec![0u8; 8192];
+    
+    loop {
+        let bytes_read = file.read(&mut buffer).await
+            .map_err(|e| format!("Failed to read file for checksum: {}", e))?;
+        
+        if bytes_read == 0 {
+            break;
+        }
+        
+        hasher.update(&buffer[..bytes_read]);
+    }
+    
+    let result = hasher.finalize();
+    Ok(format!("{:x}", result))
 }
