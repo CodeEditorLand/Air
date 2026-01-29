@@ -11,7 +11,7 @@ use tokio::sync::{Mutex, RwLock};
 use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 use ring::rand::SecureRandom;
 
-use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::ConfigurationManager};
+use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::ConfigurationManager, utils};
 
 /// Authentication service implementation
 pub struct AuthenticationService {
@@ -108,7 +108,7 @@ impl AuthenticationService {
         
         // Create session
         let session = AuthSession {
-            session_id: crate::utils::generate_request_id(),
+            session_id: utils::generate_request_id(),
             user_id: username.clone(),
             provider: provider.clone(),
             token: token.clone(),
@@ -158,7 +158,7 @@ impl AuthenticationService {
     async fn generate_session_token(&self, username: &str, provider: &str) -> Result<String> {
         let crypto_keys = self.crypto_keys.lock().await;
         
-        let payload = format!("{}:{}:{}", username, provider, crate::utils::current_timestamp());
+        let payload = format!("{}:{}:{}", username, provider, utils::current_timestamp());
         
         // Sign the payload
         let signature = crypto_keys.signing_key.sign(payload.as_bytes());

@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use futures::StreamExt;
 
-use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::ConfigurationManager};
+use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::ConfigurationManager, utils};
 
 /// Download manager implementation
 pub struct DownloadManager {
@@ -93,7 +93,7 @@ impl DownloadManager {
     
     /// Download a file
     pub async fn download_file(&self, url: String, destination_path: String, checksum: String) -> Result<DownloadResult> {
-        let download_id = crate::utils::generate_request_id();
+        let download_id = utils::generate_request_id();
         
         log::info!("[DownloadManager] Starting download [ID: {}] - URL: {}", download_id, url);
         

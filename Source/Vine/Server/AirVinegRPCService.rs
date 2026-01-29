@@ -10,6 +10,9 @@ use log::{debug, error, info, warn};
 
 use tonic::{Request, Response, Status};
 use std::collections::HashMap;
+use futures::StreamExt;
+use tokio_stream::StreamExt as TokioStreamExt;
+use async_trait::async_trait;
 
 use crate::{
     ApplicationState::ApplicationState,
@@ -19,6 +22,7 @@ use crate::{
     Updates::UpdateManager,
     Result,
     utils::current_timestamp,
+    AirError,
 };
 
 use crate::Vine::Generated::air::{ // Import from the generated air module
@@ -156,6 +160,7 @@ impl AirVinegRPCService {
     }
 }
 
+#[async_trait]
 impl AirService for AirVinegRPCService {
     /// Handle authentication requests from Mountain
     async fn authenticate(
@@ -184,8 +189,8 @@ impl AirService for AirVinegRPCService {
             return Ok(Response::new(crate::Vine::Generated::air::AuthenticationResponse {
                 request_id,
                 success: false,
-                token: None,
-                error: Some(error_msg),
+                token: String::new(),
+                error: error_msg,
             }));
         }
         
@@ -204,11 +209,11 @@ impl AirService for AirVinegRPCService {
                 // Log successful authentication
                 info!("[AirVinegRPCService] Authentication successful for user: {} [Connection: {}]", request_data.username, connection_id);
                 
-                    Ok(Response::new(crate::Vine::Generated::air::air::AuthenticationResponse {
+                    Ok(Response::new(crate::Vine::Generated::air::AuthenticationResponse {
                     request_id,
                     success: true,
-                    token: Some(token),
-                    error: None,
+                    token: token,
+                    error: String::new(),
                 }))
             },
             Err(e) => {
@@ -219,11 +224,11 @@ impl AirService for AirVinegRPCService {
                 // Log failed authentication attempt
                 warn!("[AirVinegRPCService] Authentication failed for user: {} [Connection: {}] - {}", request_data.username, connection_id, e);
                 
-                Ok(Response::new(crate::Vine::Generated::air::air::AuthenticationResponse {
+                Ok(Response::new(crate::Vine::Generated::air::AuthenticationResponse {
                     request_id,
                     success: false,
-                    token: None,
-                    error: Some(e.to_string()),
+                    token: String::new(),
+                    error: e.to_string(),
                 }))
             }
         }
@@ -255,7 +260,7 @@ impl AirService for AirVinegRPCService {
         
         // Validate channel
         let valid_channels = ["stable", "beta", "nightly"];
-        let channel = request_data.channel.clone().unwrap_or_else(|| "stable".to_string());
+        let channel = if request_data.channel.is_empty() { "stable".to_string() } else { request_data.channel.clone() };
         if !valid_channels.contains(&channel.as_str()) {
             let error_msg = format!("Invalid channel: {}. Valid values are: {}", channel, valid_channels.join(", "));
             self.app_state.update_request_status(&request_id, crate::ApplicationState::RequestState::Failed(error_msg.clone()), None)
@@ -281,7 +286,7 @@ impl AirService for AirVinegRPCService {
                     version: update_info.as_ref().map(|info| info.version.clone()).unwrap_or_default(),
                     download_url: update_info.as_ref().map(|info| info.download_url.clone()).unwrap_or_default(),
                     release_notes: update_info.as_ref().map(|info| info.release_notes.clone()).unwrap_or_default(),
-                    error: None,
+                    error: String::new(),
                 }))
             },
             Err(crate::AirError::Network(e)) => {
@@ -389,7 +394,7 @@ impl AirService for AirVinegRPCService {
                             file_path: String::new(),
                             file_size: 0,
                             checksum: String::new(),
-                            error: Some(error_msg),
+                            error: error_msg,
                         }));
                     }
                 }
@@ -431,7 +436,7 @@ impl AirService for AirVinegRPCService {
                     file_path: file_info.path,
                     file_size: file_info.size,
                     checksum: file_info.checksum,
-                    error: None,
+                    error: String::new(),
                 }))
             },
             Err(e) => {
@@ -447,7 +452,7 @@ impl AirService for AirVinegRPCService {
                     file_path: String::new(),
                     file_size: 0,
                     checksum: String::new(),
-                    error: Some(e.to_string()),
+                    error: e.to_string(),
                 }))
             }
         }
@@ -743,7 +748,7 @@ impl AirService for AirVinegRPCService {
         }
 
         // Verify update file integrity (checksum check)
-        match self.update_manager.verify_update(&request_data.update_path).await {
+        match self.update_manager.verify_update(&request_data.update_path, None).await {
             Ok(true) => {
                 info!("[AirVinegRPCService] Update verification successful, preparing for installation");
                 
@@ -760,7 +765,7 @@ impl AirService for AirVinegRPCService {
                     log::info!("[AirVinegRPCService] Initiating graceful shutdown for update version {}", version);
                     
                     // Graceful shutdown implementation
-                    if let Err(e) = app_state.initiate_graceful_shutdown().await {
+                    if let Err(e) = app_state.stop_all_background_tasks().await {
                         log::error!("[AirVinegRPCService] Failed to initiate graceful shutdown: {}", e);
                         
                         // Implement rollback if update fails
@@ -982,7 +987,7 @@ impl AirService for AirVinegRPCService {
                     let mut buffer = Vec::with_capacity(chunk_size);
                     let mut last_progress: f32 = 0.0;
 
-                    while let Some(chunk_result) = stream.next().await {
+                    while let Some(chunk_result) = TokioStreamExt::next(&mut stream).await {
                         if app_state.is_request_cancelled(&download_request_id).await {
                             log::info!("[AirVinegRPCService] Download cancelled by client [ID: {}]", download_request_id);
                             app_state.update_request_status(&download_request_id, crate::ApplicationState::RequestState::Cancelled, None)
@@ -1047,7 +1052,7 @@ impl AirService for AirVinegRPCService {
                                     total_size,
                                     downloaded: total_downloaded,
                                     completed: false,
-                                    error: Some(error.clone()),
+                                    error: error.clone(),
                                 })).await;
 
                                 app_state.update_request_status(&download_request_id, crate::ApplicationState::RequestState::Failed(error), None)
@@ -1133,7 +1138,7 @@ impl AirService for AirVinegRPCService {
                 request_id,
                 results: vec![],
                 total_results: 0,
-                error: Some("Search query cannot be empty".to_string()),
+                error: "Search query cannot be empty".to_string(),
             }));
         }
 
@@ -1207,14 +1212,14 @@ impl AirService for AirVinegRPCService {
 
         // Validate path
         if request_data.path.is_empty() {
-            return Ok(Response::new(GetFileInfoResponse {
+            return Ok(Response::new(FileInfoResponse {
                 request_id,
                 exists: false,
                 size: 0,
                 mime_type: String::new(),
                 checksum: String::new(),
                 modified_time: 0,
-                error: Some("Path cannot be empty".to_string()),
+                error: "Path cannot be empty".to_string(),
             }));
         }
 
@@ -1223,7 +1228,7 @@ impl AirService for AirVinegRPCService {
         let path = Path::new(&request_data.path);
 
         if !path.exists() {
-            return Ok(Response::new(GetFileInfoResponse {
+            return Ok(Response::new(FileInfoResponse {
                 request_id,
                 exists: false,
                 size: 0,
@@ -1253,26 +1258,26 @@ impl AirService for AirVinegRPCService {
                         String::new()
                     });
 
-                Ok(Response::new(GetFileInfoResponse {
+                Ok(Response::new(FileInfoResponse {
                     request_id,
                     exists: true,
                     size: metadata.len(),
                     mime_type,
                     checksum,
                     modified_time,
-                    error: None,
+                    error: String::new(),
                 }))
             }
             Err(e) => {
                 error!("[AirVinegRPCService] Failed to get file metadata: {}", e);
-                Ok(Response::new(GetFileInfoResponse {
+                Ok(Response::new(FileInfoResponse {
                     request_id,
                     exists: false,
                     size: 0,
                     mime_type: String::new(),
                     checksum: String::new(),
                     modified_time: 0,
-                    error: Some(e.to_string()),
+                    error: e.to_string(),
                 }))
             }
         }
@@ -1354,7 +1359,7 @@ impl AirService for AirVinegRPCService {
             return Ok(Response::new(ResourceLimitsResponse {
                 request_id,
                 success: false,
-                error: Some("Memory limit must be greater than 0".to_string()),
+                error: "Memory limit must be greater than 0".to_string(),
             }));
         }
 
@@ -1362,7 +1367,7 @@ impl AirService for AirVinegRPCService {
             return Ok(Response::new(ResourceLimitsResponse {
                 request_id,
                 success: false,
-                error: Some("CPU limit cannot exceed 100%".to_string()),
+                error: "CPU limit cannot exceed 100%".to_string(),
             }));
         }
 
@@ -1465,7 +1470,7 @@ impl AirService for AirVinegRPCService {
             return Ok(Response::new(UpdateConfigurationResponse {
                 request_id,
                 success: false,
-                error: Some("Invalid configuration section".to_string()),
+                error: "Invalid configuration section".to_string(),
             }));
         }
 
@@ -1488,9 +1493,11 @@ impl AirService for AirVinegRPCService {
             })),
         }
     }
+}
 
-    // ==================== Helper Methods ====================
+// ==================== Helper Methods ====================
 
+impl AirVinegRPCService {
     /// Detect MIME type based on file extension
     fn detect_mime_type(&self, path: &std::path::Path) -> String {
         match path.extension().and_then(|e| e.to_str()) {
@@ -1592,13 +1599,13 @@ impl AirService for AirVinegRPCService {
     }
 
     /// Prepare rollback backup before applying update
-    async fn prepare_rollback_backup(&self, version: &str) -> Result<(), String> {
+    async fn prepare_rollback_backup(&self, version: &str) -> Result<()> {
         let cache_dir = self.update_manager.get_cache_directory();
         let rollback_dir = cache_dir.join("rollback");
         
         // Create rollback directory if it doesn't exist
         if let Err(e) = tokio::fs::create_dir_all(&rollback_dir).await {
-            return Err(format!("Failed to create rollback directory: {}", e));
+            return Err(AirError::FileSystem(format!("Failed to create rollback directory: {}", e)));
         }
 
         // Create backup marker file with version
@@ -1610,7 +1617,7 @@ impl AirService for AirVinegRPCService {
         );
 
         if let Err(e) = tokio::fs::write(&backup_file, marker_content).await {
-            return Err(format!("Failed to create backup marker: {}", e));
+            return Err(AirError::FileSystem(format!("Failed to create backup marker: {}", e)));
         }
 
         info!("[AirVinegRPCService] Rollback backup prepared for version {} at {:?}",
@@ -1620,14 +1627,14 @@ impl AirService for AirVinegRPCService {
     }
 
     /// Cleanup rollback backup after successful update or failed verification
-    async fn cleanup_rollback_backup(&self, version: &str) -> Result<(), String> {
+    async fn cleanup_rollback_backup(&self, version: &str) -> Result<()> {
         let cache_dir = self.update_manager.get_cache_directory();
         let rollback_dir = cache_dir.join("rollback");
         let backup_file = rollback_dir.join(format!("backup-{}.marker", version));
 
         if backup_file.exists() {
             if let Err(e) = tokio::fs::remove_file(&backup_file).await {
-                return Err(format!("Failed to cleanup rollback backup: {}", e));
+                return Err(AirError::FileSystem(format!("Failed to cleanup rollback backup: {}", e)));
             }
             info!("[AirVinegRPCService] Rollback backup cleaned up for version {}",
                   version);
@@ -1637,13 +1644,13 @@ impl AirService for AirVinegRPCService {
     }
 
     /// Perform rollback to previous version
-    async fn perform_rollback(&self, version: &str) -> Result<(), String> {
+    async fn perform_rollback(&self, version: &str) -> Result<()> {
         let cache_dir = self.update_manager.get_cache_directory();
         let rollback_dir = cache_dir.join("rollback");
         let backup_file = rollback_dir.join(format!("backup-{}.marker", version));
         
         if !backup_file.exists() {
-            return Err(format!("Rollback backup not found for version {}", version));
+            return Err(AirError::FileSystem(format!("Rollback backup not found for version {}", version)));
         }
         
         log::info!("[AirVinegRPCService] Starting rollback for version {}", version);
@@ -1665,7 +1672,7 @@ impl AirService for AirVinegRPCService {
         }
         
         if !rollback_available {
-            return Err("Rollback not available for this version".to_string());
+            return Err(AirError::Validation("Rollback not available for this version".to_string()));
         }
         
         // Perform actual rollback logic
@@ -1700,19 +1707,19 @@ fn calculate_chunk_checksum(chunk: &[u8]) -> String {
 }
 
 /// Calculate file checksum for integrity verification
-async fn calculate_file_checksum(path: &std::path::PathBuf) -> Result<String, String> {
+async fn calculate_file_checksum(path: &std::path::PathBuf) -> Result<String> {
     use sha2::{Sha256, Digest};
     use tokio::io::AsyncReadExt;
     
     let mut file = tokio::fs::File::open(path).await
-        .map_err(|e| format!("Failed to open file for checksum: {}", e))?;
+        .map_err(|e| AirError::FileSystem(format!("Failed to open file for checksum: {}", e)))?;
     
     let mut hasher = Sha256::new();
     let mut buffer = vec![0u8; 8192];
     
     loop {
         let bytes_read = file.read(&mut buffer).await
-            .map_err(|e| format!("Failed to read file for checksum: {}", e))?;
+            .map_err(|e| AirError::FileSystem(format!("Failed to read file for checksum: {}", e)))?;
         
         if bytes_read == 0 {
             break;

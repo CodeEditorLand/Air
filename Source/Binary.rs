@@ -19,24 +19,9 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 use log::{debug, error, info, warn};
 use tokio::{signal, time::interval};
 
-use crate::{
-    ApplicationState::ApplicationState,
-    Authentication::AuthenticationService,
-    Configuration::ConfigurationManager,
-    Downloader::DownloadManager,
-    Indexing::FileIndexer,
-    Updates::UpdateManager,
-    Vine::Server::AirVinegRPCService,
-    Vine::Generated::AirServiceServer,
-};
+use crate::{ApplicationState, AuthenticationService, ConfigurationManager, DownloadManager, FileIndexer, UpdateManager, AirVinegRPCService, VERSION, PROTOCOL_VERSION, DEFAULT_BIND_ADDRESS};
 
-mod ApplicationState;
-mod Authentication;
-mod Configuration;
-mod Downloader;
-mod Indexing;
-mod Updates;
-mod Vine;
+use crate::Vine::Generated::AirServiceServer;
 
 // =============================================================================
 // Debug Helpers
