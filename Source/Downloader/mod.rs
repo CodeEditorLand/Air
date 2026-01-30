@@ -14,31 +14,31 @@ use futures_util::StreamExt;
 /// Download manager implementation
 pub struct DownloadManager {
     /// Application state
-    AppState: Arc<ApplicationState>,
+    app_state: Arc<ApplicationState>,
     
     /// Active downloads
-    ActiveDownloads: Arc<RwLock<HashMap<String, DownloadStatus>>>,
+    active_downloads: Arc<RwLock<HashMap<String, DownloadStatus>>>,
     
     /// Download cache directory
-    CacheDirectory: PathBuf,
+    cache_directory: PathBuf,
     
     /// HTTP client
-    Client: reqwest::Client,
+    client: reqwest::Client,
     /// Checksum verifier helper
-    ChecksumVerifier: Arc<crate::Security::ChecksumVerifier>,
+    checksum_verifier: Arc<crate::Security::ChecksumVerifier>,
 }
 
 /// Download status
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DownloadStatus {
-    pub DownloadId: String,
-    pub Url: String,
-    pub Destination: PathBuf,
-    pub TotalSize: u64,
-    pub Downloaded: u64,
-    pub Progress: f32,
-    pub Status: DownloadState,
-    pub Error: Option<String>,
+    pub download_id: String,
+    pub url: String,
+    pub destination: PathBuf,
+    pub total_size: u64,
+    pub downloaded: u64,
+    pub progress: f32,
+    pub status: DownloadState,
+    pub error: Option<String>,
 }
 
 /// Download state
@@ -80,73 +80,19 @@ impl DownloadManager {
             .map_err(|e| AirError::Network(format!("Failed to create HTTP client: {}", e)))?;
         
         let manager = Self {
-            AppState: app_state,
-            ActiveDownloads: Arc::new(RwLock::new(HashMap::new())),
-            CacheDirectory: cache_directory,
-            Client: client,
-            ChecksumVerifier: Arc::new(crate::Security::ChecksumVerifier::new()),
+            app_state,
+            active_downloads: Arc::new(RwLock::new(HashMap::new())),
+            cache_directory,
+            client,
+            checksum_verifier: Arc::new(crate::Security::ChecksumVerifier::new()),
         };
         
         // Initialize service status
-        manager.AppState.update_service_status("downloader", crate::ApplicationState::ServiceStatus::Running)
+        manager.app_state.update_service_status("downloader", crate::ApplicationState::ServiceStatus::Running)
             .await
             .map_err(|e| AirError::Internal(e.to_string()))?;
         
         Ok(manager)
-    }
-    
-    /// Register a new download
-    async fn register_download(&self, download_id: &str, url: &str, destination: &PathBuf) -> Result<()> {
-        let mut downloads = self.ActiveDownloads.write().await;
-        
-        downloads.insert(download_id.to_string(), DownloadStatus {
-            DownloadId: download_id.to_string(),
-            Url: url.to_string(),
-            Destination: destination.clone(),
-            TotalSize: 0,
-            Downloaded: 0,
-            Progress: 0.0,
-            Status: DownloadState::Pending,
-            Error: None,
-        });
-        
-        log::debug!("[DownloadManager] Registered download [ID: {}]", download_id);
-        Ok(())
-    }
-    
-    /// Update download status
-    async fn update_download_status(&self, download_id: &str, status: DownloadState, progress: Option<f32>, error: Option<String>) -> Result<()> {
-        let mut downloads = self.ActiveDownloads.write().await;
-        
-        if let Some(download) = downloads.get_mut(download_id) {
-            download.Status = status;
-            if let Some(progress) = progress {
-                download.Progress = progress;
-            }
-            download.Error = error;
-            
-            log::debug!("[DownloadManager] Updated status [ID: {}] - Status: {:?}, Progress: {:?}", download_id, status, progress);
-            Ok(())
-        } else {
-            Err(AirError::NotFound(format!("Download ID {} not found", download_id)))
-        }
-    }
-    
-    /// Verify checksum
-    async fn verify_checksum(&self, file_path: &PathBuf, expected_checksum: &str) -> Result<()> {
-        if expected_checksum.is_empty() {
-            return Ok(()); // Skip verification if no checksum provided
-        }
-        
-        let actual_checksum = self.ChecksumVerifier.calculate_file_checksum(file_path).await
-            .map_err(|e| AirError::Security(format!("Failed to calculate checksum: {}", e)))?;
-        
-        if actual_checksum != expected_checksum {
-            return Err(AirError::Security(format!("Checksum mismatch: expected {}, got {}", expected_checksum, actual_checksum)));
-        }
-        
-        log::debug!("[DownloadManager] Checksum verified for file: {}", file_path.display());
-        Ok(())
     }
     
     /// Download a file
@@ -163,7 +109,7 @@ impl DownloadManager {
         let destination = if destination_path.is_empty() {
             // Generate filename from URL
             let filename = url.split('/').last().unwrap_or("download.bin");
-            self.CacheDirectory.join(filename)
+            self.cache_directory.join(filename)
         } else {
             ConfigurationManager::expand_path(&destination_path)?
         };
@@ -206,7 +152,7 @@ impl DownloadManager {
         destination: &PathBuf,
         checksum: &str,
     ) -> Result<DownloadResult> {
-        let config = &self.AppState.configuration.downloader;
+        let config = &self.app_state.configuration.downloader;
         
         let retry_policy = crate::Resilience::RetryPolicy {
             max_retries: config.max_retries,
@@ -233,7 +179,7 @@ impl DownloadManager {
                 }
             }
             
-            match self.PerformDownload(download_id, url, destination).await {
+            match self.perform_download(download_id, url, destination).await {
                 Ok(file_info) => {
                     // Verify checksum if provided
                     if !checksum.is_empty() {
@@ -291,7 +237,7 @@ impl DownloadManager {
             }
         }
 
-        let mut req = self.Client.get(url);
+        let mut req = self.client.get(url);
         if existing_size > 0 {
             let range_header = format!("bytes={}-", existing_size);
             req = req.header(reqwest::header::RANGE, range_header);
@@ -321,7 +267,7 @@ impl DownloadManager {
         
         // Check for pause/cancel before writing
         if let Some(status) = self.get_download_status(download_id).await {
-            match status.Status {
+            match status.status {
                 DownloadState::Cancelled => {
                     return Err(AirError::Network("Download cancelled".to_string()));
                 }
@@ -330,7 +276,7 @@ impl DownloadManager {
                     loop {
                         tokio::time::sleep(std::time::Duration::from_millis(250)).await;
                         if let Some(s) = self.get_download_status(download_id).await {
-                            match s.Status {
+                            match s.status {
                                 DownloadState::Paused => continue,
                                 DownloadState::Cancelled => return Err(AirError::Network("Download cancelled".to_string())),
                                 _ => break,
@@ -362,20 +308,66 @@ impl DownloadManager {
         })
     }
     
-
+    /// Verify file checksum using ChecksumVerifier
+    async fn verify_checksum(&self, file_path: &PathBuf, expected_checksum: &str) -> Result<()> {
+        let is_valid = self.checksum_verifier.verify_sha256(file_path, expected_checksum).await?;
+        
+        if !is_valid {
+            return Err(AirError::Network("Checksum verification failed".to_string()));
+        }
+        
+        log::info!("[DownloadManager] Checksum verified for file: {}", file_path.display());
+        
+        Ok(())
+    }
     
     /// Calculate file checksum using ChecksumVerifier
     async fn calculate_checksum(&self, file_path: &PathBuf) -> Result<String> {
-        self.ChecksumVerifier.calculate_sha256(file_path).await
+        self.checksum_verifier.calculate_sha256(file_path).await
     }
     
-
+    /// Register a new download
+    async fn register_download(&self, download_id: &str, url: &str, destination: &PathBuf) -> Result<()> {
+        let mut downloads = self.active_downloads.write().await;
+        
+        downloads.insert(download_id.to_string(), DownloadStatus {
+            download_id: download_id.to_string(),
+            url: url.to_string(),
+            destination: destination.clone(),
+            total_size: 0,
+            downloaded: 0,
+            progress: 0.0,
+            status: DownloadState::Pending,
+            error: None,
+        });
+        
+        Ok(())
+    }
     
-
+    /// Update download status
+    async fn update_download_status(
+        &self,
+        download_id: &str,
+        status: DownloadState,
+        progress: Option<f32>,
+        error: Option<String>,
+    ) -> Result<()> {
+        let mut downloads = self.active_downloads.write().await;
+        
+        if let Some(download) = downloads.get_mut(download_id) {
+            download.status = status;
+            if let Some(progress) = progress {
+                download.progress = progress;
+            }
+            download.error = error;
+        }
+        
+        Ok(())
+    }
     
     /// Get download status
     pub async fn get_download_status(&self, download_id: &str) -> Option<DownloadStatus> {
-        let downloads = self.ActiveDownloads.read().await;
+        let downloads = self.active_downloads.read().await;
         downloads.get(download_id).cloned()
     }
     
@@ -405,7 +397,7 @@ impl DownloadManager {
     
     /// Get active download count
     pub async fn get_active_download_count(&self) -> usize {
-        let downloads = self.ActiveDownloads.read().await;
+        let downloads = self.active_downloads.read().await;
         downloads.len()
     }
     
@@ -439,10 +431,10 @@ impl DownloadManager {
     
     /// Clean up completed downloads
     async fn cleanup_completed_downloads(&self) {
-        let mut downloads = self.ActiveDownloads.write().await;
+        let mut downloads = self.active_downloads.write().await;
         
         downloads.retain(|_, download| {
-            !matches!(download.Status, DownloadState::Completed | DownloadState::Failed | DownloadState::Cancelled)
+            !matches!(download.status, DownloadState::Completed | DownloadState::Failed | DownloadState::Cancelled)
         });
         
         log::debug!("[DownloadManager] Cleaned up completed downloads");
@@ -453,7 +445,7 @@ impl DownloadManager {
         let max_age = chrono::Duration::days(7); // Keep files for 7 days
         let now = chrono::Utc::now();
         
-        let mut entries = tokio::fs::read_dir(&self.AppState.configuration.downloader.cache_directory).await
+        let mut entries = tokio::fs::read_dir(&self.cache_directory).await
             .map_err(|e| AirError::FileSystem(format!("Failed to read cache directory: {}", e)))?;
         
         while let Some(entry) = entries.next_entry().await
@@ -489,11 +481,11 @@ impl DownloadManager {
 impl Clone for DownloadManager {
     fn clone(&self) -> Self {
         Self {
-            AppState: self.AppState.clone(),
-            ActiveDownloads: self.ActiveDownloads.clone(),
-            CacheDirectory: self.CacheDirectory.clone(),
-            Client: self.Client.clone(),
-            ChecksumVerifier: self.ChecksumVerifier.clone(),
+            app_state: self.app_state.clone(),
+            active_downloads: self.active_downloads.clone(),
+            cache_directory: self.cache_directory.clone(),
+            client: self.client.clone(),
+            checksum_verifier: self.checksum_verifier.clone(),
         }
     }
 }

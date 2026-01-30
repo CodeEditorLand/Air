@@ -163,7 +163,7 @@ impl TraceGenerator {
     
     /// Complete a span
     pub async fn complete_span(&self, span_id: &str, error: Option<String>) -> Result<u64> {
-        let now = crate::utils::CurrentTimestamp();
+        let now = crate::utils::current_timestamp();
         let mut spans = self.trace_spans.write().await;
         
         if let Some(span) = spans.get_mut(span_id) {
@@ -270,7 +270,7 @@ impl TraceGenerator {
     
     /// Clean up old spans (older than specified milliseconds)
     pub async fn cleanup_old_spans(&self, older_than_ms: u64) -> Result<usize> {
-        let now = crate::utils::CurrentTimestamp();
+        let now = crate::utils::current_timestamp();
         let mut spans = self.trace_spans.write().await;
         let original_len = spans.len();
         

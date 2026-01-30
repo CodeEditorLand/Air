@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 
-use crate::{Result, AirError, DefaultConfigFile};
+use crate::{Result, AirError, DEFAULT_CONFIG_FILE};
 
 /// Main configuration structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -335,7 +335,7 @@ impl ConfigurationManager {
         let config_dir = dirs::config_dir()
             .ok_or_else(|| AirError::Configuration("Cannot determine config directory".to_string()))?;
         
-        Ok(config_dir.join("Air").join(DefaultConfigFile))
+        Ok(config_dir.join("Air").join(DEFAULT_CONFIG_FILE))
     }
     
     /// Expand paths with home directory

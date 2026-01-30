@@ -311,7 +311,7 @@ impl HealthCheckManager {
         let mut history = self.health_history.write().await;
         
         let record = HealthCheckRecord {
-            timestamp: utils::CurrentTimestamp(),
+            timestamp: utils::current_timestamp(),
             service_name: service_name.to_string(),
             status,
             response_time_ms: Some(response_time),
@@ -538,7 +538,7 @@ impl HealthCheckResponse {
             statistics,
             performance_indicators: PerformanceIndicators::default(),
             resource_warnings: Vec::new(),
-            timestamp: utils::CurrentTimestamp(),
+            timestamp: utils::current_timestamp(),
         }
     }
     

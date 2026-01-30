@@ -9,7 +9,7 @@ use log::{debug, info};
 use tonic::{Request, Response, Status};
 use async_trait::async_trait;
 
-use crate::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Downloader::DownloadManager, Indexing::FileIndexer, Updates::UpdateManager, utils::CurrentTimestamp, VERSION};
+use crate::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Downloader::DownloadManager, Indexing::FileIndexer, Updates::UpdateManager, utils::current_timestamp, VERSION};
 
 use crate::Vine::Generated::air_service_server::AirService;
 use crate::Vine::Generated::air::{
@@ -193,7 +193,7 @@ impl AirService for AirVinegRPCService {
 
         Ok(Response::new(HealthCheckResponse {
             healthy: true,
-            timestamp: crate::utils::CurrentTimestamp(),
+            timestamp: current_timestamp(),
         }))
     }
 

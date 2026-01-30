@@ -3,25 +3,6 @@
 //! Core library for the Air daemon - the persistent background service for Land.
 //! Provides services for authentication, updates, downloads, and file indexing
 //! that run independently from the main Mountain application.
-//!
-//! ## File Responsibilities
-//! - Main library entry point for Air daemon services
-//! - Module declarations and re-exports for all Air components
-//! - Common error types and utility functions
-//! - Protocol version management and configuration defaults
-//! - Service orchestration and lifecycle management
-//!
-//! ## TODO
-//! - [ ] Add comprehensive integration tests for all service modules
-//! - [ ] Implement proper service discovery and health monitoring
-//! - [ ] Add metrics collection and reporting capabilities
-//! - [ ] Implement secure credential storage and rotation
-//! - [ ] Add plugin system extensibility points
-//! - [ ] Implement graceful shutdown and restart procedures
-//! - [ ] Add comprehensive logging and audit trail
-//! - [ ] Implement backup and recovery mechanisms
-//! - [ ] Add performance optimization and caching
-//! - [ ] Implement proper error handling and recovery patterns
 
 #![allow(non_snake_case, non_camel_case_types)]
 
@@ -59,13 +40,13 @@ pub use Updates::UpdateManager;
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Default configuration file name
-pub const DefaultConfigFile: &str = "air.toml";
+pub const DEFAULT_CONFIG_FILE: &str = "air.toml";
 
 /// Default gRPC bind address (Note: Moved to port 50053 to avoid conflict with Cocoon which uses 50052)
-pub const DefaultBindAddress: &str = "[::1]:50053";
+pub const DEFAULT_BIND_ADDRESS: &str = "[::1]:50053";
 
 /// Protocol version for Mountain-Air communication
-pub const ProtocolVersion: u32 = 1;
+pub const PROTOCOL_VERSION: u32 = 1;
 
 /// Error type for Air operations
 #[derive(Debug, thiserror::Error)]
@@ -148,12 +129,12 @@ pub mod utils {
     use super::*;
     
     /// Generate a unique request ID
-    pub fn GenerateRequestId() -> String {
+    pub fn generate_request_id() -> String {
         uuid::Uuid::new_v4().to_string()
     }
     
     /// Get current timestamp in milliseconds
-    pub fn CurrentTimestamp() -> u64 {
+    pub fn current_timestamp() -> u64 {
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -161,7 +142,7 @@ pub mod utils {
     }
     
     /// Validate file path security
-    pub fn ValidateFilePath(path: &str) -> Result<()> {
+    pub fn validate_file_path(path: &str) -> Result<()> {
         if path.contains("..") || path.contains("\\") {
             return Err(AirError::Configuration("Invalid file path".to_string()));
         }
