@@ -520,6 +520,8 @@ pub struct HealthCheckResponse {
     pub overall_status: HealthStatus,
     pub service_health: HashMap<String, ServiceHealth>,
     pub statistics: HealthStatistics,
+    pub performance_indicators: PerformanceIndicators,
+    pub resource_warnings: Vec<ResourceWarning>,
     pub timestamp: u64,
 }
 
@@ -534,7 +536,93 @@ impl HealthCheckResponse {
             overall_status,
             service_health,
             statistics,
+            performance_indicators: PerformanceIndicators::default(),
+            resource_warnings: Vec::new(),
             timestamp: utils::current_timestamp(),
         }
     }
+    
+    /// Create with performance indicators
+    pub fn with_performance_indicators(
+        mut self,
+        indicators: PerformanceIndicators,
+    ) -> Self {
+        self.performance_indicators = indicators;
+        self
+    }
+    
+    /// Create with resource warnings
+    pub fn with_resource_warnings(
+        mut self,
+        warnings: Vec<ResourceWarning>,
+    ) -> Self {
+        self.resource_warnings = warnings;
+        self
+    }
+}
+
+/// Performance degradation indicators
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PerformanceIndicators {
+    pub response_time_p99_ms: f64,
+    pub response_time_p95_ms: f64,
+    pub request_throughput_per_sec: f64,
+    pub error_rate_percent: f64,
+    pub degradation_level: DegradationLevel,
+    pub bottleneck_service: Option<String>,
+}
+
+impl Default for PerformanceIndicators {
+    fn default() -> Self {
+        Self {
+            response_time_p99_ms: 0.0,
+            response_time_p95_ms: 0.0,
+            request_throughput_per_sec: 0.0,
+            error_rate_percent: 0.0,
+            degradation_level: DegradationLevel::Optimal,
+            bottleneck_service: None,
+        }
+    }
+}
+
+/// Degradation levels
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum DegradationLevel {
+    Optimal,
+    Acceptable,
+    Degraded,
+    Critical,
+}
+
+/// Resource warning types
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResourceWarning {
+    pub warning_type: ResourceWarningType,
+    pub service_name: Option<String>,
+    pub current_value: f64,
+    pub threshold: f64,
+    pub severity: WarningSeverity,
+    pub timestamp: u64,
+}
+
+/// Resource warning types
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ResourceWarningType {
+    HighMemoryUsage,
+    HighCpuUsage,
+    LowDiskSpace,
+    ConnectionPoolExhausted,
+    ThreadPoolExhausted,
+    HighLatency,
+    HighErrorRate,
+    DatabaseConnectivityIssue,
+}
+
+/// Warning severity levels
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum WarningSeverity {
+    Low,
+    Medium,
+    High,
+    Critical,
 }

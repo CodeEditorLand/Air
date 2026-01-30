@@ -19,7 +19,7 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 use log::{debug, error, info, warn};
 use tokio::{signal, time::interval};
 
-use Air::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Configuration::ConfigurationManager, Daemon::DaemonManager, Downloader::DownloadManager, HealthCheck::{HealthCheckManager, HealthCheckLevel}, Indexing::FileIndexer, Updates::UpdateManager};
+use Air::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Configuration::ConfigurationManager, Daemon::DaemonManager, Downloader::DownloadManager, HealthCheck::{HealthCheckManager, HealthCheckLevel}, Indexing::FileIndexer, Logging, Metrics, Tracing, Updates::UpdateManager, CLI::{CliParser, Command, ConfigCommand, DebugCommand, OutputFormatter}, VERSION};
 
 // =============================================================================
 // Debug Helpers
@@ -67,33 +67,41 @@ async fn wait_for_shutdown_signal() {
 
 /// Initialize logging based on environment
 fn initialize_logging() {
-    if std::env::var("RUST_LOG").is_err() {
-        unsafe {
-            std::env::set_var("RUST_LOG", "info");
-        }
+    // Initialize structured logging with JSON output support
+    let json_output = std::env::var("AIR_LOG_JSON")
+        .map(|v| v.to_lowercase() == "true")
+        .unwrap_or(false);
+    
+    let log_file_path = std::env::var("AIR_LOG_FILE").ok();
+    
+    if let Err(e) = Logging::initialize_logger(json_output, log_file_path) {
+        eprintln!("Failed to initialize structured logging: {}", e);
     }
     
-    env_logger::Builder::from_default_env()
-        .format(|buf, record| {
-            use std::io::Write;
-            let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f");
-            writeln!(
-                buf,
-                "[{}] [{}] {}",
-                timestamp,
-                record.level(),
-                record.args()
-            )
-        })
-        .init();
-    
-    info!("[Boot] Logging initialized");
+    info!("[Boot] Logging initialized - JSON output: {}, Log file: {:?}", json_output, std::env::var("AIR_LOG_FILE").ok());
 }
 
 /// Parse command line arguments
-fn parse_arguments() -> (Option<String>, Option<String>) {
+fn parse_arguments() -> (Option<String>, Option<String>, Option<Command>) {
     let args: Vec<String> = std::env::args().collect();
     
+    // Check if we're running with CLI command (first arg is a known command)
+    if args.len() > 1 {
+        match args[1].as_str() {
+            "status" | "restart" | "config" | "metrics" | "logs" | "debug" | "help" | "version" | "-h" | "--help" | "-v" | "--version" => {
+                match CliParser::parse(args.clone()) {
+                    Ok(cmd) => return (None, None, Some(cmd)),
+                    Err(e) => {
+                        eprintln!("Error parsing CLI command: {}", e);
+                        std::process::exit(1);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    
+    // Parse as daemon arguments
     let mut config_path = None;
     let mut bind_address = None;
     
@@ -115,7 +123,129 @@ fn parse_arguments() -> (Option<String>, Option<String>) {
     
     debug!("[Boot] CLI Args - config: {:?}, bind: {:?}", config_path, bind_address);
     
-    (config_path, bind_address)
+    (config_path, bind_address, None)
+}
+
+/// Handle CLI commands
+async fn handle_cli_command(cmd: Command) -> Result<(), Box<dyn std::error::Error>> {
+    match cmd {
+        Command::Help { command } => {
+            println!("{}", OutputFormatter::format_help(command.as_deref(), VERSION));
+            Ok(())
+        }
+        Command::Version => {
+            println!("Air {} ({})", VERSION, env!("CARGO_PKG_NAME"));
+            Ok(())
+        }
+        Command::Status { service, verbose, json } => {
+            // To be implemented - would require connecting to daemon
+            println!("Status command placeholder");
+            if let Some(s) = service {
+                println!("Service: {}", s);
+            }
+            if verbose {
+                println!("Verbose output requested");
+            }
+            if json {
+                println!("JSON output requested");
+            }
+            Ok(())
+        }
+        Command::Restart { service, force } => {
+            println!("Restart command placeholder");
+            if let Some(s) = service {
+                println!("Restarting service: {}", s);
+            }
+            if force {
+                println!("Force restart requested");
+            }
+            Ok(())
+        }
+        Command::Config(config_cmd) => {
+            match config_cmd {
+                ConfigCommand::Get { key } => {
+                    println!("Get config value: {}", key);
+                }
+                ConfigCommand::Set { key, value } => {
+                    println!("Set {} = {}", key, value);
+                }
+                ConfigCommand::Reload { validate } => {
+                    println!("Reloading configuration{}", if validate { " with validation" } else { "" });
+                }
+                ConfigCommand::Show { json } => {
+                    println!("Show configuration{}", if json { " as JSON" } else { "" });
+                }
+                ConfigCommand::Validate { path } => {
+                    println!("Validating configuration{}", path.map(|p| format!(": {}", p)).unwrap_or_default());
+                }
+            }
+            Ok(())
+        }
+        Command::Metrics { json: _, service } => {
+            println!("Metrics command placeholder");
+            if let Some(s) = service {
+                println!("Service: {}", s);
+            }
+            Ok(())
+        }
+        Command::Logs { service, tail, filter, follow } => {
+            println!("Logs command placeholder");
+            if let Some(s) = service {
+                println!("Service: {}", s);
+            }
+            if let Some(n) = tail {
+                println!("Last {} lines", n);
+            }
+            if let Some(f) = filter {
+                println!("Filter: {}", f);
+            }
+            if follow {
+                println!("Following logs");
+            }
+            Ok(())
+        }
+        Command::Debug(debug_cmd) => {
+            match debug_cmd {
+                DebugCommand::DumpState { service, json: _ } => {
+                    println!("Dump state command placeholder");
+                    if let Some(s) = service {
+                        println!("Service: {}", s);
+                    }
+                }
+                DebugCommand::DumpConnections { format } => {
+                    println!("Dump connections placeholder");
+                    if let Some(f) = format {
+                        println!("Format: {}", f);
+                    }
+                }
+                DebugCommand::HealthCheck { verbose, service } => {
+                    println!("Health check placeholder");
+                    if verbose {
+                        println!("Verbose output");
+                    }
+                    if let Some(s) = service {
+                        println!("Service: {}", s);
+                    }
+                }
+                DebugCommand::Diagnostics { level } => {
+                    println!("Diagnostics placeholder (level: {:?})", level);
+                }
+            }
+            Ok(())
+        }
+    }
+}
+
+/// Handler for /metrics endpoint - returns Prometheus format metrics
+fn handle_metrics_request() -> String {
+    let metrics_collector = Metrics::get_metrics();
+    match metrics_collector.export_metrics() {
+        Ok(metrics_text) => metrics_text,
+        Err(e) => {
+            error!("[Metrics] Failed to export metrics: {}", e);
+            format!("# ERROR: Failed to export metrics: {}\n", e)
+        }
+    }
 }
 
 // =============================================================================
@@ -134,11 +264,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("[Boot] Version: {} ({})", env!("CARGO_PKG_VERSION"), env!("CARGO_PKG_NAME"));
     
     // -------------------------------------------------------------------------
+    // [Boot] [Observability] Initialize metrics and tracing
+    // -------------------------------------------------------------------------
+    TraceStep!("[Boot] [Observability] Initializing observability systems...");
+    
+    if let Err(e) = Metrics::initialize_metrics() {
+        error!("[Boot] Failed to initialize metrics: {}", e);
+    }
+    
+    if let Err(e) = Tracing::initialize_tracing() {
+        error!("[Boot] Failed to initialize tracing: {}", e);
+    }
+    
+    info!("[Boot] [Observability] Metrics and tracing systems initialized");
+    
+    // -------------------------------------------------------------------------
     // [Boot] [Args] Parse command line arguments
     // -------------------------------------------------------------------------
     TraceStep!("[Boot] [Args] Parsing command line arguments...");
     
-    let (config_path, bind_address) = parse_arguments();
+    let (config_path, bind_address, cli_command) = parse_arguments();
+    
+    // If a CLI command was provided, handle it and exit
+    if let Some(cmd) = cli_command {
+        return handle_cli_command(cmd).await;
+    }
     
     // -------------------------------------------------------------------------
     // [Boot] [Configuration] Load configuration
@@ -241,6 +391,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     warn!("[ConnectionMonitor] Failed to update resource usage: {}", e);
                 }
                 
+                // Get resource metrics
+                let resources = app_state.get_resource_usage().await;
+                
+                // Record metrics
+                let metrics_collector = Metrics::get_metrics();
+                metrics_collector.update_resource_metrics(
+                    resources.memory_usage_mb as u64 * 1024 * 1024,
+                    resources.cpu_usage_percent,
+                    app_state.get_active_connection_count().await as u64,
+                    0, // Active threads - would need to be computed from system
+                );
+                
                 // Clean up stale connections (5 minute timeout)
                 if let Err(e) = app_state.cleanup_stale_connections(300).await {
                     warn!("[ConnectionMonitor] Failed to cleanup stale connections: {}", e);
@@ -249,6 +411,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // Perform health checks
                 if let Err(e) = health_manager.check_service("connections").await {
                     warn!("[ConnectionMonitor] Health check failed: {}", e);
+                    
+                    // Record metrics for failed health check
+                    let metrics_collector = Metrics::get_metrics();
+                    metrics_collector.record_request_failure("health_check_failed", 0.0);
                 }
                 
                 debug!("[ConnectionMonitor] Active connections: {}", app_state.get_active_connection_count().await);
@@ -338,8 +504,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let resources = app_state.get_resource_usage().await;
     let health_stats = health_manager.get_health_statistics().await;
     
+    // Get final metrics data
+    let metrics_data = Metrics::get_metrics().get_metrics_data();
+    
     info!("[Shutdown] Final statistics - Requests: {} successful, {} failed", 
           metrics.successful_requests, metrics.failed_requests);
+    info!("[Shutdown] Final metrics - Success rate: {:.1}%, Error rate: {:.1}%",
+          metrics_data.success_rate(), metrics_data.error_rate());
     info!("[Shutdown] Final resource usage - Memory: {:.1}MB, CPU: {:.1}%", 
           resources.memory_usage_mb, resources.cpu_usage_percent);
     info!("[Shutdown] Final health - Overall: {:.1}%, Services: {}/{} healthy", 

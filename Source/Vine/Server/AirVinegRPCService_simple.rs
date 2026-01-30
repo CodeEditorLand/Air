@@ -4,15 +4,15 @@
 //! to get the Air element compiling successfully.
 
 use std::sync::Arc;
-use log::{debug, error, info};
+use log::{debug, info};
 
 use tonic::{Request, Response, Status, Streaming};
 use async_trait::async_trait;
 
 use crate::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Downloader::DownloadManager, Indexing::FileIndexer, Updates::UpdateManager, utils::current_timestamp, VERSION};
 
+use crate::Vine::Generated::air_service_server::AirService;
 use crate::Vine::Generated::air::{
-    AirService,
     AuthenticationRequest, AuthenticationResponse,
     UpdateCheckRequest, UpdateCheckResponse,
     ApplyUpdateRequest, ApplyUpdateResponse,

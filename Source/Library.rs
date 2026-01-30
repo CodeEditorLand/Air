@@ -8,12 +8,20 @@
 
 pub mod ApplicationState;
 pub mod Authentication;
+pub mod CLI;
 pub mod Configuration;
 pub mod Daemon;
 pub mod Downloader;
 pub mod HealthCheck;
 pub mod Indexing;
+pub mod Logging;
+pub mod Metrics;
+pub mod Plugins;
+pub mod Resilience;
+pub mod Security;
+pub mod Tracing;
 pub mod Updates;
+pub mod Vine;
 
 // Re-export commonly used types
 
@@ -21,6 +29,11 @@ pub use Authentication::AuthenticationService;
 pub use Configuration::ConfigurationManager;
 pub use Downloader::DownloadManager;
 pub use Indexing::FileIndexer;
+pub use Resilience::{
+    RetryPolicy, RetryManager, CircuitBreaker, CircuitBreakerConfig, CircuitState,
+    BulkheadExecutor, BulkheadConfig, TimeoutManager, ResilienceOrchestrator,
+};
+pub use Security::{RateLimiter, RateLimitConfig, ChecksumVerifier, SecureStorage};
 pub use Updates::UpdateManager;
 
 /// Air Daemon version information
@@ -70,6 +83,12 @@ pub enum AirError {
     
     #[error("Timeout error: {0}")]
     Timeout(String),
+    
+    #[error("Plugin error: {0}")]
+    Plugin(String),
+    
+    #[error("Hot-reload error: {0}")]
+    HotReload(String),
 }
 
 impl From<config::ConfigError> for AirError {

@@ -1,12 +1,12 @@
 //! # Update Management Service
 //!
 //! Handles checking for, downloading, and applying updates for the Land ecosystem.
-//! This service runs in the background and manages the complete update lifecycle.
+//! This service runs in the background and manages the complete update lifecycle
+//! with resilient patterns for network operations.
 
 use std::{path::PathBuf, sync::Arc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
-
 
 use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::ConfigurationManager};
 
@@ -241,40 +241,98 @@ impl UpdateManager {
     async fn fetch_update_info(&self) -> Result<Option<UpdateInfo>> {
         let config = &self.app_state.configuration.updates;
         
-        let client = reqwest::Client::new();
-        
-        // Build update check URL
-        let current_version = env!("CARGO_PKG_VERSION");
-        let platform = if cfg!(target_os = "windows") {
-            "windows"
-        } else if cfg!(target_os = "macos") {
-            "macos"
-        } else {
-            "linux"
+        let retry_policy = crate::Resilience::RetryPolicy {
+            max_retries: 3,
+            initial_interval_ms: 1000,
+            max_interval_ms: 16000,
+            backoff_multiplier: 2.0,
+            jitter_factor: 0.1,
+            budget_per_minute: 50,
         };
         
-        let update_url = format!(
-            "{}/check?version={}&platform={}",
-            config.update_server_url, current_version, platform
+        let retry_manager = crate::Resilience::RetryManager::new(retry_policy.clone());
+        let circuit_breaker = crate::Resilience::CircuitBreaker::new(
+            "updates".to_string(),
+            crate::Resilience::CircuitBreakerConfig::default(),
         );
         
-        let response = client.get(&update_url)
-            .send()
-            .await
-            .map_err(|e| AirError::Network(format!("Failed to check for updates: {}", e)))?;
+        let current_version = env!("CARGO_PKG_VERSION");
+        let mut attempt = 0;
         
-        if !response.status().is_success() {
-            return Ok(None);
-        }
-        
-        let update_info: UpdateInfo = response.json().await
-            .map_err(|e| AirError::Network(format!("Failed to parse update info: {}", e)))?;
-        
-        // Compare versions
-        if Self::compare_versions(&current_version, &update_info.version) > 0 {
-            Ok(Some(update_info))
-        } else {
-            Ok(None)
+        loop {
+            // Check circuit breaker state
+            if circuit_breaker.get_state().await == crate::Resilience::CircuitState::Open {
+                if !circuit_breaker.attempt_recovery().await {
+                    return Ok(None);
+                }
+            }
+            
+            let platform = if cfg!(target_os = "windows") {
+                "windows"
+            } else if cfg!(target_os = "macos") {
+                "macos"
+            } else {
+                "linux"
+            };
+            
+            let update_url = format!(
+                "{}/check?version={}&platform={}",
+                config.update_server_url, current_version, platform
+            );
+            
+            let client = reqwest::Client::new();
+            
+            match client.get(&update_url).send().await {
+                Ok(response) => {
+                    if !response.status().is_success() {
+                        circuit_breaker.record_failure().await;
+                        if attempt < retry_policy.max_retries && retry_manager.can_retry("updates").await {
+                            attempt += 1;
+                            let delay = retry_manager.calculate_retry_delay(attempt);
+                            tokio::time::sleep(delay).await;
+                            continue;
+                        } else {
+                            return Ok(None);
+                        }
+                    }
+                    
+                    match response.json::<UpdateInfo>().await {
+                        Ok(update_info) => {
+                            circuit_breaker.record_success().await;
+                            // Compare versions
+                            if Self::compare_versions(&current_version, &update_info.version) > 0 {
+                                return Ok(Some(update_info));
+                            } else {
+                                return Ok(None);
+                            }
+                        }
+                        Err(_) => {
+                            circuit_breaker.record_failure().await;
+                            if attempt < retry_policy.max_retries && retry_manager.can_retry("updates").await {
+                                attempt += 1;
+                                let delay = retry_manager.calculate_retry_delay(attempt);
+                                tokio::time::sleep(delay).await;
+                                continue;
+                            } else {
+                                return Ok(None);
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    circuit_breaker.record_failure().await;
+                    log::warn!("[UpdateManager] Failed to check for updates: {}", e);
+                    
+                    if attempt < retry_policy.max_retries && retry_manager.can_retry("updates").await {
+                        attempt += 1;
+                        let delay = retry_manager.calculate_retry_delay(attempt);
+                        tokio::time::sleep(delay).await;
+                        continue;
+                    } else {
+                        return Ok(None);
+                    }
+                }
+            }
         }
     }
     

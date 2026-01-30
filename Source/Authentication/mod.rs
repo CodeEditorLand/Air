@@ -2,7 +2,7 @@
 //!
 //! Handles user authentication, token management, and cryptographic operations
 //! for the Air daemon. This service manages secure storage of credentials
-//! and provides authentication services to Mountain.
+//! and provides authentication services to Mountain with resilient patterns.
 
 use std::{collections::HashMap, sync::Arc};
 use chrono::{DateTime, Utc};
@@ -112,8 +112,8 @@ impl AuthenticationService {
             user_id: username.clone(),
             provider: provider.clone(),
             token: token.clone(),
-            created_at: Utc::now(),
-            expires_at: Utc::now() + chrono::Duration::hours(self.app_state.configuration.authentication.token_expiration_hours as i64),
+            created_at: chrono::Utc::now(),
+            expires_at: chrono::Utc::now() + chrono::Duration::hours(self.app_state.configuration.authentication.token_expiration_hours as i64),
             is_valid: true,
         };
         

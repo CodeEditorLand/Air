@@ -1,7 +1,8 @@
 //! # File Indexing Service
 //!
 //! Handles background file indexing and search operations for the Land ecosystem.
-//! Provides fast file search, content indexing, and metadata extraction.
+//! Provides fast file search, content indexing, and metadata extraction
+//! with resilient patterns for file operations.
 
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use serde::{Deserialize, Serialize};

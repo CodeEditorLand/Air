@@ -55,6 +55,14 @@ notify = "6.1"
 # For performance monitoring
 systemstat = "0.2"
 
+# Observability - Metrics
+prometheus-client = "0.22"
+
+# Observability - Tracing and Structured Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["json", "env-filter", "fmt", "time", "ansi"] }
+tracing-appender = "0.2"
+
 # gRPC dependencies
 tonic = { workspace = true }
 tonic-prost = { workspace = true }

@@ -2,6 +2,8 @@
 //!
 //! Handles configuration loading, validation, and management for the Air daemon.
 
+pub mod HotReload;
+
 use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 

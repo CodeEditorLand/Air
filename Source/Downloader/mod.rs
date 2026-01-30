@@ -8,7 +8,6 @@ use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
-
 use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::ConfigurationManager, utils};
 
 /// Download manager implementation
@@ -140,7 +139,7 @@ impl DownloadManager {
         }
     }
     
-    /// Download with retry logic
+    /// Download with retry logic and circuit breaker
     async fn download_with_retry(
         &self,
         download_id: &str,
@@ -149,9 +148,32 @@ impl DownloadManager {
         checksum: &str,
     ) -> Result<DownloadResult> {
         let config = &self.app_state.configuration.downloader;
-        let mut retries = 0;
+        
+        let retry_policy = crate::Resilience::RetryPolicy {
+            max_retries: config.max_retries,
+            initial_interval_ms: 1000,
+            max_interval_ms: 32000,
+            backoff_multiplier: 2.0,
+            jitter_factor: 0.1,
+            budget_per_minute: 100,
+        };
+        
+        let retry_manager = crate::Resilience::RetryManager::new(retry_policy.clone());
+        let circuit_breaker = crate::Resilience::CircuitBreaker::new(
+            "downloader".to_string(),
+            crate::Resilience::CircuitBreakerConfig::default(),
+        );
+        
+        let mut attempt = 0;
         
         loop {
+            // Check circuit breaker state
+            if circuit_breaker.get_state().await == crate::Resilience::CircuitState::Open {
+                if !circuit_breaker.attempt_recovery().await {
+                    return Err(AirError::Network("Circuit breaker is open".to_string()));
+                }
+            }
+            
             match self.perform_download(download_id, url, destination).await {
                 Ok(file_info) => {
                     // Verify checksum if provided
@@ -160,26 +182,36 @@ impl DownloadManager {
                         
                         if let Err(e) = self.verify_checksum(destination, checksum).await {
                             log::warn!("[DownloadManager] Checksum verification failed [ID: {}]: {}", download_id, e);
+                            circuit_breaker.record_failure().await;
                             
-                            if retries < config.max_retries {
-                                retries += 1;
-                                log::info!("[DownloadManager] Retrying download [ID: {}] (attempt {}/{})", download_id, retries, config.max_retries);
+                            if attempt < retry_policy.max_retries
+                                && retry_manager.can_retry("downloader").await
+                            {
+                                attempt += 1;
+                                let delay = retry_manager.calculate_retry_delay(attempt);
+                                log::info!("[DownloadManager] Retrying download [ID: {}] (attempt {}/{}) after {:?}", download_id, attempt, retry_policy.max_retries, delay);
+                                tokio::time::sleep(delay).await;
                                 continue;
                             } else {
-                                return Err(AirError::Network(format!("Checksum verification failed after {} retries", config.max_retries)));
+                                return Err(AirError::Network(format!("Checksum verification failed after {} retries", attempt)));
                             }
                         }
                     }
                     
+                    circuit_breaker.record_success().await;
                     return Ok(file_info);
                 },
                 Err(e) => {
-                    if retries < config.max_retries {
-                        retries += 1;
-                        log::warn!("[DownloadManager] Download failed [ID: {}], retrying (attempt {}/{}): {}", download_id, retries, config.max_retries, e);
+                    circuit_breaker.record_failure().await;
+                    
+                    if attempt < retry_policy.max_retries
+                        && retry_manager.can_retry("downloader").await
+                    {
+                        attempt += 1;
+                        log::warn!("[DownloadManager] Download failed [ID: {}], retrying (attempt {}/{}): {}", download_id, attempt, retry_policy.max_retries, e);
                         
-                        // Exponential backoff
-                        tokio::time::sleep(std::time::Duration::from_secs(2u64.pow(retries))).await;
+                        let delay = retry_manager.calculate_retry_delay(attempt);
+                        tokio::time::sleep(delay).await;
                     } else {
                         return Err(e);
                     }
@@ -234,28 +266,22 @@ impl DownloadManager {
         })
     }
     
-    /// Verify file checksum
+    /// Verify file checksum using ChecksumVerifier
     async fn verify_checksum(&self, file_path: &PathBuf, expected_checksum: &str) -> Result<()> {
-        let actual_checksum = self.calculate_checksum(file_path).await?;
+        let is_valid = self.checksum_verifier.verify_sha256(file_path, expected_checksum).await?;
         
-        if actual_checksum != expected_checksum {
+        if !is_valid {
             return Err(AirError::Network("Checksum verification failed".to_string()));
         }
+        
+        log::info!("[DownloadManager] Checksum verified for file: {}", file_path.display());
         
         Ok(())
     }
     
-    /// Calculate file checksum
+    /// Calculate file checksum using ChecksumVerifier
     async fn calculate_checksum(&self, file_path: &PathBuf) -> Result<String> {
-        let content = tokio::fs::read(file_path).await
-            .map_err(|e| AirError::FileSystem(format!("Failed to read file for checksum: {}", e)))?;
-        
-        use sha2::{Sha256, Digest};
-        let mut hasher = Sha256::new();
-        hasher.update(&content);
-        let checksum = format!("{:x}", hasher.finalize());
-        
-        Ok(checksum)
+        self.checksum_verifier.calculate_sha256(file_path).await
     }
     
     /// Register a new download
