@@ -40,13 +40,13 @@ pub use Updates::UpdateManager;
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Default configuration file name
-pub const DEFAULT_CONFIG_FILE: &str = "air.toml";
+pub const DefaultConfigFile: &str = "air.toml";
 
 /// Default gRPC bind address (Note: Moved to port 50053 to avoid conflict with Cocoon which uses 50052)
-pub const DEFAULT_BIND_ADDRESS: &str = "[::1]:50053";
+pub const DefaultBindAddress: &str = "[::1]:50053";
 
 /// Protocol version for Mountain-Air communication
-pub const PROTOCOL_VERSION: u32 = 1;
+pub const ProtocolVersion: u32 = 1;
 
 /// Error type for Air operations
 #[derive(Debug, thiserror::Error)]
@@ -129,12 +129,12 @@ pub mod utils {
     use super::*;
     
     /// Generate a unique request ID
-    pub fn generate_request_id() -> String {
+    pub fn GenerateRequestId() -> String {
         uuid::Uuid::new_v4().to_string()
     }
     
     /// Get current timestamp in milliseconds
-    pub fn current_timestamp() -> u64 {
+    pub fn CurrentTimestamp() -> u64 {
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -142,7 +142,7 @@ pub mod utils {
     }
     
     /// Validate file path security
-    pub fn validate_file_path(path: &str) -> Result<()> {
+    pub fn ValidateFilePath(path: &str) -> Result<()> {
         if path.contains("..") || path.contains("\\") {
             return Err(AirError::Configuration("Invalid file path".to_string()));
         }
