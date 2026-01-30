@@ -12,7 +12,6 @@ pub mod Configuration;
 pub mod Downloader;
 pub mod Indexing;
 pub mod Updates;
-pub mod Vine;
 
 // Re-export commonly used types
 
@@ -21,7 +20,6 @@ pub use Configuration::ConfigurationManager;
 pub use Downloader::DownloadManager;
 pub use Indexing::FileIndexer;
 pub use Updates::UpdateManager;
-pub use Vine::Server::AirVinegRPCService;
 
 /// Air Daemon version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

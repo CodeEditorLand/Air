@@ -19,9 +19,7 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 use log::{debug, error, info, warn};
 use tokio::{signal, time::interval};
 
-use crate::{ApplicationState, AuthenticationService, ConfigurationManager, DownloadManager, FileIndexer, UpdateManager, AirVinegRPCService, VERSION, PROTOCOL_VERSION, DEFAULT_BIND_ADDRESS};
-
-use crate::Vine::Generated::AirServiceServer;
+use Air::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Configuration::ConfigurationManager, Downloader::DownloadManager, Indexing::FileIndexer, Updates::UpdateManager, VERSION, DEFAULT_BIND_ADDRESS, PROTOCOL_VERSION};
 
 // =============================================================================
 // Debug Helpers
@@ -70,7 +68,9 @@ async fn wait_for_shutdown_signal() {
 /// Initialize logging based on environment
 fn initialize_logging() {
     if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var("RUST_LOG", "info");
+        unsafe {
+            std::env::set_var("RUST_LOG", "info");
+        }
     }
     
     env_logger::Builder::from_default_env()
@@ -146,7 +146,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     TraceStep!("[Boot] [Configuration] Loading configuration...");
     
     let config_manager = ConfigurationManager::new(config_path)?;
-    let configuration = config_manager.load_configuration().await?;
+    let configuration: std::sync::Arc<Air::Configuration::AirConfiguration> = std::sync::Arc::new(config_manager.load_configuration().await?);
     
     debug!("[Boot] [Configuration] Configuration loaded successfully");
     
@@ -155,7 +155,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // -------------------------------------------------------------------------
     TraceStep!("[Boot] [State] Initializing application state...");
     
-    let app_state = Arc::new(ApplicationState::new(configuration.clone()).await?);
+    let app_state: std::sync::Arc<ApplicationState> = Arc::new(ApplicationState::new(configuration.clone()).await?);
     
     info!("[Boot] [State] Application state initialized");
     
@@ -165,21 +165,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     TraceStep!("[Boot] [Services] Initializing core services...");
     
     // Authentication Service
-    let auth_service = Arc::new(AuthenticationService::new(app_state.clone()).await?);
+    let auth_service: std::sync::Arc<AuthenticationService> = Arc::new(AuthenticationService::new(app_state.clone()).await?);
     
     // Update Manager
-    let update_manager = Arc::new(UpdateManager::new(app_state.clone()).await?);
+    let update_manager: std::sync::Arc<UpdateManager> = Arc::new(UpdateManager::new(app_state.clone()).await?);
     
     // Download Manager
-    let download_manager = Arc::new(DownloadManager::new(app_state.clone()).await?);
+    let download_manager: std::sync::Arc<DownloadManager> = Arc::new(DownloadManager::new(app_state.clone()).await?);
     
     // File Indexer
-    let file_indexer = Arc::new(FileIndexer::new(app_state.clone()).await?);
+    let file_indexer: std::sync::Arc<FileIndexer> = Arc::new(FileIndexer::new(app_state.clone()).await?);
     
     info!("[Boot] [Services] Core services initialized");
     
     // -------------------------------------------------------------------------
-    // [Boot] [Vine] Initialize gRPC server
+    // [Boot] [Vine] Initialize gRPC server (temporarily disabled)
     // -------------------------------------------------------------------------
     TraceStep!("[Boot] [Vine] Initializing gRPC server...");
     
@@ -187,22 +187,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_or_else(|| "[::1]:50053".to_string())
         .parse()?;
     
-    let vine_service = AirVinegRPCService::new(
-        app_state.clone(),
-        auth_service.clone(),
-        update_manager.clone(),
-        download_manager.clone(),
-        file_indexer.clone(),
-    );
+    info!("[Boot] [Vine] gRPC server would be configured on {} (currently disabled)", bind_addr);
     
-    let server = tonic::transport::Server::builder()
-        .add_service(AirServiceServer::new(vine_service))
-        .serve(bind_addr);
-    
-    info!("[Boot] [Vine] gRPC server configured on {}", bind_addr);
+    // Create a dummy future that never completes (placeholder for gRPC server)
+    let server = std::future::pending::<Result<(), tonic::transport::Error>>();
     
     // Start connection monitoring background task
-    let connection_monitor_handle = tokio::spawn({
+    let connection_monitor_handle: tokio::task::JoinHandle<()> = tokio::spawn({
         let app_state = app_state.clone();
         async move {
             let mut interval = interval(Duration::from_secs(60)); // Check every minute
@@ -247,17 +238,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("[Runtime] Air Daemon 🪁 is now running");
     info!("[Runtime] Listening on {} for Mountain connections", bind_addr);
     
-    // Combine server and signal handling
-    tokio::select! {
-        server_result = server => {
-            if let Err(e) = server_result {
-                error!("[Runtime] gRPC server error: {}", e);
-            }
-        },
-        _ = wait_for_shutdown_signal() => {
-            info!("[Runtime] Shutdown signal received");
-        }
-    }
+    // Wait for shutdown signal (gRPC server temporarily disabled)
+    wait_for_shutdown_signal().await;
     
     // -------------------------------------------------------------------------
     // [Shutdown] Graceful shutdown

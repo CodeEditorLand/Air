@@ -58,7 +58,7 @@ pub struct UpdateInfo {
 impl UpdateManager {
     /// Create a new update manager
     pub async fn new(app_state: Arc<ApplicationState>) -> Result<Self> {
-        let config = &app_state.configuration.updates;
+        let _config = &app_state.configuration.updates;
         
         // Expand cache directory path
         let cache_directory = ConfigurationManager::expand_path(&app_state.configuration.downloader.cache_directory)?;

@@ -101,7 +101,7 @@ impl AuthenticationService {
         }
         
         // Check credentials
-        let user_credentials = self.validate_credentials(&username, &password, &provider).await?;
+        let _user_credentials = self.validate_credentials(&username, &password, &provider).await?;
         
         // Generate session token
         let token = self.generate_session_token(&username, &provider).await?;

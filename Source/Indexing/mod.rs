@@ -271,7 +271,7 @@ impl FileIndexer {
         // Search in content index
         if let Some(file_paths) = index.content_index.get(&query) {
             for file_path in file_paths.iter().take(max_results as usize) {
-                if let Some(metadata) = index.files.get(file_path) {
+                if let Some(_metadata) = index.files.get(file_path) {
                     // Check path filter
                     if let Some(ref search_path) = path {
                         if !file_path.to_string_lossy().contains(search_path) {
@@ -295,7 +295,7 @@ impl FileIndexer {
         }
         
         // Also search in file names
-        for (file_path, metadata) in &index.files {
+        for (file_path, _metadata) in &index.files {
             if results.len() >= max_results as usize {
                 break;
             }

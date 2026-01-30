@@ -4,13 +4,12 @@
 //! to get the Air element compiling successfully.
 
 use std::sync::Arc;
-use log::{debug, error, info, warn};
+use log::{debug, error, info};
 
 use tonic::{Request, Response, Status, Streaming};
-use std::collections::HashMap;
 use async_trait::async_trait;
 
-use crate::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Downloader::DownloadManager, Indexing::FileIndexer, Updates::UpdateManager, Result, utils::current_timestamp, AirError, VERSION};
+use crate::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Downloader::DownloadManager, Indexing::FileIndexer, Updates::UpdateManager, utils::current_timestamp, VERSION};
 
 use crate::Vine::Generated::air::{
     AirService,
@@ -29,10 +28,10 @@ use crate::Vine::Generated::air::{
     ResourceLimitsRequest, ResourceLimitsResponse,
     ConfigurationRequest, ConfigurationResponse,
     UpdateConfigurationRequest, UpdateConfigurationResponse,
-    FileResult,
 };
 
 /// The concrete implementation of the Air gRPC service
+#[allow(dead_code)]
 pub struct AirVinegRPCService {
     /// Application state
     app_state: Arc<ApplicationState>,
