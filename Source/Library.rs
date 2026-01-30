@@ -9,7 +9,9 @@
 pub mod ApplicationState;
 pub mod Authentication;
 pub mod Configuration;
+pub mod Daemon;
 pub mod Downloader;
+pub mod HealthCheck;
 pub mod Indexing;
 pub mod Updates;
 

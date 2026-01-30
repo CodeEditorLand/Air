@@ -19,7 +19,7 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 use log::{debug, error, info, warn};
 use tokio::{signal, time::interval};
 
-use Air::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Configuration::ConfigurationManager, Downloader::DownloadManager, Indexing::FileIndexer, Updates::UpdateManager};
+use Air::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Configuration::ConfigurationManager, Daemon::DaemonManager, Downloader::DownloadManager, HealthCheck::{HealthCheckManager, HealthCheckLevel}, Indexing::FileIndexer, Updates::UpdateManager};
 
 // =============================================================================
 // Debug Helpers
@@ -151,6 +151,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     debug!("[Boot] [Configuration] Configuration loaded successfully");
     
     // -------------------------------------------------------------------------
+    // [Boot] [Daemon] Initialize daemon lifecycle management
+    // -------------------------------------------------------------------------
+    TraceStep!("[Boot] [Daemon] Initializing daemon lifecycle management...");
+    
+    let daemon_manager = DaemonManager::new(None)?;
+    
+    // Acquire daemon lock to ensure single instance
+    daemon_manager.acquire_lock().await?;
+    
+    info!("[Boot] [Daemon] Daemon lock acquired");
+    
+    // -------------------------------------------------------------------------
+    // [Boot] [Health] Initialize health check system
+    // -------------------------------------------------------------------------
+    TraceStep!("[Boot] [Health] Initializing health check system...");
+    
+    let health_manager: std::sync::Arc<HealthCheckManager> = Arc::new(HealthCheckManager::new(None));
+    
+    info!("[Boot] [Health] Health check system initialized");
+    
+    // -------------------------------------------------------------------------
     // [Boot] [State] Initialize application state
     // -------------------------------------------------------------------------
     TraceStep!("[Boot] [State] Initializing application state...");
@@ -179,6 +200,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("[Boot] [Services] Core services initialized");
     
     // -------------------------------------------------------------------------
+    // [Boot] [Health] Register services for health monitoring
+    // -------------------------------------------------------------------------
+    TraceStep!("[Boot] [Health] Registering services for health monitoring...");
+    
+    health_manager.register_service("authentication".to_string(), HealthCheckLevel::Functional).await?;
+    health_manager.register_service("updates".to_string(), HealthCheckLevel::Functional).await?;
+    health_manager.register_service("downloader".to_string(), HealthCheckLevel::Functional).await?;
+    health_manager.register_service("indexing".to_string(), HealthCheckLevel::Functional).await?;
+    health_manager.register_service("grpc".to_string(), HealthCheckLevel::Responsive).await?;
+    health_manager.register_service("connections".to_string(), HealthCheckLevel::Alive).await?;
+    
+    info!("[Boot] [Health] Services registered for health monitoring");
+    
+    // -------------------------------------------------------------------------
     // [Boot] [Vine] Initialize gRPC server (temporarily disabled)
     // -------------------------------------------------------------------------
     TraceStep!("[Boot] [Vine] Initializing gRPC server...");
@@ -195,6 +230,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Start connection monitoring background task
     let connection_monitor_handle: tokio::task::JoinHandle<()> = tokio::spawn({
         let app_state = app_state.clone();
+        let health_manager = health_manager.clone();
         async move {
             let mut interval = interval(Duration::from_secs(60)); // Check every minute
             loop {
@@ -210,6 +246,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     warn!("[ConnectionMonitor] Failed to cleanup stale connections: {}", e);
                 }
                 
+                // Perform health checks
+                if let Err(e) = health_manager.check_service("connections").await {
+                    warn!("[ConnectionMonitor] Health check failed: {}", e);
+                }
+                
                 debug!("[ConnectionMonitor] Active connections: {}", app_state.get_active_connection_count().await);
             }
         }
@@ -218,6 +259,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Register background task
     app_state.register_background_task(connection_monitor_handle).await
         .map_err(|e| format!("Failed to register connection monitor: {}", e))?;
+    
+    // Start health monitoring background task
+    let health_monitor_handle: tokio::task::JoinHandle<()> = tokio::spawn({
+        let health_manager = health_manager.clone();
+        async move {
+            let mut interval = interval(Duration::from_secs(30)); // Check every 30 seconds
+            loop {
+                interval.tick().await;
+                
+                // Perform comprehensive health checks
+                let services = ["authentication", "updates", "downloader", "indexing", "grpc"];
+                for service in services.iter() {
+                    if let Err(e) = health_manager.check_service(service).await {
+                        warn!("[HealthMonitor] Health check failed for {}: {}", service, e);
+                    }
+                }
+                
+                // Log overall health status
+                let overall_health = health_manager.get_overall_health().await;
+                debug!("[HealthMonitor] Overall health: {:?}", overall_health);
+            }
+        }
+    });
+    
+    // Register health monitoring task
+    app_state.register_background_task(health_monitor_handle).await
+        .map_err(|e| format!("Failed to register health monitor: {}", e))?;
     
     // -------------------------------------------------------------------------
     // [Boot] [Startup] Start services
@@ -268,11 +336,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Log final statistics
     let metrics = app_state.get_metrics().await;
     let resources = app_state.get_resource_usage().await;
+    let health_stats = health_manager.get_health_statistics().await;
     
     info!("[Shutdown] Final statistics - Requests: {} successful, {} failed", 
           metrics.successful_requests, metrics.failed_requests);
     info!("[Shutdown] Final resource usage - Memory: {:.1}MB, CPU: {:.1}%", 
           resources.memory_usage_mb, resources.cpu_usage_percent);
+    info!("[Shutdown] Final health - Overall: {:.1}%, Services: {}/{} healthy", 
+          health_stats.overall_health_percentage(), health_stats.healthy_services, health_stats.total_services);
+    
+    // Release daemon lock
+    if let Err(e) = daemon_manager.release_lock().await {
+        error!("[Shutdown] Failed to release daemon lock: {}", e);
+    }
     
     info!("[Shutdown] All services stopped");
     info!("[Shutdown] Air Daemon 🪁 has shut down gracefully");
