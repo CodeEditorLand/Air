@@ -19,7 +19,7 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 use log::{debug, error, info, warn};
 use tokio::{signal, time::interval};
 
-use Air::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Configuration::ConfigurationManager, Daemon::DaemonManager, Downloader::DownloadManager, HealthCheck::{HealthCheckManager, HealthCheckLevel}, Indexing::FileIndexer, Logging, Metrics, Tracing, Updates::UpdateManager, CLI::{CliParser, Command, ConfigCommand, DebugCommand, OutputFormatter}, VERSION};
+use Air::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Configuration::ConfigurationManager, Daemon::DaemonManager, Downloader::DownloadManager, HealthCheck::{HealthCheckManager, HealthCheckLevel}, Indexing::FileIndexer, Logging, Metrics, Tracing, Updates::UpdateManager, CLI::{CliParser, Command, ConfigCommand, DebugCommand, OutputFormatter}, Vine::Server::AirVinegRPCService, VERSION};
 
 // =============================================================================
 // Debug Helpers
@@ -369,13 +369,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     TraceStep!("[Boot] [Vine] Initializing gRPC server...");
 
     let bind_addr: SocketAddr = bind_address
-        .unwrap_or_else(|| crate::DEFAULT_BIND_ADDRESS.to_string())
+        .unwrap_or_else(|| Air::DEFAULT_BIND_ADDRESS.to_string())
         .parse()?;
 
     info!("[Boot] [Vine] gRPC server configuring on {}", bind_addr);
 
     // Build the concrete gRPC service implementation and start the server in background.
-    let vine_service = crate::Vine::AirVinegRPCService::new(
+    let vine_service = AirVinegRPCService::new(
         app_state.clone(),
         auth_service.clone(),
         update_manager.clone(),
@@ -390,7 +390,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let server_handle: tokio::task::JoinHandle<()> = tokio::spawn(async move {
         info!("[Vine] Starting gRPC server on {}", bind_addr);
 
-        let svc = crate::Vine::Generated::air_service_server::AirServiceServer::new(vine_service);
+        let svc = Air::Vine::Generated::air_service_server::AirServiceServer::new(vine_service);
 
         let server = tonic::transport::Server::builder()
             .add_service(svc)

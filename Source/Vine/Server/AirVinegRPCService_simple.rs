@@ -8,7 +8,7 @@ use log::{debug, info};
 
 use tonic::{Request, Response, Status, Streaming};
 use async_trait::async_trait;
-use tokio_stream::wrappers::ReceiverStream;
+use tokio_stream::StreamExt;
 use bytes::Bytes;
 
 use crate::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Downloader::DownloadManager, Indexing::FileIndexer, Updates::UpdateManager, utils::current_timestamp, VERSION};
@@ -218,7 +218,7 @@ impl AirService for AirVinegRPCService {
     }
 
     /// Handle streaming download requests
-    type DownloadStreamStream = ReceiverStream<std::result::Result<DownloadStreamResponse, Status>>;
+    type DownloadStreamStream = tonic::codec::Streaming<DownloadStreamResponse>;
     
     async fn download_stream(
         &self,

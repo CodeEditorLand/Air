@@ -263,42 +263,39 @@ impl DownloadManager {
         let mut downloaded = existing_size;
         let total_size = response.content_length().unwrap_or(0) + existing_size;
 
-        let mut stream = response.bytes_stream();
-
-        while let Some(chunk_res) = stream.next().await {
-            // Check for pause/cancel
-            if let Some(status) = self.get_download_status(download_id).await {
-                match status.status {
-                    DownloadState::Cancelled => {
-                        return Err(AirError::Network("Download cancelled".to_string()));
-                    }
-                    DownloadState::Paused => {
-                        // Wait until resumed or cancelled
-                        loop {
-                            tokio::time::sleep(std::time::Duration::from_millis(250)).await;
-                            if let Some(s) = self.get_download_status(download_id).await {
-                                match s.status {
-                                    DownloadState::Paused => continue,
-                                    DownloadState::Cancelled => return Err(AirError::Network("Download cancelled".to_string())),
-                                    _ => break,
-                                }
-                            } else {
-                                break;
+        let bytes = response.bytes().await.map_err(|e| AirError::Network(format!("Failed to read response bytes: {}", e)))?;
+        
+        // Check for pause/cancel before writing
+        if let Some(status) = self.get_download_status(download_id).await {
+            match status.status {
+                DownloadState::Cancelled => {
+                    return Err(AirError::Network("Download cancelled".to_string()));
+                }
+                DownloadState::Paused => {
+                    // Wait until resumed or cancelled
+                    loop {
+                        tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+                        if let Some(s) = self.get_download_status(download_id).await {
+                            match s.status {
+                                DownloadState::Paused => continue,
+                                DownloadState::Cancelled => return Err(AirError::Network("Download cancelled".to_string())),
+                                _ => break,
                             }
+                        } else {
+                            break;
                         }
                     }
-                    _ => {}
                 }
+                _ => {}
             }
+        }
 
-            let chunk: bytes::Bytes = chunk_res.map_err(|e| AirError::Network(format!("Download chunk error: {}", e)))?;
-            file.write_all(&chunk).await.map_err(|e| AirError::FileSystem(format!("Failed to write file chunk: {}", e)))?;
-            downloaded += chunk.len() as u64;
+        file.write_all(&bytes).await.map_err(|e| AirError::FileSystem(format!("Failed to write file: {}", e)))?;
+        downloaded += bytes.len() as u64;
 
-            if total_size > 0 {
-                let progress = (downloaded as f32 / total_size as f32) * 100.0;
-                self.update_download_status(download_id, DownloadState::Downloading, Some(progress), None).await?;
-            }
+        if total_size > 0 {
+            let progress = (downloaded as f32 / total_size as f32) * 100.0;
+            self.update_download_status(download_id, DownloadState::Downloading, Some(progress), None).await?;
         }
 
         // Calculate checksum

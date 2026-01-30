@@ -230,6 +230,10 @@ pub struct RateLimitStatus {
 pub struct ChecksumVerifier;
 
 impl ChecksumVerifier {
+    /// Create a new ChecksumVerifier
+    pub fn new() -> Self {
+        Self
+    }
     /// Calculate SHA-256 checksum of a file
     pub async fn calculate_sha256(&self, file_path: &std::path::Path) -> Result<String> {
         let content = tokio::fs::read(file_path).await
