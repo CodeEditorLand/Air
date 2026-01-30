@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, RwLock};
 use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 use ring::rand::SecureRandom;
+use ring::aead;
 
 use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::ConfigurationManager, utils};
 
@@ -26,6 +27,8 @@ pub struct AuthenticationService {
     
     /// Cryptographic keys
     crypto_keys: Arc<Mutex<CryptoKeys>>,
+    /// AEAD algorithm for encryption/decryption
+    aead_algo: &'static aead::Algorithm,
 }
 
 /// Authentication session
@@ -77,12 +80,14 @@ impl AuthenticationService {
         
         // Generate cryptographic keys
         let crypto_keys = Self::generate_crypto_keys()?;
+        let aead_algo = &aead::AES_256_GCM;
         
         let service = Self {
             app_state,
             sessions: Arc::new(RwLock::new(HashMap::new())),
             credentials: Arc::new(Mutex::new(credentials_store)),
             crypto_keys: Arc::new(Mutex::new(crypto_keys)),
+            aead_algo,
         };
         
         // Initialize service status
@@ -190,31 +195,59 @@ impl AuthenticationService {
     /// Encrypt password
     async fn encrypt_password(&self, password: &str) -> Result<String> {
         let crypto_keys = self.crypto_keys.lock().await;
-        
-        // Simple XOR encryption for demonstration
-        // In production, use proper encryption like AES-GCM
-        let mut encrypted = password.as_bytes().to_vec();
-        for (i, byte) in encrypted.iter_mut().enumerate() {
-            *byte ^= crypto_keys.encryption_key[i % crypto_keys.encryption_key.len()];
-        }
-        
-        Ok(URL_SAFE.encode(&encrypted))
+
+        // Use AES-256-GCM via ring::aead. Prefix nonce to ciphertext and base64 encode.
+        let unbound_key = aead::UnboundKey::new(&aead::AES_256_GCM, &crypto_keys.encryption_key)
+            .map_err(|e| AirError::Authentication(format!("Failed to create AEAD key: {:?}", e)))?;
+
+        let less_safe = aead::LessSafeKey::new(unbound_key);
+        let mut nonce_bytes = [0u8; 12];
+        ring::rand::SystemRandom::new().fill(&mut nonce_bytes)
+            .map_err(|e| AirError::Authentication(format!("Failed to generate nonce: {:?}", e)))?;
+
+        let nonce = aead::Nonce::assume_unique_for_key(nonce_bytes);
+
+        let mut in_out = password.as_bytes().to_vec();
+        // Reserve space for tag
+        in_out.extend_from_slice(&[0u8; 16]); // AES_256_GCM tag length is 16 bytes
+
+        less_safe.seal_in_place_append_tag(nonce, aead::Aad::empty(), &mut in_out)
+            .map_err(|e| AirError::Authentication(format!("Encryption failed: {:?}", e)))?;
+
+        // Store nonce + ciphertext
+        let mut out = Vec::with_capacity(nonce_bytes.len() + in_out.len());
+        out.extend_from_slice(&nonce_bytes);
+        out.extend_from_slice(&in_out);
+
+        Ok(URL_SAFE.encode(&out))
     }
     
     /// Decrypt password
     async fn decrypt_password(&self, encrypted_password: &str) -> Result<String> {
         let crypto_keys = self.crypto_keys.lock().await;
-        
-        let encrypted_bytes = URL_SAFE.decode(encrypted_password)
+
+        let data = URL_SAFE.decode(encrypted_password)
             .map_err(|e| AirError::Authentication(format!("Failed to decode password: {}", e)))?;
-        
-        // Simple XOR decryption
-        let mut decrypted = encrypted_bytes.clone();
-        for (i, byte) in decrypted.iter_mut().enumerate() {
-            *byte ^= crypto_keys.encryption_key[i % crypto_keys.encryption_key.len()];
+
+        if data.len() < 12 + aead::AES_256_GCM.tag_len() {
+            return Err(AirError::Authentication("Encrypted data too short".to_string()));
         }
-        
-        String::from_utf8(decrypted)
+
+        let (nonce_bytes, mut cipher) = data.split_at(12);
+
+        let mut nonce_arr = [0u8; 12];
+        nonce_arr.copy_from_slice(&nonce_bytes[0..12]);
+
+        let unbound_key = aead::UnboundKey::new(&aead::AES_256_GCM, &crypto_keys.encryption_key)
+            .map_err(|e| AirError::Authentication(format!("Failed to create AEAD key: {:?}", e)))?;
+
+        let less_safe = aead::LessSafeKey::new(unbound_key);
+        let nonce = aead::Nonce::assume_unique_for_key(nonce_arr);
+
+        let plain = less_safe.open_in_place(nonce, aead::Aad::empty(), &mut cipher)
+            .map_err(|e| AirError::Authentication(format!("Decryption failed: {:?}", e)))?;
+
+        String::from_utf8(plain.to_vec())
             .map_err(|e| AirError::Authentication(format!("Failed to decode password string: {}", e)))
     }
     

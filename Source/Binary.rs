@@ -364,18 +364,47 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("[Boot] [Health] Services registered for health monitoring");
     
     // -------------------------------------------------------------------------
-    // [Boot] [Vine] Initialize gRPC server (temporarily disabled)
+    // [Boot] [Vine] Initialize gRPC server
     // -------------------------------------------------------------------------
     TraceStep!("[Boot] [Vine] Initializing gRPC server...");
-    
+
     let bind_addr: SocketAddr = bind_address
-        .unwrap_or_else(|| "[::1]:50053".to_string())
+        .unwrap_or_else(|| crate::DEFAULT_BIND_ADDRESS.to_string())
         .parse()?;
-    
-    info!("[Boot] [Vine] gRPC server would be configured on {} (currently disabled)", bind_addr);
-    
-    // Create a dummy future that never completes (placeholder for gRPC server)
-    let _server = std::future::pending::<Result<(), tonic::transport::Error>>();
+
+    info!("[Boot] [Vine] gRPC server configuring on {}", bind_addr);
+
+    // Build the concrete gRPC service implementation and start the server in background.
+    let vine_service = crate::Vine::AirVinegRPCService::new(
+        app_state.clone(),
+        auth_service.clone(),
+        update_manager.clone(),
+        download_manager.clone(),
+        file_indexer.clone(),
+    );
+
+    // Create a oneshot channel to signal server shutdown
+    let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
+
+    // Spawn the tonic gRPC server
+    let server_handle: tokio::task::JoinHandle<()> = tokio::spawn(async move {
+        info!("[Vine] Starting gRPC server on {}", bind_addr);
+
+        let svc = crate::Vine::Generated::air_service_server::AirServiceServer::new(vine_service);
+
+        let server = tonic::transport::Server::builder()
+            .add_service(svc)
+            .serve_with_shutdown(bind_addr, async {
+                // wait for shutdown signal from main
+                let _ = shutdown_rx.await;
+            });
+
+        if let Err(e) = server.await {
+            error!("[Vine] gRPC server error: {}", e);
+        } else {
+            info!("[Vine] gRPC server stopped cleanly");
+        }
+    });
     
     // Start connection monitoring background task
     let connection_monitor_handle: tokio::task::JoinHandle<()> = tokio::spawn({
@@ -472,8 +501,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("[Runtime] Air Daemon 🪁 is now running");
     info!("[Runtime] Listening on {} for Mountain connections", bind_addr);
     
-    // Wait for shutdown signal (gRPC server temporarily disabled)
+    // Wait for shutdown signal and then shutdown gRPC server
     wait_for_shutdown_signal().await;
+
+    // Signal gRPC server to shut down
+    let _ = shutdown_tx.send(());
+
+    // Await the server task to finish
+    if let Err(e) = server_handle.await {
+        warn!("[Vine] gRPC server task join error: {}", e);
+    }
     
     // -------------------------------------------------------------------------
     // [Shutdown] Graceful shutdown

@@ -300,7 +300,8 @@ impl UpdateManager {
                         Ok(update_info) => {
                             circuit_breaker.record_success().await;
                             // Compare versions
-                            if Self::compare_versions(&current_version, &update_info.version) > 0 {
+                            // If available version is greater than current, return it
+                            if Self::compare_versions(&current_version, &update_info.version) < 0 {
                                 return Ok(Some(update_info));
                             } else {
                                 return Ok(None);

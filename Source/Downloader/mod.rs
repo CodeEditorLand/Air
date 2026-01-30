@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
 use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::ConfigurationManager, utils};
+use futures_util::StreamExt;
 
 /// Download manager implementation
 pub struct DownloadManager {
@@ -23,6 +24,8 @@ pub struct DownloadManager {
     
     /// HTTP client
     client: reqwest::Client,
+    /// Checksum verifier helper
+    checksum_verifier: Arc<crate::Security::ChecksumVerifier>,
 }
 
 /// Download status
@@ -47,6 +50,7 @@ pub enum DownloadState {
     Completed,
     Failed,
     Cancelled,
+    Paused,
 }
 
 /// Download result
@@ -80,6 +84,7 @@ impl DownloadManager {
             active_downloads: Arc::new(RwLock::new(HashMap::new())),
             cache_directory,
             client,
+            checksum_verifier: Arc::new(crate::Security::ChecksumVerifier),
         };
         
         // Initialize service status
@@ -223,42 +228,82 @@ impl DownloadManager {
     /// Perform the actual download
     async fn perform_download(&self, download_id: &str, url: &str, destination: &PathBuf) -> Result<DownloadResult> {
         self.update_download_status(download_id, DownloadState::Downloading, Some(0.0), None).await?;
-        
-        let response = self.client.get(url)
-            .send()
-            .await
+
+        // Support resume by checking existing file size
+        let mut existing_size: u64 = 0;
+        if destination.exists() {
+            if let Ok(metadata) = tokio::fs::metadata(destination).await {
+                existing_size = metadata.len();
+            }
+        }
+
+        let mut req = self.client.get(url);
+        if existing_size > 0 {
+            let range_header = format!("bytes={}-", existing_size);
+            req = req.header(reqwest::header::RANGE, range_header);
+        }
+
+        let response = req.send().await
             .map_err(|e| AirError::Network(format!("Failed to start download: {}", e)))?;
-        
-        if !response.status().is_success() {
+
+        if !(response.status().is_success() || response.status() == reqwest::StatusCode::PARTIAL_CONTENT) {
             return Err(AirError::Network(format!("Download failed with status: {}", response.status())));
         }
-        
-        let total_size = response.content_length().unwrap_or(0);
-        let downloaded: u64;
-        
-        let mut file = tokio::fs::File::create(destination).await
-            .map_err(|e| AirError::FileSystem(format!("Failed to create destination file: {}", e)))?;
-        
+
+        // Open file in append mode if resuming
+        let mut file = tokio::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(destination)
+            .await
+            .map_err(|e| AirError::FileSystem(format!("Failed to open destination file: {}", e)))?;
+
         use tokio::io::AsyncWriteExt;
-        
-        // Read the entire response body as bytes
-        let bytes = response.bytes().await
-            .map_err(|e| AirError::Network(format!("Download error: {}", e)))?;
-        
-        file.write_all(&bytes).await
-            .map_err(|e| AirError::FileSystem(format!("Failed to write file: {}", e)))?;
-        
-        downloaded = bytes.len() as u64;
-        
-        // Update progress
-        if total_size > 0 {
-            let progress = (downloaded as f32 / total_size as f32) * 100.0;
-            self.update_download_status(download_id, DownloadState::Downloading, Some(progress), None).await?;
+
+        let mut downloaded = existing_size;
+        let total_size = response.content_length().unwrap_or(0) + existing_size;
+
+        let mut stream = response.bytes_stream();
+
+        while let Some(chunk_res) = stream.next().await {
+            // Check for pause/cancel
+            if let Some(status) = self.get_download_status(download_id).await {
+                match status.status {
+                    DownloadState::Cancelled => {
+                        return Err(AirError::Network("Download cancelled".to_string()));
+                    }
+                    DownloadState::Paused => {
+                        // Wait until resumed or cancelled
+                        loop {
+                            tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+                            if let Some(s) = self.get_download_status(download_id).await {
+                                match s.status {
+                                    DownloadState::Paused => continue,
+                                    DownloadState::Cancelled => return Err(AirError::Network("Download cancelled".to_string())),
+                                    _ => break,
+                                }
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+
+            let chunk = chunk_res.map_err(|e| AirError::Network(format!("Download chunk error: {}", e)))?;
+            file.write_all(&chunk).await.map_err(|e| AirError::FileSystem(format!("Failed to write file chunk: {}", e)))?;
+            downloaded += chunk.len() as u64;
+
+            if total_size > 0 {
+                let progress = (downloaded as f32 / total_size as f32) * 100.0;
+                self.update_download_status(download_id, DownloadState::Downloading, Some(progress), None).await?;
+            }
         }
-        
+
         // Calculate checksum
         let checksum = self.calculate_checksum(destination).await?;
-        
+
         Ok(DownloadResult {
             path: destination.to_string_lossy().to_string(),
             size: downloaded,
@@ -336,6 +381,20 @@ impl DownloadManager {
         // In a real implementation, this would cancel the actual download
         log::info!("[DownloadManager] Download cancelled [ID: {}]", download_id);
         
+        Ok(())
+    }
+
+    /// Pause a download
+    pub async fn pause_download(&self, download_id: &str) -> Result<()> {
+        self.update_download_status(download_id, DownloadState::Paused, None, None).await?;
+        log::info!("[DownloadManager] Download paused [ID: {}]", download_id);
+        Ok(())
+    }
+
+    /// Resume a paused download
+    pub async fn resume_download(&self, download_id: &str) -> Result<()> {
+        self.update_download_status(download_id, DownloadState::Downloading, None, None).await?;
+        log::info!("[DownloadManager] Download resumed [ID: {}]", download_id);
         Ok(())
     }
     

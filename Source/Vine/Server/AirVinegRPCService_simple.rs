@@ -8,6 +8,7 @@ use log::{debug, info};
 
 use tonic::{Request, Response, Status, Streaming};
 use async_trait::async_trait;
+use tokio_stream::wrappers::ReceiverStream;
 
 use crate::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Downloader::DownloadManager, Indexing::FileIndexer, Updates::UpdateManager, utils::current_timestamp, VERSION};
 
@@ -216,10 +217,12 @@ impl AirService for AirVinegRPCService {
     }
 
     /// Handle streaming download requests
+    type DownloadStreamStream = ReceiverStream<std::result::Result<DownloadStreamResponse, Status>>;
+    
     async fn download_stream(
         &self,
         _request: Request<DownloadStreamRequest>,
-    ) -> std::result::Result<Response<Streaming<DownloadStreamResponse>>, Status> {
+    ) -> std::result::Result<Response<Self::DownloadStreamStream>, Status> {
         // Not implemented
         Err(Status::unimplemented("download_stream not implemented"))
     }

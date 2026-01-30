@@ -413,8 +413,18 @@ async fn test_air_batch_processing() {
 
 /// Helper function to get current memory usage
 fn get_memory_usage() -> usize {
-    // In a real implementation, we would use system-specific memory APIs
-    // For testing purposes, we'll return a placeholder value
-    // This would be replaced with actual memory measurement in production
-    1024 * 1024 // 1MB placeholder
+    // Use sysinfo to query current process memory usage (in bytes)
+    use sysinfo::{ProcessExt, System, SystemExt};
+
+    let mut sys = System::new_all();
+    sys.refresh_processes();
+
+    if let Some(proc) = sys.process(sysinfo::get_current_pid().unwrap_or_default()) {
+        // `memory()` returns KB on many platforms; convert to bytes where appropriate
+        let kb = proc.memory();
+        return (kb as usize) * 1024;
+    }
+
+    // Fallback: return small value so tests don't blow up
+    1024 * 1024
 }
