@@ -9,6 +9,7 @@ use log::{debug, info};
 use tonic::{Request, Response, Status, Streaming};
 use async_trait::async_trait;
 use tokio_stream::wrappers::ReceiverStream;
+use bytes::Bytes;
 
 use crate::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Downloader::DownloadManager, Indexing::FileIndexer, Updates::UpdateManager, utils::current_timestamp, VERSION};
 

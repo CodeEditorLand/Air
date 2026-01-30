@@ -134,7 +134,6 @@ pub enum PluginState {
 }
 
 /// Plugin registry entry
-#[derive(Debug)]
 pub struct PluginRegistry {
     pub plugin: Arc<Box<dyn Plugin>>,
     pub state: PluginState,

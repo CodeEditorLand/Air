@@ -233,7 +233,7 @@ impl AuthenticationService {
             return Err(AirError::Authentication("Encrypted data too short".to_string()));
         }
 
-        let (nonce_bytes, mut cipher) = data.split_at(12);
+        let (nonce_bytes, cipher_bytes) = data.split_at(12);
 
         let mut nonce_arr = [0u8; 12];
         nonce_arr.copy_from_slice(&nonce_bytes[0..12]);
@@ -244,7 +244,8 @@ impl AuthenticationService {
         let less_safe = aead::LessSafeKey::new(unbound_key);
         let nonce = aead::Nonce::assume_unique_for_key(nonce_arr);
 
-        let plain = less_safe.open_in_place(nonce, aead::Aad::empty(), &mut cipher)
+        let mut cipher_vec = cipher_bytes.to_vec();
+        let plain = less_safe.open_in_place(nonce, aead::Aad::empty(), &mut cipher_vec)
             .map_err(|e| AirError::Authentication(format!("Decryption failed: {:?}", e)))?;
 
         String::from_utf8(plain.to_vec())
@@ -369,6 +370,7 @@ impl Clone for AuthenticationService {
             sessions: self.sessions.clone(),
             credentials: self.credentials.clone(),
             crypto_keys: self.crypto_keys.clone(),
+            aead_algo: self.aead_algo,
         }
     }
 }

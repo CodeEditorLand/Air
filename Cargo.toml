@@ -40,6 +40,8 @@ md5 = "0.8.0"
 base64 = "0.22.1"
 ring = "0.17"
 rand = "0.9.2"
+tokio-stream = { workspace = true }
+bytes = { version = "1.0", features = ["serde"] }
 
 # For configuration management
 config = { workspace = true }
@@ -60,7 +62,13 @@ prometheus-client = "0.22"
 
 # Observability - Tracing and Structured Logging
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["json", "env-filter", "fmt", "time", "ansi"] }
+tracing-subscriber = { version = "0.3", features = [
+	"json",
+	"env-filter",
+	"fmt",
+	"time",
+	"ansi",
+] }
 tracing-appender = "0.2"
 
 # gRPC dependencies
@@ -98,9 +106,7 @@ all-features = true
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 default-target = "x86_64-unknown-linux-gnu"
 targets = [
-    "x86_64-unknown-linux-gnu",
-    "x86_64-apple-darwin", 
-    "aarch64-apple-darwin",
+	"x86_64-unknown-linux-gnu",
+	"x86_64-apple-darwin",
+	"aarch64-apple-darwin",
 ]
-
-

@@ -84,7 +84,7 @@ impl DownloadManager {
             active_downloads: Arc::new(RwLock::new(HashMap::new())),
             cache_directory,
             client,
-            checksum_verifier: Arc::new(crate::Security::ChecksumVerifier),
+            checksum_verifier: Arc::new(crate::Security::ChecksumVerifier::new()),
         };
         
         // Initialize service status
@@ -291,7 +291,7 @@ impl DownloadManager {
                 }
             }
 
-            let chunk = chunk_res.map_err(|e| AirError::Network(format!("Download chunk error: {}", e)))?;
+            let chunk: bytes::Bytes = chunk_res.map_err(|e| AirError::Network(format!("Download chunk error: {}", e)))?;
             file.write_all(&chunk).await.map_err(|e| AirError::FileSystem(format!("Failed to write file chunk: {}", e)))?;
             downloaded += chunk.len() as u64;
 
@@ -488,6 +488,7 @@ impl Clone for DownloadManager {
             active_downloads: self.active_downloads.clone(),
             cache_directory: self.cache_directory.clone(),
             client: self.client.clone(),
+            checksum_verifier: self.checksum_verifier.clone(),
         }
     }
 }
