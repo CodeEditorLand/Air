@@ -19,7 +19,7 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 use log::{debug, error, info, warn};
 use tokio::{signal, time::interval};
 
-use Air::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Configuration::ConfigurationManager, Downloader::DownloadManager, Indexing::FileIndexer, Updates::UpdateManager, VERSION, DEFAULT_BIND_ADDRESS, PROTOCOL_VERSION};
+use Air::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Configuration::ConfigurationManager, Downloader::DownloadManager, Indexing::FileIndexer, Updates::UpdateManager};
 
 // =============================================================================
 // Debug Helpers
@@ -190,7 +190,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("[Boot] [Vine] gRPC server would be configured on {} (currently disabled)", bind_addr);
     
     // Create a dummy future that never completes (placeholder for gRPC server)
-    let server = std::future::pending::<Result<(), tonic::transport::Error>>();
+    let _server = std::future::pending::<Result<(), tonic::transport::Error>>();
     
     // Start connection monitoring background task
     let connection_monitor_handle: tokio::task::JoinHandle<()> = tokio::spawn({

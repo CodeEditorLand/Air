@@ -7,7 +7,7 @@
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
-use futures::StreamExt;
+
 
 use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::ConfigurationManager, utils};
 
@@ -202,27 +202,26 @@ impl DownloadManager {
         }
         
         let total_size = response.content_length().unwrap_or(0);
-        let mut downloaded: u64 = 0;
-        let mut stream = response.bytes_stream();
+        let downloaded: u64;
         
         let mut file = tokio::fs::File::create(destination).await
             .map_err(|e| AirError::FileSystem(format!("Failed to create destination file: {}", e)))?;
         
         use tokio::io::AsyncWriteExt;
         
-        while let Some(chunk) = stream.next().await {
-            let chunk = chunk.map_err(|e| AirError::Network(format!("Download error: {}", e)))?;
-            
-            file.write_all(&chunk).await
-                .map_err(|e| AirError::FileSystem(format!("Failed to write chunk: {}", e)))?;
-            
-            downloaded += chunk.len() as u64;
-            
-            // Update progress
-            if total_size > 0 {
-                let progress = (downloaded as f32 / total_size as f32) * 100.0;
-                self.update_download_status(download_id, DownloadState::Downloading, Some(progress), None).await?;
-            }
+        // Read the entire response body as bytes
+        let bytes = response.bytes().await
+            .map_err(|e| AirError::Network(format!("Download error: {}", e)))?;
+        
+        file.write_all(&bytes).await
+            .map_err(|e| AirError::FileSystem(format!("Failed to write file: {}", e)))?;
+        
+        downloaded = bytes.len() as u64;
+        
+        // Update progress
+        if total_size > 0 {
+            let progress = (downloaded as f32 / total_size as f32) * 100.0;
+            self.update_download_status(download_id, DownloadState::Downloading, Some(progress), None).await?;
         }
         
         // Calculate checksum

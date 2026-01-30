@@ -6,7 +6,7 @@
 use std::{path::PathBuf, sync::Arc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
-use futures::StreamExt;
+
 
 use crate::{ApplicationState::ApplicationState, Result, AirError, Configuration::ConfigurationManager};
 
@@ -158,8 +158,7 @@ impl UpdateManager {
         }
         
         let total_size = response.content_length().unwrap_or(0);
-        let mut downloaded: u64 = 0;
-        let mut stream = response.bytes_stream();
+        let downloaded: u64;
         
         let file_path = self.cache_directory.join(format!("update-{}.bin", update_info.version));
         let mut file = tokio::fs::File::create(&file_path).await
@@ -167,21 +166,21 @@ impl UpdateManager {
         
         use tokio::io::AsyncWriteExt;
         
-        while let Some(chunk) = stream.next().await {
-            let chunk = chunk.map_err(|e| AirError::Network(format!("Download error: {}", e)))?;
+        // Read the entire response body as bytes
+        let bytes = response.bytes().await
+            .map_err(|e| AirError::Network(format!("Download error: {}", e)))?;
+        
+        file.write_all(&bytes).await
+            .map_err(|e| AirError::FileSystem(format!("Failed to write update file: {}", e)))?;
+        
+        downloaded = bytes.len() as u64;
+        
+        // Update progress
+        if total_size > 0 {
+            let progress = (downloaded as f32 / total_size as f32) * 100.0;
             
-            file.write_all(&chunk).await
-                .map_err(|e| AirError::FileSystem(format!("Failed to write update chunk: {}", e)))?;
-            
-            downloaded += chunk.len() as u64;
-            
-            // Update progress
-            if total_size > 0 {
-                let progress = (downloaded as f32 / total_size as f32) * 100.0;
-                
-                let mut status = self.update_status.lock().await;
-                status.download_progress = Some(progress);
-            }
+            let mut status = self.update_status.lock().await;
+            status.download_progress = Some(progress);
         }
         
         // Verify checksum
