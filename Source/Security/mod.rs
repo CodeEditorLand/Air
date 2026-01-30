@@ -331,7 +331,7 @@ impl SecureStorage {
             cipher_text,
             salt,
             nonce: nonce_str,
-            created_at: crate::utils::current_timestamp(),
+            created_at: crate::utils::CurrentTimestamp(),
         };
         
         let mut storage = self.credentials.write().await;

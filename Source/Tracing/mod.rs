@@ -113,7 +113,7 @@ impl TraceGenerator {
             trace_id: trace_id.clone(),
             parent_span_id: parent_span_id.clone(),
             operation_name: operation_name.clone(),
-            start_time: crate::utils::current_timestamp(),
+            start_time: crate::utils::CurrentTimestamp(),
             end_time: None,
             status: SpanStatus::Started,
             attributes: HashMap::new(),
@@ -136,7 +136,7 @@ impl TraceGenerator {
         attributes: HashMap<String, String>,
     ) -> Result<()> {
         let event = SpanEvent {
-            timestamp: crate::utils::current_timestamp(),
+            timestamp: crate::utils::CurrentTimestamp(),
             name: event_name.into(),
             attributes,
         };
@@ -163,7 +163,7 @@ impl TraceGenerator {
     
     /// Complete a span
     pub async fn complete_span(&self, span_id: &str, error: Option<String>) -> Result<u64> {
-        let now = crate::utils::current_timestamp();
+        let now = crate::utils::CurrentTimestamp();
         let mut spans = self.trace_spans.write().await;
         
         if let Some(span) = spans.get_mut(span_id) {
@@ -270,7 +270,7 @@ impl TraceGenerator {
     
     /// Clean up old spans (older than specified milliseconds)
     pub async fn cleanup_old_spans(&self, older_than_ms: u64) -> Result<usize> {
-        let now = crate::utils::current_timestamp();
+        let now = crate::utils::CurrentTimestamp();
         let mut spans = self.trace_spans.write().await;
         let original_len = spans.len();
         
@@ -322,7 +322,7 @@ pub fn get_propagation_context() -> Option<PropagationContext> {
 /// Create a propagation context from a trace span
 pub async fn create_propagation_context(trace_id: String, parent_span_id: Option<String>) -> PropagationContext {
     let span_id = TraceGenerator::generate_span_id();
-    let correlation_id = crate::utils::generate_request_id();
+    let correlation_id = crate::utils::GenerateRequestId();
     
     PropagationContext {
         trace_id,

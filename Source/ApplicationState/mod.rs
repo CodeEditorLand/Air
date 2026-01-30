@@ -121,14 +121,14 @@ impl ApplicationState {
                 failed_requests: 0,
                 average_response_time: 0.0,
                 uptime_seconds: 0,
-                last_updated: utils::current_timestamp(),
+                last_updated: utils::CurrentTimestamp(),
             })),
             resources: Arc::new(RwLock::new(ResourceUsage {
                 memory_usage_mb: 0.0,
                 cpu_usage_percent: 0.0,
                 disk_usage_mb: 0.0,
                 network_usage_mbps: 0.0,
-                last_updated: utils::current_timestamp(),
+                last_updated: utils::CurrentTimestamp(),
             })),
             connections: Arc::new(RwLock::new(HashMap::new())),
             background_tasks: Arc::new(Mutex::new(Vec::new())),
@@ -170,7 +170,7 @@ impl ApplicationState {
             client_id: client_id.clone(),
             client_version,
             protocol_version,
-            last_heartbeat: utils::current_timestamp(),
+            last_heartbeat: utils::CurrentTimestamp(),
             is_active: true,
             connection_type,
         });
@@ -184,7 +184,7 @@ impl ApplicationState {
         let mut connections = self.connections.write().await;
         
         if let Some(connection) = connections.get_mut(connection_id) {
-            connection.last_heartbeat = utils::current_timestamp();
+            connection.last_heartbeat = utils::CurrentTimestamp();
             connection.is_active = true;
             log::debug!("Heartbeat updated for connection: {}", connection_id);
         } else {
@@ -216,7 +216,7 @@ impl ApplicationState {
     /// Clean up stale connections
     pub async fn cleanup_stale_connections(&self, timeout_seconds: u64) -> Result<usize> {
         let mut connections = self.connections.write().await;
-        let current_time = utils::current_timestamp();
+        let current_time = utils::CurrentTimestamp();
         let timeout_ms = timeout_seconds * 1000;
         
         let mut removed_count = 0;
@@ -278,7 +278,7 @@ impl ApplicationState {
         requests.insert(request_id.clone(), RequestStatus {
             request_id: request_id.clone(),
             service,
-            started_at: utils::current_timestamp(),
+            started_at: utils::CurrentTimestamp(),
             status: RequestState::Pending,
             progress: None,
         });
@@ -323,7 +323,7 @@ impl ApplicationState {
         metrics.average_response_time = alpha * (response_time as f64) + 
             (1.0 - alpha) * metrics.average_response_time;
         
-        metrics.last_updated = utils::current_timestamp();
+        metrics.last_updated = utils::CurrentTimestamp();
         
         Ok(())
     }
@@ -345,7 +345,7 @@ impl ApplicationState {
             }
         }
         
-        resources.last_updated = utils::current_timestamp();
+        resources.last_updated = utils::CurrentTimestamp();
         
         Ok(())
     }

@@ -26,8 +26,8 @@ pub struct LogContext {
 impl LogContext {
     /// Create a new log context
     pub fn new(operation: impl Into<String>) -> Self {
-        let request_id = crate::utils::generate_request_id();
-        let trace_id = crate::utils::generate_request_id();
+        let request_id = crate::utils::GenerateRequestId();
+        let trace_id = crate::utils::GenerateRequestId();
         let span_id = uuid::Uuid::new_v4().to_string();
         
         Self {

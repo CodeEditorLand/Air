@@ -3,6 +3,33 @@
 //! Handles user authentication, token management, and cryptographic operations
 //! for the Air daemon. This service manages secure storage of credentials
 //! and provides authentication services to Mountain with resilient patterns.
+//!
+//! ## File Responsibilities
+//! - User authentication and session management
+//! - Cryptographic key generation and management
+//! - Secure credential storage and encryption
+//! - Token generation and validation
+//! - Background session cleanup and maintenance
+//! - Integration with application state management
+//! - Error handling and recovery patterns
+//!
+//! ## TODO
+//! - [ ] Implement multi-factor authentication support
+//! - [ ] Add OAuth2 and OpenID Connect integration
+//! - [ ] Implement biometric authentication support
+//! - [ ] Add password policy enforcement
+//! - [ ] Implement session timeout and renewal
+//! - [ ] Add audit logging for authentication events
+//! - [ ] Implement secure password reset mechanisms
+//! - [ ] Add support for hardware security modules
+//! - [ ] Implement rate limiting and brute force protection
+//! - [ ] Add comprehensive security testing
+//! - [ ] Implement proper key rotation and management
+//! - [ ] Add support for certificate-based authentication
+//! - [ ] Implement secure session storage
+//! - [ ] Add support for federated identity providers
+//! - [ ] Implement proper error handling and recovery
+//! - [ ] Add performance optimization and caching
 
 use std::{collections::HashMap, sync::Arc};
 use chrono::{DateTime, Utc};
@@ -113,7 +140,7 @@ impl AuthenticationService {
         
         // Create session
         let session = AuthSession {
-            session_id: utils::generate_request_id(),
+            session_id: utils::GenerateRequestId(),
             user_id: username.clone(),
             provider: provider.clone(),
             token: token.clone(),
@@ -163,7 +190,7 @@ impl AuthenticationService {
     async fn generate_session_token(&self, username: &str, provider: &str) -> Result<String> {
         let crypto_keys = self.crypto_keys.lock().await;
         
-        let payload = format!("{}:{}:{}", username, provider, utils::current_timestamp());
+        let payload = format!("{}:{}:{}", username, provider, utils::CurrentTimestamp());
         
         // Sign the payload
         let signature = crypto_keys.signing_key.sign(payload.as_bytes());

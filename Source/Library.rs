@@ -3,6 +3,25 @@
 //! Core library for the Air daemon - the persistent background service for Land.
 //! Provides services for authentication, updates, downloads, and file indexing
 //! that run independently from the main Mountain application.
+//!
+//! ## File Responsibilities
+//! - Main library entry point for Air daemon services
+//! - Module declarations and re-exports for all Air components
+//! - Common error types and utility functions
+//! - Protocol version management and configuration defaults
+//! - Service orchestration and lifecycle management
+//!
+//! ## TODO
+//! - [ ] Add comprehensive integration tests for all service modules
+//! - [ ] Implement proper service discovery and health monitoring
+//! - [ ] Add metrics collection and reporting capabilities
+//! - [ ] Implement secure credential storage and rotation
+//! - [ ] Add plugin system extensibility points
+//! - [ ] Implement graceful shutdown and restart procedures
+//! - [ ] Add comprehensive logging and audit trail
+//! - [ ] Implement backup and recovery mechanisms
+//! - [ ] Add performance optimization and caching
+//! - [ ] Implement proper error handling and recovery patterns
 
 #![allow(non_snake_case, non_camel_case_types)]
 

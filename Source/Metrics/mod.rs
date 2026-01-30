@@ -227,7 +227,7 @@ impl MetricsCollector {
     /// Get metrics as structured data
     pub fn get_metrics_data(&self) -> MetricsData {
         MetricsData {
-            timestamp: crate::utils::current_timestamp(),
+            timestamp: crate::utils::CurrentTimestamp(),
             requests_total: self.requests_total.get(),
             requests_successful: self.requests_successful.get(),
             requests_failed: self.requests_failed.get(),

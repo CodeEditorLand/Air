@@ -189,7 +189,7 @@ impl HealthCheckManager {
     
     /// Perform health check for a service
     pub async fn check_service(&self, service_name: &str) -> Result<HealthStatus> {
-        let start_time = utils::current_timestamp();
+        let start_time = utils::CurrentTimestamp();
         
         // Perform service-specific health check
         let (status, error_message) = match service_name {
@@ -205,7 +205,7 @@ impl HealthCheckManager {
             }
         };
         
-        let response_time = utils::current_timestamp() - start_time;
+        let response_time = utils::CurrentTimestamp() - start_time;
         
         // Update service health
         self.update_service_health(service_name, status.clone(), &error_message, response_time).await?;
@@ -275,12 +275,12 @@ impl HealthCheckManager {
         
         if let Some(service_health) = health_map.get_mut(service_name) {
             service_health.status = status.clone();
-            service_health.last_check = utils::current_timestamp();
+            service_health.last_check = utils::CurrentTimestamp();
             service_health.response_time_ms = Some(response_time);
             
             match status {
                 HealthStatus::Healthy => {
-                    service_health.last_success = Some(utils::current_timestamp());
+                    service_health.last_success = Some(utils::CurrentTimestamp());
                     service_health.failure_count = 0;
                     service_health.error_message = None;
                 }
@@ -311,7 +311,7 @@ impl HealthCheckManager {
         let mut history = self.health_history.write().await;
         
         let record = HealthCheckRecord {
-            timestamp: utils::current_timestamp(),
+            timestamp: utils::CurrentTimestamp(),
             service_name: service_name.to_string(),
             status,
             response_time_ms: Some(response_time),
@@ -538,7 +538,7 @@ impl HealthCheckResponse {
             statistics,
             performance_indicators: PerformanceIndicators::default(),
             resource_warnings: Vec::new(),
-            timestamp: utils::current_timestamp(),
+            timestamp: utils::CurrentTimestamp(),
         }
     }
     
