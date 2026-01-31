@@ -71,8 +71,6 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use rand::Rng;
 
-...existing code...
-
 /// Error classification for adaptive retry policies
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ErrorClass {

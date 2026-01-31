@@ -1,3 +1,5 @@
+#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals)]
+
 //! # Air Library
 //!
 //! ## Overview
@@ -139,25 +141,25 @@
 /// - [ ] Implement adaptive timeout based on load
 /// - [ ] Add predictive scaling based on metrics
 /// - [ ] Implement chaos testing/metrics
-//!
-//! ## Error Handling Strategy
-//!
-//! All modules use defensive coding practices:
-//!
-//! 1. **Input Validation**: All public functions validate inputs with descriptive errors
-//! 2. **Timeout Handling**: Default timeouts with configuration overrides
-//! 3. **Resource Cleanup**: Drop trait + explicit cleanup methods
-//! 4. **Circuit Breaker**: Fail-fast for external dependencies
-//! 5. **Retry Logic**: Exponential backoff for transient failures
-//! 6. **Metrics Recording**: All operations record success/failure metrics
-//! 7. **Panic Recovery**: Catch panics in critical async tasks
-//!
-//! ## Constants
-//!
-//! - **VERSION**: Air daemon version from Cargo.toml
-//! - **DefaultConfigFile**: Default config filename (air.toml)
-//! - **DefaultBindAddress**: gRPC bind address ([::1]:50053)
-//! - **ProtocolVersion**: Vine protocol version (1)
+///
+/// ## Error Handling Strategy
+///
+/// All modules use defensive coding practices:
+///
+/// 1. **Input Validation**: All public functions validate inputs with descriptive errors
+/// 2. **Timeout Handling**: Default timeouts with configuration overrides
+/// 3. **Resource Cleanup**: Drop trait + explicit cleanup methods
+/// 4. **Circuit Breaker**: Fail-fast for external dependencies
+/// 5. **Retry Logic**: Exponential backoff for transient failures
+/// 6. **Metrics Recording**: All operations record success/failure metrics
+/// 7. **Panic Recovery**: Catch panics in critical async tasks
+///
+/// ## Constants
+///
+/// - **VERSION**: Air daemon version from Cargo.toml
+/// - **DefaultConfigFile**: Default config filename (air.toml)
+/// - **DefaultBindAddress**: gRPC bind address ([::1]:50053)
+/// - **ProtocolVersion**: Vine protocol version (1)
 
 #![allow(non_snake_case, non_camel_case_types)]
 
