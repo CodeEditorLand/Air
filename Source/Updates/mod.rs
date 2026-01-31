@@ -85,6 +85,7 @@ use tokio::{
 use sha2::{Digest, Sha256};
 use ring::digest;
 use uuid::Uuid;
+use md5;
 
 use crate::{AirError, ApplicationState::ApplicationState, Configuration::ConfigurationManager, Result};
 
@@ -418,7 +419,7 @@ impl UpdateManager {
 		let config = &app_state.configuration.updates;
 
 		// Expand cache directory path
-		let cache_directory = ConfigurationManager::expand_path(&app_state.configuration.downloader.cache_directory)?;
+		let cache_directory = ConfigurationManager::ExpandPath(&app_state.configuration.downloader.cache_directory)?;
 
 		// Create cache directory if it doesn't exist
 		tokio::fs::create_dir_all(&cache_directory)
@@ -1763,10 +1764,8 @@ impl UpdateManager {
 
 	/// Calculate MD5 checksum of a byte slice
 	fn CalculateMd5(&self, data:&[u8]) -> String {
-		use md5::Md5;
-		let mut hasher = Md5::new();
-		hasher.update(data);
-		format!("{:x}", hasher.finalize())
+		let digest = md5::compute(data);
+		format!("{:x}", digest)
 	}
 
 	/// Calculate CRC32 checksum of a byte slice

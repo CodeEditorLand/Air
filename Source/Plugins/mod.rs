@@ -268,21 +268,21 @@ impl PluginMessage {
     }
 
     /// Validate message format and content
-    pub fn validate(&self) -> Result<(), String> {
+    pub fn validate(&self) -> Result<()> {
         if self.id.is_empty() {
-            return Err("Message ID cannot be empty".to_string());
+            return Err(crate::AirError::Plugin("Message ID cannot be empty".to_string()));
         }
         if self.from.is_empty() {
-            return Err("Message sender cannot be empty".to_string());
+            return Err(crate::AirError::Plugin("Message sender cannot be empty".to_string()));
         }
         if self.to.is_empty() {
-            return Err("Message recipient cannot be empty".to_string());
+            return Err(crate::AirError::Plugin("Message recipient cannot be empty".to_string()));
         }
         if self.action.is_empty() {
-            return Err("Message action cannot be empty".to_string());
+            return Err(crate::AirError::Plugin("Message action cannot be empty".to_string()));
         }
         if self.action.len() > 100 {
-            return Err("Message action too long".to_string());
+            return Err(crate::AirError::Plugin("Message action too long".to_string()));
         }
         Ok(())
     }
@@ -447,30 +447,30 @@ impl PluginManager {
     }
 
     /// Validate plugin metadata
-    pub fn validate_plugin_metadata(&self, metadata: &PluginMetadata) -> Result<(), String> {
+    pub fn validate_plugin_metadata(&self, metadata: &PluginMetadata) -> Result<()> {
         if metadata.id.is_empty() {
-            return Err("Plugin ID cannot be empty".to_string());
+            return Err(crate::AirError::Plugin("Plugin ID cannot be empty".to_string()));
         }
         if metadata.id.len() > 100 {
-            return Err("Plugin ID too long (max 100 characters)".to_string());
+            return Err(crate::AirError::Plugin("Plugin ID too long (max 100 characters)".to_string()));
         }
         if !metadata.id.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
-            return Err("Plugin ID contains invalid characters".to_string());
+            return Err(crate::AirError::Plugin("Plugin ID contains invalid characters".to_string()));
         }
         if metadata.name.is_empty() {
-            return Err("Plugin name cannot be empty".to_string());
+            return Err(crate::AirError::Plugin("Plugin name cannot be empty".to_string()));
         }
         if metadata.version.is_empty() {
-            return Err("Plugin version cannot be empty".to_string());
+            return Err(crate::AirError::Plugin("Plugin version cannot be empty".to_string()));
         }
         if metadata.author.is_empty() {
-            return Err("Plugin author cannot be empty".to_string());
+            return Err(crate::AirError::Plugin("Plugin author cannot be empty".to_string()));
         }
         Ok(())
     }
 
     /// Validate plugin capabilities and permissions
-    pub fn validate_capabilities_and_permissions(&self, plugin: &dyn Plugin) -> Result<(), String> {
+    pub fn validate_capabilities_and_permissions(&self, plugin: &dyn Plugin) -> Result<()> {
         let permissions = plugin.permissions();
 
         // Check for dangerous permissions
@@ -1172,16 +1172,16 @@ impl ApiVersion {
     }
 
     /// Parse version from string
-    pub fn parse(version: &str) -> Result<Self, String> {
+    pub fn parse(version: &str) -> Result<Self> {
         let parts: Vec<&str> = version.split('.').collect();
         if parts.len() < 3 {
-            return Err("Invalid version format".to_string());
+            return Err(crate::AirError::Plugin("Invalid version format".to_string()));
         }
 
         Ok(Self {
-            major: parts[0].parse().map_err(|_| "Invalid major version")?,
-            minor: parts[1].parse().map_err(|_| "Invalid minor version")?,
-            patch: parts[2].parse().map_err(|_| "Invalid patch version")?,
+            major: parts[0].parse().map_err(|_| crate::AirError::Plugin("Invalid major version".to_string()))?,
+            minor: parts[1].parse().map_err(|_| crate::AirError::Plugin("Invalid minor version".to_string()))?,
+            patch: parts[2].parse().map_err(|_| crate::AirError::Plugin("Invalid patch version".to_string()))?,
             pre_release: if parts.len() > 3 { Some(parts[3].to_string()) } else { None },
         })
     }

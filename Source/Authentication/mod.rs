@@ -73,7 +73,7 @@ impl AuthenticationService {
         let config = &app_state.configuration.authentication;
         
         // Expand credentials path
-        let credentials_path = ConfigurationManager::expand_path(&config.credentials_path)?;
+        let credentials_path = ConfigurationManager::ExpandPath(&config.credentials_path)?;
         
         // Load or create credentials store
         let credentials_store = Self::load_credentials_store(&credentials_path).await?;

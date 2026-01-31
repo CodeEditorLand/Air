@@ -91,7 +91,6 @@ use tokio::{
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Result as NotifyResult, Watcher};
 use chrono::{DateTime, Utc};
 use log::{debug, error, info, trace, warn};
-use futures_util::StreamExt;
 
 use crate::{AirError, Configuration::AirConfiguration, Result};
 
@@ -99,10 +98,9 @@ use crate::{AirError, Configuration::AirConfiguration, Result};
 // Configuration Hot-Reload Manager
 // =============================================================================
 
-/// Configuration hot-reload manager with comprehensive file watching and
-/// validation
+/// Configuration hot-reload manager with file watching and validation
 pub struct ConfigHotReload {
-	/// Current active configuration (read-optimized)
+	/// Current active configuration
 	active_config:Arc<RwLock<AirConfiguration>>,
 
 	/// Previous configuration for rollback
@@ -115,7 +113,7 @@ pub struct ConfigHotReload {
 	config_path:PathBuf,
 
 	/// File watcher for monitoring changes
-	watcher:Option<Arc<RwLock<RecommendedWatcher>>>,
+	watcher:Option<Arc<RwLock<notify::RecommendedWatcher>>>,
 
 	/// Change notification sender for subscribers
 	change_sender:broadcast::Sender<ConfigChangeEvent>,
@@ -154,7 +152,7 @@ pub struct ConfigHotReload {
 	retry_delay:Duration,
 
 	/// Whether automatic rollback is enabled on validation failure
-	auto_rollback_enabled:bool,
+	auto_rollback_enabled:Arc<RwLock<bool>>,
 }
 
 /// Configuration change event for subscribers
@@ -219,63 +217,6 @@ pub trait ConfigValidator: Send + Sync {
 
 	/// Get priority (higher validators run first)
 	fn priority(&self) -> u32 { 0 }
-}
-
-// =============================================================================
-// Configuration Hot-Reload Manager
-// =============================================================================
-
-/// Configuration hot-reload manager with file watching and validation
-pub struct ConfigHotReload {
-	/// Current active configuration
-	active_config:Arc<RwLock<AirConfiguration>>,
-
-	/// Previous configuration for rollback
-	previous_config:Arc<RwLock<Option<AirConfiguration>>>,
-
-	/// Configuration file path
-	config_path:PathBuf,
-
-	/// File watcher for monitoring changes
-	watcher:Option<Arc<RwLock<notify::RecommendedWatcher>>>,
-
-	/// Change history for auditing
-	change_history:Arc<RwLock<Vec<ConfigChangeRecord>>>,
-
-	/// Last reload timestamp
-	last_reload:Arc<RwLock<Option<DateTime<Utc>>>>,
-
-	/// Whether hot-reload is enabled
-	enabled:Arc<RwLock<bool>>,
-
-	/// Validation callbacks
-	validators:Arc<RwLock<Vec<Box<dyn ConfigValidator>>>>,
-}
-
-/// Configuration change record
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ConfigChangeRecord {
-	pub timestamp:DateTime<Utc>,
-	pub changes:Vec<ConfigChange>,
-	pub validated:bool,
-	pub reason:String,
-}
-
-/// Individual configuration change
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ConfigChange {
-	pub path:String,
-	pub old_value:serde_json::Value,
-	pub new_value:serde_json::Value,
-}
-
-/// Configuration validation trait
-pub trait ConfigValidator: Send + Sync {
-	/// Validate a configuration
-	fn validate(&self, config:&AirConfiguration) -> Result<()>;
-
-	/// Get validator name
-	fn name(&self) -> &str;
 }
 
 // =============================================================================
@@ -652,7 +593,7 @@ impl ConfigHotReload {
 			validators:Arc::new(RwLock::new(Self::DefaultValidators())),
 			max_retries:3,
 			retry_delay:Duration::from_secs(1),
-			auto_rollback_enabled:true,
+			auto_rollback_enabled:Arc::new(RwLock::new(true)),
 		};
 
 		// Initialize last config hash
@@ -721,7 +662,7 @@ impl ConfigHotReload {
 					.paths
 					.iter()
 					.any(|p| p == &config_path_clone || p == config_path_clone.as_path())
-					&& event.kind != EventKind::Access(AccessMode::Any);
+					&& event.kind != EventKind::Access(notify::event::AccessKind::Any);
 
 				if should_reload {
 					let _ = reload_tx.send(ReloadRequest::FileChange).await;
@@ -854,7 +795,7 @@ impl ConfigHotReload {
 		let error = last_error.unwrap_or_else(|| AirError::Configuration("Unknown error".to_string()));
 
 		// Attempt rollback if enabled
-		if self.auto_rollback_enabled {
+		if *self.auto_rollback_enabled.read().await {
 			info!("[HotReload] Attempting rollback due to reload failure");
 			if let Err(rollback_err) = self.Rollback().await {
 				error!("[HotReload] Rollback also failed: {}", rollback_err);
@@ -867,17 +808,21 @@ impl ConfigHotReload {
 	/// Attempt to reload configuration (single attempt)
 	async fn AttemptReload(&self) -> Result<()> {
 		// Load new configuration
-		let content = fs::read_to_string(&self.config_path).await.map_err(|e| {
+		let content = fs::read_to_string(&self.config_path).await;
+		if let Err(e) = content {
 			let mut stats = self.stats.write().await;
 			stats.parse_errors += 1;
-			AirError::Configuration(format!("Failed to read config file: {}", e))
-		})?;
+			return Err(AirError::Configuration(format!("Failed to read config file: {}", e)));
+		}
+		let content = content.unwrap();
 
-		let new_config:AirConfiguration = toml::from_str(&content).map_err(|e| {
+		let new_config:std::result::Result<AirConfiguration, toml::de::Error> = toml::from_str(&content);
+		if let Err(e) = new_config {
 			let mut stats = self.stats.write().await;
 			stats.parse_errors += 1;
-			AirError::Configuration(format!("Failed to parse config file: {}", e))
-		})?;
+			return Err(AirError::Configuration(format!("Failed to parse config file: {}", e)));
+		}
+		let new_config = new_config.unwrap();
 
 		// Validate new configuration
 		self.ValidateConfig(&new_config).await?;
@@ -917,8 +862,9 @@ impl ConfigHotReload {
 		history.push(record);
 
 		// Limit history size
-		if history.len() > 1000 {
-			history.drain(0..history.len() - 1000);
+		let history_len = history.len();
+		if history_len > 1000 {
+			history.drain(0..history_len - 1000);
 		}
 		drop(history);
 
@@ -957,13 +903,14 @@ impl ConfigHotReload {
 		sorted_validators.sort_by(|a, b| b.priority().cmp(&a.priority()));
 
 		for validator in sorted_validators {
-			validator.validate(config).map_err(|e| {
+			let result = validator.validate(config);
+			if let Err(e) = result {
 				let mut stats = self.stats.write().await;
 				stats.validation_errors += 1;
 				stats.last_error = Some(format!("{}: {}", validator.name(), e));
 				error!("[HotReload] Validation failed ({}): {}", validator.name(), e);
-				AirError::Configuration(format!("{}: {}", validator.name(), e))
-			})?;
+				return Err(AirError::Configuration(format!("{}: {}", validator.name(), e)));
+			}
 
 			trace!("[HotReload] Validator '{}' passed", validator.name());
 		}
@@ -1209,7 +1156,7 @@ impl ConfigHotReload {
 
 	/// Set whether auto-rollback is enabled
 	pub async fn SetAutoRollback(&self, enabled:bool) {
-		self.auto_rollback_enabled = enabled;
+		*self.auto_rollback_enabled.write().await = enabled;
 		info!("[HotReload] Auto-rollback {}", if enabled { "enabled" } else { "disabled" });
 	}
 
@@ -1223,8 +1170,6 @@ impl ConfigHotReload {
 
 	/// Set debounce delay
 	pub async fn SetDebounceDelay(&self, delay:Duration) {
-		*self.debounce_delay as _; // This is a bit awkward - would need to restructure
-
 		// For now, just log that debounce delay would be changed
 		// In a proper implementation, we'd make debounce_delay mutable or use
 		// Arc<RwLock<Duration>>

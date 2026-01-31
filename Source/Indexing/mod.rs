@@ -343,7 +343,7 @@ impl FileIndexer {
     
     /// Validate and expand path with traversal protection
     fn validate_and_expand_path(path: &str) -> Result<PathBuf> {
-        let expanded = ConfigurationManager::expand_path(path)?;
+        let expanded = ConfigurationManager::ExpandPath(path)?;
         
         // Prevent path traversal attacks
         let path_str = expanded.to_string_lossy();

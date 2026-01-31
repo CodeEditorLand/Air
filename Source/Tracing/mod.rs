@@ -109,18 +109,18 @@ impl Default for SamplingConfig {
 
 impl SamplingConfig {
     /// Validate sampling configuration
-    pub fn Validate(&self) -> Result<(), String> {
+    pub fn Validate(&self) -> Result<()> {
         if self.sample_rate < 0.0 || self.sample_rate > 1.0 {
-            return Err("sample_rate must be between 0.0 and 1.0".to_string());
+            return Err(crate::AirError::Internal("sample_rate must be between 0.0 and 1.0".to_string()));
         }
         if self.critical_sample_rate < 0.0 || self.critical_sample_rate > 1.0 {
-            return Err("critical_sample_rate must be between 0.0 and 1.0".to_string());
+            return Err(crate::AirError::Internal("critical_sample_rate must be between 0.0 and 1.0".to_string()));
         }
         if self.max_spans_per_trace == 0 {
-            return Err("max_spans_per_trace must be greater than 0".to_string());
+            return Err(crate::AirError::Internal("max_spans_per_trace must be greater than 0".to_string()));
         }
         if self.trace_ttl_ms == 0 {
-            return Err("trace_ttl_ms must be greater than 0".to_string());
+            return Err(crate::AirError::Internal("trace_ttl_ms must be greater than 0".to_string()));
         }
         Ok(())
     }
@@ -277,7 +277,7 @@ impl TraceGenerator {
         Ok(PropagationContext {
             trace_id,
             span_id: Self::GenerateSpanId(),
-            correlation_id: crate::utils::GenerateRequestId(),
+            correlation_id: crate::utils::generate_request_id(),
             parent_span_id,
         })
     }
@@ -298,7 +298,7 @@ impl TraceGenerator {
             trace_id: trace_id.clone(),
             parent_span_id: parent_span_id.clone(),
             operation_name: operation_name.clone(),
-            start_time: crate::utils::CurrentTimestamp(),
+            start_time: crate::utils::current_timestamp(),
             end_time: None,
             status: SpanStatus::Started,
             attributes: attributes.unwrap_or_default(),
@@ -334,7 +334,7 @@ impl TraceGenerator {
         attributes: HashMap<String, String>,
     ) -> Result<()> {
         let event = SpanEvent {
-            timestamp: crate::utils::CurrentTimestamp(),
+            timestamp: crate::utils::current_timestamp(),
             name: event_name.into(),
             attributes: self.sanitize_attributes(attributes),
         };
@@ -361,7 +361,7 @@ impl TraceGenerator {
 
     /// Complete a span with optional error
     pub async fn CompleteSpan(&self, span_id: &str, error: Option<String>) -> Result<u64> {
-        let now = crate::utils::CurrentTimestamp();
+        let now = crate::utils::current_timestamp();
         let mut spans = self.trace_spans.write().await;
 
         if let Some(span) = spans.get_mut(span_id) {
@@ -479,7 +479,7 @@ impl TraceGenerator {
 
     /// Clean up old spans (older than specified milliseconds)
     pub async fn CleanupOldSpans(&self, older_than_ms: Option<u64>) -> Result<usize> {
-        let now = crate::utils::CurrentTimestamp();
+        let now = crate::utils::current_timestamp();
         let ttl = older_than_ms.unwrap_or_else(|| {
             tokio::task::block_in_place(|| {
                 tokio::runtime::Handle::current().block_on(async {
@@ -625,7 +625,7 @@ pub fn GetPropagationContext() -> Option<PropagationContext> {
 /// Create a propagation context from a trace span
 pub async fn CreatePropagationContext(trace_id: String, parent_span_id: Option<String>) -> PropagationContext {
     let span_id = TraceGenerator::GenerateSpanId();
-    let correlation_id = crate::utils::GenerateRequestId();
+    let correlation_id = crate::utils::generate_request_id();
 
     PropagationContext {
         trace_id,

@@ -106,6 +106,7 @@ impl MetricGuard {
 }
 
 /// Aggregation validation for metric integrity
+#[derive(Debug)]
 struct AggregationValidator {
     last_timestamp: Instant,
     validation_window: Duration,
@@ -120,7 +121,7 @@ impl AggregationValidator {
     }
 
     /// Validate aggregation is within time window
-    fn validate(&mut self) -> Result<(), String> {
+    fn validate(&mut self) -> std::result::Result<(), String> {
         let now = Instant::now();
         if now.duration_since(self.last_timestamp) > self.validation_window {
             warn!("[Metrics] Aggregation outside validation window, resetting");
@@ -254,11 +255,12 @@ impl MetricsCollector {
 
         // Track error by type with redaction
         let redacted_error = self.redact_error_type(error_type);
+        let redacted_error_clone = redacted_error.clone();
         if let Ok(mut error_map) = self.errors_by_type.lock() {
             *error_map.entry(redacted_error).or_insert(0) += 1;
         }
 
-        debug!("[Metrics] Recorded failed request: {}, latency: {:.3}s", redacted_error, latency_seconds);
+        debug!("[Metrics] Recorded failed request: {}, latency: {:.3}s", redacted_error_clone, latency_seconds);
     }
 
     /// Update resource usage metrics with thread-safe atomic updates
@@ -408,7 +410,7 @@ impl MetricsCollector {
         };
 
         MetricsData {
-            timestamp: crate::utils::CurrentTimestamp(),
+            timestamp: crate::utils::current_timestamp(),
             requests_total: self.requests_total.load(Ordering::Relaxed),
             requests_successful: self.requests_successful.load(Ordering::Relaxed),
             requests_failed: self.requests_failed.load(Ordering::Relaxed),

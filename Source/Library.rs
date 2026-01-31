@@ -160,8 +160,8 @@
 /// - **DefaultConfigFile**: Default config filename (air.toml)
 /// - **DefaultBindAddress**: gRPC bind address ([::1]:50053)
 /// - **ProtocolVersion**: Vine protocol version (1)
-
-#![allow(non_snake_case, non_camel_case_types)]
+///
+/// #![allow(non_snake_case, non_camel_case_types)]
 
 pub mod ApplicationState;
 pub mod Authentication;
@@ -623,7 +623,7 @@ pub mod utils {
             .subsec_nanos() as u64;
         
         let jitter_range = (capped_delay / 4).max(1); // 25% of delay, at least 1ms
-        let jitter = (seed % (2 * jitter_range)) - jitter_range as i64;
+        let jitter = (seed % (2 * jitter_range)) as i64 - jitter_range as i64;
         
         // Apply jitter (ensure non-negative)
         ((capped_delay as i64) + jitter).max(0) as u64

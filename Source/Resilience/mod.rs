@@ -274,17 +274,14 @@ impl RetryManager {
     /// Check if retry is possible within budget
     /// Validates budget state before allowing retry
     pub async fn CanRetry(&self, service: &str) -> bool {
-        std::panic::catch_unwind(std::panic::AssertUnwindSafe(async {
+        async {
             let mut budgets = self.budgets.lock().await;
             let budget = budgets
                 .entry(service.to_string())
                 .or_insert_with(|| RetryBudget::new(self.policy.budget_per_minute));
 
             budget.can_retry()
-        })).await.unwrap_or_else(|e| {
-            log::error!("[RetryManager] Panic in CanRetry, defaulting to false: {:?}", e);
-            false
-        })
+        }.await
     }
 
     /// Publish a retry event for telemetry integration
@@ -395,12 +392,9 @@ impl CircuitBreaker {
 
     /// Get current state with panic recovery
     pub async fn GetState(&self) -> CircuitState {
-        std::panic::catch_unwind(std::panic::AssertUnwindSafe(async {
+        async {
             *self.state.read().await
-        })).await.unwrap_or_else(|e| {
-            log::error!("[CircuitBreaker] Panic in GetState for {}: {:?}", self.name, e);
-            CircuitState::Closed // Safe default
-        })
+        }.await
     }
 
     /// Validate state consistency across all counters
@@ -464,7 +458,7 @@ impl CircuitBreaker {
             name: self.name.clone(),
             from_state: current_state,
             to_state: new_state,
-            timestamp: crate::utils::CurrentTimestamp(),
+            timestamp: crate::utils::current_timestamp(),
             reason: reason.to_string(),
         };
         let _ = self.event_tx.send(event);
@@ -489,7 +483,7 @@ impl CircuitBreaker {
 
     /// Record a successful call with panic recovery
     pub async fn RecordSuccess(&self) {
-        std::panic::catch_unwind(std::panic::AssertUnwindSafe(async {
+        async {
             let state = self.GetState().await;
 
             match state {
@@ -511,14 +505,12 @@ impl CircuitBreaker {
                 }
                 _ => {}
             }
-        })).await.unwrap_or_else(|e| {
-            log::error!("[CircuitBreaker] Panic in RecordSuccess for {}: {:?}", self.name, e);
-        });
+        }.await
     }
 
     /// Record a failed call with panic recovery
     pub async fn RecordFailure(&self) {
-        std::panic::catch_unwind(std::panic::AssertUnwindSafe(async {
+        async {
             let state = self.GetState().await;
 
             *self.last_failure_time.write().await = Some(Instant::now());
@@ -542,14 +534,12 @@ impl CircuitBreaker {
                 }
                 _ => {}
             }
-        })).await.unwrap_or_else(|e| {
-            log::error!("[CircuitBreaker] Panic in RecordFailure for {}: {:?}", self.name, e);
-        });
+        }.await
     }
 
     /// Attempt to transition to half-open if timeout has elapsed with panic recovery
     pub async fn AttemptRecovery(&self) -> bool {
-        std::panic::catch_unwind(std::panic::AssertUnwindSafe(async {
+        async {
             let state = self.GetState().await;
 
             if state != CircuitState::Open {
@@ -565,10 +555,7 @@ impl CircuitBreaker {
             }
 
             false
-        })).await.unwrap_or_else(|e| {
-            log::error!("[CircuitBreaker] Panic in AttemptRecovery for {}: {:?}", self.name, e);
-            false
-        })
+        }.await
     }
 
     /// Get circuit breaker statistics for metrics
@@ -704,7 +691,8 @@ impl BulkheadExecutor {
     where
         F: std::future::Future<Output = Result<R, String>>,
     {
-        std::panic::catch_unwind(std::panic::AssertUnwindSafe(async {
+        async {
+
             // Validate timeout
             if self.config.timeout_secs == 0 {
                 return Err("Bulkhead timeout must be greater than 0".to_string());
@@ -770,27 +758,21 @@ impl BulkheadExecutor {
             }
 
             execution_result
-        })).await.unwrap_or_else(|e| {
-            log::error!("[Bulkhead] Panic in Execute for {}: {:?}", self.name, e);
-            Err(format!("Unexpected panic: {:?}", e))
-        })
+        }.await
     }
 
     /// Get current load with panic recovery
     pub async fn GetLoad(&self) -> (u32, u32) {
-        std::panic::catch_unwind(std::panic::AssertUnwindSafe(async {
+        async {
             let current = *self.current_requests.read().await;
             let queue = *self.queue_size.read().await;
             (current, queue)
-        })).await.unwrap_or_else(|e| {
-            log::error!("[Bulkhead] Panic in GetLoad for {}: {:?}", self.name, e);
-            (0, 0)
-        })
+        }.await
     }
 
     /// Get bulkhead statistics for metrics
     pub async fn GetStatistics(&self) -> BulkheadStatistics {
-        std::panic::catch_unwind(std::panic::AssertUnwindSafe(async {
+        async {
             BulkheadStatistics {
                 name: self.name.clone(),
                 current_concurrent: *self.current_requests.read().await,
@@ -801,19 +783,7 @@ impl BulkheadExecutor {
                 total_completed: *self.total_completed.read().await,
                 total_timed_out: *self.total_timed_out.read().await,
             }
-        })).await.unwrap_or_else(|e| {
-            log::error!("[Bulkhead] Panic in GetStatistics for {}: {:?}", self.name, e);
-            BulkheadStatistics {
-                name: self.name.clone(),
-                current_concurrent: 0,
-                current_queue: 0,
-                max_concurrent: self.config.max_concurrent,
-                max_queue: self.config.max_queue,
-                total_rejected: 0,
-                total_completed: 0,
-                total_timed_out: 0,
-            }
-        })
+        }.await
     }
 
     /// Calculate utilization percentage

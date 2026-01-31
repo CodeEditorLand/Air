@@ -281,7 +281,7 @@ impl HealthCheckManager {
 
 	/// Perform health check for a service
 	pub async fn CheckService(&self, service_name:&str) -> Result<HealthStatus> {
-		let start_time = utils::CurrentTimestamp();
+		let start_time = utils::current_timestamp();
 
 		// Perform service-specific health check with timeout
 		let check_timeout = tokio::time::Duration::from_secs(10);
@@ -309,7 +309,7 @@ impl HealthCheckManager {
 			)
 		})?;
 
-		let response_time = utils::CurrentTimestamp() - start_time;
+		let response_time = utils::current_timestamp() - start_time;
 
 		// Update service health
 		self.UpdateServiceHealth(service_name, status.clone(), &error_message, response_time)
@@ -539,7 +539,7 @@ impl HealthCheckManager {
 
 		if let Some(service_health) = health_map.get_mut(service_name) {
 			service_health.status = status.clone();
-			service_health.last_check = utils::CurrentTimestamp();
+			service_health.last_check = utils::current_timestamp();
 			service_health.response_time_ms = Some(response_time);
 
 			match status {
