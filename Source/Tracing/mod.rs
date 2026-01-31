@@ -399,7 +399,9 @@ impl TraceGenerator {
         let mut spans = self.trace_spans.write().await;
 
         if let Some(span) = spans.get_mut(span_id) {
-            span.attributes.extend(sanitized);
+            for (key, value) in sanitized {
+                span.attributes.insert(key, value);
+            }
             Ok(())
         } else {
             Err(AirError::Internal(format!("Span not found: {}", span_id)))

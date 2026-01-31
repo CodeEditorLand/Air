@@ -69,7 +69,6 @@ use std::time::{Duration, Instant};
 use tokio::sync::{RwLock, Mutex, broadcast};
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
-use rand::Rng;
 
 /// Error classification for adaptive retry policies
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -206,27 +205,21 @@ impl RetryManager {
     }
 
     /// Calculate next retry delay with exponential backoff and jitter
-    /// Panics are caught and logged, returning a safe default delay
     pub fn CalculateRetryDelay(&self, attempt: u32) -> Duration {
-        std::panic::catch_unwind(|| {
-            if attempt == 0 {
-                return Duration::from_millis(0);
-            }
+        if attempt == 0 {
+            return Duration::from_millis(0);
+        }
 
-            let base_delay = (self.policy.initial_interval_ms as f64
-                * self.policy.backoff_multiplier.powi(attempt as i32 - 1))
-                .min(self.policy.max_interval_ms as f64) as u64;
+        let base_delay = (self.policy.initial_interval_ms as f64
+            * self.policy.backoff_multiplier.powi(attempt as i32 - 1))
+            .min(self.policy.max_interval_ms as f64) as u64;
 
-            // Add jitter
-            let jitter = (base_delay as f64 * self.policy.jitter_factor) as u64;
-            let random_jitter = (rand::random::<f64>() * jitter as f64) as u64;
-            let final_delay = base_delay + random_jitter;
+        // Add jitter
+        let jitter = (base_delay as f64 * self.policy.jitter_factor) as u64;
+        let random_jitter = (rand::random::<f64>() * jitter as f64) as u64;
+        let final_delay = base_delay + random_jitter;
 
-            Duration::from_millis(final_delay)
-        }).unwrap_or_else(|e| {
-            log::error!("[RetryManager] Panic in CalculateRetryDelay, using default: {:?}", e);
-            Duration::from_secs(1)
-        })
+        Duration::from_millis(final_delay)
     }
 
     /// Calculate adaptive retry delay based on error classification
@@ -274,14 +267,12 @@ impl RetryManager {
     /// Check if retry is possible within budget
     /// Validates budget state before allowing retry
     pub async fn CanRetry(&self, service: &str) -> bool {
-        async {
-            let mut budgets = self.budgets.lock().await;
-            let budget = budgets
-                .entry(service.to_string())
-                .or_insert_with(|| RetryBudget::new(self.policy.budget_per_minute));
+        let mut budgets = self.budgets.lock().await;
+        let budget = budgets
+            .entry(service.to_string())
+            .or_insert_with(|| RetryBudget::new(self.policy.budget_per_minute));
 
-            budget.can_retry()
-        }.await
+        budget.can_retry()
     }
 
     /// Publish a retry event for telemetry integration
@@ -392,9 +383,7 @@ impl CircuitBreaker {
 
     /// Get current state with panic recovery
     pub async fn GetState(&self) -> CircuitState {
-        async {
-            *self.state.read().await
-        }.await
+        *self.state.read().await
     }
 
     /// Validate state consistency across all counters
@@ -483,79 +472,73 @@ impl CircuitBreaker {
 
     /// Record a successful call with panic recovery
     pub async fn RecordSuccess(&self) {
-        async {
-            let state = self.GetState().await;
+        let state = self.GetState().await;
 
-            match state {
-                CircuitState::Closed => {
-                    // Reset counters
-                    *self.failure_count.write().await = 0;
-                }
-                CircuitState::HalfOpen => {
-                    // Increment success count
-                    let mut success_count = self.success_count.write().await;
-                    *success_count += 1;
-
-                    if *success_count >= self.config.success_threshold {
-                        // Close the circuit
-                        let _ = self.TransitionState(CircuitState::Closed, "Success threshold reached").await;
-                        *self.failure_count.write().await = 0;
-                        *self.success_count.write().await = 0;
-                    }
-                }
-                _ => {}
+        match state {
+            CircuitState::Closed => {
+                // Reset counters
+                *self.failure_count.write().await = 0;
             }
-        }.await
+            CircuitState::HalfOpen => {
+                // Increment success count
+                let mut success_count = self.success_count.write().await;
+                *success_count += 1;
+
+                if *success_count >= self.config.success_threshold {
+                    // Close the circuit
+                    let _ = self.TransitionState(CircuitState::Closed, "Success threshold reached").await;
+                    *self.failure_count.write().await = 0;
+                    *self.success_count.write().await = 0;
+                }
+            }
+            _ => {}
+        }
     }
 
     /// Record a failed call with panic recovery
     pub async fn RecordFailure(&self) {
-        async {
-            let state = self.GetState().await;
+        let state = self.GetState().await;
 
-            *self.last_failure_time.write().await = Some(Instant::now());
+        *self.last_failure_time.write().await = Some(Instant::now());
 
-            match state {
-                CircuitState::Closed => {
-                    // Increment failure count
-                    let mut failure_count = self.failure_count.write().await;
-                    *failure_count += 1;
+        match state {
+            CircuitState::Closed => {
+                // Increment failure count
+                let mut failure_count = self.failure_count.write().await;
+                *failure_count += 1;
 
-                    if *failure_count >= self.config.failure_threshold {
-                        // Open the circuit
-                        let _ = self.TransitionState(CircuitState::Open, "Failure threshold reached").await;
-                        *self.success_count.write().await = 0;
-                    }
-                }
-                CircuitState::HalfOpen => {
-                    // Return to open state
-                    let _ = self.TransitionState(CircuitState::Open, "Failure in half-open state").await;
+                if *failure_count >= self.config.failure_threshold {
+                    // Open the circuit
+                    let _ = self.TransitionState(CircuitState::Open, "Failure threshold reached").await;
                     *self.success_count.write().await = 0;
                 }
-                _ => {}
             }
-        }.await
+            CircuitState::HalfOpen => {
+                // Return to open state
+                let _ = self.TransitionState(CircuitState::Open, "Failure in half-open state").await;
+                *self.success_count.write().await = 0;
+            }
+            _ => {}
+        }
     }
 
     /// Attempt to transition to half-open if timeout has elapsed with panic recovery
     pub async fn AttemptRecovery(&self) -> bool {
-        async {
-            let state = self.GetState().await;
+        let state = self.GetState().await;
 
-            if state != CircuitState::Open {
-                return state == CircuitState::HalfOpen;
+        if state != CircuitState::Open {
+            return state == CircuitState::HalfOpen;
+        }
+
+        if let Some(last_failure) = *self.last_failure_time.read().await {
+            if last_failure.elapsed() >= Duration::from_secs(self.config.timeout_secs) {
+                let _ = self.TransitionState(CircuitState::HalfOpen, "Recovery timeout elapsed").await;
+                *self.success_count.write().await = 0;
+                return true;
             }
+        }
 
-            if let Some(last_failure) = *self.last_failure_time.read().await {
-                if last_failure.elapsed() >= Duration::from_secs(self.config.timeout_secs) {
-                    let _ = self.TransitionState(CircuitState::HalfOpen, "Recovery timeout elapsed").await;
-                    *self.success_count.write().await = 0;
-                    return true;
-                }
-            }
-
-            false
-        }.await
+        false
     }
 
     /// Get circuit breaker statistics for metrics
@@ -586,14 +569,70 @@ impl CircuitBreaker {
 }
 
 /// Circuit breaker statistics for metrics export
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct CircuitStatistics {
     pub name: String,
     pub state: CircuitState,
     pub failures: u32,
     pub successes: u32,
     pub state_transitions: u32,
+    #[serde(skip_serializing)]
     pub last_failure_time: Option<Instant>,
+}
+
+impl<'de> Deserialize<'de> for CircuitStatistics {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        use serde::de::{self, Visitor};
+        
+        struct CircuitStatisticsVisitor;
+        
+        impl<'de> Visitor<'de> for CircuitStatisticsVisitor {
+            type Value = CircuitStatistics;
+            
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("struct CircuitStatistics")
+            }
+            
+            fn visit_map<A>(self, mut map: A) -> std::result::Result<CircuitStatistics, A::Error>
+            where
+                A: de::MapAccess<'de>,
+            {
+                let mut name = None;
+                let mut state = None;
+                let mut failures = None;
+                let mut successes = None;
+                let mut state_transitions = None;
+                
+                while let Some(key) = map.next_key::<String>()? {
+                    match key.as_str() {
+                        "name" => name = Some(map.next_value()?),
+                        "state" => state = Some(map.next_value()?),
+                        "failures" => failures = Some(map.next_value()?),
+                        "successes" => successes = Some(map.next_value()?),
+                        "state_transitions" => state_transitions = Some(map.next_value()?),
+                        _ => {
+                            map.next_value::<de::IgnoredAny>()?;
+                        }
+                    }
+                }
+                
+                Ok(CircuitStatistics {
+                    name: name.ok_or_else(|| de::Error::missing_field("name"))?,
+                    state: state.ok_or_else(|| de::Error::missing_field("state"))?,
+                    failures: failures.ok_or_else(|| de::Error::missing_field("failures"))?,
+                    successes: successes.ok_or_else(|| de::Error::missing_field("successes"))?,
+                    state_transitions: state_transitions.ok_or_else(|| de::Error::missing_field("state_transitions"))?,
+                    last_failure_time: None,
+                })
+            }
+        }
+        
+        const FIELDS: &[&str] = &["name", "state", "failures", "successes", "state_transitions"];
+        deserializer.deserialize_struct("CircuitStatistics", FIELDS, CircuitStatisticsVisitor)
+    }
 }
 
 impl Clone for CircuitBreaker {
@@ -605,6 +644,8 @@ impl Clone for CircuitBreaker {
             failure_count: self.failure_count.clone(),
             success_count: self.success_count.clone(),
             last_failure_time: self.last_failure_time.clone(),
+            event_tx: self.event_tx.clone(),
+            state_transition_counter: self.state_transition_counter.clone(),
         }
     }
 }
@@ -733,25 +774,21 @@ impl BulkheadExecutor {
             *self.queue_size.write().await -= 1;
             *self.current_requests.write().await += 1;
 
-            let execution_result: Result<R, String> = std::panic::catch_unwind(std::panic::AssertUnwindSafe(async {
-                // Execute with timeout
-                tokio::time::timeout(
-                    Duration::from_secs(self.config.timeout_secs),
-                    f,
-                )
-                .await
-                .map_err(|_| {
-                    *self.total_timed_out.write().await += 1;
-                    "Bulkhead execution timeout".to_string()
-                })
-            })).await.unwrap_or_else(|e| {
-                log::error!("[Bulkhead] Panic during execution for {}: {:?}", self.name, e);
-                Err(format!("Panic in execution: {:?}", e))
-            });
+            // Execute with timeout (no catch_unwind to avoid interior mutability issues)
+            let execution_result = tokio::time::timeout(
+                Duration::from_secs(self.config.timeout_secs),
+                f,
+            )
+            .await;
 
-            // Decrement current requests and drop permit
-            *self.current_requests.write().await -= 1;
-            drop(permit);
+            let execution_result: Result<R, String> = match execution_result {
+                Ok(Ok(value)) => Ok(value),
+                Ok(Err(e)) => Err(e),
+                Err(_) => {
+                    *self.total_timed_out.write().await += 1;
+                    Err("Bulkhead execution timeout".to_string())
+                }
+            };
 
             if execution_result.is_ok() {
                 *self.total_completed.write().await += 1;
@@ -804,6 +841,9 @@ impl Clone for BulkheadExecutor {
             config: self.config.clone(),
             current_requests: self.current_requests.clone(),
             queue_size: self.queue_size.clone(),
+            total_rejected: self.total_rejected.clone(),
+            total_completed: self.total_completed.clone(),
+            total_timed_out: self.total_timed_out.clone(),
         }
     }
 }
@@ -843,6 +883,17 @@ impl TimeoutManager {
         Ok(())
     }
 
+    /// Validate timeout as Result for error handling
+    pub fn ValidateTimeoutResult(timeout: Duration) -> Result<Duration, String> {
+        if timeout.is_zero() {
+            return Err("Timeout must be greater than 0".to_string());
+        }
+        if timeout.as_secs() > 3600 {
+            return Err("Timeout cannot exceed 1 hour".to_string());
+        }
+        Ok(timeout)
+    }
+
     /// Get remaining time until deadline
     pub fn remaining(&self) -> Option<Duration> {
         self.global_deadline.map(|deadline| {
@@ -874,8 +925,10 @@ impl TimeoutManager {
     pub fn EffectiveTimeout(&self) -> Duration {
         std::panic::catch_unwind(|| {
             let timeout = self.effective_timeout();
-            Self::ValidateTimeout(timeout).unwrap_or(Duration::from_secs(30));
-            timeout
+            match Self::ValidateTimeoutResult(timeout) {
+                Ok(valid_timeout) => valid_timeout,
+                Err(_) => Duration::from_secs(30),
+            }
         }).unwrap_or_else(|e| {
             log::error!("[TimeoutManager] Panic in EffectiveTimeout: {:?}", e);
             Duration::from_secs(30)

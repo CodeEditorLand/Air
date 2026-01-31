@@ -96,6 +96,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Value as JsonValue, json};
+use sha2::Digest;
 
 use crate::{AirError, DefaultConfigFile, Result};
 

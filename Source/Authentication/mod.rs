@@ -91,7 +91,7 @@ impl AuthenticationService {
         };
         
         // Initialize service status
-        service.app_state.update_service_status("authentication", crate::ApplicationState::ServiceStatus::Running)
+        service.app_state.UpdateServiceStatus("authentication", crate::ApplicationState::ServiceStatus::Running)
             .await
             .map_err(|e| AirError::Authentication(e.to_string()))?;
         

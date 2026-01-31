@@ -108,11 +108,11 @@ use tokio::sync::RwLock;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use ring::pbkdf2;
-use rand::{RngCore, thread_rng};
+use rand::{RngCore, rng};
 use base64::{Engine, engine::general_purpose::STANDARD};
-use zeroize::{Zeroize, ZeroizeOnDrop};
+use zeroize::Zeroize;
 use subtle::ConstantTimeEq;
-use log::{debug, error, info, trace, warn};
+use log::{info, debug};
 
 use crate::{AirError, Result};
 
@@ -594,8 +594,9 @@ impl SecureStorage {
 			},
 		};
 
+		let auditor_clone = auditor.clone();
 		tokio::spawn(async move {
-			auditor.log_event(event).await;
+			auditor_clone.log_event(event).await;
 		});
 
 		Self {
@@ -620,7 +621,7 @@ impl SecureStorage {
 				key_salt[..provided_salt.len()].copy_from_slice(provided_salt);
 			}
 		} else {
-			let mut rng = thread_rng();
+			let mut rng = rng();
 			rng.fill_bytes(&mut key_salt);
 		}
 
@@ -638,7 +639,7 @@ impl SecureStorage {
 
 	/// Store a credential encrypted with AES-GCM
 	pub async fn Store(&self, key:&str, credential:&str) -> Result<()> {
-		let mut rng = thread_rng();
+		let mut rng = rng();
 		let mut nonce = [0u8; 12];
 		rng.fill_bytes(&mut nonce);
 

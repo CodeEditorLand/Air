@@ -41,6 +41,8 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, RwLock, Semaphore};
@@ -326,7 +328,7 @@ impl FileIndexer {
         
         // Initialize service status
         indexer.app_state
-            .update_service_status(
+            .UpdateServiceStatus(
                 "indexing",
                 crate::ApplicationState::ServiceStatus::Running,
             )
@@ -485,12 +487,13 @@ impl FileIndexer {
         for file_path in files_to_index {
             let permit = semaphore.clone().acquire_owned().await.unwrap();
             let index_ref = index_arc.clone();
+            let config_for_task = config_clone.clone();
             
             let task = tokio::spawn(async move {
                 let _permit = permit;
                 
                 // Index the file
-                match Self::index_file_internal(&file_path, &config_clone, &index_ref).await {
+                match Self::index_file_internal(&file_path, &config_for_task, &index_ref).await {
                     Ok((metadata, symbols)) => {
                         Some((file_path, metadata, symbols))
                     }
@@ -556,14 +559,15 @@ impl FileIndexer {
         
         // Remove files that were indexed before but no longer exist
         let mut paths_to_remove = Vec::new();
-        for path in index.files.keys() {
-            if !indexed_paths.contains(path) && path.starts_with(&directory_path) {
+        let all_paths: Vec<_> = index.files.keys().cloned().collect();
+        for path in all_paths {
+            if !indexed_paths.contains(&path) && path.starts_with(&directory_path) {
                 // File was deleted, remove from index
                 paths_to_remove.push(path.clone());
-                index.file_symbols.remove(path);
+                index.file_symbols.remove(&path);
                 // Remove from symbol index
                 for (_, locations) in index.symbol_index.iter_mut() {
-                    locations.retain(|loc| loc.file_path != *path);
+                    locations.retain(|loc| loc.file_path != path);
                 }
             }
         }
@@ -791,12 +795,12 @@ impl FileIndexer {
         if content.is_empty() {
             return None;
         }
-        
+
         // Check for BOM markers
         if content.starts_with(&[0xEF, 0xBB, 0xBF]) {
             return Some("UTF-8 (BOM)".to_string());
         }
-        
+
         if content.starts_with(&[0xFE, 0xFF]) {
             return Some("UTF-16 (BE)".to_string());
         }
@@ -1045,7 +1049,7 @@ impl FileIndexer {
         if let Some(file_paths) = index.content_index.get(&search_query.to_lowercase()) {
             for file_path in file_paths {
                 if let Some(metadata) = index.files.get(file_path) {
-                    if self.matches_filters(file_path, metadata, path_filter, language_filter) {
+                    if Self::matches_filters(file_path, metadata, path_filter, language_filter) {
                         if let Ok(search_result) =
                             self.find_matches_in_file(file_path, &search_query, case_sensitive, whole_word, index).await
                         {
@@ -1077,7 +1081,7 @@ impl FileIndexer {
             };
             
             if name_to_search.contains(&search_query) {
-                if self.matches_filters(file_path, metadata, path_filter, language_filter) {
+                if Self::matches_filters(file_path, metadata, path_filter, language_filter) {
                     // Filename match has lower relevance than content match
                     results.push(SearchResult {
                         path: file_path.to_string_lossy().to_string(),
@@ -1105,7 +1109,7 @@ impl FileIndexer {
                 break;
             }
             
-            if !self.matches_filters(file_path, metadata, path_filter, language_filter) {
+            if !Self::matches_filters(file_path, metadata, path_filter, language_filter) {
                 continue;
             }
             
@@ -1148,7 +1152,7 @@ impl FileIndexer {
                 break;
             }
             
-            if !self.matches_filters(file_path, metadata, path_filter, language_filter) {
+            if !Self::matches_filters(file_path, metadata, path_filter, language_filter) {
                 continue;
             }
             
@@ -1194,7 +1198,7 @@ impl FileIndexer {
                 break;
             }
             
-            if !self.matches_filters(file_path, metadata, path_filter, language_filter) {
+            if !Self::matches_filters(file_path, metadata, path_filter, language_filter) {
                 continue;
             }
             
@@ -1438,8 +1442,8 @@ impl FileIndexer {
         }
         
         // Check language filter
-        if let Some(ref lang) = language_filter {
-            if metadata.language.as_ref() != Some(lang) {
+        if let Some(lang) = language_filter {
+            if metadata.language.as_deref() != Some(lang) {
                 return false;
             }
         }
@@ -1464,7 +1468,8 @@ impl FileIndexer {
         let file_name = file_path
             .file_name()
             .unwrap_or_default()
-            .to_string_lossy();
+            .to_string_lossy()
+            .to_string();
         
         for pattern in patterns {
             if Self::matches_pattern(&file_name, pattern) {
@@ -1934,7 +1939,7 @@ impl FileIndexer {
                         "application/xml".to_string()
                     } else if content.starts_with(b"<!DOCTYPE") || content.starts_with(b"<html") {
                         "text/html".to_string()
-                    } else if content.is_ascii() && !content.windows(4).any(|w| w == b'\0') {
+                    } else if content.is_ascii() && !content.windows(4).any(|w| w.starts_with(&[0u8])) {
                         "text/plain".to_string()
                     } else {
                         "application/octet-stream".to_string()
@@ -1951,7 +1956,7 @@ impl FileIndexer {
                 "application/xml".to_string()
             } else if content.starts_with(b"---") {
                 "text/x-yaml".to_string()
-            } else if content.is_ascii() && !content.windows(4).any(|w| w == b'\0') {
+            } else if content.is_ascii() && !content.windows(4).any(|w| w.starts_with(&[0u8])) {
                 "text/plain".to_string()
             } else {
                 "application/octet-stream".to_string()
@@ -2258,7 +2263,7 @@ impl FileIndexer {
         let corruption_flag = self.corruption_detected.clone();
         
         let mut watcher: notify::RecommendedWatcher = Watcher::new(
-            move |res: Result<notify::Event, _>| {
+            move |res: Result<notify::Event, notify::Error>| {
                 if let Ok(event) = res {
                     let index = index.clone();
                     tokio::spawn(async move {
@@ -2386,7 +2391,7 @@ impl FileIndexer {
             
             // Re-index configured directories
             if let Err(e) = self
-                .IndexDirectory(config.root_directory.clone(), Vec::new())
+                .IndexDirectory(config.index_directory.clone(), Vec::new())
                 .await
             {
                 log::error!("[FileIndexer] Background indexing failed: {}", e);

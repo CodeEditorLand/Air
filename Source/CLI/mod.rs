@@ -220,29 +220,6 @@ impl CliParser {
             _ => Err(format!("Unknown command: {}\n\nUse 'air help' for available commands.", command)),
         }
     }
-    /// Parse command line arguments into Command
-    pub fn parse(args: Vec<String>) -> Result<Command, String> {
-        // Remove program name
-        let args = if args.is_empty() { vec![] } else { args[1..].to_vec() };
-        
-        if args.is_empty() {
-            return Ok(Command::Help { command: None });
-        }
-        
-        let command = &args[0];
-        
-        match command.as_str() {
-            "status" => Self::parse_status(&args[1..]),
-            "restart" => Self::parse_restart(&args[1..]),
-            "config" => Self::parse_config(&args[1..]),
-            "metrics" => Self::parse_metrics(&args[1..]),
-            "logs" => Self::parse_logs(&args[1..]),
-            "debug" => Self::parse_debug(&args[1..]),
-            "help" | "-h" | "--help" => Self::parse_help(&args[1..]),
-            "version" | "-v" | "--version" => Ok(Command::Version),
-            _ => Err(format!("Unknown command: {}", command)),
-        }
-    }
 
     /// Parse status command with validation
     fn parse_status(&self, args: &[String]) -> Result<Command, String> {

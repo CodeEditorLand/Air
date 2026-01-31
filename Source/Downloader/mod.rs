@@ -303,7 +303,7 @@ impl DownloadManager {
 		// Initialize service status
 		manager
 			.app_state
-			.update_service_status("downloader", crate::ApplicationState::ServiceStatus::Running)
+			.UpdateServiceStatus("downloader", crate::ApplicationState::ServiceStatus::Running)
 			.await
 			.map_err(|e| AirError::Internal(e.to_string()))?;
 
@@ -599,6 +599,7 @@ impl DownloadManager {
 			backoff_multiplier:2.0,
 			jitter_factor:0.1,
 			budget_per_minute:100,
+			error_classification:std::collections::HashMap::new(),
 		};
 
 		let retry_manager = crate::Resilience::RetryManager::new(retry_policy.clone());
@@ -611,8 +612,8 @@ impl DownloadManager {
 
 		loop {
 			// Check circuit breaker state
-			if circuit_breaker.get_state().await == crate::Resilience::CircuitState::Open {
-				if !circuit_breaker.attempt_recovery().await {
+			if circuit_breaker.GetState().await == crate::Resilience::CircuitState::Open {
+				if !circuit_breaker.AttemptRecovery().await {
 					return Err(AirError::Network(
 						"Circuit breaker is open, too many recent failures".to_string(),
 					));
@@ -630,16 +631,16 @@ impl DownloadManager {
 				Ok(file_info) => {
 					// Verify checksum if provided
 					if let Some(ref expected_checksum) = expected_checksum_from_config(config) {
-						self.update_download_status(download_id, DownloadState::Verifying, Some(100.0), None)
-							.await?;
+					self.UpdateDownloadStatus(download_id, DownloadState::Verifying, Some(100.0), None)
+						.await?;
 
 						if let Err(e) = self.VerifyChecksum(destination, expected_checksum).await {
 							log::warn!("[DownloadManager] Checksum verification failed [ID: {}]: {}", download_id, e);
-							circuit_breaker.record_failure().await;
+							circuit_breaker.RecordFailure().await;
 
-							if attempt < config.max_retries && retry_manager.can_retry("downloader").await {
+							if attempt < config.max_retries && retry_manager.CanRetry("downloader").await {
 								attempt += 1;
-								let delay = retry_manager.calculate_retry_delay(attempt);
+								let delay = retry_manager.CalculateRetryDelay(attempt);
 								log::info!(
 									"[DownloadManager] Retrying download [ID: {}] (attempt {}/{}) after {:?}",
 									download_id,
@@ -658,13 +659,13 @@ impl DownloadManager {
 						}
 					}
 
-					circuit_breaker.record_success().await;
+					circuit_breaker.RecordSuccess().await;
 					return Ok(file_info);
 				},
 				Err(e) => {
-					circuit_breaker.record_failure().await;
+					circuit_breaker.RecordFailure().await;
 
-					if attempt < config.max_retries && retry_manager.can_retry("downloader").await {
+					if attempt < config.max_retries && retry_manager.CanRetry("downloader").await {
 						attempt += 1;
 						log::warn!(
 							"[DownloadManager] Download failed [ID: {}], retrying (attempt {}/{}): {}",
@@ -674,7 +675,7 @@ impl DownloadManager {
 							e
 						);
 
-						let delay = retry_manager.calculate_retry_delay(attempt);
+						let delay = retry_manager.CalculateRetryDelay(attempt);
 						tokio::time::sleep(delay).await;
 					} else {
 						return Err(e);
@@ -699,7 +700,7 @@ impl DownloadManager {
 			.await
 			.map_err(|e| AirError::Internal(format!("Failed to acquire download permit: {}", e)))?;
 
-		self.update_download_status(download_id, DownloadState::Downloading, Some(0.0), None)
+		self.UpdateDownloadStatus(download_id, DownloadState::Downloading, Some(0.0), None)
 			.await?;
 
 		// Create temporary file for atomic commit
@@ -837,7 +838,7 @@ impl DownloadManager {
 
 						if total_size > 0 {
 							let progress = (downloaded as f32 / total_size as f32) * 100.0;
-							self.update_download_status(download_id, DownloadState::Downloading, Some(progress), None)
+							self.UpdateDownloadStatus(download_id, DownloadState::Downloading, Some(progress), None)
 								.await?;
 						}
 
@@ -858,7 +859,7 @@ impl DownloadManager {
 		}
 
 		// Final progress update
-		self.update_download_status(download_id, DownloadState::Downloading, Some(100.0), None)
+		self.UpdateDownloadStatus(download_id, DownloadState::Downloading, Some(100.0), None)
 			.await?;
 
 		// Flush file to ensure all data is written
@@ -896,7 +897,7 @@ impl DownloadManager {
 			)));
 		}
 
-		let actual_checksum = self.checksum_verifier.calculate_sha256(file_path).await?;
+		let actual_checksum = self.checksum_verifier.CalculateSha256(file_path).await?;
 
 		// Normalize checksums (handle case-insensitivity, remove prefix, etc.)
 		let normalized_expected = expected_checksum.trim().to_lowercase().replace("sha256:", "");
@@ -930,7 +931,7 @@ impl DownloadManager {
 			)));
 		}
 
-		self.checksum_verifier.calculate_sha256(file_path).await
+		self.checksum_verifier.CalculateSha256(file_path).await
 	}
 
 	/// Register a new download in the tracking system
@@ -971,7 +972,7 @@ impl DownloadManager {
 	}
 
 	/// Update download status
-	async fn update_download_status(
+	async fn UpdateDownloadStatus(
 		&self,
 		download_id:&str,
 		status:DownloadState,
@@ -1015,7 +1016,7 @@ impl DownloadManager {
 		let downloads = self.active_downloads.read().await;
 		if let Some(download) = downloads.get(download_id) {
 			if let Some(started_at) = download.started_at {
-				let elapsed = chrono::Utc::now() - *started_at;
+				let elapsed = chrono::Utc::now().signed_duration_since(*started_at);
 				let elapsed_secs = elapsed.num_seconds() as u64;
 				if elapsed_secs > 0 {
 					return current_bytes / elapsed_secs;
@@ -1071,7 +1072,7 @@ impl DownloadManager {
 	pub async fn cancel_download(&self, download_id:&str) -> Result<()> {
 		log::info!("[DownloadManager] Cancelling download [ID: {}]", download_id);
 
-		self.update_download_status(download_id, DownloadState::Cancelled, None, None)
+		self.UpdateDownloadStatus(download_id, DownloadState::Cancelled, None, None)
 			.await?;
 
 		// Clean up temporary file if it exists
@@ -1094,7 +1095,7 @@ impl DownloadManager {
 
 	/// Pause a download (supports resume)
 	pub async fn pause_download(&self, download_id:&str) -> Result<()> {
-		self.update_download_status(download_id, DownloadState::Paused, None, None)
+		self.UpdateDownloadStatus(download_id, DownloadState::Paused, None, None)
 			.await?;
 		log::info!("[DownloadManager] Download paused [ID: {}]", download_id);
 		Ok(())
@@ -1104,10 +1105,10 @@ impl DownloadManager {
 	pub async fn resume_download(&self, download_id:&str) -> Result<()> {
 		if let Some(status) = self.get_download_status(download_id).await {
 			if status.status == DownloadState::Paused {
-				self.update_download_status(download_id, DownloadState::Resuming, None, None)
+				self.UpdateDownloadStatus(download_id, DownloadState::Resuming, None, None)
 					.await?;
 				// The download loop handles the actual resume
-				self.update_download_status(download_id, DownloadState::Downloading, None, None)
+				self.UpdateDownloadStatus(download_id, DownloadState::Downloading, None, None)
 					.await?;
 				log::info!("[DownloadManager] Download resumed [ID: {}]", download_id);
 			} else {
@@ -1328,7 +1329,7 @@ impl DownloadManager {
 					.map_err(|e| AirError::FileSystem(format!("Failed to get modification time: {}", e)))?;
 
 				let modified_time = chrono::DateTime::<chrono::Utc>::from(modified);
-				let age = now - modified_time;
+				let age = now.signed_duration_since(modified_time);
 
 				if age.num_days() > max_age_days {
 					match tokio::fs::remove_file(&path).await {
@@ -1373,7 +1374,7 @@ impl DownloadManager {
 		// Stop service status
 		let _ = self
 			.app_state
-			.update_service_status("downloader", crate::ApplicationState::ServiceStatus::Stopped)
+			.UpdateServiceStatus("downloader", crate::ApplicationState::ServiceStatus::Stopped)
 			.await;
 	}
 
@@ -1381,14 +1382,14 @@ impl DownloadManager {
 	pub async fn set_bandwidth_limit(&self, mb_per_sec:usize) {
 		// Update semaphore permits (1 permit = 1MB)
 		let permits = mb_per_sec.max(1).min(1000);
-		*self.bandwidth_limiter = Arc::new(Semaphore::new(permits));
+		self.bandwidth_limiter = Arc::new(Semaphore::new(permits));
 		log::info!("[DownloadManager] Bandwidth limit set to {} MB/s", mb_per_sec);
 	}
 
 	/// Set maximum concurrent downloads
 	pub async fn set_max_concurrent_downloads(&self, max:usize) {
 		let permits = max.max(1).min(20);
-		*self.concurrent_limiter = Arc::new(Semaphore::new(permits));
+		self.concurrent_limiter = Arc::new(Semaphore::new(permits));
 		log::info!("[DownloadManager] Max concurrent downloads set to {}", max);
 	}
 }
@@ -1573,7 +1574,7 @@ impl DownloadManager {
 				{
 					let mut downloaded = downloaded_tracker.write().await;
 					let mut completed = completed_tracker.write().await;
-					*downloaded += (chunk_clone.end - chunk_clone.start + 1);
+					*downloaded += chunk_clone.end - chunk_clone.start + 1;
 					*completed += 1;
 
 					let progress = (*downloaded as f32 / total_size as f32) * 100.0;

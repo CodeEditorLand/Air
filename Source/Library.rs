@@ -341,6 +341,25 @@ impl From<tokio::task::JoinError> for AirError {
     }
 }
 
+impl From<&str> for AirError {
+    fn from(err: &str) -> Self {
+        AirError::Internal(err.to_string())
+    }
+}
+
+impl From<String> for AirError {
+    fn from(err: String) -> Self {
+        AirError::Internal(err)
+    }
+}
+
+impl From<(crate::HealthCheck::HealthStatus, Option<String>)> for AirError {
+    fn from((status, message): (crate::HealthCheck::HealthStatus, Option<String>)) -> Self {
+        let msg = message.unwrap_or_else(|| format!("Health check failed: {:?}", status));
+        AirError::ServiceUnavailable(msg)
+    }
+}
+
 /// Result type for Air operations
 ///
 /// Convenience type alias for Result<T, AirError>

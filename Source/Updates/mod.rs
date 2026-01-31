@@ -71,7 +71,6 @@
 
 use std::{
 	collections::HashMap,
-	fs,
 	path::{Path, PathBuf},
 	sync::Arc,
 	time::Duration,
@@ -83,7 +82,6 @@ use tokio::{
 	time::{interval, sleep},
 };
 use sha2::{Digest, Sha256};
-use ring::digest;
 use uuid::Uuid;
 use md5;
 
@@ -160,7 +158,7 @@ struct RollbackState {
 }
 
 /// Update channel configuration
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum UpdateChannel {
 	Stable,
 	Insiders,
@@ -239,7 +237,7 @@ pub struct UpdateStatus {
 }
 
 /// Installation status with detailed state tracking
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum InstallationStatus {
 	/// No update operation in progress
 	NotStarted,
@@ -490,7 +488,7 @@ impl UpdateManager {
 		// Initialize service status
 		manager
 			.app_state
-			.update_service_status("updates", crate::ApplicationState::ServiceStatus::Running)
+			.UpdateServiceStatus("updates", crate::ApplicationState::ServiceStatus::Running)
 			.await
 			.map_err(|e| AirError::Internal(e.to_string()))?;
 
@@ -589,7 +587,7 @@ impl UpdateManager {
 			// Verify minimum compatibility
 			if let Some(ref min_version) = info.min_compatible_version {
 				let current_version = env!("CARGO_PKG_VERSION");
-				if self.CompareVersions(current_version, min_version) < 0 {
+				if UpdateManager::CompareVersions(current_version, min_version) < 0 {
 					log::warn!(
 						"[UpdateManager] Update requires minimum version {} but current is {}. Skipping.",
 						min_version,
@@ -809,7 +807,7 @@ impl UpdateManager {
 							let progress = ((downloaded as f32 / total_size as f32) * 100.0).min(100.0);
 							let remaining_bytes = total_size - downloaded;
 							let eta_seconds = if download_speed > 0.0 {
-								Some((remaining_bytes as u64 / (download_speed as u64).max(1)))
+								Some(remaining_bytes as u64 / (download_speed as u64).max(1))
 							} else {
 								None
 							};
@@ -1144,6 +1142,7 @@ impl UpdateManager {
 			backoff_multiplier:2.0,
 			jitter_factor:0.1,
 			budget_per_minute:50,
+			error_classification:std::collections::HashMap::new(),
 		};
 
 		let _retry_manager = crate::Resilience::RetryManager::new(retry_policy.clone());
@@ -1157,8 +1156,8 @@ impl UpdateManager {
 
 		loop {
 			// Check circuit breaker state before attempting request
-			if circuit_breaker.get_state().await == crate::Resilience::CircuitState::Open {
-				if !circuit_breaker.attempt_recovery().await {
+			if circuit_breaker.GetState().await == crate::Resilience::CircuitState::Open {
+				if !circuit_breaker.AttemptRecovery().await {
 					log::warn!("[UpdateManager] Circuit breaker is open, skipping update check");
 					return Ok(None);
 				}
@@ -1195,7 +1194,7 @@ impl UpdateManager {
 									circuit_breaker.record_success().await;
 
 									// Check if update is actually newer
-									if self.CompareVersions(current_version, &update_info.version) < 0 {
+									if UpdateManager::CompareVersions(current_version, &update_info.version) < 0 {
 										log::info!(
 											"[UpdateManager] Update available: {} -> {}",
 											current_version,
@@ -1940,16 +1939,14 @@ impl UpdateManager {
 	pub async fn CleanupOldUpdates(&self) -> Result<()> {
 		log::info!("[UpdateManager] Cleaning up old update files");
 
-		let entries = tokio::fs::read_dir(&self.cache_directory)
+		let mut entries = tokio::fs::read_dir(&self.cache_directory)
 			.await
 			.map_err(|e| AirError::FileSystem(format!("Failed to read cache directory: {}", e)))?;
 
 		let mut cleaned_count = 0;
 		let now = std::time::SystemTime::now();
 
-		for entry in entries {
-			let entry = entry.map_err(|e| AirError::FileSystem(format!("Failed to read directory entry: {}", e)))?;
-
+		while let Some(entry) = entries.next_entry().await.map_err(|e| AirError::FileSystem(format!("Failed to read directory entry: {}", e)))? {
 			let path = entry.path();
 			let metadata = entry
 				.metadata()

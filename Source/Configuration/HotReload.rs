@@ -628,7 +628,7 @@ impl ConfigHotReload {
 		// Create watcher
 		let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 
-		let watcher = RecommendedWatcher::new(
+		let mut watcher = RecommendedWatcher::new(
 			move |res:NotifyResult<Event>| {
 				if let Ok(event) = res {
 					let _ = tx.blocking_send(event);

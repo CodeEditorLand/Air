@@ -312,7 +312,7 @@ impl ApplicationState {
             protocol_version,
             last_heartbeat: utils::current_timestamp(),
             is_active: true,
-            connection_type,
+            connection_type: connection_type.clone(),
         });
         
         log::info!("Connection registered: {} - {} ({:?})", connection_id, client_id, connection_type);
@@ -497,8 +497,9 @@ impl ApplicationState {
         }
         
         let mut service_status = self.service_status.write().await;
+        let status_clone = status.clone();
         service_status.insert(service.to_string(), status);
-        log::debug!("Service status updated: {} -> {:?}", service, status);
+        log::debug!("Service status updated: {} -> {:?}", service, status_clone);
         Ok(())
     }
     

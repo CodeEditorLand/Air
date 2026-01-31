@@ -74,7 +74,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use chrono::{DateTime, Utc};
-use log::{info, warn, error, debug};
+use log::{info, warn, error};
 use uuid::Uuid;
 
 use crate::{Result, AirError};
@@ -897,7 +897,7 @@ impl PluginManager {
 
         // Validate metadata
         if let Err(e) = self.validate_plugin_metadata(metadata) {
-            return PluginValidationResult::Invalid(e);
+            return PluginValidationResult::Invalid(e.to_string());
         }
 
         // Check version compatibility
@@ -1152,7 +1152,7 @@ impl Default for PluginLoader {
 // =============================================================================
 
 /// API version information
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ApiVersion {
     pub major: u32,
     pub minor: u32,
