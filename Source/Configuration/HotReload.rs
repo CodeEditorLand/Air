@@ -937,7 +937,7 @@ impl ConfigHotReload {
 		self.ValidateConfig(&previous).await?;
 
 		// Perform rollback
-		let old_config = self.active_config.read().await.clone();
+		let _old_config = self.active_config.read().await.clone();
 		let old_hash = self.last_config_hash.read().await.clone();
 
 		*self.active_config.write().await = previous.clone();

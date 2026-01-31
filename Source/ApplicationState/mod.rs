@@ -801,7 +801,7 @@ impl ApplicationState {
 
     /// Check if resource limits are exceeded
     pub async fn CheckResourceLimits(&self) -> Result<bool> {
-        let resources = self.resources.read().await;
+        let _resources = self.resources.read().await;
         
         // In a real implementation, compare against configured limits
         // For now, just return false

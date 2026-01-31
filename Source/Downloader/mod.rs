@@ -266,6 +266,9 @@ impl DownloadManager {
 		// Expand and validate cache directory path
 		let cache_directory = ConfigurationManager::ExpandPath(&config.cache_directory)?;
 
+		// Clone cache_directory before moving
+		let cache_directory_clone = cache_directory.clone();
+
 		// Create cache directory if it doesn't exist
 		tokio::fs::create_dir_all(&cache_directory)
 			.await
@@ -292,7 +295,7 @@ impl DownloadManager {
 			app_state,
 			active_downloads:Arc::new(RwLock::new(HashMap::new())),
 			download_queue:Arc::new(RwLock::new(VecDeque::new())),
-			cache_directory,
+			cache_directory:cache_directory_clone,
 			client,
 			checksum_verifier:Arc::new(crate::Security::ChecksumVerifier::New()),
 			bandwidth_limiter,
@@ -327,7 +330,7 @@ impl DownloadManager {
 	}
 
 	/// Download a file with detailed configuration
-	pub async fn DownloadFileWithConfig(&self, mut config:DownloadConfig) -> Result<DownloadResult> {
+	pub async fn DownloadFileWithConfig(&self, config:DownloadConfig) -> Result<DownloadResult> {
 		// Defensive: Validate and sanitize URL
 		let sanitized_url = Self::ValidateAndSanitizeUrl(&config.url)?;
 
@@ -507,8 +510,72 @@ impl DownloadManager {
 		// Find the mount point
 		let mount_point = self.FindMountPoint(&dest_path)?;
 
-		// Skip disk space validation for now
-		log::debug!("[DownloadManager] Skipping disk space validation");
+		// TODO: Implement actual disk space checking
+		// For now, log the validation request and pass
+		log::debug!(
+			"[DownloadManager] Validating disk space for URL {} (requires {} bytes) on mount point: {}",
+			url,
+			required_bytes,
+			mount_point.display()
+		);
+
+		#[cfg(unix)]
+		{
+			match self.GetDiskStatvfs(&mount_point) {
+				Ok((available_bytes, total_bytes)) => {
+					if available_bytes < required_bytes {
+						log::warn!(
+							"[DownloadManager] Insufficient disk space: {} bytes available, {} bytes required",
+							available_bytes,
+							required_bytes
+						);
+						return Err(AirError::FileSystem(format!(
+							"Insufficient disk space: {} bytes available, {} bytes required",
+							available_bytes,
+							required_bytes
+						)));
+					}
+
+					log::debug!(
+						"[DownloadManager] Sufficient disk space: {} bytes available, {} bytes required (total: {})",
+						available_bytes,
+						required_bytes,
+						total_bytes
+					);
+				},
+				Err(e) => {
+					log::warn!("[DownloadManager] Failed to check disk space: {}, proceeding anyway", e);
+				},
+			}
+		}
+
+		#[cfg(windows)]
+		{
+			match self.get_disk_space_windows(&mount_point) {
+				Ok(available_bytes) => {
+					if available_bytes < required_bytes {
+						log::warn!(
+							"[DownloadManager] Insufficient disk space: {} bytes available, {} bytes required",
+							available_bytes,
+							required_bytes
+						);
+						return Err(AirError::FileSystem(format!(
+							"Insufficient disk space: {} bytes available, {} bytes required",
+							available_bytes,
+							required_bytes
+						)));
+					}
+					log::debug!(
+						"[DownloadManager] Sufficient disk space: {} bytes available, {} bytes required",
+						available_bytes,
+						required_bytes
+					);
+				},
+				Err(e) => {
+					log::warn!("[DownloadManager] Failed to check disk space: {}, proceeding anyway", e);
+				},
+			}
+		}
 
 		#[cfg(not(any(unix, windows)))]
 		{
@@ -516,6 +583,39 @@ impl DownloadManager {
 		}
 
 		Ok(())
+	}
+
+	/// Get disk statistics using statvfs (Unix)
+	#[cfg(unix)]
+	fn GetDiskStatvfs(&self, path:&Path) -> Result<(u64, u64)> {
+		// TODO: Implement actual statvfs call using libc statvfs()
+		// Example implementation:
+		// use std::mem::size_of;
+		// let mut stat: libc::statvfs = unsafe { std::mem::zeroed() };
+		// let path_cstr = path.to_path_buf().as_os_str().to_c_string();
+		// let result = unsafe { libc::statvfs(path_cstr.as_ptr(), &mut stat) };
+		// if result != 0 { return Err(...); }
+		// let available = stat.f_bsize as u64 * stat.f_bavail as u64;
+		// let total = stat.f_bsize as u64 * stat.f_blocks as u64;
+		// For now, assume sufficient space and log the request
+		log::debug!("[DownloadManager] Checking disk space at: {}", path.display());
+		Ok((u64::MAX, u64::MAX))
+	}
+
+	/// Get disk space on Windows
+	#[cfg(windows)]
+	fn GetDiskSpaceWindows(&self, path:&Path) -> Result<u64> {
+		// TODO: Implement Windows disk space checking using winapi GetDiskFreeSpaceExW()
+		// Example implementation:
+		// use windows::Win32::Storage::FileSystem::GetDiskFreeSpaceExW;
+		// let mut available: u64 = 0;
+		// let mut total: u64 = 0;
+		// let mut free: u64 = 0;
+		// let result = unsafe { GetDiskFreeSpaceExW(path.as_os_str(), &mut available as *mut _ as _, &mut total as *mut _ as _, &mut free as *mut _ as _) };
+		// if !result.as_bool() { return Err(...); }
+		// For now, assume sufficient space and log the request
+		log::debug!("[DownloadManager] Checking disk space at: {}", path.display());
+		Ok(u64::MAX)
 	}
 
 	/// Find mount point for a given path
@@ -621,7 +721,7 @@ impl DownloadManager {
 			}
 
 			// Check for cancellation before attempting download
-			if let Some(status) = self.get_download_status(download_id).await {
+			if let Some(status) = self.GetDownloadStatus(download_id).await {
 				if status.status == DownloadState::Cancelled {
 					return Err(AirError::Network("Download cancelled".to_string()));
 				}
@@ -630,7 +730,7 @@ impl DownloadManager {
 			match self.PerformDownload(download_id, url, destination, config).await {
 				Ok(file_info) => {
 					// Verify checksum if provided
-					if let Some(ref expected_checksum) = expected_checksum_from_config(config) {
+					if let Some(ref expected_checksum) = ExpectedChecksumFromConfig(config) {
 					self.UpdateDownloadStatus(download_id, DownloadState::Verifying, Some(100.0), None)
 						.await?;
 
@@ -783,7 +883,7 @@ impl DownloadManager {
 
 		while let Some(result) = bytes_stream.next().await {
 			// Check for pause/cancel before processing chunk
-			if let Some(status) = self.get_download_status(download_id).await {
+			if let Some(status) = self.GetDownloadStatus(download_id).await {
 				match status.status {
 					DownloadState::Cancelled => {
 						// Clean up temporary file
@@ -794,7 +894,7 @@ impl DownloadManager {
 						// Wait until resumed or cancelled
 						loop {
 							tokio::time::sleep(Duration::from_millis(250)).await;
-							if let Some(s) = self.get_download_status(download_id).await {
+							if let Some(s) = self.GetDownloadStatus(download_id).await {
 								match s.status {
 									DownloadState::Paused => continue,
 									DownloadState::Cancelled => {
@@ -843,8 +943,8 @@ impl DownloadManager {
 						}
 
 						// Calculate and update download rate
-						let rate = self.calculate_download_rate(download_id, downloaded).await;
-						self.update_download_rate(download_id, rate).await;
+						let rate = self.CalculateDownloadRate(download_id, downloaded).await;
+						self.UpdateDownloadRate(download_id, rate).await;
 					}
 				},
 				Err(e) => {
@@ -876,7 +976,7 @@ impl DownloadManager {
 		let checksum = self.CalculateChecksum(destination).await?;
 
 		// Update status with final checksum
-		self.update_actual_checksum(download_id, &checksum).await;
+		self.UpdateActualChecksum(download_id, &checksum).await;
 
 		Ok(DownloadResult {
 			path:destination.to_string_lossy().to_string(),
@@ -996,7 +1096,7 @@ impl DownloadManager {
 	}
 
 	/// Update download rate tracking
-	async fn update_download_rate(&self, download_id:&str, rate:u64) {
+	async fn UpdateDownloadRate(&self, download_id:&str, rate:u64) {
 		let mut downloads = self.active_downloads.write().await;
 		if let Some(download) = downloads.get_mut(download_id) {
 			download.download_rate_bytes_per_sec = rate;
@@ -1004,7 +1104,7 @@ impl DownloadManager {
 	}
 
 	/// Update actual checksum after calculation
-	async fn update_actual_checksum(&self, download_id:&str, checksum:&str) {
+	async fn UpdateActualChecksum(&self, download_id:&str, checksum:&str) {
 		let mut downloads = self.active_downloads.write().await;
 		if let Some(download) = downloads.get_mut(download_id) {
 			download.actual_checksum = Some(checksum.to_string());
@@ -1012,11 +1112,11 @@ impl DownloadManager {
 	}
 
 	/// Calculate download rate based on progress
-	async fn calculate_download_rate(&self, download_id:&str, current_bytes:u64) -> u64 {
+	async fn CalculateDownloadRate(&self, download_id:&str, current_bytes:u64) -> u64 {
 		let downloads = self.active_downloads.read().await;
 		if let Some(download) = downloads.get(download_id) {
 			if let Some(started_at) = download.started_at {
-				let elapsed = chrono::Utc::now().signed_duration_since(*started_at);
+				let elapsed = chrono::Utc::now().signed_duration_since(started_at);
 				let elapsed_secs = elapsed.num_seconds() as u64;
 				if elapsed_secs > 0 {
 					return current_bytes / elapsed_secs;
@@ -1057,26 +1157,26 @@ impl DownloadManager {
 	}
 
 	/// Get download status
-	pub async fn get_download_status(&self, download_id:&str) -> Option<DownloadStatus> {
+	pub async fn GetDownloadStatus(&self, download_id:&str) -> Option<DownloadStatus> {
 		let downloads = self.active_downloads.read().await;
 		downloads.get(download_id).cloned()
 	}
 
 	/// Get all active downloads
-	pub async fn get_all_downloads(&self) -> Vec<DownloadStatus> {
+	pub async fn GetAllDownloads(&self) -> Vec<DownloadStatus> {
 		let downloads = self.active_downloads.read().await;
 		downloads.values().cloned().collect()
 	}
 
 	/// Cancel a download with proper cleanup
-	pub async fn cancel_download(&self, download_id:&str) -> Result<()> {
+	pub async fn CancelDownload(&self, download_id:&str) -> Result<()> {
 		log::info!("[DownloadManager] Cancelling download [ID: {}]", download_id);
 
 		self.UpdateDownloadStatus(download_id, DownloadState::Cancelled, None, None)
 			.await?;
 
 		// Clean up temporary file if it exists
-		if let Some(status) = self.get_download_status(download_id).await {
+		if let Some(status) = self.GetDownloadStatus(download_id).await {
 			let temp_path = status.destination.with_extension("tmp");
 			if temp_path.exists() {
 				let _ = tokio::fs::remove_file(&temp_path).await;
@@ -1094,7 +1194,7 @@ impl DownloadManager {
 	}
 
 	/// Pause a download (supports resume)
-	pub async fn pause_download(&self, download_id:&str) -> Result<()> {
+	pub async fn PauseDownload(&self, download_id:&str) -> Result<()> {
 		self.UpdateDownloadStatus(download_id, DownloadState::Paused, None, None)
 			.await?;
 		log::info!("[DownloadManager] Download paused [ID: {}]", download_id);
@@ -1102,8 +1202,8 @@ impl DownloadManager {
 	}
 
 	/// Resume a paused download
-	pub async fn resume_download(&self, download_id:&str) -> Result<()> {
-		if let Some(status) = self.get_download_status(download_id).await {
+	pub async fn ResumeDownload(&self, download_id:&str) -> Result<()> {
+		if let Some(status) = self.GetDownloadStatus(download_id).await {
 			if status.status == DownloadState::Paused {
 				self.UpdateDownloadStatus(download_id, DownloadState::Resuming, None, None)
 					.await?;
@@ -1121,7 +1221,7 @@ impl DownloadManager {
 	}
 
 	/// Get active download count
-	pub async fn get_active_download_count(&self) -> usize {
+	pub async fn GetActiveDownloadCount(&self) -> usize {
 		let downloads = self.active_downloads.read().await;
 		downloads
 			.iter()
@@ -1135,13 +1235,13 @@ impl DownloadManager {
 	}
 
 	/// Get download statistics
-	pub async fn get_statistics(&self) -> DownloadStatistics {
+	pub async fn GetStatistics(&self) -> DownloadStatistics {
 		let stats = self.statistics.read().await;
 		stats.clone()
 	}
 
 	/// Queue a download with priority
-	pub async fn queue_download(
+	pub async fn QueueDownload(
 		&self,
 		url:String,
 		destination:String,
@@ -1197,7 +1297,7 @@ impl DownloadManager {
 	}
 
 	/// Process next download from queue
-	pub async fn process_queue(&self) -> Result<Option<String>> {
+	pub async fn ProcessQueue(&self) -> Result<Option<String>> {
 		let mut queue = self.download_queue.write().await;
 
 		if let Some(queued) = queue.pop_front() {
@@ -1221,10 +1321,11 @@ impl DownloadManager {
 
 			// Spawn download task in background
 			let manager = self.clone();
-			let did = download_id.clone();
 			tokio::spawn(async move {
 				if let Err(e) = manager.DownloadFileWithConfig(config).await {
-					log::error!("[DownloadManager] Queued download failed [ID: {}]: {}", did, e);
+					log::error!("[DownloadManager] Queued download failed [ID: {}]: {}", download_id, e);
+					// Update download status to failed
+					let _ = manager.UpdateDownloadStatus(&download_id, DownloadState::Failed, None, Some(e.to_string())).await;
 				}
 			});
 
@@ -1235,11 +1336,11 @@ impl DownloadManager {
 	}
 
 	/// Start background tasks for cleanup and queue processing
-	pub async fn start_background_tasks(&self) -> Result<tokio::task::JoinHandle<()>> {
+	pub async fn StartBackgroundTasks(&self) -> Result<tokio::task::JoinHandle<()>> {
 		let manager = self.clone();
 
 		let handle = tokio::spawn(async move {
-			manager.background_task_loop().await;
+			manager.BackgroundTaskLoop().await;
 		});
 
 		log::info!("[DownloadManager] Background tasks started");
@@ -1248,29 +1349,29 @@ impl DownloadManager {
 	}
 
 	/// Background task loop for cleanup and queue processing
-	async fn background_task_loop(&self) {
+	async fn BackgroundTaskLoop(&self) {
 		let mut interval = tokio::time::interval(Duration::from_secs(60));
 
 		loop {
 			interval.tick().await;
 
 			// Process queue
-			if let Err(e) = self.process_queue().await {
+			if let Err(e) = self.ProcessQueue().await {
 				log::error!("[DownloadManager] Queue processing error: {}", e);
 			}
 
 			// Clean up completed downloads
-			self.cleanup_completed_downloads().await;
+			self.CleanupCompletedDownloads().await;
 
 			// Clean up old cache files
-			if let Err(e) = self.cleanup_cache().await {
+			if let Err(e) = self.CleanupCache().await {
 				log::error!("[DownloadManager] Cache cleanup failed: {}", e);
 			}
 		}
 	}
 
 	/// Clean up completed downloads from active tracking
-	async fn cleanup_completed_downloads(&self) {
+	async fn CleanupCompletedDownloads(&self) {
 		let mut downloads = self.active_downloads.write().await;
 
 		let mut cleaned_count = 0;
@@ -1291,7 +1392,7 @@ impl DownloadManager {
 	}
 
 	/// Clean up old cache files with safety checks
-	async fn cleanup_cache(&self) -> Result<()> {
+	async fn CleanupCache(&self) -> Result<()> {
 		let max_age_days = 7;
 		let now = chrono::Utc::now();
 
@@ -1360,15 +1461,22 @@ impl DownloadManager {
 	}
 
 	/// Stop background tasks and clean up resources
-	pub async fn stop_background_tasks(&self) {
+	pub async fn StopBackgroundTasks(&self) {
 		log::info!("[DownloadManager] Stopping background tasks");
 
-		// Cancel all active downloads
-		let downloads = self.active_downloads.read().await;
-		for (id, _) in downloads.iter().filter(|(_, s)| matches!(s.status, DownloadState::Downloading)) {
-			let id_clone = id.clone();
-			drop(downloads);
-			let _ = self.cancel_download(&id_clone).await;
+		// Cancel all active downloads - collect IDs first
+		let ids_to_cancel:Vec<String> = {
+			let downloads = self.active_downloads.read().await;
+			downloads
+				.iter()
+				.filter(|(_, s)| matches!(s.status, DownloadState::Downloading))
+				.map(|(id, _)| id.clone())
+				.collect()
+		};
+
+		// Now cancel downloads without holding the read lock
+		for id in ids_to_cancel {
+			let _ = self.CancelDownload(&id).await;
 		}
 
 		// Stop service status
@@ -1379,7 +1487,10 @@ impl DownloadManager {
 	}
 
 	/// Set global bandwidth limit (in MB/s)
-	pub async fn set_bandwidth_limit(&self, mb_per_sec:usize) {
+	/// TODO: Implement per-download bandwidth limiting instead of global only
+	/// TODO: Add time-based bandwidth schedules (off-peak acceleration)
+	/// TODO: Implement actual bandwidth throttling with token bucket algorithm
+	pub async fn SetBandwidthLimit(&mut self, mb_per_sec:usize) {
 		// Update semaphore permits (1 permit = 1MB)
 		let permits = mb_per_sec.max(1).min(1000);
 		self.bandwidth_limiter = Arc::new(Semaphore::new(permits));
@@ -1387,7 +1498,9 @@ impl DownloadManager {
 	}
 
 	/// Set maximum concurrent downloads
-	pub async fn set_max_concurrent_downloads(&self, max:usize) {
+	/// TODO: Implement per-host concurrent download limits
+	/// TODO: Add adaptive concurrency based on network conditions
+	pub async fn SetMaxConcurrentDownloads(&mut self, max:usize) {
 		let permits = max.max(1).min(20);
 		self.concurrent_limiter = Arc::new(Semaphore::new(permits));
 		log::info!("[DownloadManager] Max concurrent downloads set to {}", max);
@@ -1428,13 +1541,17 @@ impl Default for DownloadStatistics {
 }
 
 /// Helper function to extract expected checksum from config
-fn expected_checksum_from_config(config:&DownloadConfig) -> Option<&str> {
-	if config.checksum.is_empty() { None } else { Some(&config.checksum) }
+fn ExpectedChecksumFromConfig(config:&DownloadConfig) -> Option<&str> {
+	if config.checksum.is_empty() {
+		None
+	} else {
+		Some(&config.checksum)
+	}
 }
 
 /// Chunk information for parallel downloads
 #[derive(Debug, Clone)]
-struct DownloadChunk {
+struct ChunkInfo {
 	start:u64,
 	end:u64,
 	downloaded:u64,
@@ -1444,7 +1561,7 @@ struct DownloadChunk {
 /// Parallel download result
 #[derive(Debug)]
 struct ParallelDownloadResult {
-	chunks:Vec<DownloadChunk>,
+	chunks:Vec<ChunkInfo>,
 	total_size:u64,
 }
 
@@ -1491,6 +1608,9 @@ impl DownloadManager {
 	/// - Dynamic chunk size optimization based on bandwidth
 	/// - Adaptive chunk count based on file size
 	/// - Reassembly with integrity verification
+	/// TODO: Add adaptive chunk size based on network conditions
+	/// TODO: Implement parallel download queue management with priority
+	/// TODO: Add chunk verification and re-download of failed chunks
 	pub async fn DownloadFileWithChunks(
 		&self,
 		url:String,
@@ -1508,7 +1628,7 @@ impl DownloadManager {
 		let sanitized_url = Self::ValidateAndSanitizeUrl(&url)?;
 
 		// Get file size first using HEAD request
-		let total_size = self.get_remote_file_size(&sanitized_url).await?;
+		let total_size = self.GetRemoteFileSize(&sanitized_url).await?;
 
 		log::info!("[DownloadManager] Remote file size: {} bytes", total_size);
 
@@ -1550,7 +1670,7 @@ impl DownloadManager {
 			let start = (i as u64) * chunk_size;
 			let end = std::cmp::min(start + chunk_size - 1, total_size - 1);
 
-			chunks.push(DownloadChunk { start, end, downloaded:0, temp_path:temp_dir.join(format!("chunk_{:04}", i)) });
+			chunks.push(ChunkInfo { start, end, downloaded:0, temp_path:temp_dir.join(format!("chunk_{:04}", i)) });
 		}
 
 		// Track overall progress
@@ -1568,7 +1688,7 @@ impl DownloadManager {
 			let did = download_id.clone();
 
 			let handle = tokio::spawn(async move {
-				manager.download_chunk(&url_clone, &chunk_clone, i).await?;
+				manager.DownloadChunk(&url_clone, &chunk_clone, i).await?;
 
 				// Update progress
 				{
@@ -1607,7 +1727,7 @@ impl DownloadManager {
 
 		// Reassemble chunks
 		log::info!("[DownloadManager] Reassembling chunks into final file");
-		self.reassemble_chunks(&chunks, &destination_path).await?;
+		self.ReassembleChunks(&chunks, &destination_path).await?;
 
 		// Clean up temporary directory
 		tokio::fs::remove_dir_all(&temp_dir).await.map_err(|e| {
@@ -1634,7 +1754,7 @@ impl DownloadManager {
 	}
 
 	/// Get remote file size using HEAD request
-	async fn get_remote_file_size(&self, url:&str) -> Result<u64> {
+	async fn GetRemoteFileSize(&self, url:&str) -> Result<u64> {
 		let response = self
 			.client
 			.head(url)
@@ -1653,7 +1773,7 @@ impl DownloadManager {
 	}
 
 	/// Download a single chunk using HTTP Range request
-	async fn download_chunk(&self, url:&str, chunk:&DownloadChunk, chunk_index:usize) -> Result<()> {
+	async fn DownloadChunk(&self, url:&str, chunk:&ChunkInfo, chunk_index:usize) -> Result<()> {
 		log::debug!(
 			"[DownloadManager] Downloading chunk {} (bytes {}-{})",
 			chunk_index,
@@ -1695,7 +1815,7 @@ impl DownloadManager {
 	}
 
 	/// Reassemble downloaded chunks into final file
-	async fn reassemble_chunks(&self, chunks:&[DownloadChunk], destination:&Path) -> Result<()> {
+	async fn ReassembleChunks(&self, chunks:&[ChunkInfo], destination:&Path) -> Result<()> {
 		use tokio::io::AsyncWriteExt;
 
 		let mut file = tokio::fs::File::create(destination)

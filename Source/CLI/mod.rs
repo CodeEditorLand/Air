@@ -809,7 +809,7 @@ impl DaemonClient {
     }
 
     /// Connect to daemon and execute status command
-    pub fn execute_status(&self, service: Option<String>) -> Result<StatusResponse, String> {
+    pub fn execute_status(&self, _service: Option<String>) -> Result<StatusResponse, String> {
         // In production, this would connect via gRPC or Unix socket
         // For now, simulate a response
         Ok(StatusResponse {
@@ -865,12 +865,12 @@ impl DaemonClient {
     }
 
     /// Connect to daemon and execute config validate command
-    pub fn execute_config_validate(&self, path: Option<String>) -> Result<bool, String> {
+    pub fn execute_config_validate(&self, _path: Option<String>) -> Result<bool, String> {
         Ok(true)
     }
 
     /// Connect to daemon and execute metrics command
-    pub fn execute_metrics(&self, service: Option<String>) -> Result<MetricsResponse, String> {
+    pub fn execute_metrics(&self, _service: Option<String>) -> Result<MetricsResponse, String> {
         Ok(MetricsResponse {
             timestamp: Utc::now().to_rfc3339(),
             memory_used_mb: 512.0,
@@ -886,7 +886,7 @@ impl DaemonClient {
     }
 
     /// Connect to daemon and execute logs command
-    pub fn execute_logs(&self, service: Option<String>, tail: Option<usize>, filter: Option<String>) -> Result<Vec<LogEntry>, String> {
+    pub fn execute_logs(&self, service: Option<String>, _tail: Option<usize>, _filter: Option<String>) -> Result<Vec<LogEntry>, String> {
         // Return mock logs
         Ok(vec![
             LogEntry {
@@ -900,7 +900,7 @@ impl DaemonClient {
     }
 
     /// Connect to daemon and execute debug dump-state command
-    pub fn execute_debug_dump_state(&self, service: Option<String>) -> Result<DaemonState, String> {
+    pub fn execute_debug_dump_state(&self, _service: Option<String>) -> Result<DaemonState, String> {
         Ok(DaemonState {
             timestamp: Utc::now(),
             version: "0.1.0".to_string(),
@@ -917,7 +917,7 @@ impl DaemonClient {
     }
 
     /// Connect to daemon and execute debug health-check command
-    pub fn execute_debug_health_check(&self, service: Option<String>) -> Result<HealthCheckResponse, String> {
+    pub fn execute_debug_health_check(&self, _service: Option<String>) -> Result<HealthCheckResponse, String> {
         Ok(HealthCheckResponse {
             overall_healthy: true,
             overall_health_percentage: 100.0,
@@ -1163,11 +1163,11 @@ impl CliHandler {
                     Ok(format!("Daemon State Dump\nVersion: {}\nUptime: {}s\n", state.version, state.uptime_secs))
                 }
             }
-            DebugCommand::DumpConnections { format } => {
+            DebugCommand::DumpConnections { format: _ } => {
                 let connections = self.client.execute_debug_dump_connections()?;
                 Ok(format!("Active connections: {}", connections.len()))
             }
-            DebugCommand::HealthCheck { verbose, service } => {
+            DebugCommand::HealthCheck { verbose: _, service } => {
                 let health = self.client.execute_debug_health_check(service)?;
                 Ok(format!("Overall Health: {} ({}%)\n", if health.overall_healthy { "Healthy" } else { "Unhealthy" }, health.overall_health_percentage))
             }

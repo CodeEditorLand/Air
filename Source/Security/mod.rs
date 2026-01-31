@@ -112,7 +112,7 @@ use rand::{RngCore, rng};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use zeroize::Zeroize;
 use subtle::ConstantTimeEq;
-use log::{info, debug};
+use log::info;
 
 use crate::{AirError, Result};
 
@@ -213,7 +213,7 @@ impl SecurityAuditor {
 	pub fn new(retention:usize) -> Self { Self { events:Arc::new(RwLock::new(Vec::new())), retention } }
 
 	/// Log a security event
-	pub async fn log_event(&self, event:SecurityEvent) {
+	pub async fn LogEvent(&self, event:SecurityEvent) {
 		let mut events = self.events.write().await;
 		events.push(event.clone());
 
@@ -242,7 +242,7 @@ impl SecurityAuditor {
 	}
 
 	/// Get event history
-	pub async fn get_events(&self, event_type:Option<SecurityEventType>, limit:Option<usize>) -> Vec<SecurityEvent> {
+	pub async fn GetEvents(&self, event_type:Option<SecurityEventType>, limit:Option<usize>) -> Vec<SecurityEvent> {
 		let events = self.events.read().await;
 
 		let mut filtered:Vec<SecurityEvent> = if let Some(evt_type) = event_type {
@@ -263,8 +263,8 @@ impl SecurityAuditor {
 	}
 
 	/// Get recent critical events
-	pub async fn get_critical_events(&self, limit:usize) -> Vec<SecurityEvent> {
-		self.get_events(None, Some(limit))
+	pub async fn GetCriticalEvents(&self, limit:usize) -> Vec<SecurityEvent> {
+		self.GetEvents(None, Some(limit))
 			.await
 			.into_iter()
 			.filter(|e| e.severity == SecuritySeverity::Critical)
@@ -436,11 +436,11 @@ impl RateLimiter {
 		let mut client_buckets = self.client_buckets.write().await;
 		client_buckets.retain(|_, bucket| now.duration_since(bucket.last_refill) < self.cleanup_interval);
 
-		log::debug!("[RateLimiter] Cleaned up stale buckets");
+		// Cleanup completed - stale buckets removed
 	}
 
 	/// Start background cleanup task
-	pub fn start_cleanup_task(&self) -> tokio::task::JoinHandle<()> {
+	pub fn StartCleanupTask(&self) -> tokio::task::JoinHandle<()> {
 		let ip_buckets = self.ip_buckets.clone();
 		let client_buckets = self.client_buckets.clone();
 		let cleanup_interval = self.cleanup_interval;
@@ -596,7 +596,7 @@ impl SecureStorage {
 
 		let auditor_clone = auditor.clone();
 		tokio::spawn(async move {
-			auditor_clone.log_event(event).await;
+			auditor_clone.LogEvent(event).await;
 		});
 
 		Self {
@@ -675,7 +675,7 @@ impl SecureStorage {
 			metadata:HashMap::new(),
 		};
 
-		self.auditor.log_event(event).await;
+		self.auditor.LogEvent(event).await;
 
 		Ok(())
 	}
@@ -709,35 +709,12 @@ impl SecureStorage {
 
 				// Drop read lock before logging
 				drop(storage);
-				self.auditor.log_event(event).await;
+				self.auditor.LogEvent(event).await;
 
 				Ok(Some(credential))
-			},
+			}
 			None => Ok(None),
 		}
-	}
-
-	/// Delete a stored credential
-	pub async fn Delete(&self, key:&str) -> Result<()> {
-		let mut storage = self.credentials.write().await;
-
-		if storage.remove(key).is_some() {
-			// Log credential deletion event
-			let event = SecurityEvent {
-				timestamp:crate::utils::current_timestamp(),
-				event_type:SecurityEventType::ConfigChange,
-				severity:SecuritySeverity::Informational,
-				source_ip:None,
-				client_id:None,
-				details:format!("Credential deleted for key: {}", key),
-				metadata:HashMap::new(),
-			};
-
-			drop(storage);
-			self.auditor.log_event(event).await;
-		}
-
-		Ok(())
 	}
 
 	/// Encrypt credential data using AES-GCM
@@ -806,7 +783,7 @@ impl SecureStorage {
 	/// Rotate the master key and re-encrypt all credentials
 	pub async fn RotateMasterKey(&self, new_master_key:Vec<u8>) -> Result<KeyRotationResult> {
 		let old_key_version = self.key_version;
-		let mut credentials_rotated = 0;
+		let credentials_rotated = 0;
 
 		// Get all current credentials
 		let mut credentials = self.credentials.write().await;
@@ -842,7 +819,7 @@ impl SecureStorage {
 		};
 
 		drop(credentials);
-		self.auditor.log_event(event).await;
+		self.auditor.LogEvent(event).await;
 
 		// Zeroize the new key since we can't actually use it in this simple
 		// implementation
@@ -878,7 +855,7 @@ impl SecureStorage {
 		};
 
 		drop(storage);
-		self.auditor.log_event(event).await;
+		self.auditor.LogEvent(event).await;
 
 		Ok(())
 	}
@@ -915,7 +892,9 @@ fn standard_decode(input:&str) -> Result<Vec<u8>> {
 }
 
 /// Helper function for zeroizing secure bytes
-fn zeroize(bytes:&mut SecureBytes) {
+/// 
+/// TODO: Implement actual zeroization before drop if needed
+fn zeroize(_bytes:&mut SecureBytes) {
 	// The Drop implementation will zeroize the data
 	// This just ensures it happens immediately
 }
@@ -995,9 +974,9 @@ mod tests {
 			metadata:HashMap::new(),
 		};
 
-		auditor.log_event(event).await;
+		auditor.LogEvent(event).await;
 
-		let events = auditor.get_events(Some(SecurityEventType::AuthSuccess), None).await;
+		let events = auditor.GetEvents(Some(SecurityEventType::AuthSuccess), None).await;
 		assert_eq!(events.len(), 1);
 		assert_eq!(events[0].event_type, SecurityEventType::AuthSuccess);
 	}

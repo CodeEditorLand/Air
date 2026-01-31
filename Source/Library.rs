@@ -691,7 +691,7 @@ pub mod utils {
     /// Returns an error if the duration string is invalid.
     ///
     /// TODO: Support complex durations like "1h30m"
-    pub fn parse_duration_to_millis(duration_str: &str) -> Result<u64> {
+    pub fn parse_duration_to_millis(_duration_str: &str) -> Result<u64> {
         // TODO: Implement duration parsing with support for:
         // - ms, s, m, h suffixes
         // - Combined durations like "1m30s"

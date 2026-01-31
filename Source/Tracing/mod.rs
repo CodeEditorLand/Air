@@ -109,7 +109,7 @@ impl Default for SamplingConfig {
 
 impl SamplingConfig {
     /// Validate sampling configuration
-    pub fn Validate(&self) -> Result<()> {
+    pub fn validate(&self) -> Result<()> {
         if self.sample_rate < 0.0 || self.sample_rate > 1.0 {
             return Err(crate::AirError::Internal("sample_rate must be between 0.0 and 1.0".to_string()));
         }
@@ -202,7 +202,7 @@ impl TraceGenerator {
 
     /// Create a new trace generator with custom sampling
     pub fn with_sampling(sampling_config: SamplingConfig) -> Result<Self> {
-        sampling_config.Validate()
+        sampling_config.validate()
             .map_err(|e| AirError::Internal(format!("Invalid sampling config: {}", e)))?;
 
         Ok(Self {
@@ -212,27 +212,27 @@ impl TraceGenerator {
     }
 
     /// Generate a new trace ID with panic recovery
-    pub fn GenerateTraceId() -> String {
+    pub fn generate_trace_id() -> String {
         std::panic::catch_unwind(|| {
             uuid::Uuid::new_v4().to_string()
         }).unwrap_or_else(|e| {
-            log::error!("[Tracing] Panic in GenerateTraceId, using fallback: {:?}", e);
+            log::error!("[Tracing] Panic in generate_trace_id, using fallback: {:?}", e);
             format!("{:x}", rand::random::<u64>())
         })
     }
 
     /// Generate a new span ID
-    pub fn GenerateSpanId() -> String {
+    pub fn generate_span_id() -> String {
         std::panic::catch_unwind(|| {
             uuid::Uuid::new_v4().to_string()
         }).unwrap_or_else(|e| {
-            log::error!("[Tracing] Panic in GenerateSpanId, using fallback: {:?}", e);
+            log::error!("[Tracing] Panic in generate_span_id, using fallback: {:?}", e);
             format!("{:x}", rand::random::<u64>())
         })
     }
 
     /// Determine if a trace should be sampled based on configuration
-    pub async fn ShouldSample(&self, is_critical: bool) -> bool {
+    pub async fn should_sample(&self, is_critical: bool) -> bool {
         let config = self.sampling_config.read().await;
         let rate = if is_critical {
             config.critical_sample_rate
@@ -244,7 +244,7 @@ impl TraceGenerator {
     }
 
     /// Parse W3C Trace Context header
-    pub fn ParseTraceContext(header: &str) -> Result<PropagationContext> {
+    pub fn parse_trace_context(header: &str) -> Result<PropagationContext> {
         let parts: Vec<&str> = header.split(';').collect();
 
         let mut trace_id = String::new();
@@ -276,21 +276,21 @@ impl TraceGenerator {
 
         Ok(PropagationContext {
             trace_id,
-            span_id: Self::GenerateSpanId(),
+            span_id: Self::generate_span_id(),
             correlation_id: crate::utils::generate_request_id(),
             parent_span_id,
         })
     }
 
     /// Create a new trace span with optional sampling check
-    pub async fn CreateSpan(
+    pub async fn create_span(
         &self,
         trace_id: String,
         operation_name: impl Into<String>,
         parent_span_id: Option<String>,
         attributes: Option<HashMap<String, String>>,
     ) -> Result<TraceSpan> {
-        let span_id = Self::GenerateSpanId();
+        let span_id = Self::generate_span_id();
         let operation_name = operation_name.into();
 
         let span = TraceSpan {
@@ -327,7 +327,7 @@ impl TraceGenerator {
     }
 
     /// Add an event to a span
-    pub async fn AddSpanEvent(
+    pub async fn add_span_event(
         &self,
         span_id: &str,
         event_name: impl Into<String>,
@@ -349,7 +349,7 @@ impl TraceGenerator {
     }
 
     /// Mark a span as active
-    pub async fn MarkSpanActive(&self, span_id: &str) -> Result<()> {
+    pub async fn mark_span_active(&self, span_id: &str) -> Result<()> {
         let mut spans = self.trace_spans.write().await;
         if let Some(span) = spans.get_mut(span_id) {
             span.status = SpanStatus::Active;
@@ -360,7 +360,7 @@ impl TraceGenerator {
     }
 
     /// Complete a span with optional error
-    pub async fn CompleteSpan(&self, span_id: &str, error: Option<String>) -> Result<u64> {
+    pub async fn complete_span(&self, span_id: &str, error: Option<String>) -> Result<u64> {
         let now = crate::utils::current_timestamp();
         let mut spans = self.trace_spans.write().await;
 
@@ -380,17 +380,17 @@ impl TraceGenerator {
     }
 
     /// Add attribute to a span
-    pub async fn AddSpanAttribute(
+    pub async fn add_span_attribute(
         &self,
         span_id: &str,
         key: String,
         value: String,
     ) -> Result<()> {
-        self.AddSpanAttributes(span_id, HashMap::from([(key, value)])).await
+        self.add_span_attributes(span_id, HashMap::from([(key, value)])).await
     }
 
     /// Add multiple attributes to a span
-    pub async fn AddSpanAttributes(
+    pub async fn add_span_attributes(
         &self,
         span_id: &str,
         attributes: HashMap<String, String>,
@@ -409,7 +409,7 @@ impl TraceGenerator {
     }
 
     /// Get a span by ID
-    pub async fn GetSpan(&self, span_id: &str) -> Result<TraceSpan> {
+    pub async fn get_span(&self, span_id: &str) -> Result<TraceSpan> {
         let spans = self.trace_spans.read().await;
         spans.get(span_id)
             .cloned()
@@ -417,7 +417,7 @@ impl TraceGenerator {
     }
 
     /// Get all spans for a trace
-    pub async fn GetTraceSpans(&self, trace_id: &str) -> Result<Vec<TraceSpan>> {
+    pub async fn get_trace_spans(&self, trace_id: &str) -> Result<Vec<TraceSpan>> {
         let spans = self.trace_spans.read().await;
         Ok(spans.values()
             .filter(|span| span.trace_id == trace_id)
@@ -426,8 +426,8 @@ impl TraceGenerator {
     }
 
     /// Get trace metadata
-    pub async fn GetTraceMetadata(&self, trace_id: &str) -> Result<TraceMetadata> {
-        let trace_spans = self.GetTraceSpans(trace_id).await?;
+    pub async fn get_trace_metadata(&self, trace_id: &str) -> Result<TraceMetadata> {
+        let trace_spans = self.get_trace_spans(trace_id).await?;
 
         if trace_spans.is_empty() {
             return Err(AirError::Internal(format!("Trace not found: {}", trace_id)));
@@ -466,9 +466,9 @@ impl TraceGenerator {
     }
 
     /// Export trace in JSON format
-    pub async fn ExportTrace(&self, trace_id: &str) -> Result<String> {
-        let spans = self.GetTraceSpans(trace_id).await?;
-        let metadata = self.GetTraceMetadata(trace_id).await?;
+    pub async fn export_trace(&self, trace_id: &str) -> Result<String> {
+        let spans = self.get_trace_spans(trace_id).await?;
+        let metadata = self.get_trace_metadata(trace_id).await?;
 
         let export = serde_json::json!({
             "metadata": metadata,
@@ -480,7 +480,7 @@ impl TraceGenerator {
     }
 
     /// Clean up old spans (older than specified milliseconds)
-    pub async fn CleanupOldSpans(&self, older_than_ms: Option<u64>) -> Result<usize> {
+    pub async fn cleanup_old_spans(&self, older_than_ms: Option<u64>) -> Result<usize> {
         let now = crate::utils::current_timestamp();
         let ttl = older_than_ms.unwrap_or_else(|| {
             tokio::task::block_in_place(|| {
@@ -501,7 +501,7 @@ impl TraceGenerator {
     }
 
     /// Get trace statistics
-    pub async fn GetStatistics(&self) -> TraceStatistics {
+    pub async fn get_statistics(&self) -> TraceStatistics {
         let spans = self.trace_spans.read().await;
 
         let total_traces = spans.values()
@@ -537,9 +537,12 @@ impl TraceGenerator {
             "credential", "auth", "private_key", "session_token"
         ];
 
+        // Collect keys first to avoid borrowing issues
+        let attr_keys: Vec<String> = attributes.keys().cloned().collect();
+
         for key in sensitive_keys {
             let key_lower = key.to_lowercase();
-            for attr_key in attributes.keys() {
+            for attr_key in &attr_keys {
                 if attr_key.to_lowercase().contains(&key_lower) {
                     attributes.insert(attr_key.clone(), "[REDACTED]".to_string());
                 }
@@ -591,12 +594,12 @@ impl Default for TraceGenerator {
 static TRACE_GENERATOR: std::sync::OnceLock<TraceGenerator> = std::sync::OnceLock::new();
 
 /// Get or initialize the global trace generator
-pub fn GetTraceGenerator() -> &'static TraceGenerator {
+pub fn get_trace_generator() -> &'static TraceGenerator {
     TRACE_GENERATOR.get_or_init(TraceGenerator::new)
 }
 
 /// Initialize the global trace generator with custom sampling
-pub fn InitializeTracing(sampling_config: Option<SamplingConfig>) -> Result<()> {
+pub fn initialize_tracing(sampling_config: Option<SamplingConfig>) -> Result<()> {
     let generator = if let Some(config) = sampling_config {
         TraceGenerator::with_sampling(config)?
     } else {
@@ -613,20 +616,20 @@ thread_local! {
 }
 
 /// Set the propagation context for the current thread
-pub fn SetPropagationContext(context: PropagationContext) {
+pub fn set_propagation_context(context: PropagationContext) {
     PROPAGATION_CONTEXT.with(|ctx| {
         *ctx.borrow_mut() = Some(context);
     });
 }
 
 /// Get the current propagation context
-pub fn GetPropagationContext() -> Option<PropagationContext> {
+pub fn get_propagation_context() -> Option<PropagationContext> {
     PROPAGATION_CONTEXT.with(|ctx| ctx.borrow().clone())
 }
 
 /// Create a propagation context from a trace span
-pub async fn CreatePropagationContext(trace_id: String, parent_span_id: Option<String>) -> PropagationContext {
-    let span_id = TraceGenerator::GenerateSpanId();
+pub async fn create_propagation_context(trace_id: String, parent_span_id: Option<String>) -> PropagationContext {
+    let span_id = TraceGenerator::generate_span_id();
     let correlation_id = crate::utils::generate_request_id();
 
     PropagationContext {
@@ -638,6 +641,6 @@ pub async fn CreatePropagationContext(trace_id: String, parent_span_id: Option<S
 }
 
 /// Create a W3C trace context header from propagation context
-pub fn CreateTraceContextHeader(context: &PropagationContext) -> String {
+pub fn create_trace_context_header(context: &PropagationContext) -> String {
     format!("traceparent=00-{}-{}-01", context.trace_id, context.span_id)
 }

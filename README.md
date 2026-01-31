@@ -162,7 +162,7 @@ phase.
 
 ### Port Allocation
 
-- **Air**: Port `50053` (Vine/air.proto protocol - Air daemon services)
+- **Air**: Port `50053` (Vine/Air.proto protocol - Air daemon services)
 - **Cocoon**: Port `50052` (Vine.proto protocol - VS Code extension hosting)
 
 ---

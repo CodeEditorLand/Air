@@ -201,7 +201,7 @@ pub trait PluginHooks: Send + Sync {
     }
 
     /// Called when configuration changes
-    async fn on_config_changed(&self, old: &serde_json::Value, new: &serde_json::Value) -> Result<()> {
+    async fn on_config_changed(&self, _old: &serde_json::Value, _new: &serde_json::Value) -> Result<()> {
         Ok(())
     }
 }
@@ -223,7 +223,7 @@ pub trait Plugin: PluginHooks + Send + Sync {
     }
 
     /// Handle inter-plugin message
-    async fn handle_message(&self, from: &str, message: &PluginMessage) -> Result<PluginMessage> {
+    async fn handle_message(&self, from: &str, _message: &PluginMessage) -> Result<PluginMessage> {
         Err(AirError::Plugin(format!("Plugin {} does not handle messages", from)))
     }
 
@@ -233,12 +233,12 @@ pub trait Plugin: PluginHooks + Send + Sync {
     }
 
     /// Check if plugin has specific capability
-    fn has_capability(&self, capability: &str) -> bool {
+    fn has_capability(&self, _capability: &str) -> bool {
         false
     }
 
     /// Check if plugin has specific permission
-    fn has_permission(&self, permission: &PluginPermission) -> bool {
+    fn has_permission(&self, _permission: &PluginPermission) -> bool {
         false
     }
 }
@@ -421,7 +421,7 @@ impl PluginManager {
             plugin.on_load()
         ).await;
 
-        let load_result = load_result
+        let _load_result = load_result
             .map_err(|_| AirError::Plugin(format!("Plugin {} load timeout after {:?}", metadata.name, self.startup_timeout)))?
             .map_err(|e| {
                 error!("[PluginManager] Failed to load plugin {}: {}", metadata.name, e);
@@ -830,9 +830,9 @@ impl PluginManager {
     /// Check inter-plugin communication permission
     fn check_inter_plugin_permission(
         &self,
-        sender: &PluginRegistry,
-        target: &PluginRegistry,
-        message: &PluginMessage,
+        _sender: &PluginRegistry,
+        _target: &PluginRegistry,
+        _message: &PluginMessage,
     ) -> bool {
         // In production, this would check if sender has permission to communicate with target
         // For now, we allow all communication

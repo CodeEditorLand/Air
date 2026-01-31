@@ -306,13 +306,13 @@ impl FileIndexer {
         let config = &app_state.configuration.indexing;
         
         // Expand index directory path with validation
-        let index_directory = Self::validate_and_expand_path(&config.index_directory)?;
+        let index_directory = Self::ValidateAndExpandPath(&config.index_directory)?;
         
         // Create index directory if it doesn't exist with error handling
-        Self::ensure_index_directory(&index_directory).await?;
+        Self::EnsureIndexDirectory(&index_directory).await?;
         
         // Load or create index with corruption detection
-        let file_index = Self::load_or_create_index(&index_directory).await?;
+        let file_index = Self::LoadOrCreateIndex(&index_directory).await?;
         
         let indexer = Self {
             app_state: app_state.clone(),
@@ -324,7 +324,7 @@ impl FileIndexer {
         };
         
         // Verify index integrity
-        indexer.verify_index_integrity().await?;
+        indexer.VerifyIndexIntegrity().await?;
         
         // Initialize service status
         indexer.app_state
@@ -344,7 +344,7 @@ impl FileIndexer {
     }
     
     /// Validate and expand path with traversal protection
-    fn validate_and_expand_path(path: &str) -> Result<PathBuf> {
+    fn ValidateAndExpandPath(path: &str) -> Result<PathBuf> {
         let expanded = ConfigurationManager::ExpandPath(path)?;
         
         // Prevent path traversal attacks
@@ -359,7 +359,7 @@ impl FileIndexer {
     }
     
     /// Ensure index directory exists with proper error handling
-    async fn ensure_index_directory(path: &Path) -> Result<()> {
+    async fn EnsureIndexDirectory(path: &Path) -> Result<()> {
         tokio::fs::create_dir_all(path)
             .await
             .map_err(|e| AirError::Configuration(format!("Failed to create index directory {}: {}", path.display(), e)))?;
@@ -382,7 +382,7 @@ impl FileIndexer {
         log::info!("[FileIndexer] Starting directory index: {}", path);
         
         // Validate and expand path
-        let directory_path = Self::validate_and_expand_path(&path)?;
+        let directory_path = Self::ValidateAndExpandPath(&path)?;
         
         // Validate directory exists and is accessible
         if !directory_path.exists() {
@@ -400,7 +400,7 @@ impl FileIndexer {
         }
         
         // Check directory permissions
-        Self::check_directory_permissions(&directory_path).await?;
+        Self::CheckDirectoryPermissions(&directory_path).await?;
         
         let config = &self.app_state.configuration.indexing;
         let mut files_indexed = 0u32;
@@ -455,9 +455,9 @@ impl FileIndexer {
                             }
                             
                             // Check file pattern
-                            if Self::matches_patterns(&file_path, &include_patterns) {
+                            if Self::MatchesPatterns(&file_path, &include_patterns) {
                                 // Try to get file access to validate permissions
-                                if Self::validate_file_access(&file_path).await {
+                                if Self::ValidateFileAccess(&file_path).await {
                                     files_to_index.push(file_path);
                                 } else {
                                     log::warn!(
@@ -488,12 +488,13 @@ impl FileIndexer {
             let permit = semaphore.clone().acquire_owned().await.unwrap();
             let index_ref = index_arc.clone();
             let config_for_task = config_clone.clone();
+            let patterns_for_task = include_patterns_clone.clone();
             
             let task = tokio::spawn(async move {
                 let _permit = permit;
                 
-                // Index the file
-                match Self::index_file_internal(&file_path, &config_for_task, &index_ref).await {
+                // Index the file with pattern validation - use active index reference and check patterns
+                match Self::IndexFileInternal(&file_path, &config_for_task, &index_ref, &patterns_for_task).await {
                     Ok((metadata, symbols)) => {
                         Some((file_path, metadata, symbols))
                     }
@@ -519,7 +520,7 @@ impl FileIndexer {
                     indexed_paths.insert(file_path.clone());
                     
                     // Index content for search
-                    if let Err(e) = self.index_content_internal(&mut index, &file_path, &metadata).await {
+                    if let Err(e) = self.IndexContentInternal(&mut index, &file_path, &metadata).await {
                         log::warn!(
                             "[FileIndexer] Failed to index content for {}: {}",
                             file_path.display(),
@@ -578,11 +579,11 @@ impl FileIndexer {
         
         // Update index metadata
         index.last_updated = chrono::Utc::now();
-        index.index_version = Self::generate_index_version();
-        index.index_checksum = Self::calculate_index_checksum(&index)?;
+        index.index_version = Self::GenerateIndexVersion();
+        index.index_checksum = Self::CalculateIndexChecksum(&index)?;
         
         // Save index to disk
-        self.save_index(&index).await?;
+        self.SaveIndex(&index).await?;
         
         let duration = start_time.elapsed().as_secs_f64();
         
@@ -605,7 +606,7 @@ impl FileIndexer {
     }
     
     /// Check directory read permissions
-    async fn check_directory_permissions(path: &Path) -> Result<()> {
+    async fn CheckDirectoryPermissions(path: &Path) -> Result<()> {
         tokio::task::spawn_blocking({
             let path = path.to_path_buf();
             move || {
@@ -623,7 +624,7 @@ impl FileIndexer {
     }
     
     /// Validate file access and permissions
-    async fn validate_file_access(path: &Path) -> bool {
+    async fn ValidateFileAccess(path: &Path) -> bool {
         tokio::task::spawn_blocking({
             let path = path.to_path_buf();
             move || {
@@ -642,10 +643,11 @@ impl FileIndexer {
     }
     
     /// Index a single file internally (called by parallel tasks)
-    async fn index_file_internal(
+    async fn IndexFileInternal(
         file_path: &PathBuf,
         config: &crate::Configuration::IndexingConfig,
         index_ref: &Arc<RwLock<FileIndex>>,
+        patterns: &[String],
     ) -> Result<(FileMetadata, Vec<SymbolInfo>)> {
         // Get file metadata with error handling
         let metadata = std::fs::metadata(file_path)
@@ -685,13 +687,13 @@ impl FileIndexer {
         let checksum = format!("{:x}", hasher.finalize());
         
         // Detect file encoding
-        let encoding = Self::detect_encoding(&content);
+        let encoding = Self::DetectEncoding(&content);
         
         // Detect MIME type
-        let mime_type = Self::detect_mime_type(file_path, &content);
+        let mime_type = Self::DetectMimeType(file_path, &content);
         
         // Detect programming language
-        let language = Self::detect_language(file_path);
+        let language = Self::DetectLanguage(file_path);
         
         // Count lines for text files
         let line_count = if mime_type.starts_with("text/") {
@@ -702,7 +704,7 @@ impl FileIndexer {
         
         // Extract symbols from code for VSCode Outline View
         let symbols = if let Some(lang) = &language {
-            Self::extract_symbols(file_path, &content, lang).await?
+            Self::ExtractSymbols(file_path, &content, lang).await?
         } else {
             Vec::new()
         };
@@ -717,7 +719,7 @@ impl FileIndexer {
                 line_count,
                 checksum,
                 is_symlink,
-                permissions: Self::get_permissions_string(&metadata),
+                permissions: Self::GetPermissionsString(&metadata),
                 encoding,
                 indexed_at: chrono::Utc::now(),
                 symbol_count: symbols.len() as u32,
@@ -727,7 +729,7 @@ impl FileIndexer {
     }
     
     /// Index file content for search
-    async fn index_content_internal(
+    async fn IndexContentInternal(
         &self,
         index: &mut FileIndex,
         file_path: &PathBuf,
@@ -748,7 +750,7 @@ impl FileIndexer {
         }
         
         // Token-based indexing with better word boundary detection
-        let tokens = Self::tokenize_content(&content);
+        let tokens = Self::TokenizeContent(&content);
         
         for token in tokens {
             if token.len() > 2 {
@@ -765,7 +767,7 @@ impl FileIndexer {
     }
     
     /// Tokenize content for indexing with improved word boundary handling
-    fn tokenize_content(content: &str) -> Vec<String> {
+    fn TokenizeContent(content: &str) -> Vec<String> {
         let mut tokens = Vec::new();
         let mut current_token = String::new();
         let mut in_token = false;
@@ -791,7 +793,7 @@ impl FileIndexer {
     }
     
     /// Detect file encoding (simplified detection)
-    fn detect_encoding(content: &[u8]) -> Option<String> {
+    fn DetectEncoding(content: &[u8]) -> Option<String> {
         if content.is_empty() {
             return None;
         }
@@ -827,7 +829,7 @@ impl FileIndexer {
     }
     
     /// Get file permissions as string
-    fn get_permissions_string(metadata: &std::fs::Metadata) -> String {
+    fn GetPermissionsString(metadata: &std::fs::Metadata) -> String {
         let mode = metadata.permissions().mode();
         let mut perms = String::new();
         // Read permission
@@ -851,8 +853,9 @@ impl FileIndexer {
     pub async fn IndexFile(&self, file_path: &PathBuf) -> Result<FileMetadata> {
         let config = &self.app_state.configuration.indexing;
         let index_ref = self.file_index.clone();
+        let patterns = &config.file_types;
         
-        let (metadata, symbols) = Self::index_file_internal(file_path, config, &index_ref).await?;
+        let (metadata, symbols) = Self::IndexFileInternal(file_path, config, &index_ref, patterns).await?;
         
         let mut index = self.file_index.write().await;
         index.files.insert(file_path.clone(), metadata.clone());
@@ -879,7 +882,7 @@ impl FileIndexer {
     /// Index file content for search (public API)
     pub async fn IndexContent(&self, file_path: &PathBuf, metadata: &FileMetadata) -> Result<()> {
         let mut index = self.file_index.write().await;
-        self.index_content_internal(&mut index, file_path, metadata).await
+        self.IndexContentInternal(&mut index, file_path, metadata).await
     }
     
     /// Search files with multiple modes and comprehensive query handling
@@ -901,7 +904,7 @@ impl FileIndexer {
         );
         
         // Sanitize search query
-        let sanitized_query = Self::sanitize_search_query(&query.query)?;
+        let sanitized_query = Self::SanitizeSearchQuery(&query.query)?;
         
         // Build search parameters
         let case_sensitive = query.case_sensitive;
@@ -918,7 +921,7 @@ impl FileIndexer {
         // Search based on mode
         match query.mode {
             SearchMode::Literal => {
-                self.search_literal(
+                self.SearchLiteral(
                     &sanitized_query,
                     case_sensitive,
                     whole_word,
@@ -931,7 +934,7 @@ impl FileIndexer {
             }
             SearchMode::Regex => {
                 if let Some(regex) = &query.regex {
-                    self.search_regex(
+                    self.SearchRegex(
                         regex,
                         path.as_deref(),
                         language.as_deref(),
@@ -942,7 +945,7 @@ impl FileIndexer {
                 } else {
                     // Try to compile regex from query
                     if let Ok(regex) = Regex::new(&sanitized_query) {
-                        self.search_regex(
+                        self.SearchRegex(
                             &regex,
                             path.as_deref(),
                             language.as_deref(),
@@ -954,7 +957,7 @@ impl FileIndexer {
                 }
             }
             SearchMode::Fuzzy => {
-                self.search_fuzzy(
+                self.SearchFuzzy(
                     &sanitized_query,
                     case_sensitive,
                     path.as_deref(),
@@ -965,7 +968,7 @@ impl FileIndexer {
                 .await;
             }
             SearchMode::Exact => {
-                self.search_exact(
+                self.SearchExact(
                     &sanitized_query,
                     case_sensitive,
                     path.as_deref(),
@@ -1011,7 +1014,7 @@ impl FileIndexer {
     }
     
     /// Sanitize search query to prevent injection and invalid patterns
-    fn sanitize_search_query(query: &str) -> Result<String> {
+    fn SanitizeSearchQuery(query: &str) -> Result<String> {
         // Remove null bytes and control characters
         let sanitized: String = query
             .chars()
@@ -1029,7 +1032,7 @@ impl FileIndexer {
     }
     
     /// Literal search (default mode)
-    async fn search_literal(
+    async fn SearchLiteral(
         &self,
         query: &str,
         case_sensitive: bool,
@@ -1049,9 +1052,9 @@ impl FileIndexer {
         if let Some(file_paths) = index.content_index.get(&search_query.to_lowercase()) {
             for file_path in file_paths {
                 if let Some(metadata) = index.files.get(file_path) {
-                    if Self::matches_filters(file_path, metadata, path_filter, language_filter) {
+                    if Self::MatchesFilters(file_path, metadata, path_filter, language_filter) {
                         if let Ok(search_result) =
-                            self.find_matches_in_file(file_path, &search_query, case_sensitive, whole_word, index).await
+                            self.FindMatchesInFile(file_path, &search_query, case_sensitive, whole_word, index).await
                         {
                             if !search_result.matches.is_empty() {
                                 results.push(search_result);
@@ -1081,7 +1084,7 @@ impl FileIndexer {
             };
             
             if name_to_search.contains(&search_query) {
-                if Self::matches_filters(file_path, metadata, path_filter, language_filter) {
+                if Self::MatchesFilters(file_path, metadata, path_filter, language_filter) {
                     // Filename match has lower relevance than content match
                     results.push(SearchResult {
                         path: file_path.to_string_lossy().to_string(),
@@ -1096,7 +1099,7 @@ impl FileIndexer {
     }
     
     /// Regex search mode
-    async fn search_regex(
+    async fn SearchRegex(
         &self,
         regex: &Regex,
         path_filter: Option<&str>,
@@ -1109,15 +1112,15 @@ impl FileIndexer {
                 break;
             }
             
-            if !Self::matches_filters(file_path, metadata, path_filter, language_filter) {
+            if !Self::MatchesFilters(file_path, metadata, path_filter, language_filter) {
                 continue;
             }
             
             if let Ok(content) = tokio::fs::read_to_string(file_path).await {
-                let matches = Self::find_regex_matches(&content, regex);
+                let matches = Self::FindRegexMatches(&content, regex);
                 
                 if !matches.is_empty() {
-                    let relevance = Self::calculate_relevance(&matches, metadata);
+                    let relevance = Self::CalculateRelevance(&matches, metadata);
                     
                     results.push(SearchResult {
                         path: file_path.to_string_lossy().to_string(),
@@ -1135,8 +1138,8 @@ impl FileIndexer {
         }
     }
     
-    /// Fuzzy search with typo tolerance (simple implementation)
-    async fn search_fuzzy(
+    /// Fuzzy search with typo tolerance using Levenshtein distance
+    async fn SearchFuzzy(
         &self,
         query: &str,
         case_sensitive: bool,
@@ -1152,20 +1155,21 @@ impl FileIndexer {
                 break;
             }
             
-            if !Self::matches_filters(file_path, metadata, path_filter, language_filter) {
+            if !Self::MatchesFilters(file_path, metadata, path_filter, language_filter) {
                 continue;
             }
             
             if let Ok(content) = tokio::fs::read_to_string(file_path).await {
-                let matches = Self::find_fuzzy_matches(
+                let max_distance = 2; // TODO: Make this configurable
+                let matches = Self::FindFuzzyMatches(
                     &content,
                     &query_lower,
                     case_sensitive,
-                    2, // max distance
+                    max_distance,
                 );
                 
                 if !matches.is_empty() {
-                    let relevance = Self::calculate_relevance(&matches, metadata) * 0.8; // Fuzzy matches have lower relevance
+                    let relevance = Self::CalculateRelevance(&matches, metadata) * 0.8; // Fuzzy matches have lower relevance
                     
                     results.push(SearchResult {
                         path: file_path.to_string_lossy().to_string(),
@@ -1184,7 +1188,7 @@ impl FileIndexer {
     }
     
     /// Exact match search (whole word, case-sensitive)
-    async fn search_exact(
+    async fn SearchExact(
         &self,
         query: &str,
         _case_sensitive: bool,
@@ -1198,15 +1202,15 @@ impl FileIndexer {
                 break;
             }
             
-            if !Self::matches_filters(file_path, metadata, path_filter, language_filter) {
+            if !Self::MatchesFilters(file_path, metadata, path_filter, language_filter) {
                 continue;
             }
             
             if let Ok(content) = tokio::fs::read_to_string(file_path).await {
-                let matches = Self::find_exact_matches(&content, query);
+                let matches = Self::FindExactMatches(&content, query);
                 
                 if !matches.is_empty() {
-                    let relevance = Self::calculate_relevance(&matches, metadata) * 1.1; // Exact matches have higher relevance
+                    let relevance = Self::CalculateRelevance(&matches, metadata) * 1.1; // Exact matches have higher relevance
                     
                     results.push(SearchResult {
                         path: file_path.to_string_lossy().to_string(),
@@ -1225,7 +1229,7 @@ impl FileIndexer {
     }
     
     /// Find matches in a single file with context
-    async fn find_matches_in_file(
+    async fn FindMatchesInFile(
         &self,
         file_path: &PathBuf,
         query: &str,
@@ -1240,8 +1244,8 @@ impl FileIndexer {
             AirError::Internal("File metadata not found in index".to_string())
         })?;
         
-        let matches = Self::find_matches_with_context(&content, query, case_sensitive, whole_word);
-        let relevance = Self::calculate_relevance(&matches, metadata);
+        let matches = Self::FindMatchesWithContext(&content, query, case_sensitive, whole_word);
+        let relevance = Self::CalculateRelevance(&matches, metadata);
         
         Ok(SearchResult {
             path: file_path.to_string_lossy().to_string(),
@@ -1257,7 +1261,7 @@ impl FileIndexer {
     }
     
     /// Find matches in content with surrounding context
-    fn find_matches_with_context(
+    fn FindMatchesWithContext(
         content: &str,
         query: &str,
         case_sensitive: bool,
@@ -1280,7 +1284,7 @@ impl FileIndexer {
             };
             
             let start = if whole_word {
-                Self::find_whole_word_match(&line_to_search, &query_to_find)
+                Self::FindWholeWordMatch(&line_to_search, &query_to_find)
             } else {
                 line_to_search.find(&query_to_find)
             };
@@ -1321,7 +1325,7 @@ impl FileIndexer {
     }
     
     /// Find whole word match with word boundary detection
-    fn find_whole_word_match(line: &str, word: &str) -> Option<usize> {
+    fn FindWholeWordMatch(line: &str, word: &str) -> Option<usize> {
         let mut start = 0;
         
         while let Some(pos) = line[start..].find(word) {
@@ -1347,7 +1351,7 @@ impl FileIndexer {
     }
     
     /// Find regex matches in content
-    fn find_regex_matches(content: &str, regex: &Regex) -> Vec<SearchMatch> {
+    fn FindRegexMatches(content: &str, regex: &Regex) -> Vec<SearchMatch> {
         let mut matches = Vec::new();
         let lines: Vec<&str> = content.lines().collect();
         
@@ -1369,8 +1373,9 @@ impl FileIndexer {
         matches
     }
     
-    /// Find fuzzy matches (simple implementation with Levenshtein distance)
-    fn find_fuzzy_matches(
+    /// Find fuzzy matches using Levenshtein distance algorithm
+    /// TODO: Implement full Levenshtein distance calculation for fuzzy matching
+    fn FindFuzzyMatches(
         content: &str,
         query: &str,
         case_sensitive: bool,
@@ -1387,17 +1392,25 @@ impl FileIndexer {
                 line.to_lowercase()
             };
             
-            // Simple substring match with distance check
+            // Calculate Levenshtein distance for fuzzy matching
+            // TODO: Implement full Levenshtein distance algorithm
             if let Some(pos) = line_to_search.find(query) {
-                // For now, just do substring match as fuzzy match
-                matches.push(SearchMatch {
-                    line_number,
-                    line_content: line.to_string(),
-                    match_start: pos,
-                    match_end: pos + query.len(),
-                    context_before: Vec::new(),
-                    context_after: Vec::new(),
-                });
+                // Check if the match is within the max_distance threshold
+                let distance = Self::CalculateLevenshteinDistance(
+                    &line_to_search[pos..pos.saturating_add(query.len())],
+                    query
+                );
+                
+                if distance <= max_distance {
+                    matches.push(SearchMatch {
+                        line_number,
+                        line_content: line.to_string(),
+                        match_start: pos,
+                        match_end: pos + query.len(),
+                        context_before: Vec::new(),
+                        context_after: Vec::new(),
+                    });
+                }
             }
         }
         
@@ -1405,12 +1418,52 @@ impl FileIndexer {
     }
     
     /// Find exact matches (word boundary and case-sensitive)
-    fn find_exact_matches(content: &str, query: &str) -> Vec<SearchMatch> {
-        Self::find_matches_with_context(content, query, true, true)
+    fn FindExactMatches(content: &str, query: &str) -> Vec<SearchMatch> {
+        Self::FindMatchesWithContext(content, query, true, true)
+    }
+    
+    /// Calculate Levenshtein distance between two strings
+    /// Used for fuzzy matching to measure edit distance
+    fn CalculateLevenshteinDistance(s1: &str, s2: &str) -> usize {
+        let s1_chars: Vec<char> = s1.chars().collect();
+        let s2_chars: Vec<char> = s2.chars().collect();
+        let len1 = s1_chars.len();
+        let len2 = s2_chars.len();
+        
+        // Create a 2D matrix to store distances
+        let mut dp = vec![vec![0usize; len2 + 1]; len1 + 1];
+        
+        // Initialize the matrix
+        for i in 0..=len1 {
+            dp[i][0] = i;
+        }
+        for j in 0..=len2 {
+            dp[0][j] = j;
+        }
+        
+        // Calculate distances
+        for i in 1..=len1 {
+            for j in 1..=len2 {
+                if s1_chars[i - 1] == s2_chars[j - 1] {
+                    dp[i][j] = dp[i - 1][j - 1];
+                } else {
+                    dp[i][j] = 1 + [
+                        dp[i - 1][j],      // deletion
+                        dp[i][j - 1],      // insertion
+                        dp[i - 1][j - 1],  // substitution
+                    ]
+                    .into_iter()
+                    .min()
+                    .unwrap();
+                }
+            }
+        }
+        
+        dp[len1][len2]
     }
     
     /// Calculate relevance score for search results
-    fn calculate_relevance(matches: &[SearchMatch], metadata: &FileMetadata) -> f64 {
+    fn CalculateRelevance(matches: &[SearchMatch], metadata: &FileMetadata) -> f64 {
         let match_count = matches.len();
         let line_count = metadata.line_count.unwrap_or(1) as f64;
         
@@ -1428,7 +1481,7 @@ impl FileIndexer {
     }
     
     /// Check if file matches filters
-    fn matches_filters(
+    fn MatchesFilters(
         file_path: &PathBuf,
         metadata: &FileMetadata,
         path_filter: Option<&str>,
@@ -1453,14 +1506,14 @@ impl FileIndexer {
     
     /// Get file information
     pub async fn GetFileInfo(&self, path: String) -> Result<Option<FileMetadata>> {
-        let file_path = Self::validate_and_expand_path(&path)?;
+        let file_path = Self::ValidateAndExpandPath(&path)?;
         let index = self.file_index.read().await;
         
         Ok(index.files.get(&file_path).cloned())
     }
     
     /// Check if file matches patterns
-    fn matches_patterns(file_path: &PathBuf, patterns: &[String]) -> bool {
+    fn MatchesPatterns(file_path: &PathBuf, patterns: &[String]) -> bool {
         if patterns.is_empty() {
             return true;
         }
@@ -1472,7 +1525,7 @@ impl FileIndexer {
             .to_string();
         
         for pattern in patterns {
-            if Self::matches_pattern(&file_name, pattern) {
+            if Self::MatchesPattern(&file_name, pattern) {
                 return true;
             }
         }
@@ -1481,7 +1534,7 @@ impl FileIndexer {
     }
     
     /// Check if filename matches pattern
-    fn matches_pattern(filename: &str, pattern: &str) -> bool {
+    fn MatchesPattern(filename: &str, pattern: &str) -> bool {
         if pattern.starts_with("*.") {
             let extension = &pattern[2..];
             filename.ends_with(extension)
@@ -1497,17 +1550,17 @@ impl FileIndexer {
     /// - TypeScript/JavaScript: class, interface, function, const, let, var
     /// - Python: class, def
     /// - Go: type, func, struct, interface
-    async fn extract_symbols(file_path: &PathBuf, content: &[u8], language: &str) -> Result<Vec<SymbolInfo>> {
+    async fn ExtractSymbols(file_path: &PathBuf, content: &[u8], language: &str) -> Result<Vec<SymbolInfo>> {
         let content_str = String::from_utf8_lossy(content);
         let mut symbols = Vec::new();
         
         match language.to_lowercase().as_str() {
-            "rust" => symbols.extend(Self::extract_rust_symbols(&content_str, file_path)),
+            "rust" => symbols.extend(Self::ExtractRustSymbols(&content_str, file_path)),
             "typescript" | "javascript" => {
-                symbols.extend(Self::extract_typescript_symbols(&content_str, file_path))
+                symbols.extend(Self::ExtractTypeScriptSymbols(&content_str, file_path))
             }
-            "python" => symbols.extend(Self::extract_python_symbols(&content_str, file_path)),
-            "go" => symbols.extend(Self::extract_go_symbols(&content_str, file_path)),
+            "python" => symbols.extend(Self::ExtractPythonSymbols(&content_str, file_path)),
+            "go" => symbols.extend(Self::ExtractGoSymbols(&content_str, file_path)),
             _ => {}
         }
         
@@ -1515,7 +1568,7 @@ impl FileIndexer {
     }
     
     /// Extract Rust symbols (struct, impl, fn, mod, enum, trait)
-    fn extract_rust_symbols(content: &str, file_path: &PathBuf) -> Vec<SymbolInfo> {
+    fn ExtractRustSymbols(content: &str, file_path: &PathBuf) -> Vec<SymbolInfo> {
         let mut symbols = Vec::new();
         let lines: Vec<&str> = content.lines().collect();
         
@@ -1626,7 +1679,7 @@ impl FileIndexer {
     }
     
     /// Extract TypeScript/JavaScript symbols (class, interface, function, etc.)
-    fn extract_typescript_symbols(content: &str, file_path: &PathBuf) -> Vec<SymbolInfo> {
+    fn ExtractTypeScriptSymbols(content: &str, file_path: &PathBuf) -> Vec<SymbolInfo> {
         let mut symbols = Vec::new();
         let lines: Vec<&str> = content.lines().collect();
         
@@ -1727,7 +1780,7 @@ impl FileIndexer {
     }
     
     /// Extract Python symbols (class, def)
-    fn extract_python_symbols(content: &str, file_path: &PathBuf) -> Vec<SymbolInfo> {
+    fn ExtractPythonSymbols(content: &str, file_path: &PathBuf) -> Vec<SymbolInfo> {
         let mut symbols = Vec::new();
         let lines: Vec<&str> = content.lines().collect();
         
@@ -1768,7 +1821,7 @@ impl FileIndexer {
     }
     
     /// Extract Go symbols (type, func, struct, interface)
-    fn extract_go_symbols(content: &str, file_path: &PathBuf) -> Vec<SymbolInfo> {
+    fn ExtractGoSymbols(content: &str, file_path: &PathBuf) -> Vec<SymbolInfo> {
         let mut symbols = Vec::new();
         let lines: Vec<&str> = content.lines().collect();
         
@@ -1872,7 +1925,7 @@ impl FileIndexer {
     }
     
     /// Detect MIME type with comprehensive file type detection
-    fn detect_mime_type(file_path: &PathBuf, content: &[u8]) -> String {
+    fn DetectMimeType(file_path: &PathBuf, content: &[u8]) -> String {
         if let Some(extension) = file_path.extension() {
             match extension.to_string_lossy().to_lowercase().as_str() {
                 "rs" => "text/x-rust".to_string(),
@@ -1965,7 +2018,7 @@ impl FileIndexer {
     }
     
     /// Detect programming language from file extension and shebang
-    fn detect_language(file_path: &PathBuf) -> Option<String> {
+    fn DetectLanguage(file_path: &PathBuf) -> Option<String> {
         if let Some(extension) = file_path.extension() {
             let lang = match extension.to_string_lossy().to_lowercase().as_str() {
                 "rs" => "rust",
@@ -2058,12 +2111,12 @@ impl FileIndexer {
     }
     
     /// Load index from disk or create new one with corruption detection
-    async fn load_or_create_index(index_directory: &PathBuf) -> Result<FileIndex> {
+    async fn LoadOrCreateIndex(index_directory: &PathBuf) -> Result<FileIndex> {
         let index_file = index_directory.join("file_index.json");
         
         if index_file.exists() {
             // Try to load existing index
-            match Self::load_index_internal(&index_file).await {
+            match Self::LoadIndexInternal(&index_file).await {
                 Ok(index) => {
                     log::info!(
                         "[FileIndexer] Loaded index with {} files",
@@ -2077,18 +2130,18 @@ impl FileIndexer {
                         e
                     );
                     // Backup corrupted index
-                    Self::backup_corrupted_index(index_directory).await?;
-                    Ok(Self::create_new_index())
+                    Self::BackupCorruptedIndex(index_directory).await?;
+                    Ok(Self::CreateNewIndex())
                 }
             }
         } else {
             // Create new index
-            Ok(Self::create_new_index())
+            Ok(Self::CreateNewIndex())
         }
     }
     
     /// Load index from disk internal
-    async fn load_index_internal(index_file: &PathBuf) -> Result<FileIndex> {
+    async fn LoadIndexInternal(index_file: &PathBuf) -> Result<FileIndex> {
         let content = tokio::fs::read_to_string(index_file).await
             .map_err(|e| AirError::FileSystem(format!("Failed to read index file: {}", e)))?;
         
@@ -2106,14 +2159,14 @@ impl FileIndexer {
     }
     
     /// Create a new empty index
-    fn create_new_index() -> FileIndex {
+    fn CreateNewIndex() -> FileIndex {
         let index = FileIndex {
             files: HashMap::new(),
             content_index: HashMap::new(),
             symbol_index: HashMap::new(),
             file_symbols: HashMap::new(),
             last_updated: chrono::Utc::now(),
-            index_version: Self::generate_index_version(),
+            index_version: Self::GenerateIndexVersion(),
             index_checksum: String::new(),
         };
         
@@ -2121,7 +2174,7 @@ impl FileIndexer {
     }
     
     /// Backup corrupted index before creating new one
-    async fn backup_corrupted_index(index_directory: &PathBuf) -> Result<()> {
+    async fn BackupCorruptedIndex(index_directory: &PathBuf) -> Result<()> {
         let index_file = index_directory.join("file_index.json");
         let backup_file = index_directory.join(format!(
             "file_index.corrupted.{}.json",
@@ -2142,12 +2195,12 @@ impl FileIndexer {
     }
     
     /// Generate index version string
-    fn generate_index_version() -> String {
+    fn GenerateIndexVersion() -> String {
         format!("{}-{}", env!("CARGO_PKG_VERSION"), chrono::Utc::now().timestamp())
     }
     
     /// Calculate index checksum for integrity verification
-    fn calculate_index_checksum(index: &FileIndex) -> Result<String> {
+    fn CalculateIndexChecksum(index: &FileIndex) -> Result<String> {
         let checksum_input = format!(
             "{}:{}:{}:{}",
             index.files.len(),
@@ -2163,11 +2216,11 @@ impl FileIndexer {
     }
     
     /// Verify index integrity and detect corruption
-    async fn verify_index_integrity(&self) -> Result<()> {
+    async fn VerifyIndexIntegrity(&self) -> Result<()> {
         let index = self.file_index.read().await;
         
         // Recalculate checksum
-        let expected_checksum = Self::calculate_index_checksum(&index)?;
+        let expected_checksum = Self::CalculateIndexChecksum(&index)?;
         
         if index.index_checksum != expected_checksum {
             log::warn!(
@@ -2209,10 +2262,10 @@ impl FileIndexer {
         log::info!("[FileIndexer] Recovering from corrupted index...");
         
         // Backup corrupted index
-        Self::backup_corrupted_index(&self.index_directory).await?;
+        Self::BackupCorruptedIndex(&self.index_directory).await?;
         
         // Create new index
-        let new_index = Self::create_new_index();
+        let new_index = Self::CreateNewIndex();
         *self.file_index.write().await = new_index;
         
         // Clear corruption flag
@@ -2224,7 +2277,7 @@ impl FileIndexer {
     }
     
     /// Save index to disk with atomic write
-    async fn save_index(&self, index: &FileIndex) -> Result<()> {
+    async fn SaveIndex(&self, index: &FileIndex) -> Result<()> {
         let index_file = self.index_directory.join("file_index.json");
         let temp_file = self.index_directory.join("file_index.json.tmp");
         
@@ -2262,12 +2315,21 @@ impl FileIndexer {
         let index = self.file_index.clone();
         let corruption_flag = self.corruption_detected.clone();
         
+        // Clone indexer for async task
+        let indexer_arc = Arc::new(self.clone());
+        
         let mut watcher: notify::RecommendedWatcher = Watcher::new(
-            move |res: Result<notify::Event, notify::Error>| {
+            move |res: std::result::Result<notify::Event, notify::Error>| {
                 if let Ok(event) = res {
+                    // Check corruption flag before processing events
+                    let indexer = indexer_arc.clone();
+                    if *corruption_flag.blocking_lock() {
+                        log::warn!("[FileIndexer] Skipping file event - index marked as corrupted");
+                        return;
+                    }
                     let index = index.clone();
                     tokio::spawn(async move {
-                        Self::handle_file_event(event, index).await;
+                        Self::HandleFileEvent(event, index).await;
                     });
                 }
             },
@@ -2295,12 +2357,12 @@ impl FileIndexer {
     }
     
     /// Handle file watcher event
-    async fn handle_file_event(event: notify::Event, index: Arc<RwLock<FileIndex>>) {
+    async fn HandleFileEvent(event: notify::Event, index: Arc<RwLock<FileIndex>>) {
         match event.kind {
             notify::EventKind::Create(notify::event::CreateKind::File) => {
                 for path in event.paths {
                     log::debug!("[FileIndexer] File created: {}", path.display());
-                    // Schedule reindex
+                    // TODO: Schedule reindex for newly created files
                 }
             }
             notify::EventKind::Modify(notify::event::ModifyKind::Data(_))
@@ -2310,7 +2372,7 @@ impl FileIndexer {
                 for path in event.paths {
                     log::debug!("[FileIndexer] File modified: {}", path.display());
                     // Update index for this file
-                    // TODO: Implement incremental update
+                    // TODO: Implement incremental update for modified files
                 }
             }
             notify::EventKind::Remove(notify::event::RemoveKind::File) => {
@@ -2358,7 +2420,7 @@ impl FileIndexer {
         let indexer = self.clone();
         
         let handle = tokio::spawn(async move {
-            indexer.background_task().await;
+            indexer.BackgroundTask().await;
         });
         
         log::info!("[FileIndexer] Background tasks started");
@@ -2367,7 +2429,7 @@ impl FileIndexer {
     }
     
     /// Background task for periodic indexing
-    async fn background_task(&self) {
+    async fn BackgroundTask(&self) {
         let config = &self.app_state.configuration.indexing;
         
         let interval = tokio::time::Duration::from_secs(config.update_interval_minutes as u64 * 60);
