@@ -1706,24 +1706,24 @@ mod tests {
 
 	#[test]
 	fn test_profile_defaults() {
-		let dev_config = ConfigurationManager::GetProfileDefaults("dev");
-		assert_eq!(dev_config.profile, "dev");
-		assert_eq!(dev_config.logging.level, "debug");
+		let DevConfig = ConfigurationManager::GetProfileDefaults("dev");
+		assert_eq!(DevConfig.profile, "dev");
+		assert_eq!(DevConfig.logging.level, "debug");
 
-		let prod_config = ConfigurationManager::GetProfileDefaults("prod");
-		assert_eq!(prod_config.profile, "prod");
-		assert_eq!(prod_config.logging.level, "warn");
-		assert!(!prod_config.logging.console_enabled);
+		let ProdConfig = ConfigurationManager::GetProfileDefaults("prod");
+		assert_eq!(ProdConfig.profile, "prod");
+		assert_eq!(ProdConfig.logging.level, "warn");
+		assert!(!ProdConfig.logging.console_enabled);
 	}
 
 	#[test]
 	fn test_path_expansion() {
-		let home = dirs::home_dir().expect("Cannot determine home directory");
-		let expanded = ConfigurationManager::ExpandPath("~/test").unwrap();
-		assert_eq!(expanded, home.join("test"));
+		let Home = dirs::home_dir().expect("Cannot determine home directory");
+		let Expanded = ConfigurationManager::ExpandPath("~/test").unwrap();
+		assert_eq!(Expanded, Home.join("test"));
 
-		let absolute = ConfigurationManager::ExpandPath("/tmp/test").unwrap();
-		assert_eq!(absolute, PathBuf::from("/tmp/test"));
+		let Absolute = ConfigurationManager::ExpandPath("/tmp/test").unwrap();
+		assert_eq!(Absolute, PathBuf::from("/tmp/test"));
 	}
 
 	#[test]
