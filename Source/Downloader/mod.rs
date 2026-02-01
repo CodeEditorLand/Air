@@ -110,8 +110,6 @@ use std::{
 use serde::{Deserialize, Serialize};
 use tokio::sync::{RwLock, Semaphore};
 
-
-
 use crate::{AirError, ApplicationState::ApplicationState, Configuration::ConfigurationManager, Result, utils};
 
 /// Download manager implementation with full resilience and capabilities
@@ -531,8 +529,7 @@ impl DownloadManager {
 						);
 						return Err(AirError::FileSystem(format!(
 							"Insufficient disk space: {} bytes available, {} bytes required",
-							available_bytes,
-							required_bytes
+							available_bytes, required_bytes
 						)));
 					}
 
@@ -561,8 +558,7 @@ impl DownloadManager {
 						);
 						return Err(AirError::FileSystem(format!(
 							"Insufficient disk space: {} bytes available, {} bytes required",
-							available_bytes,
-							required_bytes
+							available_bytes, required_bytes
 						)));
 					}
 					log::debug!(
@@ -605,13 +601,14 @@ impl DownloadManager {
 	/// Get disk space on Windows
 	#[cfg(windows)]
 	fn GetDiskSpaceWindows(&self, path:&Path) -> Result<u64> {
-		// TODO: Implement Windows disk space checking using winapi GetDiskFreeSpaceExW()
-		// Example implementation:
+		// TODO: Implement Windows disk space checking using winapi
+		// GetDiskFreeSpaceExW() Example implementation:
 		// use windows::Win32::Storage::FileSystem::GetDiskFreeSpaceExW;
 		// let mut available: u64 = 0;
 		// let mut total: u64 = 0;
 		// let mut free: u64 = 0;
-		// let result = unsafe { GetDiskFreeSpaceExW(path.as_os_str(), &mut available as *mut _ as _, &mut total as *mut _ as _, &mut free as *mut _ as _) };
+		// let result = unsafe { GetDiskFreeSpaceExW(path.as_os_str(), &mut available as
+		// *mut _ as _, &mut total as *mut _ as _, &mut free as *mut _ as _) };
 		// if !result.as_bool() { return Err(...); }
 		// For now, assume sufficient space and log the request
 		log::debug!("[DownloadManager] Checking disk space at: {}", path.display());
@@ -642,7 +639,7 @@ impl DownloadManager {
 				};
 				#[cfg(not(unix))]
 				let current_device = 0u64; // Dummy value for non-unix systems
-				
+
 				let parent = current.parent();
 
 				if let Some(parent_path) = parent {
@@ -731,8 +728,8 @@ impl DownloadManager {
 				Ok(file_info) => {
 					// Verify checksum if provided
 					if let Some(ref expected_checksum) = ExpectedChecksumFromConfig(config) {
-					self.UpdateDownloadStatus(download_id, DownloadState::Verifying, Some(100.0), None)
-						.await?;
+						self.UpdateDownloadStatus(download_id, DownloadState::Verifying, Some(100.0), None)
+							.await?;
 
 						if let Err(e) = self.VerifyChecksum(destination, expected_checksum).await {
 							log::warn!("[DownloadManager] Checksum verification failed [ID: {}]: {}", download_id, e);
@@ -919,7 +916,8 @@ impl DownloadManager {
 				Ok(chunk) => {
 					// Bandwidth limiting check
 					let chunk_size = chunk.len();
-					if let Ok(permit) = self.bandwidth_limiter.try_acquire_many((chunk_size / (1024 * 1024) + 1) as u32) {
+					if let Ok(permit) = self.bandwidth_limiter.try_acquire_many((chunk_size / (1024 * 1024) + 1) as u32)
+					{
 						drop(permit);
 					} else {
 						// Wait if bandwidth limit reached
@@ -1321,11 +1319,14 @@ impl DownloadManager {
 
 			// Spawn download task in background
 			let manager = self.clone();
+			let download_id_clone = download_id.clone();
 			tokio::spawn(async move {
 				if let Err(e) = manager.DownloadFileWithConfig(config).await {
-					log::error!("[DownloadManager] Queued download failed [ID: {}]: {}", download_id, e);
+					log::error!("[DownloadManager] Queued download failed [ID: {}]: {}", download_id_clone, e);
 					// Update download status to failed
-					let _ = manager.UpdateDownloadStatus(&download_id, DownloadState::Failed, None, Some(e.to_string())).await;
+					let _ = manager
+						.UpdateDownloadStatus(&download_id_clone, DownloadState::Failed, None, Some(e.to_string()))
+						.await;
 				}
 			});
 
@@ -1542,11 +1543,7 @@ impl Default for DownloadStatistics {
 
 /// Helper function to extract expected checksum from config
 fn ExpectedChecksumFromConfig(config:&DownloadConfig) -> Option<&str> {
-	if config.checksum.is_empty() {
-		None
-	} else {
-		Some(&config.checksum)
-	}
+	if config.checksum.is_empty() { None } else { Some(&config.checksum) }
 }
 
 /// Chunk information for parallel downloads
@@ -1685,7 +1682,7 @@ impl DownloadManager {
 			let chunk_clone = chunk.clone();
 			let downloaded_tracker = downloaded_tracker.clone();
 			let completed_tracker = completed_tracker.clone();
-			let did = download_id.clone();
+			let _Did = download_id.clone();
 
 			let handle = tokio::spawn(async move {
 				manager.DownloadChunk(&url_clone, &chunk_clone, i).await?;
