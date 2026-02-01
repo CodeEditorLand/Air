@@ -437,7 +437,8 @@ impl UpdateManager {
 			.map_err(|e| AirError::Configuration(format!("Failed to create backup directory: {}", e)))?;
 
 		// Determine platform-specific configuration
-		let platform_config = Self::detect_platform();
+		let PlatformConfig = Self::detect_platform();
+		let PlatformConfigClone = PlatformConfig.clone();
 
 		// Determine update channel from configuration
 		let update_channel = if config.channel == "insiders" {
@@ -482,7 +483,7 @@ impl UpdateManager {
 			download_sessions:Arc::new(RwLock::new(HashMap::new())),
 			rollback_history:Arc::new(Mutex::new(rollback_history)),
 			update_channel,
-			platform_config,
+			platform_config:PlatformConfigClone,
 		};
 
 		// Initialize service status
@@ -494,8 +495,8 @@ impl UpdateManager {
 
 		log::info!(
 			"[UpdateManager] Update service initialized for platform: {}/{}",
-			platform_config.platform,
-			platform_config.arch
+			PlatformConfig.platform,
+			PlatformConfig.arch
 		);
 
 		Ok(manager)
@@ -602,7 +603,7 @@ impl UpdateManager {
 			log::info!(
 				"[UpdateManager] Update available: {} ({})",
 				info.version,
-				self.format_size(info.size)
+				self.format_size(info.size as f64)
 			);
 
 			// Update status
@@ -1183,7 +1184,7 @@ impl UpdateManager {
 					match response.status() {
 						reqwest::StatusCode::NO_CONTENT => {
 							// No update available (up to date)
-							circuit_breaker.record_success().await;
+							circuit_breaker.RecordSuccess().await;
 							log::debug!("[UpdateManager] Server reports no updates available");
 							return Ok(None);
 						},
@@ -1191,7 +1192,7 @@ impl UpdateManager {
 							// Parse update information
 							match response.json::<UpdateInfo>().await {
 								Ok(update_info) => {
-									circuit_breaker.record_success().await;
+									circuit_breaker.RecordSuccess().await;
 
 									// Check if update is actually newer
 									if UpdateManager::CompareVersions(current_version, &update_info.version) < 0 {
@@ -1210,7 +1211,7 @@ impl UpdateManager {
 									}
 								},
 								Err(e) => {
-									circuit_breaker.record_failure().await;
+									circuit_breaker.RecordFailure().await;
 									log::error!("[UpdateManager] Failed to parse update info: {}", e);
 
 									if attempt < retry_policy.max_retries {
@@ -1230,7 +1231,7 @@ impl UpdateManager {
 							}
 						},
 						status => {
-							circuit_breaker.record_failure().await;
+							circuit_breaker.RecordFailure().await;
 							log::warn!("[UpdateManager] Update server returned status: {}", status);
 
 							if attempt < retry_policy.max_retries {
@@ -1247,7 +1248,7 @@ impl UpdateManager {
 					}
 				},
 				Err(e) => {
-					circuit_breaker.record_failure().await;
+					circuit_breaker.RecordFailure().await;
 					log::warn!("[UpdateManager] Failed to check for updates: {}", e);
 
 					if attempt < retry_policy.max_retries {
@@ -1536,7 +1537,7 @@ impl UpdateManager {
 			#[cfg(not(target_os = "windows"))]
 			{
 				use std::os::unix::fs::MetadataExt;
-				let device_id = metadata.dev();
+let _device_id = metadata.dev();
 
 				// TODO: Actually get free space for the device
 				// This would require platform-specific syscalls
@@ -1545,7 +1546,7 @@ impl UpdateManager {
 
 		log::info!(
 			"[UpdateManager] Disk space validation: requiring {} bytes",
-			self.format_size(required_bytes)
+			self.format_size(required_bytes as f64)
 		);
 
 		// For now, we'll trust that there's enough space
@@ -1735,7 +1736,7 @@ impl UpdateManager {
 			operation,
 			if success { "succeeded" } else { "failed" },
 			duration_ms,
-			download_size.map(|s| self.format_size(s)),
+			download_size.map(|s| self.format_size(s as f64)),
 			success
 		);
 
@@ -1856,13 +1857,13 @@ impl UpdateManager {
 	/// # Arguments
 	/// * `update_info` - Update information to resume download
 	pub async fn ResumeDownload(&self, update_info:&UpdateInfo) -> Result<()> {
-		let mut status = self.update_status.write().await;
+		let Status = self.update_status.write().await;
 
-		if status.installation_status != InstallationStatus::Paused {
+		if Status.installation_status != InstallationStatus::Paused {
 			return Err(AirError::Internal("No paused download to resume".to_string()));
 		}
 
-		drop(status);
+		drop(Status);
 
 		log::info!("[UpdateManager] Resuming download for version {}", update_info.version);
 		self.DownloadUpdate(update_info).await
@@ -1946,7 +1947,11 @@ impl UpdateManager {
 		let mut cleaned_count = 0;
 		let now = std::time::SystemTime::now();
 
-		while let Some(entry) = entries.next_entry().await.map_err(|e| AirError::FileSystem(format!("Failed to read directory entry: {}", e)))? {
+		while let Some(entry) = entries
+			.next_entry()
+			.await
+			.map_err(|e| AirError::FileSystem(format!("Failed to read directory entry: {}", e)))?
+		{
 			let path = entry.path();
 			let metadata = entry
 				.metadata()
@@ -2053,23 +2058,23 @@ impl UpdateManager {
 	/// Format byte count to human-readable string
 	///
 	/// # Arguments
-	/// * `bytes` - Number of bytes
+	/// * `bytes` - Number of bytes (supports both u64 and f64 for rates)
 	///
 	/// # Returns
 	/// Formatted string (e.g., "1.5 MB", "500 KB")
-	fn format_size(&self, bytes:u64) -> String {
-		const KB:u64 = 1024;
-		const MB:u64 = KB * 1024;
-		const GB:u64 = MB * 1024;
+	fn format_size(&self, bytes:f64) -> String {
+		const KB:f64 = 1024.0;
+		const MB:f64 = KB * 1024.0;
+		const GB:f64 = MB * 1024.0;
 
 		if bytes >= GB {
-			format!("{:.2} GB", bytes as f64 / GB as f64)
+			format!("{:.2} GB/s", bytes / GB)
 		} else if bytes >= MB {
-			format!("{:.2} MB", bytes as f64 / MB as f64)
+			format!("{:.2} MB/s", bytes / MB)
 		} else if bytes >= KB {
-			format!("{:.2} KB", bytes as f64 / KB as f64)
+			format!("{:.2} KB/s", bytes / KB)
 		} else {
-			format!("{} B", bytes)
+			format!("{:.0} B/s", bytes)
 		}
 	}
 }
