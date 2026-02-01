@@ -62,124 +62,124 @@ use crate::Vine::Generated::Air::{
 /// The concrete implementation of the Air gRPC service
 pub struct AirVinegRPCService {
 	/// Application state
-	app_state:Arc<ApplicationState>,
+	AppState:Arc<ApplicationState>,
 
 	/// Authentication service
-	auth_service:Arc<AuthenticationService>,
+	AuthService:Arc<AuthenticationService>,
 
 	/// Update manager
-	update_manager:Arc<UpdateManager>,
+	UpdateManager:Arc<UpdateManager>,
 
 	/// Download manager
-	download_manager:Arc<DownloadManager>,
+	DownloadManager:Arc<DownloadManager>,
 
 	/// File indexer
-	file_indexer:Arc<FileIndexer>,
+	FileIndexer:Arc<FileIndexer>,
 
 	/// Connection tracking
-	active_connections:Arc<tokio::sync::RwLock<HashMap<String, ConnectionMetadata>>>,
+	ActiveConnections:Arc<tokio::sync::RwLock<HashMap<String, ConnectionMetadata>>>,
 }
 
 /// Connection metadata for tracking client state
 #[derive(Debug, Clone)]
 struct ConnectionMetadata {
-	pub client_id:String,
-	pub client_version:String,
-	pub protocol_version:u32,
-	pub last_request_time:u64,
-	pub request_count:u64,
-	pub connection_type:crate::ApplicationState::ConnectionType,
+	pub ClientId:String,
+	pub ClientVersion:String,
+	pub ProtocolVersion:u32,
+	pub LastRequestTime:u64,
+	pub RequestCount:u64,
+	pub ConnectionType:crate::ApplicationState::ConnectionType,
 }
 
 impl AirVinegRPCService {
 	/// Creates a new instance of the Air gRPC service
 	pub fn new(
-		app_state:Arc<ApplicationState>,
-		auth_service:Arc<AuthenticationService>,
-		update_manager:Arc<UpdateManager>,
-		download_manager:Arc<DownloadManager>,
-		file_indexer:Arc<FileIndexer>,
+		AppState:Arc<ApplicationState>,
+		AuthService:Arc<AuthenticationService>,
+		UpdateManager:Arc<UpdateManager>,
+		DownloadManager:Arc<DownloadManager>,
+		FileIndexer:Arc<FileIndexer>,
 	) -> Self {
 		info!("[AirVinegRPCService] New instance created");
 
 		Self {
-			app_state,
-			auth_service,
-			update_manager,
-			download_manager,
-			file_indexer,
-			active_connections:Arc::new(tokio::sync::RwLock::new(HashMap::new())),
+			AppState,
+			AuthService,
+			UpdateManager,
+			DownloadManager,
+			FileIndexer,
+			ActiveConnections:Arc::new(tokio::sync::RwLock::new(HashMap::new())),
 		}
 	}
 
 	/// Track connection for a request
-	async fn track_connection(&self, request:&tonic::Request<()>, service_name:&str) -> Result<String, Status> {
+	async fn TrackConnection(&self, request:&tonic::Request<()>, ServiceName:&str) -> Result<String, Status> {
 		let metadata = request.metadata();
 		let ConnectionId = metadata
 			.get("connection-id")
 			.map(|v| v.to_str().unwrap_or_default().to_string())
 			.unwrap_or_else(|| crate::utils::GenerateRequestId());
 
-		let client_id = metadata
+		let ClientId = metadata
 			.get("client-id")
 			.map(|v| v.to_str().unwrap_or_default().to_string())
 			.unwrap_or_else(|| "unknown".to_string());
 
-		let client_version = metadata
+		let ClientVersion = metadata
 			.get("client-version")
 			.map(|v| v.to_str().unwrap_or_default().to_string())
 			.unwrap_or_else(|| "unknown".to_string());
 
-		let protocol_version = metadata
+		let ProtocolVersion = metadata
 			.get("protocol-version")
 			.map(|v| v.to_str().unwrap_or_default().parse().unwrap_or(1))
 			.unwrap_or(1);
 
 		// Update connection tracking
-		let mut connections = self.active_connections.write().await;
-		let connection_metadata = connections.entry(ConnectionId.clone()).or_insert_with(|| {
+		let mut connections = self.ActiveConnections.write().await;
+		let ConnectionMetadata = connections.entry(ConnectionId.clone()).or_insert_with(|| {
 			ConnectionMetadata {
-				client_id:client_id.clone(),
-				client_version:client_version.clone(),
-				protocol_version,
-				last_request_time:crate::utils::CurrentTimestamp(),
-				request_count:0,
-				connection_type:crate::ApplicationState::ConnectionType::MountainMain,
+				ClientId:ClientId.clone(),
+				ClientVersion:ClientVersion.clone(),
+				ProtocolVersion,
+				LastRequestTime:crate::utils::CurrentTimestamp(),
+				RequestCount:0,
+				ConnectionType:crate::ApplicationState::ConnectionType::MountainMain,
 			}
 		});
 
-		connection_metadata.last_request_time = crate::utils::CurrentTimestamp();
-		connection_metadata.request_count += 1;
+		connection_metadata.LastRequestTime = crate::utils::CurrentTimestamp();
+		connection_metadata.RequestCount += 1;
 
 		// Register connection with application state
-		self.app_state
+		self.AppState
 			.register_connection(
 				ConnectionId.clone(),
-				client_id,
-				client_version,
-				protocol_version,
+				ClientId,
+				ClientVersion,
+				ProtocolVersion,
 				crate::ApplicationState::ConnectionType::MountainMain,
 			)
 			.await
 			.map_err(|e| Status::internal(e.to_string()))?;
 
-		Ok(connection_id)
+		Ok(ConnectionId)
 	}
 
 	/// Validate protocol version compatibility
-	fn validate_protocol_version(&self, client_version:u32) -> Result<(), Status> {
-		if client_version > crate::PROTOCOL_VERSION {
+	fn validate_protocol_version(&self, ClientVersion:u32) -> Result<(), Status> {
+		if ClientVersion > crate::PROTOCOL_VERSION {
 			return Err(Status::failed_precondition(format!(
 				"Client protocol version {} is newer than server version {}",
-				client_version,
+				ClientVersion,
 				crate::PROTOCOL_VERSION
 			)));
 		}
 
-		if client_version < crate::PROTOCOL_VERSION {
+		if ClientVersion < crate::PROTOCOL_VERSION {
 			warn!(
 				"Client using older protocol version {} (server: {})",
-				client_version,
+				ClientVersion,
 				crate::PROTOCOL_VERSION
 			);
 		}
@@ -195,71 +195,71 @@ impl AirService for AirVinegRPCService {
 		&self,
 		request:Request<AuthenticationRequest>,
 	) -> std::result::Result<Response<AuthenticationResponse>, Status> {
-		let request_data = request.into_inner();
-		let request_id = request_data.request_id.clone();
+		let RequestData = request.into_inner();
+		let RequestId = RequestData.RequestId.clone();
 
 		// Track connection and validate protocol
-		let connection_id = self.track_connection(&request, "authentication").await?;
+		let ConnectionId = self.TrackConnection(&request, "authentication").await?;
 
 		info!(
 			"[AirVinegRPCService] Authentication request received [ID: {}] [Connection: {}]",
-			request_id, connection_id
+			RequestId, ConnectionId
 		);
 
-		self.app_state
-			.register_request(request_id.clone(), "authentication".to_string())
+		self.AppState
+			.register_request(RequestId.clone(), "authentication".to_string())
 			.await
 			.map_err(|e| Status::internal(e.to_string()))?;
 
 		// Additional security validation
-		if request_data.username.is_empty() || request_data.password.is_empty() || request_data.provider.is_empty() {
-			let error_msg = "Invalid authentication parameters".to_string();
-			self.app_state
+		if RequestData.username.is_empty() || RequestData.password.is_empty() || RequestData.provider.is_empty() {
+			let ErrorMsg = "Invalid authentication parameters".to_string();
+			self.AppState
 				.update_request_status(
-					&request_id,
-					crate::ApplicationState::RequestState::Failed(error_msg.clone()),
+					&RequestId,
+					crate::ApplicationState::RequestState::Failed(ErrorMsg.clone()),
 					None,
 				)
 				.await
 				.ok();
 
 			return Ok(Response::new(crate::Vine::Generated::Air::AuthenticationResponse {
-				request_id,
+				RequestId,
 				success:false,
 				token:String::new(),
-				error:error_msg,
+				error:ErrorMsg,
 			}));
 		}
 
 		let result = self
-			.auth_service
-			.authenticate_user(request_data.username, request_data.password, request_data.provider)
+			.AuthService
+			.authenticate_user(RequestData.username, RequestData.password, RequestData.provider)
 			.await;
 
 		match result {
 			Ok(token) => {
-				self.app_state
-					.update_request_status(&request_id, crate::ApplicationState::RequestState::Completed, Some(100.0))
+				self.AppState
+					.update_request_status(&RequestId, crate::ApplicationState::RequestState::Completed, Some(100.0))
 					.await
 					.ok();
 
 				// Log successful authentication
 				info!(
 					"[AirVinegRPCService] Authentication successful for user: {} [Connection: {}]",
-					request_data.username, connection_id
+					RequestData.username, ConnectionId
 				);
 
 				Ok(Response::new(crate::Vine::Generated::Air::AuthenticationResponse {
-					request_id,
+					RequestId,
 					success:true,
 					token,
 					error:String::new(),
 				}))
 			},
 			Err(e) => {
-				self.app_state
+				self.AppState
 					.update_request_status(
-						&request_id,
+						&RequestId,
 						crate::ApplicationState::RequestState::Failed(e.to_string()),
 						None,
 					)
@@ -269,11 +269,11 @@ impl AirService for AirVinegRPCService {
 				// Log failed authentication attempt
 				warn!(
 					"[AirVinegRPCService] Authentication failed for user: {} [Connection: {}] - {}",
-					request_data.username, connection_id, e
+					RequestData.username, ConnectionId, e
 				);
 
 				Ok(Response::new(crate::Vine::Generated::Air::AuthenticationResponse {
-					request_id,
+					RequestId,
 					success:false,
 					token:String::new(),
 					error:e.to_string(),
@@ -287,89 +287,89 @@ impl AirService for AirVinegRPCService {
 		&self,
 		request:Request<UpdateCheckRequest>,
 	) -> std::result::Result<Response<UpdateCheckResponse>, Status> {
-		let request_data = request.into_inner();
-		let request_id = request_data.request_id.clone();
+		let RequestData = request.into_inner();
+		let RequestId = RequestData.RequestId.clone();
 
 		info!(
 			"[AirVinegRPCService] Update check request received [ID: {}] - Version: {}, Channel: {}",
-			request_id, request_data.current_version, request_data.channel
+			RequestId, RequestData.CurrentVersion, RequestData.channel
 		);
 
-		self.app_state
-			.register_request(request_id.clone(), "updates".to_string())
+		self.AppState
+			.register_request(RequestId.clone(), "updates".to_string())
 			.await
 			.map_err(|e| Status::internal(e.to_string()))?;
 
-		// Validate current_version
-		if request_data.current_version.is_empty() {
-			let error_msg = crate::AirError::Validation("current_version cannot be empty".to_string());
-			self.app_state
+		// Validate CurrentVersion
+		if RequestData.CurrentVersion.is_empty() {
+			let ErrorMsg = crate::AirError::Validation("CurrentVersion cannot be empty".to_string());
+			self.AppState
 				.update_request_status(
-					&request_id,
-					crate::ApplicationState::RequestState::Failed(error_msg.to_string()),
+					&RequestId,
+					crate::ApplicationState::RequestState::Failed(ErrorMsg.to_string()),
 					None,
 				)
 				.await
 				.ok();
-			return Err(Status::invalid_argument(error_msg.to_string()));
+			return Err(Status::invalid_argument(ErrorMsg.to_string()));
 		}
 
 		// Validate channel
-		let valid_channels = ["stable", "beta", "nightly"];
-		let channel = if request_data.channel.is_empty() {
+		let ValidChannels = ["stable", "beta", "nightly"];
+		let channel = if RequestData.channel.is_empty() {
 			"stable".to_string()
 		} else {
-			request_data.channel.clone()
+			RequestData.channel.clone()
 		};
 		if !valid_channels.contains(&channel.as_str()) {
-			let error_msg = format!("Invalid channel: {}. Valid values are: {}", channel, valid_channels.join(", "));
-			self.app_state
+			let ErrorMsg = format!("Invalid channel: {}. Valid values are: {}", channel, valid_channels.join(", "));
+			self.AppState
 				.update_request_status(
-					&request_id,
-					crate::ApplicationState::RequestState::Failed(error_msg.clone()),
+					&RequestId,
+					crate::ApplicationState::RequestState::Failed(ErrorMsg.clone()),
 					None,
 				)
 				.await
 				.ok();
-			return Err(Status::invalid_argument(error_msg));
+			return Err(Status::invalid_argument(ErrorMsg));
 		}
 
 		// Check for updates using UpdateManager
-		let result = self.update_manager.check_for_updates().await;
+		let result = self.UpdateManager.check_for_updates().await;
 
 		match result {
-			Ok(update_info) => {
-				self.app_state
-					.update_request_status(&request_id, crate::ApplicationState::RequestState::Completed, Some(100.0))
+			Ok(UpdateInfo) => {
+				self.AppState
+					.update_request_status(&RequestId, crate::ApplicationState::RequestState::Completed, Some(100.0))
 					.await
 					.ok();
 
 				info!(
 					"[AirVinegRPCService] Update check successful - Available: {}",
-					update_info.is_some()
+					UpdateInfo.is_some()
 				);
 
 				Ok(Response::new(crate::Vine::Generated::Air::UpdateCheckResponse {
-					request_id,
-					update_available:update_info.is_some(),
-					version:update_info.as_ref().map(|info| info.version.clone()).unwrap_or_default(),
-					download_url:update_info.as_ref().map(|info| info.download_url.clone()).unwrap_or_default(),
-					release_notes:update_info.as_ref().map(|info| info.release_notes.clone()).unwrap_or_default(),
+					RequestId,
+					UpdateAvailable:UpdateInfo.is_some(),
+					version:UpdateInfo.as_ref().map(|info| info.version.clone()).unwrap_or_default(),
+					DownloadUrl:UpdateInfo.as_ref().map(|info| info.DownloadUrl.clone()).unwrap_or_default(),
+					ReleaseNotes:UpdateInfo.as_ref().map(|info| info.ReleaseNotes.clone()).unwrap_or_default(),
 					error:String::new(),
 				}))
 			},
 			Err(crate::AirError::Network(e)) => {
-				self.app_state
-					.update_request_status(&request_id, crate::ApplicationState::RequestState::Failed(e.clone()), None)
+				self.AppState
+					.update_request_status(&RequestId, crate::ApplicationState::RequestState::Failed(e.clone()), None)
 					.await
 					.ok();
 				error!("[AirVinegRPCService] Network error during update check: {}", e);
 				Err(Status::unavailable(e))
 			},
 			Err(e) => {
-				self.app_state
+				self.AppState
 					.update_request_status(
-						&request_id,
+						&RequestId,
 						crate::ApplicationState::RequestState::Failed(e.to_string()),
 						None,
 					)
@@ -377,11 +377,11 @@ impl AirService for AirVinegRPCService {
 					.ok();
 				error!("[AirVinegRPCService] Update check failed: {}", e);
 				Ok(Response::new(crate::Vine::Generated::Air::UpdateCheckResponse {
-					request_id,
-					update_available:false,
+					RequestId,
+					UpdateAvailable:false,
 					version:String::new(),
-					download_url:String::new(),
-					release_notes:String::new(),
+					DownloadUrl:String::new(),
+					ReleaseNotes:String::new(),
 					error:Some(e.to_string()),
 				}))
 			},
@@ -393,12 +393,12 @@ impl AirService for AirVinegRPCService {
 		&self,
 		request:Request<DownloadRequest>,
 	) -> std::result::Result<Response<DownloadResponse>, Status> {
-		let request_data = request.into_inner();
-		let request_id = request_data.request_id.clone();
+		let RequestData = request.into_inner();
+		let RequestId = RequestData.RequestId.clone();
 
 		info!(
 			"[AirVinegRPCService] Download request received [ID: {}] - URL: {}",
-			request_id, request_data.url
+			RequestId, RequestData.url
 		);
 
 		// Request ID for tracking (use provided or generate)

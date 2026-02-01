@@ -223,7 +223,7 @@ impl SecurityAuditor {
 		}
 
 		// Log to system logger
-		let level = match event.severity {
+		let level = match event.Severity {
 			SecuritySeverity::Informational => log::Level::Info,
 			SecuritySeverity::Warning => log::Level::Warn,
 			SecuritySeverity::Error => log::Level::Error,
@@ -233,9 +233,9 @@ impl SecurityAuditor {
 		log::log!(
 			level,
 			"[Security] {:?}: {} - {}",
-			event.event_type,
-			event.details,
-			event.source_ip.as_deref().unwrap_or("N/A")
+			event.EventType,
+			event.Details,
+			event.SourceIp.as_deref().unwrap_or("N/A")
 		);
 
 		// In production, forward to Mountain monitoring
@@ -246,7 +246,7 @@ impl SecurityAuditor {
 		let events = self.events.read().await;
 
 		let mut filtered:Vec<SecurityEvent> = if let Some(evt_type) = event_type {
-			events.iter().filter(|e| e.event_type == evt_type).cloned().collect()
+			events.iter().filter(|e| e.EventType == evt_type).cloned().collect()
 		} else {
 			events.clone()
 		};
@@ -267,7 +267,7 @@ impl SecurityAuditor {
 		self.GetEvents(None, Some(limit))
 			.await
 			.into_iter()
-			.filter(|e| e.severity == SecuritySeverity::Critical)
+			.filter(|e| e.Severity == SecuritySeverity::Critical)
 			.collect()
 	}
 }
@@ -581,13 +581,13 @@ impl SecureStorage {
 
 		// Log key generation event
 		let event = SecurityEvent {
-			timestamp:crate::utils::CurrentTimestamp(),
-			event_type:SecurityEventType::KeyGenerated,
-			severity:SecuritySeverity::Warning,
-			source_ip:None,
-			client_id:None,
-			details:"Master key generated for secure storage".to_string(),
-			metadata:{
+			Timestamp:crate::utils::CurrentTimestamp(),
+			EventType:SecurityEventType::KeyGenerated,
+			Severity:SecuritySeverity::Warning,
+			SourceIp:None,
+			ClientId:None,
+			Details:"Master key generated for secure storage".to_string(),
+			Metadata:{
 				let mut meta = HashMap::new();
 				meta.insert("key_version".to_string(), "1".to_string());
 				meta
@@ -666,13 +666,13 @@ impl SecureStorage {
 
 		// Log credential storage event
 		let event = SecurityEvent {
-			timestamp:crate::utils::CurrentTimestamp(),
-			event_type:SecurityEventType::ConfigChange,
-			severity:SecuritySeverity::Informational,
-			source_ip:None,
-			client_id:None,
-			details:format!("Credential stored for key: {}", key),
-			metadata:HashMap::new(),
+			Timestamp:crate::utils::CurrentTimestamp(),
+			EventType:SecurityEventType::ConfigChange,
+			Severity:SecuritySeverity::Informational,
+			SourceIp:None,
+			ClientId:None,
+			Details:format!("Credential stored for key: {}", key),
+			Metadata:HashMap::new(),
 		};
 
 		self.auditor.LogEvent(event).await;
@@ -698,13 +698,13 @@ impl SecureStorage {
 
 				// Log credential retrieval event (without exposing the credential)
 				let event = SecurityEvent {
-					timestamp:crate::utils::CurrentTimestamp(),
-					event_type:SecurityEventType::AuthSuccess,
-					severity:SecuritySeverity::Informational,
-					source_ip:None,
-					client_id:None,
-					details:format!("Credential retrieved for key: {}", key),
-					metadata:HashMap::new(),
+					Timestamp:crate::utils::CurrentTimestamp(),
+					EventType:SecurityEventType::AuthSuccess,
+					Severity:SecuritySeverity::Informational,
+					SourceIp:None,
+					ClientId:None,
+					Details:format!("Credential retrieved for key: {}", key),
+					Metadata:HashMap::new(),
 				};
 
 				// Drop read lock before logging
@@ -803,13 +803,13 @@ impl SecureStorage {
 
 		// Log key rotation event
 		let event = SecurityEvent {
-			timestamp:crate::utils::CurrentTimestamp(),
-			event_type:SecurityEventType::KeyRotation,
-			severity:SecuritySeverity::Warning,
-			source_ip:None,
-			client_id:None,
-			details:format!("Master key rotated from version {} to {}", old_key_version, old_key_version + 1),
-			metadata:{
+			Timestamp:crate::utils::CurrentTimestamp(),
+			EventType:SecurityEventType::KeyRotation,
+			Severity:SecuritySeverity::Warning,
+			SourceIp:None,
+			ClientId:None,
+			Details:format!("Master key rotated from version {} to {}", old_key_version, old_key_version + 1),
+			Metadata:{
 				let mut meta = HashMap::new();
 				meta.insert("old_key_version".to_string(), old_key_version.to_string());
 				meta.insert("new_key_version".to_string(), (old_key_version + 1).to_string());
@@ -841,13 +841,13 @@ impl SecureStorage {
 
 		// Log clear event
 		let event = SecurityEvent {
-			timestamp:crate::utils::CurrentTimestamp(),
-			event_type:SecurityEventType::ConfigChange,
-			severity:SecuritySeverity::Warning,
-			source_ip:None,
-			client_id:None,
-			details:format!("All credentials cleared ({} credentials)", count),
-			metadata:{
+			Timestamp:crate::utils::CurrentTimestamp(),
+			EventType:SecurityEventType::ConfigChange,
+			Severity:SecuritySeverity::Warning,
+			SourceIp:None,
+			ClientId:None,
+			Details:format!("All credentials cleared ({} credentials)", count),
+			Metadata:{
 				let mut meta = HashMap::new();
 				meta.insert("credential_count".to_string(), count.to_string());
 				meta

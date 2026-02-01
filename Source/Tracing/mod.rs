@@ -192,10 +192,10 @@ pub enum TraceStatus {
 /// Context propagation information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PropagationContext {
-	pub trace_id:String,
-	pub span_id:String,
-	pub correlation_id:String,
-	pub parent_span_id:Option<String>,
+	pub TraceId:String,
+	pub SpanId:String,
+	pub CorrelationId:String,
+	pub ParentSpanId:Option<String>,
 }
 
 impl TraceGenerator {
@@ -275,10 +275,10 @@ impl TraceGenerator {
 		}
 
 		Ok(PropagationContext {
-			trace_id,
-			span_id:Self::generate_span_id(),
-			correlation_id:crate::utils::GenerateRequestId(),
-			parent_span_id,
+			TraceId:trace_id,
+			SpanId:Self::generate_span_id(),
+			CorrelationId:crate::utils::GenerateRequestId(),
+			ParentSpanId:parent_span_id,
 		})
 	}
 
@@ -478,7 +478,7 @@ impl TraceGenerator {
 		let mut spans = self.trace_spans.write().await;
 		let original_len = spans.len();
 
-		spans.retain(|_, span| span.end_time.map_or(true, |end| now.saturating_sub(end) < ttl));
+		spans.retain(|_, span| span.end_time.map_or(true, |end| Now.saturating_sub(end) < ttl));
 
 		Ok(original_len.saturating_sub(spans.len()))
 	}
@@ -613,14 +613,14 @@ pub fn set_propagation_context(context:PropagationContext) {
 pub fn get_propagation_context() -> Option<PropagationContext> { PROPAGATION_CONTEXT.with(|ctx| ctx.borrow().clone()) }
 
 /// Create a propagation context from a trace span
-pub async fn create_propagation_context(trace_id:String, parent_span_id:Option<String>) -> PropagationContext {
-	let span_id = TraceGenerator::generate_span_id();
+pub async fn create_propagation_context(TraceId:String, ParentSpanId:Option<String>) -> PropagationContext {
+	let SpanId = TraceGenerator::generate_span_id();
 	let CorrelationId = crate::utils::GenerateRequestId();
 
-	PropagationContext { trace_id, span_id, correlation_id, parent_span_id }
+	PropagationContext { TraceId, SpanId, CorrelationId, ParentSpanId }
 }
 
 /// Create a W3C trace context header from propagation context
 pub fn create_trace_context_header(context:&PropagationContext) -> String {
-	format!("traceparent=00-{}-{}-01", context.trace_id, context.span_id)
+	format!("traceparent=00-{}-{}-01", context.TraceId, context.SpanId)
 }

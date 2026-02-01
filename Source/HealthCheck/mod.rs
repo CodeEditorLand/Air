@@ -100,11 +100,11 @@ use crate::{AirError, Result, utils};
 #[derive(Debug)]
 pub struct HealthCheckManager {
 	/// Service health status
-	service_health:Arc<RwLock<HashMap<String, ServiceHealth>>>,
+	ServiceHealth:Arc<RwLock<HashMap<String, ServiceHealth>>>,
 	/// Health check history
-	health_history:Arc<RwLock<Vec<HealthCheckRecord>>>,
+	HealthHistory:Arc<RwLock<Vec<HealthCheckRecord>>>,
 	/// Recovery actions
-	recovery_actions:Arc<RwLock<HashMap<String, RecoveryAction>>>,
+	RecoveryActions:Arc<RwLock<HashMap<String, RecoveryAction>>>,
 	/// Health check configuration
 	config:HealthCheckConfig,
 }
@@ -113,21 +113,21 @@ pub struct HealthCheckManager {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServiceHealth {
 	/// Service name
-	pub service_name:String,
+	pub ServiceName:String,
 	/// Current health status
-	pub status:HealthStatus,
+	pub Status:HealthStatus,
 	/// Last check timestamp
-	pub last_check:u64,
+	pub LastCheck:u64,
 	/// Last successful check timestamp
-	pub last_success:Option<u64>,
+	pub LastSuccess:Option<u64>,
 	/// Failure count
-	pub failure_count:u32,
+	pub FailureCount:u32,
 	/// Error message (if any)
-	pub error_message:Option<String>,
+	pub ErrorMessage:Option<String>,
 	/// Response time in milliseconds
-	pub response_time_ms:Option<u64>,
+	pub ResponseTimeMs:Option<u64>,
 	/// Health check level
-	pub check_level:HealthCheckLevel,
+	pub CheckLevel:HealthCheckLevel,
 }
 
 /// Health status enum
@@ -158,32 +158,32 @@ pub enum HealthCheckLevel {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HealthCheckRecord {
 	/// Timestamp
-	pub timestamp:u64,
+	pub Timestamp:u64,
 	/// Service name
-	pub service_name:String,
+	pub ServiceName:String,
 	/// Health status
-	pub status:HealthStatus,
+	pub Status:HealthStatus,
 	/// Response time in milliseconds
-	pub response_time_ms:Option<u64>,
+	pub ResponseTimeMs:Option<u64>,
 	/// Error message (if any)
-	pub error_message:Option<String>,
+	pub ErrorMessage:Option<String>,
 }
 
 /// Recovery action configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RecoveryAction {
 	/// Action name
-	pub name:String,
+	pub Name:String,
 	/// Service name
-	pub service_name:String,
+	pub ServiceName:String,
 	/// Trigger condition
-	pub trigger:RecoveryTrigger,
+	pub Trigger:RecoveryTrigger,
 	/// Action to take
-	pub action:RecoveryActionType,
+	pub Action:RecoveryActionType,
 	/// Maximum retry attempts
-	pub max_retries:u32,
+	pub MaxRetries:u32,
 	/// Current retry count
-	pub retry_count:u32,
+	pub RetryCount:u32,
 }
 
 /// Recovery trigger conditions
@@ -216,28 +216,28 @@ pub enum RecoveryActionType {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HealthCheckConfig {
 	/// Default check interval in seconds
-	pub default_check_interval:u64,
+	pub DefaultCheckInterval:u64,
 	/// Health history retention (number of records)
-	pub history_retention:usize,
+	pub HistoryRetention:usize,
 	/// Consecutive failures threshold
-	pub consecutive_failures_threshold:u32,
+	pub ConsecutiveFailuresThreshold:u32,
 	/// Response time threshold in milliseconds
-	pub response_time_threshold_ms:u64,
+	pub ResponseTimeThresholdMs:u64,
 	/// Enable automatic recovery
-	pub enable_auto_recovery:bool,
+	pub EnableAutoRecovery:bool,
 	/// Recovery timeout in seconds
-	pub recovery_timeout_sec:u64,
+	pub RecoveryTimeoutSec:u64,
 }
 
 impl Default for HealthCheckConfig {
 	fn default() -> Self {
 		Self {
-			default_check_interval:30,
-			history_retention:100,
-			consecutive_failures_threshold:3,
-			response_time_threshold_ms:5000,
-			enable_auto_recovery:true,
-			recovery_timeout_sec:60,
+			DefaultCheckInterval:30,
+			HistoryRetention:100,
+			ConsecutiveFailuresThreshold:3,
+			ResponseTimeThresholdMs:5000,
+			EnableAutoRecovery:true,
+			RecoveryTimeoutSec:60,
 		}
 	}
 }
@@ -246,47 +246,47 @@ impl HealthCheckManager {
 	/// Create a new HealthCheckManager instance
 	pub fn new(config:Option<HealthCheckConfig>) -> Self {
 		Self {
-			service_health:Arc::new(RwLock::new(HashMap::new())),
-			health_history:Arc::new(RwLock::new(Vec::new())),
-			recovery_actions:Arc::new(RwLock::new(HashMap::new())),
+			ServiceHealth:Arc::new(RwLock::new(HashMap::new())),
+			HealthHistory:Arc::new(RwLock::new(Vec::new())),
+			RecoveryActions:Arc::new(RwLock::new(HashMap::new())),
 			config:config.unwrap_or_default(),
 		}
 	}
 
 	/// Register a service for health monitoring
-	pub async fn RegisterService(&self, service_name:String, check_level:HealthCheckLevel) -> Result<()> {
-		let mut health_map = self.service_health.write().await;
+	pub async fn RegisterService(&self, ServiceName:String, CheckLevel:HealthCheckLevel) -> Result<()> {
+		let mut HealthMap = self.ServiceHealth.write().await;
 
-		health_map.insert(
-			service_name.clone(),
+		HealthMap.insert(
+			ServiceName.clone(),
 			ServiceHealth {
-				service_name:service_name.clone(),
-				status:HealthStatus::Unknown,
-				last_check:0,
-				last_success:None,
-				failure_count:0,
-				error_message:None,
-				response_time_ms:None,
-				check_level:check_level.clone(),
+				ServiceName:ServiceName.clone(),
+				Status:HealthStatus::Unknown,
+				LastCheck:0,
+				LastSuccess:None,
+				FailureCount:0,
+				ErrorMessage:None,
+				ResponseTimeMs:None,
+				CheckLevel:CheckLevel.clone(),
 			},
 		);
 
 		info!(
 			"[HealthCheck] Registered service for monitoring: {} ({:?})",
-			service_name, check_level
+			ServiceName, CheckLevel
 		);
 		Ok(())
 	}
 
 	/// Perform health check for a service
-	pub async fn CheckService(&self, service_name:&str) -> Result<HealthStatus> {
+	pub async fn CheckService(&self, ServiceName:&str) -> Result<HealthStatus> {
 		let StartTime = utils::CurrentTimestamp();
 
 		// Perform service-specific health check with timeout
-		let check_timeout = tokio::time::Duration::from_secs(10);
+		let CheckTimeout = tokio::time::Duration::from_secs(10);
 
-		let (status, error_message) = tokio::time::timeout(check_timeout, async {
-			match service_name {
+		let (status, ErrorMessage) = tokio::time::timeout(check_timeout, async {
+			match ServiceName {
 				"authentication" => self.CheckAuthenticationService().await,
 				"updates" => self.CheckUpdatesService().await,
 				"downloader" => self.CheckDownloaderService().await,
@@ -294,37 +294,37 @@ impl HealthCheckManager {
 				"grpc" => self.CheckGrpcService().await,
 				"connections" => self.CheckConnectionsService().await,
 				_ => {
-					warn!("[HealthCheck] Unknown service: {}", service_name);
-					return (HealthStatus::Unhealthy, Some(format!("Unknown service: {}", service_name)));
+					warn!("[HealthCheck] Unknown service: {}", ServiceName);
+					return (HealthStatus::Unhealthy, Some(format!("Unknown service: {}", ServiceName)));
 				},
 			}
 		})
 		.await
 		.map_err(|_| {
-			warn!("[HealthCheck] Timeout checking service: {}", service_name);
+			warn!("[HealthCheck] Timeout checking service: {}", ServiceName);
 			(
 				HealthStatus::Unhealthy,
-				Some(format!("Health check timeout for service: {}", service_name)),
+				Some(format!("Health check timeout for service: {}", ServiceName)),
 			)
 		})?;
 
 		let ResponseTime = utils::CurrentTimestamp() - StartTime;
 
 		// Update service health
-		self.UpdateServiceHealth(service_name, status.clone(), &error_message, response_time)
+		self.UpdateServiceHealth(ServiceName, status.clone(), &ErrorMessage, ResponseTime)
 			.await?;
 
 		// Record health check
-		self.RecordHealthCheck(service_name, status.clone(), response_time, &error_message)
+		self.RecordHealthCheck(ServiceName, status.clone(), ResponseTime, &ErrorMessage)
 			.await;
 
 		// Trigger recovery if needed
-		if self.config.enable_auto_recovery {
-			self.TriggerRecoveryIfNeeded(service_name).await;
+		if self.config.EnableAutoRecovery {
+			self.TriggerRecoveryIfNeeded(ServiceName).await;
 		}
 
 		// Check if alerting is needed
-		self.HandleCriticalAlerts(service_name, &status).await;
+		self.HandleCriticalAlerts(ServiceName, &status).await;
 
 		Ok(status)
 	}
@@ -529,39 +529,39 @@ impl HealthCheckManager {
 	/// Update service health status
 	async fn UpdateServiceHealth(
 		&self,
-		service_name:&str,
+		ServiceName:&str,
 		status:HealthStatus,
-		error_message:&Option<String>,
-		response_time:u64,
+		ErrorMessage:&Option<String>,
+		ResponseTime:u64,
 	) -> Result<()> {
-		let mut health_map = self.service_health.write().await;
+		let mut HealthMap = self.ServiceHealth.write().await;
 
-		if let Some(service_health) = health_map.get_mut(service_name) {
-			service_health.status = status.clone();
-			service_health.last_check = utils::CurrentTimestamp();
-			service_health.response_time_ms = Some(response_time);
+		if let Some(ServiceHealth) = HealthMap.get_mut(ServiceName) {
+			ServiceHealth.Status = status.clone();
+			ServiceHealth.LastCheck = utils::CurrentTimestamp();
+			ServiceHealth.ResponseTimeMs = Some(ResponseTime);
 
 			match status {
 				HealthStatus::Healthy => {
-					service_health.last_success = Some(utils::CurrentTimestamp());
-					service_health.failure_count = 0;
-					service_health.error_message = None;
+					ServiceHealth.LastSuccess = Some(utils::CurrentTimestamp());
+					ServiceHealth.FailureCount = 0;
+					ServiceHealth.ErrorMessage = None;
 				},
 				HealthStatus::Degraded | HealthStatus::Unhealthy => {
-					service_health.failure_count += 1;
-					service_health.error_message = error_message.clone();
+					ServiceHealth.FailureCount += 1;
+					ServiceHealth.ErrorMessage = ErrorMessage.clone();
 				},
 				HealthStatus::Unknown => {
 					// Keep existing state
 				},
 			}
 		} else {
-			return Err(AirError::Internal(format!("Service not registered: {}", service_name)));
+			return Err(AirError::Internal(format!("Service not registered: {}", ServiceName)));
 		}
 
 		debug!(
 			"[HealthCheck] Updated health for {}: {:?} ({}ms)",
-			service_name, status, response_time
+			ServiceName, status, ResponseTime
 		);
 		Ok(())
 	}
@@ -569,70 +569,70 @@ impl HealthCheckManager {
 	/// Record health check in history
 	async fn RecordHealthCheck(
 		&self,
-		service_name:&str,
+		ServiceName:&str,
 		status:HealthStatus,
-		response_time:u64,
-		error_message:&Option<String>,
+		ResponseTime:u64,
+		ErrorMessage:&Option<String>,
 	) {
-		let mut history = self.health_history.write().await;
+		let mut history = self.HealthHistory.write().await;
 
 		let record = HealthCheckRecord {
-			timestamp:utils::CurrentTimestamp(),
-			service_name:service_name.to_string(),
-			status,
-			response_time_ms:Some(response_time),
-			error_message:error_message.clone(),
+			Timestamp:utils::CurrentTimestamp(),
+			ServiceName:ServiceName.to_string(),
+			Status:status,
+			ResponseTimeMs:Some(ResponseTime),
+			ErrorMessage:ErrorMessage.clone(),
 		};
 
 		history.push(record);
 
 		// Trim history to retention limit
-		if history.len() > self.config.history_retention {
+		if history.len() > self.config.HistoryRetention {
 			history.remove(0);
 		}
 	}
 
 	/// Trigger recovery actions if needed
-	async fn TriggerRecoveryIfNeeded(&self, service_name:&str) {
-		let health_map = self.service_health.read().await;
+	async fn TriggerRecoveryIfNeeded(&self, ServiceName:&str) {
+		let HealthMap = self.ServiceHealth.read().await;
 
-		if let Some(service_health) = health_map.get(service_name) {
+		if let Some(ServiceHealth) = HealthMap.get(ServiceName) {
 			// Check if recovery is needed based on failure count
-			if service_health.failure_count >= self.config.consecutive_failures_threshold {
+			if ServiceHealth.FailureCount >= self.config.ConsecutiveFailuresThreshold {
 				warn!(
 					"[HealthCheck] Service {} has {} consecutive failures, triggering recovery",
-					service_name, service_health.failure_count
+					ServiceName, ServiceHealth.FailureCount
 				);
 
-				self.PerformRecoveryAction(service_name).await;
+				self.PerformRecoveryAction(ServiceName).await;
 			}
 
 			// Check if recovery is needed based on response time
-			if let Some(response_time) = service_health.response_time_ms {
-				if response_time > self.config.response_time_threshold_ms {
+			if let Some(ResponseTime) = ServiceHealth.ResponseTimeMs {
+				if ResponseTime > self.config.ResponseTimeThresholdMs {
 					warn!(
 						"[HealthCheck] Service {} response time {}ms exceeds threshold {}ms",
-						service_name, response_time, self.config.response_time_threshold_ms
+						ServiceName, ResponseTime, self.config.ResponseTimeThresholdMs
 					);
 
-					self.HandleResponseTimeRecovery(service_name, response_time).await;
+					self.HandleResponseTimeRecovery(ServiceName, ResponseTime).await;
 				}
 			}
 		}
 	}
 
 	/// Handle response time-based recovery
-	async fn HandleResponseTimeRecovery(&self, service_name:&str, response_time:u64) {
+	async fn HandleResponseTimeRecovery(&self, ServiceName:&str, ResponseTime:u64) {
 		info!(
 			"[HealthCheck] Handling response time recovery for {}: {}ms",
-			service_name, response_time
+			ServiceName, ResponseTime
 		);
 
-		match service_name {
+		match ServiceName {
 			"grpc" => {
 				warn!(
 					"[HealthCheck] Response time recovery: Optimizing gRPC server for {}",
-					service_name
+					ServiceName
 				);
 				// In production, this might:
 				// - Adjust connection pool sizes
@@ -642,7 +642,7 @@ impl HealthCheckManager {
 			"connections" => {
 				warn!(
 					"[HealthCheck] Response time recovery: Optimizing connections for {}",
-					service_name
+					ServiceName
 				);
 				// In production, this might:
 				// - Clear idle connections
@@ -652,18 +652,18 @@ impl HealthCheckManager {
 			_ => {
 				warn!(
 					"[HealthCheck] Response time recovery: Generic optimization for {}",
-					service_name
+					ServiceName
 				);
 			},
 		}
 	}
 
 	/// Handle critical health alerts
-	async fn HandleCriticalAlerts(&self, service_name:&str, status:&HealthStatus) {
+	async fn HandleCriticalAlerts(&self, ServiceName:&str, status:&HealthStatus) {
 		if *status == HealthStatus::Unhealthy {
 			warn!(
 				"[HealthCheck] CRITICAL: Service {} is UNHEALTHY - immediate attention required",
-				service_name
+				ServiceName
 			);
 
 			// In production, this would:
@@ -675,10 +675,10 @@ impl HealthCheckManager {
 	}
 
 	/// Perform recovery action for a service
-	async fn PerformRecoveryAction(&self, service_name:&str) {
+	async fn PerformRecoveryAction(&self, ServiceName:&str) {
 		info!("[HealthCheck] Performing recovery action for {}", service_name);
 
-		let recovery_timeout = tokio::time::Duration::from_secs(self.config.recovery_timeout_sec);
+		let RecoveryTimeout = tokio::time::Duration::from_secs(self.config.RecoveryTimeoutSec);
 
 		let result = tokio::time::timeout(recovery_timeout, async {
 			match service_name {
@@ -753,26 +753,26 @@ impl HealthCheckManager {
 
 	/// Get overall daemon health status
 	pub async fn GetOverallHealth(&self) -> HealthStatus {
-		let health_map = self.service_health.read().await;
+		let HealthMap = self.ServiceHealth.read().await;
 
-		let mut healthy_count = 0;
-		let mut degraded_count = 0;
-		let mut unhealthy_count = 0;
+		let mut HealthyCount = 0;
+		let mut DegradedCount = 0;
+		let mut UnhealthyCount = 0;
 
-		for service_health in health_map.values() {
-			match service_health.status {
-				HealthStatus::Healthy => healthy_count += 1,
-				HealthStatus::Degraded => degraded_count += 1,
-				HealthStatus::Unhealthy => unhealthy_count += 1,
+		for ServiceHealth in HealthMap.values() {
+			match ServiceHealth.Status {
+				HealthStatus::Healthy => HealthyCount += 1,
+				HealthStatus::Degraded => DegradedCount += 1,
+				HealthStatus::Unhealthy => UnhealthyCount += 1,
 				HealthStatus::Unknown => {},
 			}
 		}
 
-		if unhealthy_count > 0 {
+		if UnhealthyCount > 0 {
 			HealthStatus::Unhealthy
-		} else if degraded_count > 0 {
+		} else if DegradedCount > 0 {
 			HealthStatus::Degraded
-		} else if healthy_count > 0 {
+		} else if HealthyCount > 0 {
 			HealthStatus::Healthy
 		} else {
 			HealthStatus::Unknown
@@ -781,18 +781,18 @@ impl HealthCheckManager {
 
 	/// Get service health status
 	pub async fn GetServiceHealth(&self, service_name:&str) -> Option<ServiceHealth> {
-		let health_map = self.service_health.read().await;
-		health_map.get(service_name).cloned()
+		let HealthMap = self.ServiceHealth.read().await;
+		HealthMap.get(service_name).cloned()
 	}
 
 	/// Get health check history
 	pub async fn GetHealthHistory(&self, service_name:Option<&str>, limit:Option<usize>) -> Vec<HealthCheckRecord> {
-		let history = self.health_history.read().await;
+		let history = self.HealthHistory.read().await;
 
-		let mut filtered_history:Vec<HealthCheckRecord> = if let Some(service) = service_name {
+		let mut FilteredHistory:Vec<HealthCheckRecord> = if let Some(service) = service_name {
 			history
 				.iter()
-				.filter(|record| record.service_name == service)
+				.filter(|record| record.ServiceName == service)
 				.cloned()
 				.collect()
 		} else {
@@ -812,22 +812,22 @@ impl HealthCheckManager {
 
 	/// Register a recovery action
 	pub async fn RegisterRecoveryAction(&self, action:RecoveryAction) -> Result<()> {
-		let mut actions = self.recovery_actions.write().await;
-		actions.insert(action.name.clone(), action);
+		let mut actions = self.RecoveryActions.write().await;
+		actions.insert(action.Name.clone(), action);
 		Ok(())
 	}
 
 	/// Get health statistics
 	pub async fn GetHealthStatistics(&self) -> HealthStatistics {
-		let health_map = self.service_health.read().await;
-		let history = self.health_history.read().await;
+		let HealthMap = self.ServiceHealth.read().await;
+		let history = self.HealthHistory.read().await;
 		// Count service statuses
-		let mut healthy_services = 0;
-		let mut degraded_services = 0;
-		let mut unhealthy_services = 0;
+		let mut HealthyServices = 0;
+		let mut DegradedServices = 0;
+		let mut UnhealthyServices = 0;
 
-		for service_health in health_map.values() {
-			match service_health.status {
+		for ServiceHealth in health_map.values() {
+			match service_health.Status {
 				HealthStatus::Healthy => healthy_services += 1,
 				HealthStatus::Degraded => degraded_services += 1,
 				HealthStatus::Unhealthy => unhealthy_services += 1,
@@ -837,32 +837,32 @@ impl HealthCheckManager {
 
 		// Get health statistics
 		let mut stats = HealthStatistics {
-			total_services:health_map.len(),
-			healthy_services,
-			degraded_services,
-			unhealthy_services,
-			total_checks:history.len(),
-			average_response_time_ms:0.0,
-			success_rate:0.0,
+			TotalServices:health_map.len(),
+			HealthyServices:healthy_services,
+			DegradedServices:degraded_services,
+			UnhealthyServices:unhealthy_services,
+			TotalChecks:history.len(),
+			AverageResponseTimeMs:0.0,
+			SuccessRate:0.0,
 		};
 
 		// Calculate response time and success rate
 		if !history.is_empty() {
-			let mut total_response_time = 0;
-			let mut successful_checks = 0;
+			let mut TotalResponseTime = 0;
+			let mut SuccessfulChecks = 0;
 
 			for record in history.iter() {
-				if let Some(response_time) = record.response_time_ms {
-					total_response_time += response_time;
+				if let Some(ResponseTime) = record.ResponseTimeMs {
+					total_response_time += ResponseTime;
 				}
 
-				if record.status == HealthStatus::Healthy {
+				if record.Status == HealthStatus::Healthy {
 					successful_checks += 1;
 				}
 			}
 
-			stats.average_response_time_ms = total_response_time as f64 / history.len() as f64;
-			stats.success_rate = successful_checks as f64 / history.len() as f64 * 100.0;
+			stats.AverageResponseTimeMs = total_response_time as f64 / history.len() as f64;
+			stats.SuccessRate = successful_checks as f64 / history.len() as f64 * 100.0;
 		}
 
 		stats
@@ -872,63 +872,63 @@ impl HealthCheckManager {
 /// Health statistics
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HealthStatistics {
-	pub total_services:usize,
-	pub healthy_services:usize,
-	pub degraded_services:usize,
-	pub unhealthy_services:usize,
-	pub total_checks:usize,
-	pub average_response_time_ms:f64,
-	pub success_rate:f64,
+	pub TotalServices:usize,
+	pub HealthyServices:usize,
+	pub DegradedServices:usize,
+	pub UnhealthyServices:usize,
+	pub TotalChecks:usize,
+	pub AverageResponseTimeMs:f64,
+	pub SuccessRate:f64,
 }
 
 impl HealthStatistics {
 	/// Get overall health percentage
-	pub fn overall_health_percentage(&self) -> f64 {
-		if self.total_services == 0 {
+	pub fn OverallHealthPercentage(&self) -> f64 {
+		if self.TotalServices == 0 {
 			return 0.0;
 		}
 
-		(self.healthy_services as f64 / self.total_services as f64) * 100.0
+		(self.HealthyServices as f64 / self.TotalServices as f64) * 100.0
 	}
 }
 
 /// Health check response for gRPC
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HealthCheckResponse {
-	pub overall_status:HealthStatus,
-	pub service_health:HashMap<String, ServiceHealth>,
-	pub statistics:HealthStatistics,
-	pub performance_indicators:PerformanceIndicators,
-	pub resource_warnings:Vec<ResourceWarning>,
-	pub timestamp:u64,
+	pub OverallStatus:HealthStatus,
+	pub ServiceHealth:HashMap<String, ServiceHealth>,
+	pub Statistics:HealthStatistics,
+	pub PerformanceIndicators:PerformanceIndicators,
+	pub ResourceWarnings:Vec<ResourceWarning>,
+	pub Timestamp:u64,
 }
 
 impl HealthCheckResponse {
 	/// Create a new health check response
 	pub fn new(
-		overall_status:HealthStatus,
-		service_health:HashMap<String, ServiceHealth>,
-		statistics:HealthStatistics,
+		OverallStatus:HealthStatus,
+		ServiceHealth:HashMap<String, ServiceHealth>,
+		Statistics:HealthStatistics,
 	) -> Self {
 		Self {
-			overall_status,
-			service_health,
-			statistics,
-			performance_indicators:PerformanceIndicators::default(),
-			resource_warnings:Vec::new(),
-			timestamp:utils::CurrentTimestamp(),
+			OverallStatus,
+			ServiceHealth,
+			Statistics,
+			PerformanceIndicators:PerformanceIndicators::default(),
+			ResourceWarnings:Vec::new(),
+			Timestamp:utils::CurrentTimestamp(),
 		}
 	}
 
 	/// Create with performance indicators
 	pub fn with_performance_indicators(mut self, indicators:PerformanceIndicators) -> Self {
-		self.performance_indicators = indicators;
+		self.PerformanceIndicators = indicators;
 		self
 	}
 
 	/// Create with resource warnings
 	pub fn with_resource_warnings(mut self, warnings:Vec<ResourceWarning>) -> Self {
-		self.resource_warnings = warnings;
+		self.ResourceWarnings = warnings;
 		self
 	}
 }
@@ -936,23 +936,23 @@ impl HealthCheckResponse {
 /// Performance degradation indicators
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PerformanceIndicators {
-	pub response_time_p99_ms:f64,
-	pub response_time_p95_ms:f64,
-	pub request_throughput_per_sec:f64,
-	pub error_rate_percent:f64,
-	pub degradation_level:DegradationLevel,
-	pub bottleneck_service:Option<String>,
+	pub ResponseTimeP99Ms:f64,
+	pub ResponseTimeP95Ms:f64,
+	pub RequestThroughputPerSec:f64,
+	pub ErrorRatePercent:f64,
+	pub DegradationLevel:DegradationLevel,
+	pub BottleneckService:Option<String>,
 }
 
 impl Default for PerformanceIndicators {
 	fn default() -> Self {
 		Self {
-			response_time_p99_ms:0.0,
-			response_time_p95_ms:0.0,
-			request_throughput_per_sec:0.0,
-			error_rate_percent:0.0,
-			degradation_level:DegradationLevel::Optimal,
-			bottleneck_service:None,
+			ResponseTimeP99Ms:0.0,
+			ResponseTimeP95Ms:0.0,
+			RequestThroughputPerSec:0.0,
+			ErrorRatePercent:0.0,
+			DegradationLevel:DegradationLevel::Optimal,
+			BottleneckService:None,
 		}
 	}
 }
@@ -969,12 +969,12 @@ pub enum DegradationLevel {
 /// Resource warning types
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourceWarning {
-	pub warning_type:ResourceWarningType,
-	pub service_name:Option<String>,
-	pub current_value:f64,
-	pub threshold:f64,
-	pub severity:WarningSeverity,
-	pub timestamp:u64,
+	pub WarningType:ResourceWarningType,
+	pub ServiceName:Option<String>,
+	pub CurrentValue:f64,
+	pub Threshold:f64,
+	pub Severity:WarningSeverity,
+	pub Timestamp:u64,
 }
 
 /// Resource warning types

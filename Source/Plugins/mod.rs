@@ -110,8 +110,8 @@ pub struct PluginMetadata {
 	pub version:String,
 	pub description:String,
 	pub author:String,
-	pub min_air_version:String,
-	pub max_air_version:Option<String>,
+	pub MinAirVersion:String,
+	pub MaxAirVersion:Option<String>,
 	pub dependencies:Vec<PluginDependency>,
 	pub capabilities:Vec<String>,
 }
@@ -119,9 +119,9 @@ pub struct PluginMetadata {
 /// Plugin dependency specification
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginDependency {
-	pub plugin_id:String,
-	pub min_version:String,
-	pub max_version:Option<String>,
+	pub PluginId:String,
+	pub MinVersion:String,
+	pub MaxVersion:Option<String>,
 	pub optional:bool,
 }
 
@@ -130,7 +130,7 @@ pub struct PluginDependency {
 pub struct PluginCapability {
 	pub name:String,
 	pub description:String,
-	pub required_permissions:Vec<String>,
+	pub RequiredPermissions:Vec<String>,
 }
 
 /// Plugin permission
@@ -152,24 +152,24 @@ pub enum PluginPermission {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginSandboxConfig {
 	pub enabled:bool,
-	pub max_memory_mb:Option<u64>,
-	pub max_cpu_percent:Option<f64>,
-	pub network_allowed:bool,
-	pub filesystem_allowed:bool,
-	pub allowed_paths:Vec<String>,
-	pub timeout_secs:Option<u64>,
+	pub MaxMemoryMb:Option<u64>,
+	pub MaxCpuPercent:Option<f64>,
+	pub NetworkAllowed:bool,
+	pub FilesystemAllowed:bool,
+	pub AllowedPaths:Vec<String>,
+	pub TimeoutSecs:Option<u64>,
 }
 
 impl Default for PluginSandboxConfig {
 	fn default() -> Self {
 		Self {
 			enabled:true,
-			max_memory_mb:Some(128),
-			max_cpu_percent:Some(10.0),
-			network_allowed:false,
-			filesystem_allowed:false,
-			allowed_paths:vec![],
-			timeout_secs:Some(30),
+			MaxMemoryMb:Some(128),
+			MaxCpuPercent:Some(10.0),
+			NetworkAllowed:false,
+			FilesystemAllowed:false,
+			AllowedPaths:vec![],
+			TimeoutSecs:Some(30),
 		}
 	}
 }
@@ -291,8 +291,8 @@ pub enum PluginState {
 pub struct PluginRegistry {
 	pub plugin:Arc<Box<dyn Plugin>>,
 	pub state:PluginState,
-	pub started_at:Option<DateTime<Utc>>,
-	pub loaded_at:Option<DateTime<Utc>>,
+	pub StartedAt:Option<DateTime<Utc>>,
+	pub LoadedAt:Option<DateTime<Utc>>,
 	pub error:Option<String>,
 	pub sandbox:PluginSandboxConfig,
 }
@@ -300,45 +300,45 @@ pub struct PluginRegistry {
 /// Main plugin manager
 pub struct PluginManager {
 	plugins:Arc<RwLock<HashMap<String, PluginRegistry>>>,
-	message_queue:Arc<RwLock<Vec<PluginMessage>>>,
-	air_version:String,
-	enable_sandbox:bool,
-	startup_timeout:Duration,
-	operation_timeout:Duration,
+	MessageQueue:Arc<RwLock<Vec<PluginMessage>>>,
+	AirVersion:String,
+	EnableSandbox:bool,
+	StartupTimeout:Duration,
+	OperationTimeout:Duration,
 }
 
 impl PluginManager {
 	/// Create a new plugin manager
-	pub fn new(air_version:String) -> Self {
+	pub fn new(AirVersion:String) -> Self {
 		Self {
 			plugins:Arc::new(RwLock::new(HashMap::new())),
-			message_queue:Arc::new(RwLock::new(Vec::new())),
-			air_version,
-			enable_sandbox:true,
-			startup_timeout:Duration::from_secs(30),
-			operation_timeout:Duration::from_secs(60),
+			MessageQueue:Arc::new(RwLock::new(Vec::new())),
+			AirVersion,
+			EnableSandbox:true,
+			StartupTimeout:Duration::from_secs(30),
+			OperationTimeout:Duration::from_secs(60),
 		}
 	}
 
 	/// Create a new plugin manager with custom configuration
 	pub fn with_config(
-		air_version:String,
-		enable_sandbox:bool,
-		startup_timeout_secs:u64,
-		operation_timeout_secs:u64,
+		AirVersion:String,
+		EnableSandbox:bool,
+		StartupTimeoutSecs:u64,
+		OperationTimeoutSecs:u64,
 	) -> Self {
 		Self {
 			plugins:Arc::new(RwLock::new(HashMap::new())),
-			message_queue:Arc::new(RwLock::new(Vec::new())),
-			air_version,
-			enable_sandbox,
-			startup_timeout:Duration::from_secs(startup_timeout_secs),
-			operation_timeout:Duration::from_secs(operation_timeout_secs),
+			MessageQueue:Arc::new(RwLock::new(Vec::new())),
+			AirVersion,
+			EnableSandbox,
+			StartupTimeout:Duration::from_secs(startup_timeout_secs),
+			OperationTimeout:Duration::from_secs(operation_timeout_secs),
 		}
 	}
 
 	/// Enable or disable sandbox mode
-	pub fn set_sandbox_enabled(&mut self, enabled:bool) { self.enable_sandbox = enabled; }
+	pub fn set_sandbox_enabled(&mut self, enabled:bool) { self.EnableSandbox = enabled; }
 
 	/// Discover plugins from a directory
 	pub async fn discover_plugins(&self, directory:&str) -> Result<Vec<String>> {
@@ -367,35 +367,35 @@ impl PluginManager {
 		info!("[PluginManager] Registering plugin: {} v{}", metadata.name, metadata.version);
 
 		// Validate plugin metadata
-		self.validate_plugin_metadata(metadata)?;
+		self.ValidatePluginMetadata(metadata)?;
 
 		// Check Air version compatibility
-		self.check_air_version_compatibility(metadata)?;
+		self.CheckAirVersionCompatibility(metadata)?;
 
 		// Check API version compatibility
 		self.CheckApiVersionCompatibility(metadata)?;
 
 		// Check dependencies
-		self.check_dependencies(metadata).await?;
+		self.CheckDependencies(metadata).await?;
 
 		// Validate plugin capabilities and permissions
-		self.validate_capabilities_and_permissions(plugin.as_ref().as_ref())?;
+		self.ValidateCapabilitiesAndPermissions(plugin.as_ref().as_ref())?;
 
 		// Setup sandbox configuration
-		let sandbox = if self.enable_sandbox {
+		let sandbox = if self.EnableSandbox {
 			plugin.sandbox_config()
 		} else {
 			PluginSandboxConfig { enabled:false, ..Default::default() }
 		};
 
 		// Load plugin with timeout
-		let load_result = tokio::time::timeout(self.startup_timeout, plugin.on_load()).await;
+		let LoadResult = tokio::time::timeout(self.StartupTimeout, plugin.on_load()).await;
 
-		let _load_result = load_result
+		let _load_result = LoadResult
 			.map_err(|_| {
 				AirError::Plugin(format!(
 					"Plugin {} load timeout after {:?}",
-					metadata.name, self.startup_timeout
+					metadata.name, self.StartupTimeout
 				))
 			})?
 			.map_err(|e| {
@@ -410,8 +410,8 @@ impl PluginManager {
 			PluginRegistry {
 				plugin:plugin.clone(),
 				state:PluginState::Loaded,
-				started_at:None,
-				loaded_at:Some(Utc::now()),
+				StartedAt:None,
+				LoadedAt:Some(Utc::now()),
 				error:None,
 				sandbox,
 			},
@@ -422,7 +422,7 @@ impl PluginManager {
 	}
 
 	/// Validate plugin metadata
-	pub fn validate_plugin_metadata(&self, metadata:&PluginMetadata) -> Result<()> {
+	pub fn ValidatePluginMetadata(&self, metadata:&PluginMetadata) -> Result<()> {
 		if metadata.id.is_empty() {
 			return Err(crate::AirError::Plugin("Plugin ID cannot be empty".to_string()));
 		}
@@ -468,19 +468,19 @@ impl PluginManager {
 	}
 
 	/// Check Air version compatibility
-	pub fn check_air_version_compatibility(&self, metadata:&PluginMetadata) -> Result<()> {
-		if !self.version_satisfies(&self.air_version, &metadata.min_air_version) {
+	pub fn CheckAirVersionCompatibility(&self, metadata:&PluginMetadata) -> Result<()> {
+		if !self.VersionSatisfies(&self.AirVersion, &metadata.MinAirVersion) {
 			return Err(AirError::Plugin(format!(
 				"Plugin requires Air version {} or higher, current: {}",
-				metadata.min_air_version, self.air_version
+				metadata.MinAirVersion, self.AirVersion
 			)));
 		}
 
-		if let Some(max_version) = &metadata.max_air_version {
-			if !self.version_satisfies(max_version, &self.air_version) {
+		if let Some(max_version) = &metadata.MaxAirVersion {
+			if !self.VersionSatisfies(max_version, &self.AirVersion) {
 				return Err(AirError::Plugin(format!(
 					"Plugin is incompatible with Air version {}, max supported: {}",
-					self.air_version, max_version
+					self.AirVersion, max_version
 				)));
 			}
 		}
@@ -501,22 +501,22 @@ impl PluginManager {
 
 		for dep in &metadata.dependencies {
 			if !dep.optional {
-				let dep_plugin = plugins
-					.get(&dep.plugin_id)
-					.ok_or_else(|| AirError::Plugin(format!("Required dependency not found: {}", dep.plugin_id)))?;
+				let DepPlugin = plugins
+					.get(&dep.PluginId)
+					.ok_or_else(|| AirError::Plugin(format!("Required dependency not found: {}", dep.PluginId)))?;
 
-				let dep_version = &dep_plugin.plugin.metadata().version;
-				if !self.version_satisfies(dep_version, &dep.min_version) {
+				let DepVersion = &dep_plugin.plugin.metadata().version;
+				if !self.VersionSatisfies(dep_version, &dep.MinVersion) {
 					return Err(AirError::Plugin(format!(
 						"Dependency {} version {} does not satisfy requirement {}",
-						dep.plugin_id, dep_version, dep.min_version
+						dep.PluginId, dep_version, dep.MinVersion
 					)));
 				}
 
 				if dep_plugin.state != PluginState::Running && dep_plugin.state != PluginState::Loaded {
 					return Err(AirError::Plugin(format!(
 						"Dependency {} is not ready (state: {:?})",
-						dep.plugin_id, dep_plugin.state
+						dep.PluginId, dep_plugin.state
 					)));
 				}
 			}
@@ -526,70 +526,70 @@ impl PluginManager {
 	}
 
 	/// Start a plugin
-	pub async fn start(&self, plugin_id:&str) -> Result<()> {
+	pub async fn start(&self, PluginId:&str) -> Result<()> {
 		let mut plugins = self.plugins.write().await;
 		let registry = plugins
-			.get_mut(plugin_id)
-			.ok_or_else(|| AirError::Plugin(format!("Plugin not found: {}", plugin_id)))?;
+			.get_mut(PluginId)
+			.ok_or_else(|| AirError::Plugin(format!("Plugin not found: {}", PluginId)))?;
 
 		if registry.state == PluginState::Running {
-			info!("[PluginManager] Plugin {} already running", plugin_id);
+			info!("[PluginManager] Plugin {} already running", PluginId);
 			return Ok(());
 		}
 
 		registry.state = PluginState::Starting;
 
 		// Check sandbox configuration
-		if self.enable_sandbox && registry.sandbox.enabled {
-			info!("[PluginManager] Starting plugin {} in sandbox mode", plugin_id);
+		if self.EnableSandbox && registry.sandbox.enabled {
+			info!("[PluginManager] Starting plugin {} in sandbox mode", PluginId);
 		}
 
 		let plugin = registry.plugin.clone();
 		drop(plugins);
 
-		let start_result = tokio::time::timeout(self.startup_timeout, plugin.on_start()).await;
+		let StartResult = tokio::time::timeout(self.StartupTimeout, plugin.on_start()).await;
 
-		match start_result {
+		match StartResult {
 			Ok(Ok(())) => {
 				let mut plugins = self.plugins.write().await;
-				if let Some(registry) = plugins.get_mut(plugin_id) {
+				if let Some(registry) = plugins.get_mut(PluginId) {
 					registry.state = PluginState::Running;
-					registry.started_at = Some(Utc::now());
+					registry.StartedAt = Some(Utc::now());
 					registry.error = None;
 				}
-				info!("[PluginManager] Plugin started: {}", plugin_id);
+				info!("[PluginManager] Plugin started: {}", PluginId);
 				Ok(())
 			},
 			Ok(Err(e)) => {
 				let mut plugins = self.plugins.write().await;
-				if let Some(registry) = plugins.get_mut(plugin_id) {
+				if let Some(registry) = plugins.get_mut(PluginId) {
 					registry.state = PluginState::Error;
 					registry.error = Some(e.to_string());
 				}
-				error!("[PluginManager] Plugin start failed: {}: {}", plugin_id, e);
+				error!("[PluginManager] Plugin start failed: {}: {}", PluginId, e);
 				Err(e)
 			},
 			Err(_) => {
 				let mut plugins = self.plugins.write().await;
-				if let Some(registry) = plugins.get_mut(plugin_id) {
+				if let Some(registry) = plugins.get_mut(PluginId) {
 					registry.state = PluginState::Error;
-					registry.error = Some(format!("Startup timeout after {:?}", self.startup_timeout));
+					registry.error = Some(format!("Startup timeout after {:?}", self.StartupTimeout));
 				}
-				error!("[PluginManager] Plugin start timeout: {}", plugin_id);
-				Err(AirError::Plugin(format!("Plugin {} startup timeout", plugin_id)))
+				error!("[PluginManager] Plugin start timeout: {}", PluginId);
+				Err(AirError::Plugin(format!("Plugin {} startup timeout", PluginId)))
 			},
 		}
 	}
 
 	/// Stop a plugin
-	pub async fn stop(&self, plugin_id:&str) -> Result<()> {
+	pub async fn stop(&self, PluginId:&str) -> Result<()> {
 		let mut plugins = self.plugins.write().await;
 		let registry = plugins
-			.get_mut(plugin_id)
-			.ok_or_else(|| AirError::Plugin(format!("Plugin not found: {}", plugin_id)))?;
+			.get_mut(PluginId)
+			.ok_or_else(|| AirError::Plugin(format!("Plugin not found: {}", PluginId)))?;
 
 		if registry.state != PluginState::Running {
-			info!("[PluginManager] Plugin {} not running", plugin_id);
+			info!("[PluginManager] Plugin {} not running", PluginId);
 			return Ok(());
 		}
 
@@ -597,48 +597,48 @@ impl PluginManager {
 		let plugin = registry.plugin.clone();
 		drop(plugins);
 
-		let stop_result = tokio::time::timeout(self.operation_timeout, plugin.on_stop()).await;
+		let StopResult = tokio::time::timeout(self.OperationTimeout, plugin.on_stop()).await;
 
-		match stop_result {
+		match StopResult {
 			Ok(Ok(())) => {
 				let mut plugins = self.plugins.write().await;
-				if let Some(registry) = plugins.get_mut(plugin_id) {
+				if let Some(registry) = plugins.get_mut(PluginId) {
 					registry.state = PluginState::Loaded;
-					registry.started_at = None;
+					registry.StartedAt = None;
 				}
-				info!("[PluginManager] Plugin stopped: {}", plugin_id);
+				info!("[PluginManager] Plugin stopped: {}", PluginId);
 				Ok(())
 			},
 			Ok(Err(e)) => {
 				let mut plugins = self.plugins.write().await;
-				if let Some(registry) = plugins.get_mut(plugin_id) {
+				if let Some(registry) = plugins.get_mut(PluginId) {
 					registry.state = PluginState::Error;
 					registry.error = Some(e.to_string());
 				}
-				error!("[PluginManager] Plugin stop failed: {}: {}", plugin_id, e);
+				error!("[PluginManager] Plugin stop failed: {}: {}", PluginId, e);
 				Err(e)
 			},
 			Err(_) => {
 				let mut plugins = self.plugins.write().await;
-				if let Some(registry) = plugins.get_mut(plugin_id) {
+				if let Some(registry) = plugins.get_mut(PluginId) {
 					registry.state = PluginState::Error;
-					registry.error = Some(format!("Stop timeout after {:?}", self.operation_timeout));
+					registry.error = Some(format!("Stop timeout after {:?}", self.OperationTimeout));
 				}
-				error!("[PluginManager] Plugin stop timeout: {}", plugin_id);
-				Err(AirError::Plugin(format!("Plugin {} stop timeout", plugin_id)))
+				error!("[PluginManager] Plugin stop timeout: {}", PluginId);
+				Err(AirError::Plugin(format!("Plugin {} stop timeout", PluginId)))
 			},
 		}
 	}
 
 	/// Start all registered plugins
 	pub async fn start_all(&self) -> Result<()> {
-		let plugin_ids:Vec<String> = self.plugins.read().await.keys().cloned().collect();
+		let PluginIds:Vec<String> = self.plugins.read().await.keys().cloned().collect();
 
-		info!("[PluginManager] Starting {} plugins", plugin_ids.len());
+		info!("[PluginManager] Starting {} plugins", PluginIds.len());
 
-		for plugin_id in plugin_ids {
-			if let Err(e) = self.start(&plugin_id).await {
-				warn!("[PluginManager] Failed to start plugin {}: {}", plugin_id, e);
+		for PluginId in PluginIds {
+			if let Err(e) = self.start(&PluginId).await {
+				warn!("[PluginManager] Failed to start plugin {}: {}", PluginId, e);
 			}
 		}
 
@@ -647,7 +647,7 @@ impl PluginManager {
 
 	/// Stop all running plugins
 	pub async fn stop_all(&self) -> Result<()> {
-		let plugin_ids:Vec<String> = self.plugins.read().await.keys().cloned().collect();
+		let PluginIds:Vec<String> = self.plugins.read().await.keys().cloned().collect();
 
 		info!("[PluginManager] Stopping {} plugins", plugin_ids.len());
 
@@ -676,14 +676,14 @@ impl PluginManager {
 		let plugin = registry.plugin.clone();
 		drop(plugins);
 
-		let load_result = tokio::time::timeout(self.startup_timeout, plugin.on_load()).await;
+		let LoadResult = tokio::time::timeout(self.StartupTimeout, plugin.on_load()).await;
 
-		match load_result {
+		match LoadResult {
 			Ok(Ok(())) => {
 				let mut plugins = self.plugins.write().await;
 				if let Some(registry) = plugins.get_mut(plugin_id) {
 					registry.state = PluginState::Loaded;
-					registry.loaded_at = Some(Utc::now());
+					registry.LoadedAt = Some(Utc::now());
 					registry.error = None;
 				}
 				info!("[PluginManager] Plugin loaded: {}", plugin_id);
@@ -702,7 +702,7 @@ impl PluginManager {
 				let mut plugins = self.plugins.write().await;
 				if let Some(registry) = plugins.get_mut(plugin_id) {
 					registry.state = PluginState::Error;
-					registry.error = Some(format!("Load timeout after {:?}", self.startup_timeout));
+					registry.error = Some(format!("Load timeout after {:?}", self.StartupTimeout));
 				}
 				error!("[PluginManager] Plugin load timeout: {}", plugin_id);
 				Err(AirError::Plugin(format!("Plugin {} load timeout", plugin_id)))
@@ -723,9 +723,9 @@ impl PluginManager {
 		let plugin = registry.plugin.clone();
 		plugins.remove(plugin_id);
 
-		let unload_result = tokio::time::timeout(self.operation_timeout, plugin.on_unload()).await;
+		let UnloadResult = tokio::time::timeout(self.OperationTimeout, plugin.on_unload()).await;
 
-		match unload_result {
+		match UnloadResult {
 			Ok(Ok(())) => {
 				info!("[PluginManager] Plugin unloaded: {}", plugin_id);
 				Ok(())
@@ -762,11 +762,11 @@ impl PluginManager {
 		}
 
 		// Check if sender has permission to send to receiver
-		let sender_metadata = plugins
+		let SenderMetadata = plugins
 			.get(&message.from)
 			.ok_or_else(|| AirError::Plugin(format!("Sender plugin not found: {}", message.from)))?;
 
-		if !self.check_inter_plugin_permission(sender_metadata, target, &message) {
+		if !self.CheckInterPluginPermission(sender_metadata, target, &message) {
 			return Err(AirError::Plugin(format!(
 				"Permission denied: {} cannot send to {}",
 				message.from, message.to
@@ -777,8 +777,8 @@ impl PluginManager {
 		drop(plugins);
 
 		// Send message with timeout
-		let send_result =
-			tokio::time::timeout(self.operation_timeout, plugin.handle_message(&message.from, &message)).await;
+		let SendResult =
+			tokio::time::timeout(self.OperationTimeout, plugin.handle_message(&message.from, &message)).await;
 
 		send_result
 			.map_err(|_| AirError::Plugin(format!("Message send timeout: {} -> {}", message.from, message.to)))?
@@ -807,7 +807,7 @@ impl PluginManager {
 				id:id.clone(),
 				metadata,
 				state:registry.state,
-				uptime_secs:registry.started_at.map(|t| (Utc::now() - t).num_seconds() as u64).unwrap_or(0),
+				UptimeSecs:registry.StartedAt.map(|t| (Utc::now() - t).num_seconds() as u64).unwrap_or(0),
 				error:registry.error.clone(),
 			});
 		}
@@ -841,7 +841,7 @@ impl PluginManager {
 		let mut results = vec![];
 
 		for (id, registry) in plugins.iter() {
-			let result = self.validate_plugin(registry.plugin.as_ref().as_ref());
+			let result = self.ValidatePlugin(registry.plugin.as_ref().as_ref());
 			results.push((id.clone(), result));
 		}
 
@@ -853,12 +853,12 @@ impl PluginManager {
 		let metadata = plugin.metadata();
 
 		// Validate metadata
-		if let Err(e) = self.validate_plugin_metadata(metadata) {
+		if let Err(e) = self.ValidatePluginMetadata(metadata) {
 			return PluginValidationResult::Invalid(e.to_string());
 		}
 
 		// Check version compatibility
-		if let Err(e) = self.check_air_version_compatibility(metadata) {
+		if let Err(e) = self.CheckAirVersionCompatibility(metadata) {
 			return PluginValidationResult::Invalid(format!("Version compatibility error: {}", e));
 		}
 
@@ -888,14 +888,14 @@ impl PluginManager {
 		let mut order = vec![];
 
 		for plugin_id in plugins.keys() {
-			self.visit_plugin_for_load_order(plugin_id, &mut visited, &mut order, &plugins)?;
+			self.VisitPluginForLoadOrder(plugin_id, &mut visited, &mut order, &plugins)?;
 		}
 
 		Ok(order)
 	}
 
 	/// Visit plugin for load order (helper function)
-	fn visit_plugin_for_load_order(
+	fn VisitPluginForLoadOrder(
 		&self,
 		plugin_id:&str,
 		visited:&mut std::collections::HashSet<String>,
@@ -912,7 +912,7 @@ impl PluginManager {
 			let metadata = registry.plugin.metadata();
 			for dep in &metadata.dependencies {
 				if !dep.optional {
-					self.visit_plugin_for_load_order(&dep.plugin_id, visited, order, plugins)?;
+					self.VisitPluginForLoadOrder(&dep.plugin_id, visited, order, plugins)?;
 				}
 			}
 		}
@@ -923,8 +923,8 @@ impl PluginManager {
 
 	/// Simple version satisfaction check (X.Y.Z format)
 	fn version_satisfies(&self, actual:&str, required:&str) -> bool {
-		let actual_parts:Vec<&str> = actual.split('.').collect();
-		let required_parts:Vec<&str> = required.split('.').collect();
+		let ActualParts:Vec<&str> = actual.split('.').collect();
+		let RequiredParts:Vec<&str> = required.split('.').collect();
 
 		for (i, required_part) in required_parts.iter().enumerate() {
 			if let (Ok(a), Ok(r)) = (actual_parts.get(i).unwrap_or(&"0").parse::<u32>(), required_part.parse::<u32>()) {
@@ -946,7 +946,7 @@ pub struct PluginInfo {
 	pub id:String,
 	pub metadata:PluginMetadata,
 	pub state:PluginState,
-	pub uptime_secs:u64,
+	pub UptimeSecs:u64,
 	pub error:Option<String>,
 }
 
@@ -1018,7 +1018,7 @@ impl Default for PluginEventBus {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginDiscoveryResult {
 	pub plugin_id:String,
-	pub manifest_path:String,
+	pub ManifestPath:String,
 	pub metadata:PluginMetadata,
 	pub enabled:bool,
 }
@@ -1033,14 +1033,14 @@ pub struct PluginManifest {
 
 /// Plugin loader for discovering and loading plugins
 pub struct PluginLoader {
-	plugin_paths:Vec<String>,
+	PluginPaths:Vec<String>,
 }
 
 impl PluginLoader {
 	/// Create a new plugin loader
 	pub fn new() -> Self {
 		Self {
-			plugin_paths:vec![
+			PluginPaths:vec![
 				"/usr/local/lib/air/plugins".to_string(),
 				"~/.local/share/air/plugins".to_string(),
 			],
@@ -1048,14 +1048,14 @@ impl PluginLoader {
 	}
 
 	/// Add a plugin discovery path
-	pub fn add_path(&mut self, path:String) { self.plugin_paths.push(path); }
+	pub fn add_path(&mut self, path:String) { self.PluginPaths.push(path); }
 
 	/// Discover plugins from all configured paths
 	pub async fn discover_all(&self) -> Result<Vec<PluginDiscoveryResult>> {
 		let mut results = vec![];
 
-		for path in &self.plugin_paths {
-			match self.discover_in_path(path).await {
+		for path in &self.PluginPaths {
+			match self.DiscoverInPath(path).await {
 				Ok(mut discovered) => {
 					results.append(&mut discovered);
 				},
@@ -1104,12 +1104,12 @@ pub struct ApiVersion {
 	pub major:u32,
 	pub minor:u32,
 	pub patch:u32,
-	pub pre_release:Option<String>,
+	pub PreRelease:Option<String>,
 }
 
 impl ApiVersion {
 	/// Get the current API version
-	pub fn current() -> Self { Self { major:1, minor:0, patch:0, pre_release:None } }
+	pub fn current() -> Self { Self { major:1, minor:0, patch:0, PreRelease:None } }
 
 	/// Parse version from string
 	pub fn parse(version:&str) -> Result<Self> {
@@ -1128,12 +1128,12 @@ impl ApiVersion {
 			patch:parts[2]
 				.parse()
 				.map_err(|_| crate::AirError::Plugin("Invalid patch version".to_string()))?,
-			pre_release:if parts.len() > 3 { Some(parts[3].to_string()) } else { None },
+			PreRelease:if parts.len() > 3 { Some(parts[3].to_string()) } else { None },
 		})
 	}
 
 	/// Check if this version is compatible with another
-	pub fn is_compatible(&self, other:&ApiVersion) -> bool {
+	pub fn IsCompatible(&self, other:&ApiVersion) -> bool {
 		// Same major version means compatible
 		if self.major != other.major {
 			return false;
@@ -1150,27 +1150,27 @@ impl ApiVersion {
 
 /// API version manager
 pub struct ApiVersionManager {
-	current_version:ApiVersion,
-	compatible_versions:Vec<ApiVersion>,
+	CurrentVersion:ApiVersion,
+	CompatibleVersions:Vec<ApiVersion>,
 }
 
 impl ApiVersionManager {
 	/// Create a new API version manager
 	pub fn new() -> Self {
 		let current = ApiVersion::current();
-		Self { current_version:current.clone(), compatible_versions:vec![current] }
+		Self { CurrentVersion:current.clone(), CompatibleVersions:vec![current] }
 	}
 
 	/// Get the current API version
-	pub fn current(&self) -> &ApiVersion { &self.current_version }
+	pub fn current(&self) -> &ApiVersion { &self.CurrentVersion }
 
 	/// Check if a version is compatible
-	pub fn is_compatible(&self, version:&ApiVersion) -> bool { self.current_version.is_compatible(version) }
+	pub fn IsCompatible(&self, version:&ApiVersion) -> bool { self.CurrentVersion.IsCompatible(version) }
 
 	/// Register a compatible API version
 	pub fn register_compatible(&mut self, version:ApiVersion) {
-		if self.is_compatible(&version) && !self.compatible_versions.contains(&version) {
-			self.compatible_versions.push(version);
+		if self.IsCompatible(&version) && !self.CompatibleVersions.contains(&version) {
+			self.CompatibleVersions.push(version);
 		}
 	}
 }
@@ -1240,8 +1240,8 @@ mod tests {
 				version:"1.0.0".to_string(),
 				description:"A test plugin".to_string(),
 				author:"Test".to_string(),
-				min_air_version:"0.1.0".to_string(),
-				max_air_version:None,
+				MinAirVersion:"0.1.0".to_string(),
+				MaxAirVersion:None,
 				dependencies:vec![],
 				capabilities:vec![],
 			}
@@ -1316,9 +1316,9 @@ mod tests {
 
 	#[tokio::test]
 	fn test_api_version_compatibility() {
-		let v1 = ApiVersion { major:1, minor:0, patch:0, pre_release:None };
-		let v2 = ApiVersion { major:1, minor:1, patch:0, pre_release:None };
-		let v3 = ApiVersion { major:2, minor:0, patch:0, pre_release:None };
+		let v1 = ApiVersion { major:1, minor:0, patch:0, PreRelease:None };
+		let v2 = ApiVersion { major:1, minor:1, patch:0, PreRelease:None };
+		let v3 = ApiVersion { major:2, minor:0, patch:0, PreRelease:None };
 
 		assert!(v1.is_compatible(&v2));
 		assert!(!v1.is_compatible(&v3));
@@ -1328,9 +1328,9 @@ mod tests {
 	fn test_sandbox_config_default() {
 		let config = PluginSandboxConfig::default();
 		assert!(config.enabled);
-		assert_eq!(config.max_memory_mb, Some(128));
-		assert!(!config.network_allowed);
-		assert!(!config.filesystem_allowed);
+		assert_eq!(config.MaxMemoryMb, Some(128));
+		assert!(!config.NetworkAllowed);
+		assert!(!config.FilesystemAllowed);
 	}
 
 	#[tokio::test]
@@ -1342,22 +1342,22 @@ mod tests {
 			version:"1.0.0".to_string(),
 			description:"A test plugin".to_string(),
 			author:"Test".to_string(),
-			min_air_version:"1.0.0".to_string(),
-			max_air_version:None,
+			MinAirVersion:"1.0.0".to_string(),
+			MaxAirVersion:None,
 			dependencies:vec![],
 			capabilities:vec![],
 		};
 
 		assert!(manager.validate_plugin_metadata(&metadata).is_ok());
 
-		let invalid_metadata = PluginMetadata {
+		let InvalidMetadata = PluginMetadata {
 			id:"".to_string(),
 			name:"Invalid".to_string(),
 			version:"1.0.0".to_string(),
 			description:"Invalid plugin".to_string(),
 			author:"Test".to_string(),
-			min_air_version:"1.0.0".to_string(),
-			max_air_version:None,
+			MinAirVersion:"1.0.0".to_string(),
+			MaxAirVersion:None,
 			dependencies:vec![],
 			capabilities:vec![],
 		};

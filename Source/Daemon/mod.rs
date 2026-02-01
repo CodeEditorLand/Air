@@ -152,9 +152,9 @@ pub enum ExitCode {
 
 impl DaemonManager {
 	/// Create a new DaemonManager instance
-	pub fn New(pid_file_path:Option<PathBuf>) -> Result<Self> {
-		let pid_file_path = pid_file_path.unwrap_or_else(|| Self::DefaultPidFilePath());
-		let platform_info = Self::DetectPlatformInfo();
+	pub fn New(PidFilePath:Option<PathBuf>) -> Result<Self> {
+		let PidFilePath = PidFilePath.unwrap_or_else(|| Self::DefaultPidFilePath());
+		let PlatformInfo = Self::DetectPlatformInfo();
 
 		Ok(Self {
 			PidFilePath:pid_file_path,
@@ -193,12 +193,12 @@ impl DaemonManager {
 	/// Detect platform-specific information
 	fn DetectPlatformInfo() -> PlatformInfo {
 		let platform = Self::DetectPlatform();
-		let service_name = "air-daemon".to_string();
+		let ServiceName = "air-daemon".to_string();
 
 		// Get current user
-		let run_as_user = std::env::var("USER").ok().or_else(|| std::env::var("USERNAME").ok());
+		let RunAsUser = std::env::var("USER").ok().or_else(|| std::env::var("USERNAME").ok());
 
-		PlatformInfo { platform, service_name, run_as_user }
+		PlatformInfo { Platform: platform, ServiceName: ServiceName, RunAsUser: RunAsUser }
 	}
 
 	/// Get default PID file path based on platform
@@ -228,12 +228,12 @@ impl DaemonManager {
 	/// Detect platform-specific information
 	fn detect_platform_info() -> PlatformInfo {
 		let platform = Self::detect_platform();
-		let service_name = "air-daemon".to_string();
+		let ServiceName = "air-daemon".to_string();
 
 		// Get current user
-		let run_as_user = std::env::var("USER").ok().or_else(|| std::env::var("USERNAME").ok());
+		let RunAsUser = std::env::var("USER").ok().or_else(|| std::env::var("USERNAME").ok());
 
-		PlatformInfo { platform, service_name, run_as_user }
+		PlatformInfo { Platform: platform, ServiceName: ServiceName, RunAsUser: run_as_user }
 	}
 
 	/// Acquire daemon lock to ensure single instance
@@ -248,8 +248,8 @@ impl DaemonManager {
 
 		// Acquire lock to prevent race conditions
 		tokio::select! {
-			_ = tokio::time::timeout(Duration::from_secs(30), self.pid_lock.lock()) => {
-				let _lock_guard = self.pid_lock.lock().await;
+			_ = tokio::time::timeout(Duration::from_secs(30), self.PidLock.lock()) => {
+				let _lock_guard = self.PidLock.lock().await;
 			},
 			_ = tokio::time::sleep(Duration::from_secs(30)) => {
 				return Err(AirError::Internal(
@@ -258,10 +258,10 @@ impl DaemonManager {
 			}
 		}
 
-		let _lock = self.pid_lock.lock().await;
+		let _lock = self.PidLock.lock().await;
 
 		// Check if shutdown has been requested
-		if *self.shutdown_requested.read().await {
+		if *self.ShutdownRequested.read().await {
 			return Err(AirError::ServiceUnavailable(
 				"Shutdown requested, cannot acquire lock".to_string(),
 			));
@@ -273,8 +273,8 @@ impl DaemonManager {
 		}
 
 		// Create PID directory with secure permissions if it doesn't exist
-		let temp_dir = PathBuf::from(format!("{}.tmp", self.pid_file_path.display()));
-		if let Some(parent) = self.pid_file_path.parent() {
+		let TempDir = PathBuf::from(format!("{}.tmp", self.PidFilePath.display()));
+		if let Some(parent) = self.PidFilePath.parent() {
 			fs::create_dir_all(parent)
 				.map_err(|e| AirError::FileSystem(format!("Failed to create PID directory: {}", e)))?;
 
@@ -294,44 +294,44 @@ impl DaemonManager {
 			.duration_since(std::time::UNIX_EPOCH)
 			.unwrap()
 			.as_secs();
-		let pid_content = format!("{}|{}", pid, timestamp);
+		let PidContent = format!("{}|{}", pid, timestamp);
 
 		// Calculate checksum for integrity verification
 		let mut hasher = Sha256::new();
-		hasher.update(pid_content.as_bytes());
+		hasher.update(PidContent.as_bytes());
 		let checksum = format!("{:x}", hasher.finalize());
 
 		// Write to temporary file first (atomic operation)
-		let temp_file_content = format!("{}|CHECKSUM:{}", pid_content, checksum);
-		fs::write(&temp_dir, &temp_file_content)
+		let TempFileContent = format!("{}|CHECKSUM:{}", PidContent, checksum);
+		fs::write(&TempDir, &temp_file_content)
 			.map_err(|e| AirError::FileSystem(format!("Failed to write temporary PID file: {}", e)))?;
 
 		// Atomic rename to avoid partial writes
 		#[cfg(unix)]
-		fs::rename(&temp_dir, &self.pid_file_path).map_err(|e| {
+		fs::rename(&TempDir, &self.PidFilePath).map_err(|e| {
 			// Rollback: clean up temp file on failure
-			let _ = fs::remove_file(&temp_dir);
+			let _ = fs::remove_file(&TempDir);
 			AirError::FileSystem(format!("Failed to rename PID file: {}", e))
 		})?;
 
 		#[cfg(not(unix))]
-		fs::rename(&temp_dir, &self.pid_file_path).map_err(|e| {
-			let _ = fs::remove_file(&temp_dir);
+		fs::rename(&TempDir, &self.PidFilePath).map_err(|e| {
+			let _ = fs::remove_file(&TempDir);
 			AirError::FileSystem(format!("Failed to rename PID file: {}", e))
 		})?;
 
 		// Store checksum for later validation
-		*self.pid_checksum.lock().await = Some(checksum);
+		*self.PidChecksum.lock().await = Some(checksum);
 
 		// Set running state
-		*self.is_running.write().await = true;
+		*self.IsRunning.write().await = true;
 
 		// Set secure permissions on PID file
 		#[cfg(unix)]
 		{
 			use std::os::unix::fs::PermissionsExt;
 			let perms = fs::Permissions::from_mode(0o600);
-			if let Err(e) = fs::set_permissions(&self.pid_file_path, perms) {
+			if let Err(e) = fs::set_permissions(&self.PidFilePath, perms) {
 				warn!("[Daemon] Failed to set PID file permissions: {}", e);
 			}
 		}
@@ -347,13 +347,13 @@ impl DaemonManager {
 	/// - Process existence validation
 	/// - Stale PID file cleanup
 	pub async fn IsAlreadyRunning(&self) -> Result<bool> {
-		if !self.pid_file_path.exists() {
+		if !self.PidFilePath.exists() {
 			debug!("[Daemon] PID file does not exist");
 			return Ok(false);
 		}
 
 		// Read PID from file
-		let pid_content = fs::read_to_string(&self.pid_file_path)
+		let PidContent = fs::read_to_string(&self.PidFilePath)
 			.map_err(|e| AirError::FileSystem(format!("Failed to read PID file: {}", e)))?;
 
 		// Parse PID content with checksum
@@ -371,10 +371,10 @@ impl DaemonManager {
 
 		// Verify checksum if present
 		if parts.len() >= 3 && parts[1].starts_with("CHECKSUM:") {
-			let stored_checksum = &parts[1][9..]; // Remove "CHECKSUM:" prefix
-			let current_checksum = self.pid_checksum.lock().await;
+			let StoredChecksum = &parts[1][9..]; // Remove "CHECKSUM:" prefix
+			let CurrentChecksum = self.PidChecksum.lock().await;
 
-			if let Some(ref cksum) = *current_checksum {
+			if let Some(ref cksum) = *CurrentChecksum {
 				if cksum != stored_checksum {
 					warn!("[Daemon] PID file checksum mismatch, file may be corrupted");
 					// Don't automatically delete - could be a different daemon instance
@@ -384,15 +384,15 @@ impl DaemonManager {
 		}
 
 		// Check if process exists with validation
-		let is_running = Self::ValidateProcess(pid);
+		let IsRunning = Self::ValidateProcess(pid);
 
-		if !is_running {
+		if !IsRunning {
 			// Clean up stale PID file with validation
 			warn!("[Daemon] Detected stale PID file for PID {}", pid);
 			self.CleanupStalePidFile().await?;
 		}
 
-		Ok(is_running)
+		Ok(IsRunning)
 	}
 
 	/// Validate that a process with the given PID is running
@@ -454,12 +454,12 @@ impl DaemonManager {
 
 	/// Cleanup stale PID file with validation and error handling
 	async fn CleanupStalePidFile(&self) -> Result<()> {
-		if !self.pid_file_path.exists() {
+		if !self.PidFilePath.exists() {
 			return Ok(());
 		}
 
 		// Verify the file is actually stale before deleting
-		let content = fs::read_to_string(&self.pid_file_path)
+		let content = fs::read_to_string(&self.PidFilePath)
 			.map_err(|e| {
 				warn!("[Daemon] Cannot verify stale PID file: {}", e);
 				return false;
@@ -469,7 +469,7 @@ impl DaemonManager {
 		if let Some(content) = content {
 			if content.starts_with(|c:char| c.is_numeric()) {
 				// Clean up the stale PID file
-				if let Err(e) = fs::remove_file(&self.pid_file_path) {
+				if let Err(e) = fs::remove_file(&self.PidFilePath) {
 					warn!("[Daemon] Failed to remove stale PID file: {}", e);
 					return Err(AirError::FileSystem(format!("Failed to remove stale PID file: {}", e)));
 				}
@@ -483,20 +483,20 @@ impl DaemonManager {
 	/// Release daemon lock with proper cleanup and rollback
 	/// Ensures all resources are properly cleaned up even on failure
 	pub async fn ReleaseLock(&self) -> Result<()> {
-		info!("[Daemon] Releasing daemon lock...");
+	info!("[Daemon] Releasing daemon lock...");
 
-		// Acquire lock for atomic cleanup
-		let _lock = self.pid_lock.lock().await;
+	// Acquire lock for atomic cleanup
+	let _lock = self.PidLock.lock().await;
 
-		// Set running state before cleanup
-		*self.is_running.write().await = false;
+	// Set running state before cleanup
+	*self.IsRunning.write().await = false;
 
-		// Clear checksum
-		*self.pid_checksum.lock().await = None;
+	// Clear checksum
+	*self.PidChecksum.lock().await = None;
 
 		// Remove PID file with validation
-		if self.pid_file_path.exists() {
-			match fs::remove_file(&self.pid_file_path) {
+		if self.PidFilePath.exists() {
+			match fs::remove_file(&self.PidFilePath) {
 				Ok(_) => {
 					debug!("[Daemon] PID file removed successfully");
 				},
@@ -509,9 +509,9 @@ impl DaemonManager {
 		}
 
 		// Try to clean up any temporary files
-		let temp_dir = PathBuf::from(format!("{}.tmp", self.pid_file_path.display()));
-		if temp_dir.exists() {
-			let _ = fs::remove_file(&temp_dir);
+		let TempDir = PathBuf::from(format!("{}.tmp", self.PidFilePath.display()));
+		if TempDir.exists() {
+			let _ = fs::remove_file(&TempDir);
 		}
 
 		info!("[Daemon] Daemon lock released");
@@ -519,32 +519,32 @@ impl DaemonManager {
 	}
 
 	/// Check if daemon is running
-	pub async fn IsRunning(&self) -> bool { *self.is_running.read().await }
+	pub async fn IsRunning(&self) -> bool { *self.IsRunning.read().await }
 
 	/// Request graceful shutdown
 	pub async fn RequestShutdown(&self) -> Result<()> {
 		info!("[Daemon] Requesting graceful shutdown...");
-		*self.shutdown_requested.write().await = true;
+		*self.ShutdownRequested.write().await = true;
 		Ok(())
 	}
 
 	/// Clear shutdown request (for restart scenarios)
 	pub async fn ClearShutdownRequest(&self) -> Result<()> {
 		info!("[Daemon] Clearing shutdown request");
-		*self.shutdown_requested.write().await = false;
+		*self.ShutdownRequested.write().await = false;
 		Ok(())
 	}
 
 	/// Check if shutdown has been requested
-	pub async fn IsShutdownRequested(&self) -> bool { *self.shutdown_requested.read().await }
+	pub async fn IsShutdownRequested(&self) -> bool { *self.ShutdownRequested.read().await }
 
 	/// Get daemon status with comprehensive health information
 	pub async fn GetStatus(&self) -> Result<DaemonStatus> {
-		let is_running = self.IsRunning().await;
-		let pid_file_exists = self.pid_file_path.exists();
+		let IsRunning = self.IsRunning().await;
+		let PidFileExists = self.PidFilePath.exists();
 
-		let pid = if pid_file_exists {
-			fs::read_to_string(&self.pid_file_path)
+		let pid = if PidFileExists {
+			fs::read_to_string(&self.PidFilePath)
 				.ok()
 				.and_then(|content| content.split('|').next().and_then(|s| s.trim().parse().ok()))
 		} else {
@@ -552,18 +552,18 @@ impl DaemonManager {
 		};
 
 		Ok(DaemonStatus {
-			is_running,
-			pid_file_exists,
-			pid,
-			platform:self.platform_info.platform.clone(),
-			service_name:self.platform_info.service_name.clone(),
-			shutdown_requested:self.IsShutdownRequested().await,
+			IsRunning: is_running,
+			PidFileExists: PidFileExists,
+			Pid: pid,
+			Platform: self.PlatformInfo.Platform.clone(),
+			ServiceName: self.PlatformInfo.ServiceName.clone(),
+			ShutdownRequested: self.IsShutdownRequested().await,
 		})
 	}
 
 	/// Generate system service file for installation
 	pub fn GenerateServiceFile(&self) -> Result<String> {
-		match self.platform_info.platform {
+		match self.PlatformInfo.Platform {
 			Platform::Linux => self.GenerateSystemdService(),
 			Platform::MacOS => self.GenerateLaunchdService(),
 			Platform::Windows => self.GenerateWindowsService(),
@@ -577,13 +577,13 @@ impl DaemonManager {
 
 	/// Generate systemd service file with comprehensive configuration
 	fn GenerateSystemdService(&self) -> Result<String> {
-		let exe_path = std::env::current_exe()
+		let ExePath = std::env::current_exe()
 			.map_err(|e| AirError::FileSystem(format!("Failed to get executable path: {}", e)))?;
 
-		let user = self.platform_info.run_as_user.as_deref().unwrap_or("root");
-		let group = self.platform_info.run_as_user.as_deref().unwrap_or("root");
+		let user = self.PlatformInfo.RunAsUser.as_deref().unwrap_or("root");
+		let group = self.PlatformInfo.RunAsUser.as_deref().unwrap_or("root");
 
-		let service_content = format!(
+		let ServiceContent = format!(
 			r#"[Unit]
 Description=Air Daemon - Background service for Land code editor
 Documentation=man:air(1)
@@ -619,24 +619,24 @@ RestrictRealtime=true
 [Install]
 WantedBy=multi-user.target
 "#,
-			exe_path.display(),
+			ExePath.display(),
 			user,
 			group
 		);
 
-		Ok(service_content)
+		Ok(ServiceContent)
 	}
 
 	/// Generate launchd service file with comprehensive configuration
 	fn GenerateLaunchdService(&self) -> Result<String> {
-		let exe_path = std::env::current_exe()
+		let ExePath = std::env::current_exe()
 			.map(|p| p.display().to_string())
 			.unwrap_or_else(|_| "/usr/local/bin/air".to_string());
 
-		let service_name = &self.platform_info.service_name;
-		let user = self.platform_info.run_as_user.as_deref().unwrap_or("root");
+		let ServiceName = &self.PlatformInfo.ServiceName;
+		let user = self.PlatformInfo.RunAsUser.as_deref().unwrap_or("root");
 
-		let service_content = format!(
+		let ServiceContent = format!(
 			r#"<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -705,26 +705,26 @@ WantedBy=multi-user.target
 </dict>
 </plist>
 "#,
-			service_name, exe_path, user
+			ServiceName, ExePath, user
 		);
 
-		Ok(service_content)
+		Ok(ServiceContent)
 	}
 
 	/// Generate Windows service configuration file
 	/// TODO: Integrate with winsvc crate for actual Windows Service
 	/// registration
 	fn GenerateWindowsService(&self) -> Result<String> {
-		let exe_path = std::env::current_exe()
+		let ExePath = std::env::current_exe()
 			.map(|p| p.display().to_string())
 			.unwrap_or_else(|_| "C:\\Program Files\\Air\\air.exe".to_string());
 
-		let service_name = &self.platform_info.service_name;
-		let display_name = "Air Daemon Service";
+		let ServiceName = &self.PlatformInfo.ServiceName;
+		let DisplayName = "Air Daemon Service";
 		let description = "Background service for Land code editor";
 
 		// Generate winsvc-compatible XML configuration
-		let service_content = format!(
+		let ServiceContent = format!(
 			r#"<service>
     <id>{}</id>
     <name>{}</name>
@@ -763,7 +763,7 @@ WantedBy=multi-user.target
     <env name="DAEMON_MODE" value="windows"/>
 </service>
 "#,
-			service_name, display_name, description, exe_path
+			ServiceName, display_name, description, ExePath
 		);
 
 		Ok(service_content)
@@ -771,9 +771,9 @@ WantedBy=multi-user.target
 
 	/// Install daemon as system service with validation
 	pub async fn InstallService(&self) -> Result<()> {
-		info!("[Daemon] Installing system service...");
+	info!("[Daemon] Installing system service...");
 
-		match self.platform_info.platform {
+	match self.PlatformInfo.Platform {
 			Platform::Linux => self.InstallSystemdService().await,
 			Platform::MacOS => self.InstallLaunchdService().await,
 			Platform::Windows => self.InstallWindowsService().await,
@@ -787,31 +787,31 @@ WantedBy=multi-user.target
 
 	/// Install systemd service with validation
 	async fn InstallSystemdService(&self) -> Result<()> {
-		let service_file_content = self.GenerateSystemdService()?;
-		let service_file_path = format!("/etc/systemd/system/{}.service", self.platform_info.service_name);
+		let ServiceFileContent = self.GenerateSystemdService()?;
+		let ServiceFilePath = format!("/etc/systemd/system/{}.service", self.PlatformInfo.ServiceName);
 
 		// Create temporary file for atomic write
-		let temp_path = format!("{}.tmp", service_file_path);
+		let TempPath = format!("{}.tmp", ServiceFilePath);
 
 		// Validate service content
-		if !service_file_content.contains("[Unit]") || !service_file_content.contains("[Service]") {
+		if !ServiceFileContent.contains("[Unit]") || !ServiceFileContent.contains("[Service]") {
 			return Err(AirError::Configuration("Generated service file is invalid".to_string()));
 		}
 
 		// Write to temporary file first
-		fs::write(&temp_path, &service_file_content)
+		fs::write(&TempPath, &ServiceFileContent)
 			.map_err(|e| AirError::FileSystem(format!("Failed to write temporary service file: {}", e)))?;
 
 		// Atomic rename
 		#[cfg(unix)]
-		fs::rename(&temp_path, &service_file_path).map_err(|e| {
-			let _ = fs::remove_file(&temp_path);
+		fs::rename(&TempPath, &ServiceFilePath).map_err(|e| {
+			let _ = fs::remove_file(&TempPath);
 			AirError::FileSystem(format!("Failed to rename service file: {}", e))
 		})?;
 
 		#[cfg(not(unix))]
-		fs::rename(&temp_path, &service_file_path).map_err(|e| {
-			let _ = fs::remove_file(&temp_path);
+		fs::rename(&TempPath, &ServiceFilePath).map_err(|e| {
+			let _ = fs::remove_file(&TempPath);
 			AirError::FileSystem(format!("Failed to rename service file: {}", e))
 		})?;
 
@@ -820,14 +820,14 @@ WantedBy=multi-user.target
 		{
 			use std::os::unix::fs::PermissionsExt;
 			let perms = fs::Permissions::from_mode(0o644);
-			fs::set_permissions(&service_file_path, perms)
+			fs::set_permissions(&ServiceFilePath, perms)
 				.map_err(|e| {
 					error!("[Daemon] Failed to set service file permissions: {}", e);
 				})
 				.ok();
 		}
 
-		info!("[Daemon] Systemd service installed at {}", service_file_path);
+		info!("[Daemon] Systemd service installed at {}", ServiceFilePath);
 
 		// Run daemon-reload to notify systemd
 		let _ = tokio::process::Command::new("systemctl").args(["daemon-reload"]).output().await;
@@ -837,31 +837,31 @@ WantedBy=multi-user.target
 
 	/// Install launchd service with validation
 	async fn InstallLaunchdService(&self) -> Result<()> {
-		let service_file_content = self.GenerateLaunchdService()?;
-		let service_file_path = format!("/Library/LaunchDaemons/{}.plist", self.platform_info.service_name);
+		let ServiceFileContent = self.GenerateLaunchdService()?;
+		let ServiceFilePath = format!("/Library/LaunchDaemons/{}.plist", self.PlatformInfo.ServiceName);
 
 		// Create temporary file for atomic write
-		let temp_path = format!("{}.tmp", service_file_path);
+		let TempPath = format!("{}.tmp", ServiceFilePath);
 
 		// Validate plist content
-		if !service_file_content.contains("<?xml") || !service_file_content.contains("<!DOCTYPE plist") {
+		if !ServiceFileContent.contains("<?xml") || !ServiceFileContent.contains("<!DOCTYPE plist") {
 			return Err(AirError::Configuration("Generated plist file is invalid".to_string()));
 		}
 
 		// Write to temporary file first
-		fs::write(&temp_path, &service_file_content)
+		fs::write(&TempPath, &ServiceFileContent)
 			.map_err(|e| AirError::FileSystem(format!("Failed to write temporary plist file: {}", e)))?;
 
 		// Atomic rename
 		#[cfg(unix)]
-		fs::rename(&temp_path, &service_file_path).map_err(|e| {
-			let _ = fs::remove_file(&temp_path);
+		fs::rename(&TempPath, &ServiceFilePath).map_err(|e| {
+			let _ = fs::remove_file(&TempPath);
 			AirError::FileSystem(format!("Failed to rename plist file: {}", e))
 		})?;
 
 		#[cfg(not(unix))]
-		fs::rename(&temp_path, &service_file_path).map_err(|e| {
-			let _ = fs::remove_file(&temp_path);
+		fs::rename(&TempPath, &ServiceFilePath).map_err(|e| {
+			let _ = fs::remove_file(&TempPath);
 			AirError::FileSystem(format!("Failed to rename plist file: {}", e))
 		})?;
 
@@ -870,14 +870,14 @@ WantedBy=multi-user.target
 		{
 			use std::os::unix::fs::PermissionsExt;
 			let perms = fs::Permissions::from_mode(0o644);
-			fs::set_permissions(&service_file_path, perms)
+			fs::set_permissions(&ServiceFilePath, perms)
 				.map_err(|e| {
 					error!("[Daemon] Failed to set plist file permissions: {}", e);
 				})
 				.ok();
 		}
 
-		info!("[Daemon] Launchd service installed at {}", service_file_path);
+		info!("[Daemon] Launchd service installed at {}", ServiceFilePath);
 
 		// No need to load immediately - launchd will pick it up automatically
 		// User can run: sudo launchctl load -w /Library/LaunchDaemons/air-daemon.plist
@@ -888,16 +888,16 @@ WantedBy=multi-user.target
 	/// Install Windows service
 	/// TODO: Integrate with winsvc crate for actual service registration
 	async fn InstallWindowsService(&self) -> Result<()> {
-		let service_file_content = self.GenerateWindowsService()?;
-		let service_dir = "C:\\ProgramData\\Air";
-		let service_file_path = format!("{}\\{}.xml", service_dir, self.platform_info.service_name);
+		let ServiceFileContent = self.GenerateWindowsService()?;
+		let ServiceDir = "C:\\ProgramData\\Air";
+		let ServiceFilePath = format!("{}\\{}.xml", service_dir, self.PlatformInfo.ServiceName);
 
 		// Create directory if it doesn't exist
 		fs::create_dir_all(service_dir)
 			.map_err(|e| AirError::FileSystem(format!("Failed to create service directory: {}", e)))?;
 
 		// Create temporary file for atomic write
-		let temp_path = format!("{}.tmp", service_file_path);
+		let TempPath = format!("{}.tmp", ServiceFilePath);
 
 		// Validate service content
 		if !service_file_content.contains("<service>") {
@@ -905,16 +905,16 @@ WantedBy=multi-user.target
 		}
 
 		// Write to temporary file first
-		fs::write(&temp_path, &service_file_content)
+		fs::write(&TempPath, &service_file_content)
 			.map_err(|e| AirError::FileSystem(format!("Failed to write temporary service file: {}", e)))?;
 
 		// Atomic rename
-		fs::rename(&temp_path, &service_file_path).map_err(|e| {
-			let _ = fs::remove_file(&temp_path);
+		fs::rename(&TempPath, &ServiceFilePath).map_err(|e| {
+			let _ = fs::remove_file(&TempPath);
 			AirError::FileSystem(format!("Failed to rename service file: {}", e))
 		})?;
 
-		info!("[Daemon] Windows service configuration written to {}", service_file_path);
+		info!("[Daemon] Windows service configuration written to {}", ServiceFilePath);
 		warn!("[Daemon] Windows service installation requires additional integration with winsvc crate");
 		warn!("[Daemon] Manual installation may be required: Use SC.EXE or winsvc to register service");
 
@@ -925,7 +925,7 @@ WantedBy=multi-user.target
 	pub async fn UninstallService(&self) -> Result<()> {
 		info!("[Daemon] Uninstalling system service...");
 
-		match self.platform_info.platform {
+		match self.PlatformInfo.Platform {
 			Platform::Linux => self.UninstallSystemdService().await,
 			Platform::MacOS => self.UninstallLaunchdService().await,
 			Platform::Windows => self.UninstallWindowsService().await,
@@ -939,25 +939,25 @@ WantedBy=multi-user.target
 
 	/// Uninstall systemd service with proper coordination
 	async fn UninstallSystemdService(&self) -> Result<()> {
-		let service_file_path = format!("/etc/systemd/system/{}.service", self.platform_info.service_name);
+		let ServiceFilePath = format!("/etc/systemd/system/{}.service", self.PlatformInfo.ServiceName);
 
 		// Stop service first if running
 		let _ = tokio::process::Command::new("systemctl")
-			.args(["stop", &self.platform_info.service_name])
+			.args(["stop", &self.PlatformInfo.ServiceName])
 			.output()
 			.await;
 
 		// Disable service
 		let _ = tokio::process::Command::new("systemctl")
-			.args(["disable", &self.platform_info.service_name])
+			.args(["disable", &self.PlatformInfo.ServiceName])
 			.output()
 			.await;
 
 		// Remove service file
-		if fs::remove_file(&service_file_path).is_ok() {
+		if fs::remove_file(&ServiceFilePath).is_ok() {
 			info!("[Daemon] Systemd service file removed");
 		} else {
-			warn!("[Daemon] Service file {} not found", service_file_path);
+			warn!("[Daemon] Service file {} not found", ServiceFilePath);
 		}
 
 		// Reload systemd
@@ -969,19 +969,19 @@ WantedBy=multi-user.target
 
 	/// Uninstall launchd service with proper coordination
 	async fn UninstallLaunchdService(&self) -> Result<()> {
-		let service_file_path = format!("/Library/LaunchDaemons/{}.plist", self.platform_info.service_name);
+		let ServiceFilePath = format!("/Library/LaunchDaemons/{}.plist", self.PlatformInfo.ServiceName);
 
 		// Unload service first
 		let _ = tokio::process::Command::new("launchctl")
-			.args(["unload", "-w", &service_file_path])
+			.args(["unload", "-w", &ServiceFilePath])
 			.output()
 			.await;
 
 		// Remove service file
-		if fs::remove_file(&service_file_path).is_ok() {
+		if fs::remove_file(&ServiceFilePath).is_ok() {
 			info!("[Daemon] Launchd service file removed");
 		} else {
-			warn!("[Daemon] Service file {} not found", service_file_path);
+			warn!("[Daemon] Service file {} not found", ServiceFilePath);
 		}
 
 		info!("[Daemon] Launchd service uninstalled");
@@ -990,7 +990,7 @@ WantedBy=multi-user.target
 
 	/// Uninstall Windows service
 	async fn UninstallWindowsService(&self) -> Result<()> {
-		let service_file_path = format!("C:\\ProgramData\\Air\\{}.xml", self.platform_info.service_name);
+		let ServiceFilePath = format!("C:\\ProgramData\\Air\\{}.xml", self.PlatformInfo.ServiceName);
 
 		// TODO: Use winsvc to properly stop and remove service
 		// For now, just remove the configuration file
@@ -1021,9 +1021,9 @@ pub struct DaemonStatus {
 impl DaemonStatus {
 	/// Get human-readable status description
 	pub fn status_description(&self) -> String {
-		if self.is_running {
-			format!("Running (PID: {})", self.pid.unwrap_or(0))
-		} else if self.pid_file_exists {
+		if self.IsRunning {
+			format!("Running (PID: {})", self.Pid.unwrap_or(0))
+		} else if self.PidFileExists {
 			"Stale PID file exists".to_string()
 		} else {
 			"Not running".to_string()

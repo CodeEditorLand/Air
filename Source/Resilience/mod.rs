@@ -96,52 +96,52 @@ pub enum ErrorClass {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RetryPolicy {
 	/// Maximum number of retry attempts
-	pub max_retries:u32,
+	pub MaxRetries:u32,
 
 	/// Initial retry interval (in milliseconds)
-	pub initial_interval_ms:u64,
+	pub InitialIntervalMs:u64,
 
 	/// Maximum retry interval (in milliseconds)
-	pub max_interval_ms:u64,
+	pub MaxIntervalMs:u64,
 
 	/// Exponential backoff multiplier
-	pub backoff_multiplier:f64,
+	pub BackoffMultiplier:f64,
 
 	/// Jitter percentage (0-1)
-	pub jitter_factor:f64,
+	pub JitterFactor:f64,
 
 	/// Retry budget per service (max retries per minute)
-	pub budget_per_minute:u32,
+	pub BudgetPerMinute:u32,
 
 	/// Adaptive error classification for intelligent retry behavior
-	pub error_classification:HashMap<String, ErrorClass>,
+	pub ErrorClassification:HashMap<String, ErrorClass>,
 }
 
 impl Default for RetryPolicy {
 	fn default() -> Self {
-		let mut error_classification = HashMap::new();
+		let mut ErrorClassification = HashMap::new();
 
 		// Default error classifications
-		error_classification.insert("timeout".to_string(), ErrorClass::Transient);
-		error_classification.insert("connection_refused".to_string(), ErrorClass::Transient);
-		error_classification.insert("connection_reset".to_string(), ErrorClass::Transient);
-		error_classification.insert("rate_limit_exceeded".to_string(), ErrorClass::RateLimited);
-		error_classification.insert("authentication_failed".to_string(), ErrorClass::NonRetryable);
-		error_classification.insert("unauthorized".to_string(), ErrorClass::NonRetryable);
-		error_classification.insert("not_found".to_string(), ErrorClass::NonRetryable);
-		error_classification.insert("server_error".to_string(), ErrorClass::ServerError);
-		error_classification.insert("internal_server_error".to_string(), ErrorClass::ServerError);
-		error_classification.insert("service_unavailable".to_string(), ErrorClass::ServerError);
-		error_classification.insert("gateway_timeout".to_string(), ErrorClass::Transient);
+		ErrorClassification.insert("timeout".to_string(), ErrorClass::Transient);
+		ErrorClassification.insert("connection_refused".to_string(), ErrorClass::Transient);
+		ErrorClassification.insert("connection_reset".to_string(), ErrorClass::Transient);
+		ErrorClassification.insert("rate_limit_exceeded".to_string(), ErrorClass::RateLimited);
+		ErrorClassification.insert("authentication_failed".to_string(), ErrorClass::NonRetryable);
+		ErrorClassification.insert("unauthorized".to_string(), ErrorClass::NonRetryable);
+		ErrorClassification.insert("not_found".to_string(), ErrorClass::NonRetryable);
+		ErrorClassification.insert("server_error".to_string(), ErrorClass::ServerError);
+		ErrorClassification.insert("internal_server_error".to_string(), ErrorClass::ServerError);
+		ErrorClassification.insert("service_unavailable".to_string(), ErrorClass::ServerError);
+		ErrorClassification.insert("gateway_timeout".to_string(), ErrorClass::Transient);
 
 		Self {
-			max_retries:3,
-			initial_interval_ms:1000,
-			max_interval_ms:32000,
-			backoff_multiplier:2.0,
-			jitter_factor:0.1,
-			budget_per_minute:100,
-			error_classification,
+			MaxRetries:3,
+			InitialIntervalMs:1000,
+			MaxIntervalMs:32000,
+			BackoffMultiplier:2.0,
+			JitterFactor:0.1,
+			BudgetPerMinute:100,
+			ErrorClassification,
 		}
 	}
 }
@@ -150,20 +150,20 @@ impl Default for RetryPolicy {
 #[derive(Debug, Clone)]
 struct RetryBudget {
 	attempts:Vec<Instant>,
-	max_per_minute:u32,
+	MaxPerMinute:u32,
 }
 
 impl RetryBudget {
-	fn new(max_per_minute:u32) -> Self { Self { attempts:Vec::new(), max_per_minute } }
+	fn new(MaxPerMinute:u32) -> Self { Self { attempts:Vec::new(), MaxPerMinute } }
 
 	fn can_retry(&mut self) -> bool {
 		let now = Instant::now();
-		let one_minute_ago = now - Duration::from_secs(60);
+		let OneMinuteAgo = now - Duration::from_secs(60);
 
 		// Remove attempts older than 1 minute
 		self.attempts.retain(|&attempt| attempt > one_minute_ago);
 
-		if self.attempts.len() < self.max_per_minute as usize {
+		if self.attempts.len() < self.MaxPerMinute as usize {
 			self.attempts.push(now);
 			true
 		} else {
@@ -176,7 +176,7 @@ impl RetryBudget {
 pub struct RetryManager {
 	policy:RetryPolicy,
 	budgets:Arc<Mutex<HashMap<String, RetryBudget>>>,
-	event_tx:Arc<broadcast::Sender<RetryEvent>>,
+	EventTx:Arc<broadcast::Sender<RetryEvent>>,
 }
 
 /// Events published by retry operations for metrics and telemetry integration
@@ -184,25 +184,25 @@ pub struct RetryManager {
 pub struct RetryEvent {
 	pub service:String,
 	pub attempt:u32,
-	pub error_class:ErrorClass,
-	pub delay_ms:u64,
+	pub ErrorClass:ErrorClass,
+	pub DelayMs:u64,
 	pub success:bool,
-	pub error_message:Option<String>,
+	pub ErrorMessage:Option<String>,
 }
 
 impl RetryManager {
 	/// Create a new retry manager
 	pub fn new(policy:RetryPolicy) -> Self {
-		let (event_tx, _) = broadcast::channel(1000);
+		let (EventTx, _) = broadcast::channel(1000);
 		Self {
 			policy,
 			budgets:Arc::new(Mutex::new(HashMap::new())),
-			event_tx:Arc::new(event_tx),
+			EventTx:Arc::new(EventTx),
 		}
 	}
 
 	/// Get the retry event transmitter for subscription
-	pub fn GetEventTransmitter(&self) -> broadcast::Sender<RetryEvent> { (*self.event_tx).clone() }
+	pub fn GetEventTransmitter(&self) -> broadcast::Sender<RetryEvent> { (*self.EventTx).clone() }
 
 	/// Calculate next retry delay with exponential backoff and jitter
 	pub fn CalculateRetryDelay(&self, attempt:u32) -> Duration {
@@ -210,28 +210,28 @@ impl RetryManager {
 			return Duration::from_millis(0);
 		}
 
-		let base_delay = (self.policy.initial_interval_ms as f64
-			* self.policy.backoff_multiplier.powi(attempt as i32 - 1))
-		.min(self.policy.max_interval_ms as f64) as u64;
+		let BaseDelay = (self.policy.InitialIntervalMs as f64
+			* self.policy.BackoffMultiplier.powi(attempt as i32 - 1))
+		.min(self.policy.MaxIntervalMs as f64) as u64;
 
 		// Add jitter
-		let jitter = (base_delay as f64 * self.policy.jitter_factor) as u64;
-		let random_jitter = (rand::random::<f64>() * jitter as f64) as u64;
-		let final_delay = base_delay + random_jitter;
+		let jitter = (BaseDelay as f64 * self.policy.JitterFactor) as u64;
+		let RandomJitter = (rand::random::<f64>() * jitter as f64) as u64;
+		let FinalDelay = BaseDelay + random_jitter;
 
 		Duration::from_millis(final_delay)
 	}
 
 	/// Calculate adaptive retry delay based on error classification
-	pub fn CalculateAdaptiveRetryDelay(&self, error_type:&str, attempt:u32) -> Duration {
-		let error_class = self
+	pub fn CalculateAdaptiveRetryDelay(&self, ErrorType:&str, attempt:u32) -> Duration {
+		let ErrorClass = self
 			.policy
-			.error_classification
+			.ErrorClassification
 			.get(error_type)
 			.copied()
 			.unwrap_or(ErrorClass::Unknown);
 
-		match error_class {
+		match ErrorClass {
 			ErrorClass::RateLimited => {
 				// Longer delays with linear backoff for rate limits
 				let delay = (attempt + 1) * 5000; // 5s, 10s, 15s...
@@ -239,8 +239,8 @@ impl RetryManager {
 			},
 			ErrorClass::ServerError => {
 				// Aggressive backoff for server errors
-				let base_delay = self.policy.initial_interval_ms * 2_u64.pow(attempt);
-				Duration::from_millis(base_delay.min(self.policy.max_interval_ms))
+				let BaseDelay = self.policy.InitialIntervalMs * 2_u64.pow(attempt);
+				Duration::from_millis(base_delay.min(self.policy.MaxIntervalMs))
 			},
 			ErrorClass::Transient => {
 				// Standard exponential backoff
@@ -254,10 +254,10 @@ impl RetryManager {
 	}
 
 	/// Classify an error for adaptive retry behavior
-	pub fn ClassifyError(&self, error_message:&str) -> ErrorClass {
-		let error_lower = error_message.to_lowercase();
+	pub fn ClassifyError(&self, ErrorMessage:&str) -> ErrorClass {
+		let ErrorLower = ErrorMessage.to_lowercase();
 
-		for (pattern, class) in &self.policy.error_classification {
+		for (pattern, class) in &self.policy.ErrorClassification {
 			if error_lower.contains(pattern) {
 				return *class;
 			}
@@ -272,33 +272,33 @@ impl RetryManager {
 		let mut budgets = self.budgets.lock().await;
 		let budget = budgets
 			.entry(service.to_string())
-			.or_insert_with(|| RetryBudget::new(self.policy.budget_per_minute));
+			.or_insert_with(|| RetryBudget::new(self.policy.BudgetPerMinute));
 
 		budget.can_retry()
 	}
 
 	/// Publish a retry event for telemetry integration
-	pub fn PublishRetryEvent(&self, event:RetryEvent) { let _ = self.event_tx.send(event); }
+	pub fn PublishRetryEvent(&self, event:RetryEvent) { let _ = self.EventTx.send(event); }
 
 	/// Validate retry policy configuration
 	pub fn ValidatePolicy(&self) -> Result<(), String> {
-		if self.policy.max_retries == 0 {
-			return Err("max_retries must be greater than 0".to_string());
+		if self.policy.MaxRetries == 0 {
+			return Err("MaxRetries must be greater than 0".to_string());
 		}
-		if self.policy.initial_interval_ms == 0 {
-			return Err("initial_interval_ms must be greater than 0".to_string());
+		if self.policy.InitialIntervalMs == 0 {
+			return Err("InitialIntervalMs must be greater than 0".to_string());
 		}
-		if self.policy.initial_interval_ms > self.policy.max_interval_ms {
-			return Err("initial_interval_ms cannot be greater than max_interval_ms".to_string());
+		if self.policy.InitialIntervalMs > self.policy.MaxIntervalMs {
+			return Err("InitialIntervalMs cannot be greater than MaxIntervalMs".to_string());
 		}
-		if self.policy.backoff_multiplier <= 1.0 {
-			return Err("backoff_multiplier must be greater than 1.0".to_string());
+		if self.policy.BackoffMultiplier <= 1.0 {
+			return Err("BackoffMultiplier must be greater than 1.0".to_string());
 		}
-		if self.policy.jitter_factor < 0.0 || self.policy.jitter_factor > 1.0 {
-			return Err("jitter_factor must be between 0 and 1".to_string());
+		if self.policy.JitterFactor < 0.0 || self.policy.JitterFactor > 1.0 {
+			return Err("JitterFactor must be between 0 and 1".to_string());
 		}
-		if self.policy.budget_per_minute == 0 {
-			return Err("budget_per_minute must be greater than 0".to_string());
+		if self.policy.BudgetPerMinute == 0 {
+			return Err("BudgetPerMinute must be greater than 0".to_string());
 		}
 		Ok(())
 	}
@@ -319,25 +319,25 @@ pub enum CircuitState {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct CircuitBreakerConfig {
 	/// Failure threshold before tripping
-	pub failure_threshold:u32,
+	pub FailureThreshold:u32,
 
 	/// Success threshold before closing
-	pub success_threshold:u32,
+	pub SuccessThreshold:u32,
 
 	/// Timeout before attempting recovery (in seconds)
-	pub timeout_secs:u64,
+	pub TimeoutSecs:u64,
 }
 
 impl Default for CircuitBreakerConfig {
-	fn default() -> Self { Self { failure_threshold:5, success_threshold:2, timeout_secs:60 } }
+	fn default() -> Self { Self { FailureThreshold:5, SuccessThreshold:2, TimeoutSecs:60 } }
 }
 
 /// Circuit breaker events for metrics and telemetry integration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CircuitEvent {
 	pub name:String,
-	pub from_state:CircuitState,
-	pub to_state:CircuitState,
+	pub FromState:CircuitState,
+	pub ToState:CircuitState,
 	pub timestamp:u64,
 	pub reason:String,
 }
@@ -348,31 +348,31 @@ pub struct CircuitBreaker {
 	name:String,
 	state:Arc<RwLock<CircuitState>>,
 	config:CircuitBreakerConfig,
-	failure_count:Arc<RwLock<u32>>,
-	success_count:Arc<RwLock<u32>>,
-	last_failure_time:Arc<RwLock<Option<Instant>>>,
-	event_tx:Arc<broadcast::Sender<CircuitEvent>>,
-	state_transition_counter:Arc<RwLock<u32>>,
+	FailureCount:Arc<RwLock<u32>>,
+	SuccessCount:Arc<RwLock<u32>>,
+	LastFailureTime:Arc<RwLock<Option<Instant>>>,
+	EventTx:Arc<broadcast::Sender<CircuitEvent>>,
+	StateTransitionCounter:Arc<RwLock<u32>>,
 }
 
 impl CircuitBreaker {
 	/// Create a new circuit breaker with event publishing
 	pub fn new(name:String, config:CircuitBreakerConfig) -> Self {
-		let (event_tx, _) = broadcast::channel(1000);
+		let (EventTx, _) = broadcast::channel(1000);
 		Self {
 			name:name.clone(),
 			state:Arc::new(RwLock::new(CircuitState::Closed)),
 			config,
-			failure_count:Arc::new(RwLock::new(0)),
-			success_count:Arc::new(RwLock::new(0)),
-			last_failure_time:Arc::new(RwLock::new(None)),
-			event_tx:Arc::new(event_tx),
-			state_transition_counter:Arc::new(RwLock::new(0)),
+			FailureCount:Arc::new(RwLock::new(0)),
+			SuccessCount:Arc::new(RwLock::new(0)),
+			LastFailureTime:Arc::new(RwLock::new(None)),
+			EventTx:Arc::new(EventTx),
+			StateTransitionCounter:Arc::new(RwLock::new(0)),
 		}
 	}
 
 	/// Get the circuit breaker event transmitter for subscription
-	pub fn GetEventTransmitter(&self) -> broadcast::Sender<CircuitEvent> { (*self.event_tx).clone() }
+	pub fn GetEventTransmitter(&self) -> broadcast::Sender<CircuitEvent> { (*self.EventTx).clone() }
 
 	/// Get current state with panic recovery
 	pub async fn GetState(&self) -> CircuitState { *self.state.read().await }
@@ -380,33 +380,33 @@ impl CircuitBreaker {
 	/// Validate state consistency across all counters
 	pub async fn ValidateState(&self) -> Result<(), String> {
 		let state = *self.state.read().await;
-		let failures = *self.failure_count.read().await;
-		let successes = *self.success_count.read().await;
+		let failures = *self.FailureCount.read().await;
+		let successes = *self.SuccessCount.read().await;
 
 		match state {
 			CircuitState::Closed => {
 				if successes != 0 {
 					return Err(format!("Inconsistent state: Closed but has {} successes", successes));
 				}
-				if failures >= self.config.failure_threshold {
+				if failures >= self.config.FailureThreshold {
 					log::warn!(
 						"[CircuitBreaker] State inconsistency: Closed but failure count ({}) >= threshold ({})",
 						failures,
-						self.config.failure_threshold
+						self.config.FailureThreshold
 					);
 				}
 			},
 			CircuitState::Open => {
-				if failures < self.config.failure_threshold {
+				if failures < self.config.FailureThreshold {
 					log::warn!(
 						"[CircuitBreaker] State inconsistency: Open but failure count ({}) < threshold ({})",
 						failures,
-						self.config.failure_threshold
+						self.config.FailureThreshold
 					);
 				}
 			},
 			CircuitState::HalfOpen => {
-				if successes >= self.config.success_threshold {
+				if successes >= self.config.SuccessThreshold {
 					return Err(format!(
 						"Inconsistent state: HalfOpen but has {} successes (should be Closed)",
 						successes
@@ -418,15 +418,15 @@ impl CircuitBreaker {
 	}
 
 	/// Transition state with validation and event publishing
-	async fn TransitionState(&self, new_state:CircuitState, reason:&str) -> Result<(), String> {
-		let current_state = self.GetState().await;
+	async fn TransitionState(&self, NewState:CircuitState, reason:&str) -> Result<(), String> {
+		let CurrentState = self.GetState().await;
 
-		if current_state == new_state {
+		if CurrentState == new_state {
 			return Ok(()); // No transition needed
 		}
 
 		// Validate the proposed transition
-		match (current_state, new_state) {
+		match (CurrentState, new_state) {
 			(CircuitState::Closed, CircuitState::Open) | (CircuitState::HalfOpen, CircuitState::Open) => {
 				// Valid transitions
 			},
@@ -447,18 +447,18 @@ impl CircuitBreaker {
 		// Publish state transition event
 		let event = CircuitEvent {
 			name:self.name.clone(),
-			from_state:current_state,
-			to_state:new_state,
+			FromState:current_state,
+			ToState:new_state,
 			timestamp:crate::utils::CurrentTimestamp(),
 			reason:reason.to_string(),
 		};
-		let _ = self.event_tx.send(event);
+		let _ = self.EventTx.send(event);
 
 		// Transition state
 		*self.state.write().await = new_state;
 
 		// Increment transition counter
-		*self.state_transition_counter.write().await += 1;
+		*self.StateTransitionCounter.write().await += 1;
 
 		log::info!(
 			"[CircuitBreaker] State transition for {}: {:?} -> {:?} (reason: {})",
@@ -484,18 +484,18 @@ impl CircuitBreaker {
 		match state {
 			CircuitState::Closed => {
 				// Reset counters
-				*self.failure_count.write().await = 0;
+				*self.FailureCount.write().await = 0;
 			},
 			CircuitState::HalfOpen => {
 				// Increment success count
-				let mut success_count = self.success_count.write().await;
-				*success_count += 1;
+				let mut SuccessCount = self.SuccessCount.write().await;
+				*SuccessCount += 1;
 
-				if *success_count >= self.config.success_threshold {
+				if *SuccessCount >= self.config.SuccessThreshold {
 					// Close the circuit
 					let _ = self.TransitionState(CircuitState::Closed, "Success threshold reached").await;
-					*self.failure_count.write().await = 0;
-					*self.success_count.write().await = 0;
+					*self.FailureCount.write().await = 0;
+					*self.SuccessCount.write().await = 0;
 				}
 			},
 			_ => {},
@@ -506,24 +506,24 @@ impl CircuitBreaker {
 	pub async fn RecordFailure(&self) {
 		let state = self.GetState().await;
 
-		*self.last_failure_time.write().await = Some(Instant::now());
+		*self.LastFailureTime.write().await = Some(Instant::now());
 
 		match state {
 			CircuitState::Closed => {
 				// Increment failure count
-				let mut failure_count = self.failure_count.write().await;
-				*failure_count += 1;
+				let mut FailureCount = self.FailureCount.write().await;
+				*FailureCount += 1;
 
-				if *failure_count >= self.config.failure_threshold {
+				if *FailureCount >= self.config.FailureThreshold {
 					// Open the circuit
 					let _ = self.TransitionState(CircuitState::Open, "Failure threshold reached").await;
-					*self.success_count.write().await = 0;
+					*self.SuccessCount.write().await = 0;
 				}
 			},
 			CircuitState::HalfOpen => {
 				// Return to open state
 				let _ = self.TransitionState(CircuitState::Open, "Failure in half-open state").await;
-				*self.success_count.write().await = 0;
+				*self.SuccessCount.write().await = 0;
 			},
 			_ => {},
 		}
@@ -538,10 +538,10 @@ impl CircuitBreaker {
 			return state == CircuitState::HalfOpen;
 		}
 
-		if let Some(last_failure) = *self.last_failure_time.read().await {
-			if last_failure.elapsed() >= Duration::from_secs(self.config.timeout_secs) {
+		if let Some(last_failure) = *self.LastFailureTime.read().await {
+			if last_failure.elapsed() >= Duration::from_secs(self.config.TimeoutSecs) {
 				let _ = self.TransitionState(CircuitState::HalfOpen, "Recovery timeout elapsed").await;
-				*self.success_count.write().await = 0;
+				*self.SuccessCount.write().await = 0;
 				return true;
 			}
 		}
@@ -554,23 +554,23 @@ impl CircuitBreaker {
 		CircuitStatistics {
 			name:self.name.clone(),
 			state:self.GetState().await,
-			failures:*self.failure_count.read().await,
-			successes:*self.success_count.read().await,
-			state_transitions:*self.state_transition_counter.read().await,
-			last_failure_time:*self.last_failure_time.read().await,
+			failures:*self.FailureCount.read().await,
+			successes:*self.SuccessCount.read().await,
+			StateTransitions:*self.StateTransitionCounter.read().await,
+			LastFailureTime:*self.LastFailureTime.read().await,
 		}
 	}
 
 	/// Validate circuit breaker configuration
 	pub fn ValidateConfig(&config:&CircuitBreakerConfig) -> Result<(), String> {
-		if config.failure_threshold == 0 {
-			return Err("failure_threshold must be greater than 0".to_string());
+		if config.FailureThreshold == 0 {
+			return Err("FailureThreshold must be greater than 0".to_string());
 		}
-		if config.success_threshold == 0 {
-			return Err("success_threshold must be greater than 0".to_string());
+		if config.SuccessThreshold == 0 {
+			return Err("SuccessThreshold must be greater than 0".to_string());
 		}
-		if config.timeout_secs == 0 {
-			return Err("timeout_secs must be greater than 0".to_string());
+		if config.TimeoutSecs == 0 {
+			return Err("TimeoutSecs must be greater than 0".to_string());
 		}
 		Ok(())
 	}
@@ -583,9 +583,9 @@ pub struct CircuitStatistics {
 	pub state:CircuitState,
 	pub failures:u32,
 	pub successes:u32,
-	pub state_transitions:u32,
+	pub StateTransitions:u32,
 	#[serde(skip_serializing)]
-	pub last_failure_time:Option<Instant>,
+	pub LastFailureTime:Option<Instant>,
 }
 
 impl<'de> Deserialize<'de> for CircuitStatistics {

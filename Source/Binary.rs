@@ -162,7 +162,7 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 use log::{debug, error, info, warn};
 use tokio::{signal, time::interval};
 
-use Air::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Configuration::ConfigurationManager, Daemon::DaemonManager, Downloader::DownloadManager, HealthCheck::{HealthCheckManager, HealthCheckLevel}, Indexing::FileIndexer, Logging, Metrics, Tracing, Updates::UpdateManager, CLI::{CliParser, Command, ConfigCommand, DebugCommand, OutputFormatter}, Vine::Server::AirVinegRPCService_simple::AirVinegRPCService, VERSION};
+use AirLibrary::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Configuration::ConfigurationManager, Daemon::DaemonManager, Downloader::DownloadManager, HealthCheck::{HealthCheckManager, HealthCheckLevel}, Indexing::FileIndexer, Logging, Metrics, Tracing, Updates::UpdateManager, CLI::{CliParser, Command, ConfigCommand, DebugCommand, OutputFormatter}, Vine::Server::AirVinegRPCService_simple::AirVinegRPCService, VERSION, DefaultBindAddress, ProtocolVersion};
 
 // =============================================================================
 // Debug Helpers
@@ -449,8 +449,8 @@ async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error>> {
         
         Command::Version => {
             println!("Air {} ({})", VERSION, env!("CARGO_PKG_NAME"));
-            println!("Protocol: Version {} (gRPC)", Air::ProtocolVersion);
-            println!("Port: {} (Air), {} (Cocoon)", Air::DefaultBindAddress, "[::1]:50052");
+            println!("Protocol: Version {} (gRPC)", ProtocolVersion);
+            println!("Port: {} (Air), {} (Cocoon)", DefaultBindAddress, "[::1]:50052");
             println!("Build: {} {}", env!("CARGO_PKG_VERSION"), env!("CARGO_PKG_NAME"));
             Ok(())
         }
@@ -516,7 +516,7 @@ async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error>> {
                 println!("🔍 Verbose Information:");
                 println!("  Debug mode: Disabled by default");
                 println!("  Log level: info");
-                println!("  Config file: {}", Air::DefaultConfigFile);
+                println!("  Config file: {}", DefaultConfigFile);
                 println!("");
                 println!("  TODO: Implement detailed service status with:");
                 println!("    - Service uptime");
@@ -592,7 +592,7 @@ async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error>> {
                     println!("  Key: {}", key);
                     println!("");
                     println!("  Note: Config retrieval not yet implemented");
-                    println!("  Workaround: Check config file directly: cat {}", Air::DefaultConfigFile);
+                    println!("  Workaround: Check config file directly: cat {}", DefaultConfigFile);
                     
                     Err("Config 'get' command not yet implemented".into())
                 }
@@ -662,11 +662,11 @@ async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error>> {
                     } else {
                         println!("  Current Configuration:");
                         println!("  Note: Config display not yet implemented");
-                        println!("  Workaround: View config file: cat {}", Air::DefaultConfigFile);
+                        println!("  Workaround: View config file: cat {}", DefaultConfigFile);
                     }
                     
                     println!("");
-                    println!("  Default config file: {}", Air::DefaultConfigFile);
+                    println!("  Default config file: {}", DefaultConfigFile);
                     println!("  Config directory: ~/.config/air/");
                     
                     Err("Config 'show' command not yet implemented".into())
@@ -686,7 +686,7 @@ async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error>> {
                     println!("✅ Validate Configuration");
                     println!("");
                     
-                    let config_path = path.unwrap_or_else(|| Air::DefaultConfigFile.to_string());
+                    let config_path = path.unwrap_or_else(|| DefaultConfigFile.to_string());
                     println!("  Config file: {}", config_path);
                     println!("");
                     
@@ -1037,7 +1037,7 @@ async fn attempt_daemon_connection() -> Result<(), String> {
     use tokio::net::TcpStream;
     use tokio::time::{timeout, Duration};
     
-    let addr = Air::DefaultBindAddress;
+    let addr = DefaultBindAddress;
     
     // Timeout: 5 seconds
     let connection_result = timeout(Duration::from_secs(5), async {
@@ -1229,7 +1229,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
     };
     
     // Load configuration with timeout
-    let configuration: std::sync::Arc<Air::Configuration::AirConfiguration> = match tokio::time::timeout(
+    let configuration: std::sync::Arc<AirLibrary::Configuration::AirConfiguration> = match tokio::time::timeout(
         Duration::from_secs(10),
         config_manager.load_configuration()
     ).await {
@@ -1437,10 +1437,10 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
                 return Err(format!("Invalid bind address: {}", e).into());
             }
         },
-        None => match Air::DefaultBindAddress.parse() {
+        None => match DefaultBindAddress.parse() {
             Ok(parsed) => parsed,
             Err(e) => {
-                error!("[Boot] Invalid default bind address '{}': {}", Air::DefaultBindAddress, e);
+                error!("[Boot] Invalid default bind address '{}': {}", DefaultBindAddress, e);
                 return Err(format!("Invalid default bind address: {}", e).into());
             }
         }
@@ -1449,7 +1449,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
     info!("[Boot] [Vine] Configuring gRPC server on {}", bind_addr);
 
     // Create gRPC service implementation with all dependencies
-    let vine_service = match Air::Vine::Server::AirVinegRPCService_simple::AirVinegRPCService::new(
+    let vine_service = match AirLibrary::Vine::Server::AirVinegRPCService_simple::AirVinegRPCService::new(
         app_state.clone(),
         auth_service.clone(),
         update_manager.clone(),
@@ -1470,7 +1470,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
     let server_handle: tokio::task::JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>> = tokio::spawn(async move {
         info!("[Vine] Starting gRPC server on {}", bind_addr);
 
-        let svc = Air::Vine::Generated::air_service_server::AirServiceServer::new(vine_service);
+        let svc = AirLibrary::Vine::Generated::air_service_server::AirServiceServer::new(vine_service);
 
         let server = tonic::transport::Server::builder()
             .add_service(svc)
@@ -1548,7 +1548,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
                         
                         // Record metrics for failed health check
                         let metrics_collector = Metrics::get_metrics();
-                        metrics_collector.record_request_failure("health_check_failed", 0.0);
+                        metrics_collector.RecordRequestFailure("health_check_failed", 0.0);
                     }
                 }
                 
@@ -1623,7 +1623,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
     info!("===========================================");
     info!("[Runtime] Air Daemon 🪁 is now running");
     info!("[Runtime] Listening on {} for Mountain connections", bind_addr);
-    info!("[Runtime] Protocol Version: {}", Air::ProtocolVersion);
+    info!("[Runtime] Protocol Version: {}", ProtocolVersion);
     info!("[Runtime] Cocoon Port: 50052");
     info!("===========================================");
     info!("");
@@ -1768,7 +1768,7 @@ async fn validate_environment() -> Result<(), String> {
 /// - Validate timeout values
 /// - Validate file paths exist or are creatable
 /// - Validate URLs are properly formatted
-fn validate_configuration(config: &Air::Configuration::AirConfiguration) -> Result<(), String> {
+fn validate_configuration(config: &AirLibrary::Configuration::AirConfiguration) -> Result<(), String> {
     // Add configuration validation logic here
     debug!("[Config] Configuration passed basic validation");
     Ok(())

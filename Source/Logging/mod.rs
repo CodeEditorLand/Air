@@ -181,11 +181,11 @@ impl Default for SensitiveDataConfig {
 /// Context for structured logging with request IDs and metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogContext {
-	pub request_id:String,
-	pub trace_id:String,
-	pub span_id:String,
-	pub user_id:Option<String>,
-	pub session_id:Option<String>,
+	pub RequestId:String,
+	pub TraceId:String,
+	pub SpanId:String,
+	pub UserId:Option<String>,
+	pub SessionId:Option<String>,
 	pub operation:String,
 	pub metadata:HashMap<String, String>,
 }
@@ -195,14 +195,14 @@ impl LogContext {
 	pub fn New(operation:impl Into<String>) -> Self {
 		let RequestId = crate::utils::GenerateRequestId();
 		let TraceId = crate::utils::GenerateRequestId();
-		let span_id = uuid::Uuid::new_v4().to_string();
+		let SpanId = uuid::Uuid::new_v4().to_string();
 
 		Self {
-			request_id:RequestId,
-			trace_id:TraceId,
-			span_id,
-			user_id:None,
-			session_id:None,
+			RequestId:RequestId,
+			TraceId:TraceId,
+			SpanId,
+			UserId:None,
+			SessionId:None,
 			operation:operation.into(),
 			metadata:HashMap::new(),
 		}
@@ -210,11 +210,11 @@ impl LogContext {
 
 	/// Validate log context for required fields
 	pub fn Validate(&self) -> Result<()> {
-		if self.request_id.is_empty() {
-			return Err("request_id cannot be empty".into());
+		if self.RequestId.is_empty() {
+			return Err("RequestId cannot be empty".into());
 		}
-		if self.trace_id.is_empty() {
-			return Err("trace_id cannot be empty".into());
+		if self.TraceId.is_empty() {
+			return Err("TraceId cannot be empty".into());
 		}
 		if self.operation.is_empty() {
 			return Err("operation cannot be empty".into());
@@ -223,14 +223,14 @@ impl LogContext {
 	}
 
 	/// Set user ID in context
-	pub fn WithUserId(mut self, user_id:String) -> Self {
-		self.user_id = Some(user_id);
+	pub fn WithUserId(mut self, UserId:String) -> Self {
+		self.UserId = Some(UserId);
 		self
 	}
 
 	/// Set session ID in context
-	pub fn WithSessionId(mut self, session_id:String) -> Self {
-		self.session_id = Some(session_id);
+	pub fn WithSessionId(mut self, SessionId:String) -> Self {
+		self.SessionId = Some(SessionId);
 		self
 	}
 
@@ -275,8 +275,8 @@ pub fn ClearLogContext() {
 /// Log file manager for rotation and cleanup
 pub struct LogManager {
 	config:LogRotationConfig,
-	current_file:Arc<Mutex<Option<PathBuf>>>,
-	current_size:Arc<Mutex<u64>>,
+	CurrentFile:Arc<Mutex<Option<PathBuf>>>,
+	CurrentSize:Arc<Mutex<u64>>,
 }
 
 impl LogManager {
@@ -284,24 +284,24 @@ impl LogManager {
 		config.Validate()?;
 
 		// Ensure log directory exists
-		std::fs::create_dir_all(&config.log_directory)?;
+		std::fs::create_dir_all(&config.LogDirectory)?;
 
 		Ok(Self {
 			config,
-			current_file:Arc::new(Mutex::new(None)),
-			current_size:Arc::new(Mutex::new(0)),
+			CurrentFile:Arc::new(Mutex::new(None)),
+			CurrentSize:Arc::new(Mutex::new(0)),
 		})
 	}
 
 	/// Check if log rotation is needed
 	fn ShouldRotate(&self) -> bool {
-		let size = *self.current_size.lock().unwrap();
-		size >= self.config.max_file_size_bytes
+		let size = *self.CurrentSize.lock().unwrap();
+		size >= self.config.MaxFileSizeBytes
 	}
 
 	/// Perform log rotation
 	fn Rotate(&self) -> Result<()> {
-		let CurrentFile = self.current_file.lock().unwrap();
+		let CurrentFile = self.CurrentFile.lock().unwrap();
 
 		if let Some(ref FilePath) = *CurrentFile {
 			// Rename current file with timestamp
@@ -312,7 +312,7 @@ impl LogManager {
 			std::fs::rename(FilePath, &RotatedPath)?;
 
 			// Compress if enabled
-			if self.config.compress {
+			if self.config.Compress {
 				self.CompressFile(&RotatedPath)?;
 			}
 
@@ -320,7 +320,7 @@ impl LogManager {
 			self.CleanupOldLogs()?;
 		}
 
-		*self.current_size.lock().unwrap() = 0;
+		*self.CurrentSize.lock().unwrap() = 0;
 
 		Ok(())
 	}
@@ -334,7 +334,7 @@ impl LogManager {
 
 	/// Cleanup old log files
 	fn CleanupOldLogs(&self) -> Result<()> {
-		let log_dir = Path::new(&self.config.log_directory);
+		let log_dir = Path::new(&self.config.LogDirectory);
 
 		if !log_dir.exists() {
 			return Ok(());
@@ -359,7 +359,7 @@ impl LogManager {
 		});
 
 		// Keep only max_files
-		for file in log_files.into_iter().skip(self.config.max_files) {
+		for file in log_files.into_iter().skip(self.config.MaxFiles) {
 			let _ = std::fs::remove_file(file.path());
 		}
 
@@ -393,14 +393,14 @@ impl Default for SensitiveDataFilter {
 impl SensitiveDataFilter {
 	fn new(config:SensitiveDataConfig) -> Result<Self> {
 		let mut filter = Self::default();
-		filter.enabled = config.enabled;
+		filter.enabled = config.Enabled;
 
-		if !config.include_standard_patterns {
+		if !config.IncludeStandardPatterns {
 			filter.patterns.clear();
 		}
 
 		// Add custom patterns
-		for pattern in &config.custom_patterns {
+		for pattern in &config.CustomPatterns {
 			match regex::Regex::new(pattern) {
 				Ok(re) => filter.patterns.push(re),
 				Err(e) => warn!("[Logging] Failed to compile custom regex '{}': {}", pattern, e),

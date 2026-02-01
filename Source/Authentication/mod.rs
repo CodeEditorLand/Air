@@ -17,82 +17,82 @@ use crate::{AirError, ApplicationState::ApplicationState, Configuration::Configu
 /// Authentication service implementation
 pub struct AuthenticationService {
 	/// Application state
-	app_state:Arc<ApplicationState>,
+	AppState:Arc<ApplicationState>,
 
 	/// Active sessions
-	sessions:Arc<RwLock<HashMap<String, AuthSession>>>,
+	Sessions:Arc<RwLock<HashMap<String, AuthSession>>>,
 
 	/// Credentials storage
-	credentials:Arc<Mutex<CredentialsStore>>,
+	Credentials:Arc<Mutex<CredentialsStore>>,
 
 	/// Cryptographic keys
-	crypto_keys:Arc<Mutex<CryptoKeys>>,
+	CryptoKeys:Arc<Mutex<CryptoKeys>>,
 	/// AEAD algorithm for encryption/decryption
-	aead_algo:&'static aead::Algorithm,
+	AeadAlgo:&'static aead::Algorithm,
 }
 
 /// Authentication session
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuthSession {
-	pub session_id:String,
-	pub user_id:String,
-	pub provider:String,
-	pub token:String,
-	pub created_at:DateTime<Utc>,
-	pub expires_at:DateTime<Utc>,
-	pub is_valid:bool,
+	pub SessionId:String,
+	pub UserId:String,
+	pub Provider:String,
+	pub Token:String,
+	pub CreatedAt:DateTime<Utc>,
+	pub ExpiresAt:DateTime<Utc>,
+	pub IsValid:bool,
 }
 
 /// Credentials storage
 #[derive(Debug, Serialize, Deserialize)]
 struct CredentialsStore {
-	credentials:HashMap<String, UserCredentials>,
-	file_path:String,
+	Credentials:HashMap<String, UserCredentials>,
+	FilePath:String,
 }
 
 /// User credentials
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserCredentials {
-	pub user_id:String,
-	pub provider:String,
-	pub encrypted_password:String,
-	pub last_used:DateTime<Utc>,
-	pub is_valid:bool,
+	pub UserId:String,
+	pub Provider:String,
+	pub EncryptedPassword:String,
+	pub LastUsed:DateTime<Utc>,
+	pub IsValid:bool,
 }
 
 /// Cryptographic keys
 #[derive(Debug)]
 struct CryptoKeys {
-	signing_key:ring::signature::Ed25519KeyPair,
-	encryption_key:[u8; 32],
+	SigningKey:ring::signature::Ed25519KeyPair,
+	EncryptionKey:[u8; 32],
 }
 
 impl AuthenticationService {
 	/// Create a new authentication service
-	pub async fn new(app_state:Arc<ApplicationState>) -> Result<Self> {
-		let config = &app_state.configuration.authentication;
+	pub async fn new(AppState:Arc<ApplicationState>) -> Result<Self> {
+		let config = &AppState.configuration.authentication;
 
 		// Expand credentials path
-		let CredentialsPath = ConfigurationManager::ExpandPath(&config.credentials_path)?;
+		let CredentialsPath = ConfigurationManager::ExpandPath(&config.CredentialsPath)?;
 
 		// Load or create credentials store
 		let CredentialsStore = Self::LoadCredentialsStore(&CredentialsPath).await?;
 
 		// Generate cryptographic keys
 		let CryptoKeys = Self::GenerateCryptoKeys()?;
-		let aead_algo = &aead::AES_256_GCM;
+		let AeadAlgo = &aead::AES_256_GCM;
 
 		let Service = Self {
-			app_state,
-			sessions:Arc::new(RwLock::new(HashMap::new())),
-			credentials:Arc::new(Mutex::new(CredentialsStore)),
-			crypto_keys:Arc::new(Mutex::new(CryptoKeys)),
-			aead_algo,
+			AppState:AppState,
+			Sessions:Arc::new(RwLock::new(HashMap::new())),
+			Credentials:Arc::new(Mutex::new(CredentialsStore)),
+			CryptoKeys:Arc::new(Mutex::new(CryptoKeys)),
+			AeadAlgo,
 		};
 
 		// Initialize service status
 		Service
-			.app_state
+			.AppState
 			.UpdateServiceStatus("authentication", crate::ApplicationState::ServiceStatus::Running)
 			.await
 			.map_err(|e| AirError::Authentication(e.to_string()))?;
@@ -116,20 +116,20 @@ impl AuthenticationService {
 		// Create session
 		let SessionId = utils::GenerateRequestId();
 		let Session = AuthSession {
-			session_id:SessionId,
-			user_id:Username.clone(),
-			provider:Provider.clone(),
-			token:Token.clone(),
-			created_at:chrono::Utc::now(),
-			expires_at:chrono::Utc::now()
-				+ chrono::Duration::hours(self.app_state.configuration.authentication.token_expiration_hours as i64),
-			is_valid:true,
+			SessionId:SessionId,
+			UserId:Username.clone(),
+			Provider:Provider.clone(),
+			Token:Token.clone(),
+			CreatedAt:chrono::Utc::now(),
+			ExpiresAt:chrono::Utc::now()
+				+ chrono::Duration::hours(self.AppState.configuration.authentication.TokenExpirationHours as i64),
+			IsValid:true,
 		};
 
 		// Store session
 		{
-			let mut Sessions = self.sessions.write().await;
-			Sessions.insert(Session.session_id.clone(), Session);
+			let mut Sessions = self.Sessions.write().await;
+			Sessions.insert(Session.SessionId.clone(), Session);
 		}
 
 		// Update credentials usage
@@ -140,18 +140,18 @@ impl AuthenticationService {
 
 	/// Validate user credentials
 	async fn ValidateCredentials(&self, Username:&str, Password:&str, Provider:&str) -> Result<UserCredentials> {
-		let CredentialsStore = self.credentials.lock().await;
+		let CredentialsStore = self.Credentials.lock().await;
 
 		let Key = format!("{}:{}", Provider, Username);
 
-		if let Some(UserCredentials) = CredentialsStore.credentials.get(&Key) {
-			if !UserCredentials.is_valid {
+		if let Some(UserCredentials) = CredentialsStore.Credentials.get(&Key) {
+			if !UserCredentials.IsValid {
 				return Err(AirError::Authentication("Credentials are invalid".to_string()));
 			}
 
 			// Verify password (in a real implementation, this would decrypt and verify)
 			// For now, we'll use a simple approach
-			let DecryptedPassword = self.DecryptPassword(&UserCredentials.encrypted_password).await?;
+			let DecryptedPassword = self.DecryptPassword(&UserCredentials.EncryptedPassword).await?;
 
 			if DecryptedPassword == Password {
 				Ok(UserCredentials.clone())
@@ -165,12 +165,12 @@ impl AuthenticationService {
 
 	/// Generate a session token
 	async fn GenerateSessionToken(&self, Username:&str, Provider:&str) -> Result<String> {
-		let CryptoKeys = self.crypto_keys.lock().await;
+		let CryptoKeys = self.CryptoKeys.lock().await;
 
 		let Payload = format!("{}:{}:{}", Username, Provider, utils::CurrentTimestamp());
 
 		// Sign the payload
-		let Signature = CryptoKeys.signing_key.sign(Payload.as_bytes());
+		let Signature = CryptoKeys.SigningKey.sign(Payload.as_bytes());
 
 		// Encode token
 		let Token = URL_SAFE.encode(format!("{}:{}", Payload, URL_SAFE.encode(Signature.as_ref())));
@@ -180,12 +180,12 @@ impl AuthenticationService {
 
 	/// Update credentials usage timestamp
 	async fn UpdateCredentialsUsage(&self, Username:&str, Provider:&str) -> Result<()> {
-		let mut CredentialsStore = self.credentials.lock().await;
+		let mut CredentialsStore = self.Credentials.lock().await;
 
 		let Key = format!("{}:{}", Provider, Username);
 
-		if let Some(UserCredentials) = CredentialsStore.credentials.get_mut(&Key) {
-			UserCredentials.last_used = Utc::now();
+		if let Some(UserCredentials) = CredentialsStore.Credentials.get_mut(&Key) {
+			UserCredentials.LastUsed = Utc::now();
 		}
 
 		// Save updated credentials
@@ -196,10 +196,10 @@ impl AuthenticationService {
 
 	/// Encrypt password
 	async fn EncryptPassword(&self, Password:&str) -> Result<String> {
-		let CryptoKeys = self.crypto_keys.lock().await;
+		let CryptoKeys = self.CryptoKeys.lock().await;
 
 		// Use AES-256-GCM via ring::aead. Prefix nonce to ciphertext and base64 encode.
-		let UnboundKey = aead::UnboundKey::new(&aead::AES_256_GCM, &CryptoKeys.encryption_key)
+		let UnboundKey = aead::UnboundKey::new(&aead::AES_256_GCM, &CryptoKeys.EncryptionKey)
 			.map_err(|e| AirError::Authentication(format!("Failed to create AEAD key: {:?}", e)))?;
 
 		let LessSafe = aead::LessSafeKey::new(UnboundKey);
@@ -228,7 +228,7 @@ impl AuthenticationService {
 
 	/// Decrypt password
 	async fn DecryptPassword(&self, EncryptedPassword:&str) -> Result<String> {
-		let CryptoKeys = self.crypto_keys.lock().await;
+		let CryptoKeys = self.CryptoKeys.lock().await;
 
 		let Data = URL_SAFE
 			.decode(EncryptedPassword)
@@ -243,7 +243,7 @@ impl AuthenticationService {
 		let mut NonceArr = [0u8; 12];
 		NonceArr.copy_from_slice(&NonceBytes[0..12]);
 
-		let UnboundKey = aead::UnboundKey::new(&aead::AES_256_GCM, &CryptoKeys.encryption_key)
+		let UnboundKey = aead::UnboundKey::new(&aead::AES_256_GCM, &CryptoKeys.EncryptionKey)
 			.map_err(|e| AirError::Authentication(format!("Failed to create AEAD key: {:?}", e)))?;
 
 		let LessSafe = aead::LessSafeKey::new(UnboundKey);
@@ -268,31 +268,32 @@ impl AuthenticationService {
 			let Credentials:HashMap<String, UserCredentials> = serde_json::from_str(&Content)
 				.map_err(|e| AirError::Authentication(format!("Failed to parse credentials file: {}", e)))?;
 
-			Ok(CredentialsStore { credentials:Credentials, file_path:FilePath.to_string_lossy().to_string() })
+			Ok(CredentialsStore { Credentials:Credentials, FilePath:FilePath.to_string_lossy().to_string() })
 		} else {
 			// Create new credentials store
-			Ok(CredentialsStore { credentials:HashMap::new(), file_path:FilePath.to_string_lossy().to_string() })
+			Ok(CredentialsStore { Credentials:HashMap::new(), FilePath:FilePath.to_string_lossy().to_string() })
 		}
 	}
 
 	/// Save credentials store to file
 	async fn SaveCredentialsStore(&self, Store:&CredentialsStore) -> Result<()> {
-		let Content = serde_json::to_string_pretty(&Store.credentials)
+		let Content = serde_json::to_string_pretty(&Store.Credentials)
 			.map_err(|e| AirError::Authentication(format!("Failed to serialize credentials: {}", e)))?;
 
 		// Create directory if it doesn't exist
-		if let Some(Parent) = std::path::Path::new(&Store.file_path).parent() {
+		if let Some(Parent) = std::path::Path::new(&Store.FilePath).parent() {
 			tokio::fs::create_dir_all(Parent)
 				.await
 				.map_err(|e| AirError::Authentication(format!("Failed to create credentials directory: {}", e)))?;
+
+			tokio::fs::write(&Store.FilePath, Content)
+				.await
+				.map_err(|e| AirError::Authentication(format!("Failed to write credentials file: {}", e)))?;
+
+			Ok(())
 		}
-
-		tokio::fs::write(&Store.file_path, Content)
-			.await
-			.map_err(|e| AirError::Authentication(format!("Failed to write credentials file: {}", e)))?;
-
-		Ok(())
 	}
+
 
 	/// Generate cryptographic keys
 	fn GenerateCryptoKeys() -> Result<CryptoKeys> {
@@ -368,11 +369,11 @@ impl AuthenticationService {
 impl Clone for AuthenticationService {
 	fn clone(&self) -> Self {
 		Self {
-			app_state:self.app_state.clone(),
-			sessions:self.sessions.clone(),
-			credentials:self.credentials.clone(),
-			crypto_keys:self.crypto_keys.clone(),
-			aead_algo:self.aead_algo,
+			AppState:self.AppState.clone(),
+			Sessions:self.Sessions.clone(),
+			Credentials:self.Credentials.clone(),
+			CryptoKeys:self.CryptoKeys.clone(),
+			AeadAlgo:self.AeadAlgo,
 		}
 	}
 }

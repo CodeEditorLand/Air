@@ -115,28 +115,28 @@ use crate::{AirError, ApplicationState::ApplicationState, Configuration::Configu
 /// Download manager implementation with full resilience and capabilities
 pub struct DownloadManager {
 	/// Application state reference
-	app_state:Arc<ApplicationState>,
+	AppState:Arc<ApplicationState>,
 
 	/// Active downloads tracking
-	active_downloads:Arc<RwLock<HashMap<String, DownloadStatus>>>,
+	ActiveDownloads:Arc<RwLock<HashMap<String, DownloadStatus>>>,
 
 	/// Download queue with priority ordering
-	download_queue:Arc<RwLock<VecDeque<QueuedDownload>>>,
+	DownloadQueue:Arc<RwLock<VecDeque<QueuedDownload>>>,
 
 	/// Download cache directory
-	cache_directory:PathBuf,
+	CacheDirectory:PathBuf,
 
 	/// HTTP client with connection pooling
 	client:reqwest::Client,
 
 	/// Checksum verifier helper
-	checksum_verifier:Arc<crate::Security::ChecksumVerifier>,
+	ChecksumVerifier:Arc<crate::Security::ChecksumVerifier>,
 
 	/// Bandwidth limiter for global control
-	bandwidth_limiter:Arc<Semaphore>,
+	BandwidthLimiter:Arc<Semaphore>,
 
 	/// Concurrent download limiter
-	concurrent_limiter:Arc<Semaphore>,
+	ConcurrentLimiter:Arc<Semaphore>,
 
 	/// Download statistics
 	statistics:Arc<RwLock<DownloadStatistics>>,
@@ -145,21 +145,21 @@ pub struct DownloadManager {
 /// Download status with comprehensive tracking
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DownloadStatus {
-	pub download_id:String,
+	pub DownloadId:String,
 	pub url:String,
 	pub destination:PathBuf,
-	pub total_size:u64,
+	pub TotalSize:u64,
 	pub downloaded:u64,
 	pub progress:f32,
 	pub status:DownloadState,
 	pub error:Option<String>,
-	pub started_at:Option<chrono::DateTime<chrono::Utc>>,
-	pub completed_at:Option<chrono::DateTime<chrono::Utc>>,
-	pub chunks_completed:usize,
-	pub total_chunks:usize,
-	pub download_rate_bytes_per_sec:u64,
-	pub expected_checksum:Option<String>,
-	pub actual_checksum:Option<String>,
+	pub StartedAt:Option<chrono::DateTime<chrono::Utc>>,
+	pub CompletedAt:Option<chrono::DateTime<chrono::Utc>>,
+	pub ChunksCompleted:usize,
+	pub TotalChunks:usize,
+	pub DownloadRateBytesPerSec:u64,
+	pub ExpectedChecksum:Option<String>,
+	pub ActualChecksum:Option<String>,
 }
 
 /// Download state with detailed progress
@@ -188,14 +188,14 @@ pub enum DownloadPriority {
 /// Queued download with metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueuedDownload {
-	download_id:String,
+	DownloadId:String,
 	url:String,
 	destination:PathBuf,
 	checksum:String,
 	priority:DownloadPriority,
-	added_at:chrono::DateTime<chrono::Utc>,
-	max_file_size:Option<u64>,
-	validate_disk_space:bool,
+	AddedAt:chrono::DateTime<chrono::Utc>,
+	MaxFileSize:Option<u64>,
+	ValidateDiskSpace:bool,
 }
 
 /// Download result with full metadata
@@ -205,22 +205,22 @@ pub struct DownloadResult {
 	pub size:u64,
 	pub checksum:String,
 	pub duration:Duration,
-	pub average_rate:u64,
+	pub AverageRate:u64,
 }
 
 /// Download statistics and analytics
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DownloadStatistics {
-	pub total_downloads:u64,
-	pub successful_downloads:u64,
-	pub failed_downloads:u64,
-	pub cancelled_downloads:u64,
-	pub total_bytes_downloaded:u64,
-	pub total_download_time_secs:f64,
-	pub average_download_rate:f64,
-	pub peak_download_rate:u64,
-	pub active_downloads:usize,
-	pub queued_downloads:usize,
+	pub TotalDownloads:u64,
+	pub SuccessfulDownloads:u64,
+	pub FailedDownloads:u64,
+	pub CancelledDownloads:u64,
+	pub TotalBytesDownloaded:u64,
+	pub TotalDownloadTimeSecs:f64,
+	pub AverageDownloadRate:f64,
+	pub PeakDownloadRate:u64,
+	pub ActiveDownloads:usize,
+	pub QueuedDownloads:usize,
 }
 
 /// Progress callback type
@@ -232,12 +232,12 @@ pub struct DownloadConfig {
 	pub url:String,
 	pub destination:String,
 	pub checksum:String,
-	pub max_file_size:Option<u64>,
-	pub chunk_size:usize,
-	pub max_retries:u32,
-	pub timeout_secs:u64,
+	pub MaxFileSize:Option<u64>,
+	pub ChunkSize:usize,
+	pub MaxRetries:u32,
+	pub TimeoutSecs:u64,
 	pub priority:DownloadPriority,
-	pub validate_disk_space:bool,
+	pub ValidateDiskSpace:bool,
 }
 
 impl Default for DownloadConfig {
@@ -246,35 +246,35 @@ impl Default for DownloadConfig {
 			url:String::new(),
 			destination:String::new(),
 			checksum:String::new(),
-			max_file_size:None,
-			chunk_size:8 * 1024 * 1024, // 8MB chunks
-			max_retries:5,
-			timeout_secs:300,
+			MaxFileSize:None,
+			ChunkSize:8 * 1024 * 1024, // 8MB chunks
+			MaxRetries:5,
+			TimeoutSecs:300,
 			priority:DownloadPriority::Normal,
-			validate_disk_space:true,
+			ValidateDiskSpace:true,
 		}
 	}
 }
 
 impl DownloadManager {
 	/// Create a new download manager with comprehensive initialization
-	pub async fn new(app_state:Arc<ApplicationState>) -> Result<Self> {
-		let config = &app_state.configuration.downloader;
+	pub async fn new(AppState:Arc<ApplicationState>) -> Result<Self> {
+		let config = &AppState.configuration.downloader;
 
 		// Expand and validate cache directory path
-		let cache_directory = ConfigurationManager::ExpandPath(&config.cache_directory)?;
+		let CacheDirectory = ConfigurationManager::ExpandPath(&config.CacheDirectory)?;
 
-		// Clone cache_directory before moving
-		let cache_directory_clone = cache_directory.clone();
+		// Clone CacheDirectory before moving
+		let CacheDirectoryClone = CacheDirectory.clone();
 
 		// Create cache directory if it doesn't exist
-		tokio::fs::create_dir_all(&cache_directory)
+		tokio::fs::create_dir_all(&CacheDirectory)
 			.await
 			.map_err(|e| AirError::Configuration(format!("Failed to create cache directory: {}", e)))?;
 
 		// Create HTTP client with connection pooling and timeouts
 		let client = reqwest::Client::builder()
-			.timeout(Duration::from_secs(config.download_timeout_secs))
+			.timeout(Duration::from_secs(config.DownloadTimeoutSecs))
 			.connect_timeout(Duration::from_secs(30))
 			.pool_idle_timeout(Duration::from_secs(90))
 			.pool_max_idle_per_host(10)
@@ -284,43 +284,43 @@ impl DownloadManager {
 			.map_err(|e| AirError::Network(format!("Failed to create HTTP client: {}", e)))?;
 
 		// Bandwidth limiter (permit = 1MB of transfer)
-		let bandwidth_limiter = Arc::new(Semaphore::new(100));
+		let BandwidthLimiter = Arc::new(Semaphore::new(100));
 
 		// Concurrent download limiter (max 5 parallel downloads)
-		let concurrent_limiter = Arc::new(Semaphore::new(5));
+		let ConcurrentLimiter = Arc::new(Semaphore::new(5));
 
 		let manager = Self {
-			app_state,
-			active_downloads:Arc::new(RwLock::new(HashMap::new())),
-			download_queue:Arc::new(RwLock::new(VecDeque::new())),
-			cache_directory:cache_directory_clone,
+			AppState,
+			ActiveDownloads:Arc::new(RwLock::new(HashMap::new())),
+			DownloadQueue:Arc::new(RwLock::new(VecDeque::new())),
+			CacheDirectory:cache_directory_clone,
 			client,
-			checksum_verifier:Arc::new(crate::Security::ChecksumVerifier::New()),
-			bandwidth_limiter,
-			concurrent_limiter,
+			ChecksumVerifier:Arc::new(crate::Security::ChecksumVerifier::New()),
+			BandwidthLimiter,
+			ConcurrentLimiter,
 			statistics:Arc::new(RwLock::new(DownloadStatistics::default())),
 		};
 
 		// Initialize service status
 		manager
-			.app_state
+			.AppState
 			.UpdateServiceStatus("downloader", crate::ApplicationState::ServiceStatus::Running)
 			.await
 			.map_err(|e| AirError::Internal(e.to_string()))?;
 
 		log::info!(
 			"[DownloadManager] Initialized with cache directory: {}",
-			cache_directory.display()
+			CacheDirectory.display()
 		);
 
 		Ok(manager)
 	}
 
 	/// Download a file with comprehensive validation and resilience
-	pub async fn DownloadFile(&self, url:String, destination_path:String, checksum:String) -> Result<DownloadResult> {
+	pub async fn DownloadFile(&self, url:String, DestinationPath:String, checksum:String) -> Result<DownloadResult> {
 		self.DownloadFileWithConfig(DownloadConfig {
 			url,
-			destination:destination_path,
+			destination:DestinationPath,
 			checksum,
 			..Default::default()
 		})
@@ -330,7 +330,7 @@ impl DownloadManager {
 	/// Download a file with detailed configuration
 	pub async fn DownloadFileWithConfig(&self, config:DownloadConfig) -> Result<DownloadResult> {
 		// Defensive: Validate and sanitize URL
-		let SanitizedUrl = Self::ValidateAndSanitizeUrl(&config.url)?
+		let SanitizedUrl = Self::ValidateAndSanitizeUrl(&config.url)?;
 
 		// Defensive: Check if download is already active
 		let DownloadId = utils::GenerateRequestId();
@@ -354,7 +354,7 @@ impl DownloadManager {
 				.last()
 				.and_then(|s| s.split('?').next())
 				.unwrap_or("download.bin");
-			self.cache_directory.join(Filename)
+			self.CacheDirectory.join(Filename)
 		} else {
 			ConfigurationManager::ExpandPath(&config.destination)?
 		};
@@ -374,8 +374,8 @@ impl DownloadManager {
 			.await?;
 
 		// Defensive: Validate disk space before download
-		if config.validate_disk_space {
-			if let Some(MaxSize) = config.max_file_size {
+		if config.ValidateDiskSpace {
+			if let Some(MaxSize) = config.MaxFileSize {
 				self.ValidateDiskSpace(&SanitizedUrl, &Destination, MaxSize * 2).await?;
 			} else {
 				self.ValidateDiskSpace(&SanitizedUrl, &Destination, 1024 * 1024 * 1024).await?; // Default 1GB check
@@ -495,9 +495,9 @@ impl DownloadManager {
 	}
 
 	/// Validate available disk space before download
-	async fn ValidateDiskSpace(&self, url:&str, destination:&Path, required_bytes:u64) -> Result<()> {
+	async fn ValidateDiskSpace(&self, url:&str, destination:&Path, RequiredBytes:u64) -> Result<()> {
 		// Get destination path
-		let dest_path = if destination.is_absolute() {
+		let DestPath = if destination.is_absolute() {
 			destination.to_path_buf()
 		} else {
 			std::env::current_dir()
@@ -506,38 +506,38 @@ impl DownloadManager {
 		};
 
 		// Find the mount point
-		let mount_point = self.FindMountPoint(&dest_path)?;
+		let MountPoint = self.FindMountPoint(&DestPath)?;
 
 		// TODO: Implement actual disk space checking
 		// For now, log the validation request and pass
 		log::debug!(
 			"[DownloadManager] Validating disk space for URL {} (requires {} bytes) on mount point: {}",
 			url,
-			required_bytes,
+			RequiredBytes,
 			mount_point.display()
 		);
 
 		#[cfg(unix)]
 		{
 			match self.GetDiskStatvfs(&mount_point) {
-				Ok((available_bytes, total_bytes)) => {
-					if available_bytes < required_bytes {
+				Ok((AvailableBytes, TotalBytes)) => {
+					if AvailableBytes < RequiredBytes {
 						log::warn!(
 							"[DownloadManager] Insufficient disk space: {} bytes available, {} bytes required",
-							available_bytes,
-							required_bytes
+							AvailableBytes,
+							RequiredBytes
 						);
 						return Err(AirError::FileSystem(format!(
 							"Insufficient disk space: {} bytes available, {} bytes required",
-							available_bytes, required_bytes
+							AvailableBytes, RequiredBytes
 						)));
 					}
 
 					log::debug!(
 						"[DownloadManager] Sufficient disk space: {} bytes available, {} bytes required (total: {})",
-						available_bytes,
-						required_bytes,
-						total_bytes
+						AvailableBytes,
+						RequiredBytes,
+						TotalBytes
 					);
 				},
 				Err(e) => {
@@ -548,23 +548,23 @@ impl DownloadManager {
 
 		#[cfg(windows)]
 		{
-			match self.get_disk_space_windows(&mount_point) {
-				Ok(available_bytes) => {
-					if available_bytes < required_bytes {
+			match self.GetDiskSpaceWindows(&mount_point) {
+				Ok(AvailableBytes) => {
+					if AvailableBytes < RequiredBytes {
 						log::warn!(
 							"[DownloadManager] Insufficient disk space: {} bytes available, {} bytes required",
-							available_bytes,
-							required_bytes
+							AvailableBytes,
+							RequiredBytes
 						);
 						return Err(AirError::FileSystem(format!(
 							"Insufficient disk space: {} bytes available, {} bytes required",
-							available_bytes, required_bytes
+							available_bytes, RequiredBytes
 						)));
 					}
 					log::debug!(
 						"[DownloadManager] Sufficient disk space: {} bytes available, {} bytes required",
 						available_bytes,
-						required_bytes
+						RequiredBytes
 					);
 				},
 				Err(e) => {
@@ -588,11 +588,11 @@ impl DownloadManager {
 		// Example implementation:
 		// use std::mem::size_of;
 		// let mut stat: libc::statvfs = unsafe { std::mem::zeroed() };
-		// let path_cstr = path.to_path_buf().as_os_str().to_c_string();
+		// let PathCstr = path.to_path_buf().as_os_str().to_c_string();
 		// let result = unsafe { libc::statvfs(path_cstr.as_ptr(), &mut stat) };
 		// if result != 0 { return Err(...); }
-		// let available = stat.f_bsize as u64 * stat.f_bavail as u64;
-		// let total = stat.f_bsize as u64 * stat.f_blocks as u64;
+		// let available = stat.FBsize as u64 * stat.FBavail as u64;
+		// let total = stat.FBsize as u64 * stat.FBlocks as u64;
 		// For now, assume sufficient space and log the request
 		log::debug!("[DownloadManager] Checking disk space at: {}", path.display());
 		Ok((u64::MAX, u64::MAX))
@@ -633,28 +633,28 @@ impl DownloadManager {
 
 				// Check if device ID changes (indicates mount point)
 				#[cfg(unix)]
-				let current_device = {
+				let CurrentDevice = {
 					use std::os::unix::fs::MetadataExt;
 					metadata.dev()
 				};
 				#[cfg(not(unix))]
-				let current_device = 0u64; // Dummy value for non-unix systems
+				let CurrentDevice = 0u64; // Dummy value for non-unix systems
 
 				let parent = current.parent();
 
 				if let Some(parent_path) = parent {
-					let parent_metadata = std::fs::metadata(parent_path)
+					let ParentMetadata = std::fs::metadata(parent_path)
 						.map_err(|e| AirError::FileSystem(format!("Failed to get parent metadata: {}", e)))?;
 
 					#[cfg(unix)]
-					let parent_device = {
+					let ParentDevice = {
 						use std::os::unix::fs::MetadataExt;
 						parent_metadata.dev()
 					};
 					#[cfg(not(unix))]
-					let parent_device = 0u64; // Dummy value for non-unix systems
+					let ParentDevice = 0u64; // Dummy value for non-unix systems
 
-					if parent_device != current_device {
+					if ParentDevice != CurrentDevice {
 						return Ok(current);
 					}
 				} else {
@@ -668,9 +668,9 @@ impl DownloadManager {
 		#[cfg(windows)]
 		{
 			// Windows: Get drive letter
-			let path_str = path.to_string_lossy();
-			if path_str.len() >= 3 && path_str.chars().nth(1) == Some(':') {
-				return Ok(PathBuf::from(&path_str[..3]));
+			let PathStr = path.to_string_lossy();
+			if PathStr.len() >= 3 && PathStr.chars().nth(1) == Some(':') {
+				return Ok(PathBuf::from(&PathStr[..3]));
 			}
 			Ok(PathBuf::from("C:\\"))
 		}
@@ -684,23 +684,23 @@ impl DownloadManager {
 	/// Download with retry logic and circuit breaker
 	async fn DownloadWithRetry(
 		&self,
-		download_id:&str,
+		DownloadId:&str,
 		url:&str,
 		destination:&PathBuf,
 		config:&DownloadConfig,
 	) -> Result<DownloadResult> {
-		let retry_policy = crate::Resilience::RetryPolicy {
-			max_retries:config.max_retries,
-			initial_interval_ms:1000,
-			max_interval_ms:32000,
-			backoff_multiplier:2.0,
-			jitter_factor:0.1,
-			budget_per_minute:100,
-			error_classification:std::collections::HashMap::new(),
+		let RetryPolicy = crate::Resilience::RetryPolicy {
+			MaxRetries:config.MaxRetries,
+			InitialIntervalMs:1000,
+			MaxIntervalMs:32000,
+			BackoffMultiplier:2.0,
+			JitterFactor:0.1,
+			BudgetPerMinute:100,
+			ErrorClassification:std::collections::HashMap::new(),
 		};
 
-		let retry_manager = crate::Resilience::RetryManager::new(retry_policy.clone());
-		let circuit_breaker = crate::Resilience::CircuitBreaker::new(
+		let RetryManager = crate::Resilience::RetryManager::new(RetryPolicy.clone());
+		let CircuitBreaker = crate::Resilience::CircuitBreaker::new(
 			"downloader".to_string(),
 			crate::Resilience::CircuitBreakerConfig::default(),
 		);
@@ -709,8 +709,8 @@ impl DownloadManager {
 
 		loop {
 			// Check circuit breaker state
-			if circuit_breaker.GetState().await == crate::Resilience::CircuitState::Open {
-				if !circuit_breaker.AttemptRecovery().await {
+			if CircuitBreaker.GetState().await == crate::Resilience::CircuitState::Open {
+				if !CircuitBreaker.AttemptRecovery().await {
 					return Err(AirError::Network(
 						"Circuit breaker is open, too many recent failures".to_string(),
 					));
@@ -718,31 +718,31 @@ impl DownloadManager {
 			}
 
 			// Check for cancellation before attempting download
-			if let Some(status) = self.GetDownloadStatus(download_id).await {
+			if let Some(status) = self.GetDownloadStatus(DownloadId).await {
 				if status.status == DownloadState::Cancelled {
 					return Err(AirError::Network("Download cancelled".to_string()));
 				}
 			}
 
-			match self.PerformDownload(download_id, url, destination, config).await {
+			match self.PerformDownload(DownloadId, url, destination, config).await {
 				Ok(file_info) => {
 					// Verify checksum if provided
-					if let Some(ref expected_checksum) = ExpectedChecksumFromConfig(config) {
-						self.UpdateDownloadStatus(download_id, DownloadState::Verifying, Some(100.0), None)
+					if let Some(ref ExpectedChecksum) = ExpectedChecksumFromConfig(config) {
+						self.UpdateDownloadStatus(DownloadId, DownloadState::Verifying, Some(100.0), None)
 							.await?;
 
-						if let Err(e) = self.VerifyChecksum(destination, expected_checksum).await {
-							log::warn!("[DownloadManager] Checksum verification failed [ID: {}]: {}", download_id, e);
-							circuit_breaker.RecordFailure().await;
+						if let Err(e) = self.VerifyChecksum(destination, ExpectedChecksum).await {
+							log::warn!("[DownloadManager] Checksum verification failed [ID: {}]: {}", DownloadId, e);
+							CircuitBreaker.RecordFailure().await;
 
-							if attempt < config.max_retries && retry_manager.CanRetry("downloader").await {
+							if attempt < config.MaxRetries && RetryManager.CanRetry("downloader").await {
 								attempt += 1;
-								let delay = retry_manager.CalculateRetryDelay(attempt);
+								let delay = RetryManager.CalculateRetryDelay(attempt);
 								log::info!(
 									"[DownloadManager] Retrying download [ID: {}] (attempt {}/{}) after {:?}",
-									download_id,
+									DownloadId,
 									attempt + 1,
-									config.max_retries + 1,
+									config.MaxRetries + 1,
 									delay
 								);
 								tokio::time::sleep(delay).await;
@@ -756,23 +756,23 @@ impl DownloadManager {
 						}
 					}
 
-					circuit_breaker.RecordSuccess().await;
+					CircuitBreaker.RecordSuccess().await;
 					return Ok(file_info);
 				},
 				Err(e) => {
-					circuit_breaker.RecordFailure().await;
+					CircuitBreaker.RecordFailure().await;
 
-					if attempt < config.max_retries && retry_manager.CanRetry("downloader").await {
+					if attempt < config.MaxRetries && RetryManager.CanRetry("downloader").await {
 						attempt += 1;
 						log::warn!(
 							"[DownloadManager] Download failed [ID: {}], retrying (attempt {}/{}): {}",
-							download_id,
+							DownloadId,
 							attempt + 1,
-							config.max_retries + 1,
+							config.MaxRetries + 1,
 							e
 						);
 
-						let delay = retry_manager.CalculateRetryDelay(attempt);
+						let delay = RetryManager.CalculateRetryDelay(attempt);
 						tokio::time::sleep(delay).await;
 					} else {
 						return Err(e);
@@ -785,38 +785,38 @@ impl DownloadManager {
 	/// Perform the actual download with streaming and partial resume support
 	async fn PerformDownload(
 		&self,
-		download_id:&str,
+		DownloadId:&str,
 		url:&str,
 		destination:&PathBuf,
 		config:&DownloadConfig,
 	) -> Result<DownloadResult> {
 		// Acquire concurrent download permit
 		let _concurrent_permit = self
-			.concurrent_limiter
+			.ConcurrentLimiter
 			.acquire()
 			.await
 			.map_err(|e| AirError::Internal(format!("Failed to acquire download permit: {}", e)))?;
 
-		self.UpdateDownloadStatus(download_id, DownloadState::Downloading, Some(0.0), None)
+		self.UpdateDownloadStatus(DownloadId, DownloadState::Downloading, Some(0.0), None)
 			.await?;
 
 		// Create temporary file for atomic commit
-		let temp_destination = destination.with_extension("tmp");
+		let TempDestination = destination.with_extension("tmp");
 
 		// Support resume by checking existing file size
-		let mut existing_size:u64 = 0;
+		let mut ExistingSize:u64 = 0;
 		if temp_destination.exists() {
 			if let Ok(metadata) = tokio::fs::metadata(&temp_destination).await {
-				existing_size = metadata.len();
-				log::info!("[DownloadManager] Resuming download from {} bytes", existing_size);
+				ExistingSize = metadata.len();
+				log::info!("[DownloadManager] Resuming download from {} bytes", ExistingSize);
 			}
 		}
 
 		// Build request with Range header for resume
-		let mut req = self.client.get(url).timeout(Duration::from_secs(config.timeout_secs));
-		if existing_size > 0 {
-			let range_header = format!("bytes={}-", existing_size);
-			req = req.header(reqwest::header::RANGE, range_header);
+		let mut req = self.client.get(url).timeout(Duration::from_secs(config.TimeoutSecs));
+		if ExistingSize > 0 {
+			let RangeHeader = format!("bytes={}-", existing_size);
+			req = req.header(reqwest::header::RANGE, RangeHeader);
 			req = req.header(reqwest::header::IF_MATCH, "*"); // Ensure server supports resume
 		}
 
@@ -826,7 +826,7 @@ impl DownloadManager {
 			.map_err(|e| AirError::Network(format!("Failed to start download: {}", e)))?;
 
 		// Handle redirect if needed
-		let final_url = response.url().clone();
+		let FinalUrl = response.url().clone();
 		let response = if final_url.as_str() != url {
 			log::info!("[DownloadManager] Redirected to: {}", final_url);
 			response
@@ -835,14 +835,14 @@ impl DownloadManager {
 		};
 
 		// Validate response status
-		let status_code = response.status();
-		if !status_code.is_success() && status_code != reqwest::StatusCode::PARTIAL_CONTENT {
-			return Err(AirError::Network(format!("Download failed with status: {}", status_code)));
+		let StatusCode = response.status();
+		if !StatusCode.is_success() && StatusCode != reqwest::StatusCode::PARTIAL_CONTENT {
+			return Err(AirError::Network(format!("Download failed with status: {}", StatusCode)));
 		}
 
 		// Get total size (handle both fresh and resume scenarios)
-		let total_size = if let Some(cl) = response.content_length() {
-			if status_code == reqwest::StatusCode::PARTIAL_CONTENT {
+		let TotalSize = if let Some(cl) = response.content_length() {
+			if StatusCode == reqwest::StatusCode::PARTIAL_CONTENT {
 				cl + existing_size
 			} else {
 				cl
@@ -852,11 +852,11 @@ impl DownloadManager {
 		};
 
 		// Defensive: Validate file size if max size specified
-		if let Some(max_size) = config.max_file_size {
-			if total_size > 0 && total_size > max_size {
+		if let Some(max_size) = config.MaxFileSize {
+			if TotalSize > 0 && TotalSize > max_size {
 				return Err(AirError::Network(format!(
 					"File too large: {} bytes exceeds maximum allowed size: {} bytes",
-					total_size, max_size
+					TotalSize, max_size
 				)));
 			}
 		}
@@ -873,14 +873,14 @@ impl DownloadManager {
 		use futures_util::StreamExt;
 
 		let mut downloaded = existing_size;
-		let mut last_progress_update = Instant::now();
-		let bytes_stream = response.bytes_stream();
+		let mut LastProgressUpdate = Instant::now();
+		let BytesStream = response.bytes_stream();
 
 		tokio::pin!(bytes_stream);
 
 		while let Some(result) = bytes_stream.next().await {
 			// Check for pause/cancel before processing chunk
-			if let Some(status) = self.GetDownloadStatus(download_id).await {
+			if let Some(status) = self.GetDownloadStatus(DownloadId).await {
 				match status.status {
 					DownloadState::Cancelled => {
 						// Clean up temporary file
@@ -891,7 +891,7 @@ impl DownloadManager {
 						// Wait until resumed or cancelled
 						loop {
 							tokio::time::sleep(Duration::from_millis(250)).await;
-							if let Some(s) = self.GetDownloadStatus(download_id).await {
+							if let Some(s) = self.GetDownloadStatus(DownloadId).await {
 								match s.status {
 									DownloadState::Paused => continue,
 									DownloadState::Cancelled => {
@@ -899,7 +899,7 @@ impl DownloadManager {
 										return Err(AirError::Network("Download cancelled".to_string()));
 									},
 									_ => {
-										log::info!("[DownloadManager] Resuming paused download [ID: {}]", download_id);
+										log::info!("[DownloadManager] Resuming paused download [ID: {}]", DownloadId);
 										break;
 									},
 								}
@@ -915,8 +915,8 @@ impl DownloadManager {
 			match result {
 				Ok(chunk) => {
 					// Bandwidth limiting check
-					let chunk_size = chunk.len();
-					if let Ok(permit) = self.bandwidth_limiter.try_acquire_many((chunk_size / (1024 * 1024) + 1) as u32)
+					let ChunkSize = chunk.len();
+					if let Ok(permit) = self.BandwidthLimiter.try_acquire_many((ChunkSize / (1024 * 1024) + 1) as u32)
 					{
 						drop(permit);
 					} else {
@@ -928,21 +928,21 @@ impl DownloadManager {
 						.await
 						.map_err(|e| AirError::FileSystem(format!("Failed to write file: {}", e)))?;
 
-					downloaded += chunk_size as u64;
+					downloaded += ChunkSize as u64;
 
 					// Update progress (throttled to avoid excessive updates)
 					if last_progress_update.elapsed() > Duration::from_millis(500) {
 						last_progress_update = Instant::now();
 
-						if total_size > 0 {
-							let progress = (downloaded as f32 / total_size as f32) * 100.0;
-							self.UpdateDownloadStatus(download_id, DownloadState::Downloading, Some(progress), None)
+						if TotalSize > 0 {
+							let progress = (downloaded as f32 / TotalSize as f32) * 100.0;
+							self.UpdateDownloadStatus(DownloadId, DownloadState::Downloading, Some(progress), None)
 								.await?;
 						}
 
 						// Calculate and update download rate
-						let rate = self.CalculateDownloadRate(download_id, downloaded).await;
-						self.UpdateDownloadRate(download_id, rate).await;
+						let rate = self.CalculateDownloadRate(DownloadId, downloaded).await;
+						self.UpdateDownloadRate(DownloadId, rate).await;
 					}
 				},
 				Err(e) => {
@@ -957,7 +957,7 @@ impl DownloadManager {
 		}
 
 		// Final progress update
-		self.UpdateDownloadStatus(download_id, DownloadState::Downloading, Some(100.0), None)
+		self.UpdateDownloadStatus(DownloadId, DownloadState::Downloading, Some(100.0), None)
 			.await?;
 
 		// Flush file to ensure all data is written
@@ -974,39 +974,39 @@ impl DownloadManager {
 		let checksum = self.CalculateChecksum(destination).await?;
 
 		// Update status with final checksum
-		self.UpdateActualChecksum(download_id, &checksum).await;
+		self.UpdateActualChecksum(DownloadId, &checksum).await;
 
 		Ok(DownloadResult {
 			path:destination.to_string_lossy().to_string(),
 			size:downloaded,
 			checksum,
 			duration:Duration::from_secs(0),
-			average_rate:0,
+			AverageRate:0,
 		})
 	}
 
 	/// Verify file checksum using ChecksumVerifier
-	pub async fn VerifyChecksum(&self, file_path:&PathBuf, expected_checksum:&str) -> Result<()> {
+	pub async fn VerifyChecksum(&self, FilePath:&PathBuf, ExpectedChecksum:&str) -> Result<()> {
 		// Defensive: Validate input file exists
-		if !file_path.exists() {
+		if !FilePath.exists() {
 			return Err(AirError::FileSystem(format!(
 				"File not found for checksum verification: {}",
-				file_path.display()
+				FilePath.display()
 			)));
 		}
 
-		let actual_checksum = self.checksum_verifier.CalculateSha256(file_path).await?;
+		let ActualChecksum = self.ChecksumVerifier.CalculateSha256(FilePath).await?;
 
 		// Normalize checksums (handle case-insensitivity, remove prefix, etc.)
-		let normalized_expected = expected_checksum.trim().to_lowercase().replace("sha256:", "");
-		let normalized_actual = actual_checksum.trim().to_lowercase();
+		let NormalizedExpected = ExpectedChecksum.trim().to_lowercase().replace("sha256:", "");
+		let NormalizedActual = ActualChecksum.trim().to_lowercase();
 
-		if normalized_actual != normalized_expected {
+		if NormalizedActual != normalized_expected {
 			log::error!(
 				"[DownloadManager] Checksum mismatch for {}: expected {}, got {}",
-				file_path.display(),
+				FilePath.display(),
 				normalized_expected,
-				normalized_actual
+				NormalizedActual
 			);
 			return Err(AirError::Network(format!(
 				"Checksum verification failed: expected {}, got {}",
@@ -1014,55 +1014,55 @@ impl DownloadManager {
 			)));
 		}
 
-		log::info!("[DownloadManager] Checksum verified for file: {}", file_path.display());
+		log::info!("[DownloadManager] Checksum verified for file: {}", FilePath.display());
 
 		Ok(())
 	}
 
 	/// Calculate file checksum using ChecksumVerifier
-	pub async fn CalculateChecksum(&self, file_path:&PathBuf) -> Result<String> {
+	pub async fn CalculateChecksum(&self, FilePath:&PathBuf) -> Result<String> {
 		// Defensive: Validate input file exists
-		if !file_path.exists() {
+		if !FilePath.exists() {
 			return Err(AirError::FileSystem(format!(
 				"File not found for checksum calculation: {}",
-				file_path.display()
+				FilePath.display()
 			)));
 		}
 
-		self.checksum_verifier.CalculateSha256(file_path).await
+		self.ChecksumVerifier.CalculateSha256(FilePath).await
 	}
 
 	/// Register a new download in the tracking system
 	async fn RegisterDownload(
 		&self,
-		download_id:&str,
+		DownloadId:&str,
 		url:&str,
 		destination:&PathBuf,
-		expected_checksum:Option<String>,
+		ExpectedChecksum:Option<String>,
 	) -> Result<()> {
-		let mut downloads = self.active_downloads.write().await;
+		let mut downloads = self.ActiveDownloads.write().await;
 		let mut stats = self.statistics.write().await;
 
-		stats.active_downloads += 1;
+		stats.ActiveDownloads += 1;
 
 		downloads.insert(
-			download_id.to_string(),
+			DownloadId.to_string(),
 			DownloadStatus {
-				download_id:download_id.to_string(),
+				DownloadId:DownloadId.to_string(),
 				url:url.to_string(),
 				destination:destination.clone(),
-				total_size:0,
+				TotalSize:0,
 				downloaded:0,
 				progress:0.0,
 				status:DownloadState::Pending,
 				error:None,
-				started_at:Some(chrono::Utc::now()),
-				completed_at:None,
-				chunks_completed:0,
-				total_chunks:1,
-				download_rate_bytes_per_sec:0,
-				expected_checksum:expected_checksum.clone(),
-				actual_checksum:None,
+				StartedAt:Some(chrono::Utc::now()),
+				CompletedAt:None,
+				ChunksCompleted:0,
+				TotalChunks:1,
+				DownloadRateBytesPerSec:0,
+				ExpectedChecksum:ExpectedChecksum.clone(),
+				ActualChecksum:None,
 			},
 		);
 
@@ -1072,16 +1072,16 @@ impl DownloadManager {
 	/// Update download status
 	async fn UpdateDownloadStatus(
 		&self,
-		download_id:&str,
+		DownloadId:&str,
 		status:DownloadState,
 		progress:Option<f32>,
 		error:Option<String>,
 	) -> Result<()> {
-		let mut downloads = self.active_downloads.write().await;
+		let mut downloads = self.ActiveDownloads.write().await;
 
-		if let Some(download) = downloads.get_mut(download_id) {
+		if let Some(download) = downloads.get_mut(DownloadId) {
 			if status == DownloadState::Completed || status == DownloadState::Failed {
-				download.completed_at = Some(chrono::Utc::now());
+				download.CompletedAt = Some(chrono::Utc::now());
 			}
 			download.status = status;
 			if let Some(progress) = progress {
@@ -1094,30 +1094,30 @@ impl DownloadManager {
 	}
 
 	/// Update download rate tracking
-	async fn UpdateDownloadRate(&self, download_id:&str, rate:u64) {
-		let mut downloads = self.active_downloads.write().await;
-		if let Some(download) = downloads.get_mut(download_id) {
-			download.download_rate_bytes_per_sec = rate;
+	async fn UpdateDownloadRate(&self, DownloadId:&str, rate:u64) {
+		let mut downloads = self.ActiveDownloads.write().await;
+		if let Some(download) = downloads.get_mut(DownloadId) {
+			download.DownloadRateBytesPerSec = rate;
 		}
 	}
 
 	/// Update actual checksum after calculation
-	async fn UpdateActualChecksum(&self, download_id:&str, checksum:&str) {
-		let mut downloads = self.active_downloads.write().await;
-		if let Some(download) = downloads.get_mut(download_id) {
-			download.actual_checksum = Some(checksum.to_string());
+	async fn UpdateActualChecksum(&self, DownloadId:&str, checksum:&str) {
+		let mut downloads = self.ActiveDownloads.write().await;
+		if let Some(download) = downloads.get_mut(DownloadId) {
+			download.ActualChecksum = Some(checksum.to_string());
 		}
 	}
 
 	/// Calculate download rate based on progress
-	async fn CalculateDownloadRate(&self, download_id:&str, current_bytes:u64) -> u64 {
-		let downloads = self.active_downloads.read().await;
-		if let Some(download) = downloads.get(download_id) {
-			if let Some(started_at) = download.started_at {
-				let elapsed = chrono::Utc::now().signed_duration_since(started_at);
-				let elapsed_secs = elapsed.num_seconds() as u64;
-				if elapsed_secs > 0 {
-					return current_bytes / elapsed_secs;
+	async fn CalculateDownloadRate(&self, DownloadId:&str, CurrentBytes:u64) -> u64 {
+		let downloads = self.ActiveDownloads.read().await;
+		if let Some(download) = downloads.get(DownloadId) {
+			if let Some(StartedAt) = download.StartedAt {
+				let elapsed = chrono::Utc::now().signed_duration_since(StartedAt);
+				let ElapsedSecs = elapsed.num_seconds() as u64;
+				if ElapsedSecs > 0 {
+					return current_bytes / ElapsedSecs;
 				}
 			}
 		}
@@ -1129,63 +1129,63 @@ impl DownloadManager {
 		let mut stats = self.statistics.write().await;
 
 		if success {
-			stats.successful_downloads += 1;
-			stats.total_bytes_downloaded += bytes;
-			stats.total_download_time_secs += duration.as_secs_f64();
+			stats.SuccessfulDownloads += 1;
+			stats.TotalBytesDownloaded += bytes;
+			stats.TotalDownloadTimeSecs += duration.as_secs_f64();
 
-			if stats.total_download_time_secs > 0.0 {
-				stats.average_download_rate = stats.total_bytes_downloaded as f64 / stats.total_download_time_secs
+			if stats.TotalDownloadTimeSecs > 0.0 {
+				stats.AverageDownloadRate = stats.TotalBytesDownloaded as f64 / stats.TotalDownloadTimeSecs
 			}
 
 			// Update peak rate
-			let current_rate = if duration.as_secs_f64() > 0.0 {
+			let CurrentRate = if duration.as_secs_f64() > 0.0 {
 				(bytes as f64 / duration.as_secs_f64()) as u64
 			} else {
 				0
 			};
-			if current_rate > stats.peak_download_rate {
-				stats.peak_download_rate = current_rate;
+			if CurrentRate > stats.PeakDownloadRate {
+				stats.PeakDownloadRate = CurrentRate;
 			}
 		} else {
-			stats.failed_downloads += 1;
+			stats.FailedDownloads += 1;
 		}
 
-		stats.total_downloads += 1;
-		stats.active_downloads = stats.active_downloads.saturating_sub(1);
+		stats.TotalDownloads += 1;
+		stats.ActiveDownloads = stats.ActiveDownloads.saturating_sub(1);
 	}
 
 	/// Get download status
-	pub async fn GetDownloadStatus(&self, download_id:&str) -> Option<DownloadStatus> {
-		let downloads = self.active_downloads.read().await;
-		downloads.get(download_id).cloned()
+	pub async fn GetDownloadStatus(&self, DownloadId:&str) -> Option<DownloadStatus> {
+		let downloads = self.ActiveDownloads.read().await;
+		downloads.get(DownloadId).cloned()
 	}
 
 	/// Get all active downloads
 	pub async fn GetAllDownloads(&self) -> Vec<DownloadStatus> {
-		let downloads = self.active_downloads.read().await;
+		let downloads = self.ActiveDownloads.read().await;
 		downloads.values().cloned().collect()
 	}
 
 	/// Cancel a download with proper cleanup
-	pub async fn CancelDownload(&self, download_id:&str) -> Result<()> {
-		log::info!("[DownloadManager] Cancelling download [ID: {}]", download_id);
+	pub async fn CancelDownload(&self, DownloadId:&str) -> Result<()> {
+		log::info!("[DownloadManager] Cancelling download [ID: {}]", DownloadId);
 
-		self.UpdateDownloadStatus(download_id, DownloadState::Cancelled, None, None)
+		self.UpdateDownloadStatus(DownloadId, DownloadState::Cancelled, None, None)
 			.await?;
 
 		// Clean up temporary file if it exists
-		if let Some(status) = self.GetDownloadStatus(download_id).await {
-			let temp_path = status.destination.with_extension("tmp");
-			if temp_path.exists() {
-				let _ = tokio::fs::remove_file(&temp_path).await;
+		if let Some(status) = self.GetDownloadStatus(DownloadId).await {
+			let TempPath = status.destination.with_extension("tmp");
+			if TempPath.exists() {
+				let _ = tokio::fs::remove_file(&TempPath).await;
 			}
 		}
 
 		// Update statistics
 		{
 			let mut stats = self.statistics.write().await;
-			stats.cancelled_downloads += 1;
-			stats.active_downloads = stats.active_downloads.saturating_sub(1);
+			stats.CancelledDownloads += 1;
+			stats.ActiveDownloads = stats.ActiveDownloads.saturating_sub(1);
 		}
 
 		Ok(())
@@ -1287,11 +1287,11 @@ impl DownloadManager {
 
 		log::info!(
 			"[DownloadManager] Download queued [ID: {}] with priority {:?}",
-			download_id,
+			DownloadId,
 			priority
 		);
 
-		Ok(download_id)
+		Ok(DownloadId)
 	}
 
 	/// Process next download from queue
@@ -1682,7 +1682,7 @@ impl DownloadManager {
 			let chunk_clone = chunk.clone();
 			let downloaded_tracker = downloaded_tracker.clone();
 			let completed_tracker = completed_tracker.clone();
-			let _Did = download_id.clone();
+			let _Did = DownloadId.clone();
 
 			let handle = tokio::spawn(async move {
 				manager.DownloadChunk(&url_clone, &chunk_clone, i).await?;

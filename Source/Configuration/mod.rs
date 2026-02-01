@@ -109,32 +109,32 @@ use crate::{AirError, DefaultConfigFile, Result};
 pub struct AirConfiguration {
 	/// Configuration schema version for migration tracking
 	#[serde(default = "default_schema_version")]
-	pub schema_version:String,
+	pub SchemaVersion:String,
 
 	/// Profile name (dev, staging, prod, custom)
 	#[serde(default = "default_profile")]
-	pub profile:String,
+	pub Profile:String,
 
 	/// gRPC server configuration
-	pub grpc:GrpcConfig,
+	pub Grpc:GrpcConfig,
 
 	/// Authentication configuration
-	pub authentication:AuthConfig,
+	pub Authentication:AuthConfig,
 
 	/// Update configuration
-	pub updates:UpdateConfig,
+	pub Updates:UpdateConfig,
 
 	/// Download configuration
-	pub downloader:DownloadConfig,
+	pub Downloader:DownloadConfig,
 
 	/// Indexing configuration
-	pub indexing:IndexingConfig,
+	pub Indexing:IndexingConfig,
 
 	/// Logging configuration
-	pub logging:LoggingConfig,
+	pub Logging:LoggingConfig,
 
 	/// Performance configuration
-	pub performance:PerformanceConfig,
+	pub Performance:PerformanceConfig,
 }
 
 fn default_schema_version() -> String { "1.0.0".to_string() }
@@ -149,19 +149,19 @@ pub struct GrpcConfig {
 	/// Format: [IPv6]:port or IPv4:port or hostname:port
 	/// Example: "[::1]:50053", "127.0.0.1:50053", "localhost:50053"
 	#[serde(default = "default_grpc_bind_address")]
-	pub bind_address:String,
+	pub BindAddress:String,
 
 	/// Maximum concurrent connections
 	/// Validation: Range [10, 10000]
 	/// Default: 100
 	#[serde(default = "default_grpc_max_connections")]
-	pub max_connections:u32,
+	pub MaxConnections:u32,
 
 	/// Request timeout in seconds
 	/// Validation: Range [1, 3600] (1 second to 1 hour)
 	/// Default: 30
 	#[serde(default = "default_grpc_request_timeout")]
-	pub request_timeout_secs:u64,
+	pub RequestTimeoutSecs:u64,
 }
 
 fn default_grpc_bind_address() -> String { "[::1]:50053".to_string() }
@@ -175,26 +175,26 @@ fn default_grpc_request_timeout() -> u64 { 30 }
 pub struct AuthConfig {
 	/// Enable authentication service
 	#[serde(default = "default_auth_enabled")]
-	pub enabled:bool,
+	pub Enabled:bool,
 
 	/// Path to credentials storage
 	/// Validation: Must be a valid absolute or home-relative path
 	/// Security: Ensures directory traversal prevention
 	/// Default: "~/.air/credentials"
 	#[serde(default = "default_auth_credentials_path")]
-	pub credentials_path:String,
+	pub CredentialsPath:String,
 
 	/// Token expiration in hours
 	/// Validation: Range [1, 8760] (1 hour to 1 year)
 	/// Default: 24
 	#[serde(default = "default_auth_token_expiration")]
-	pub token_expiration_hours:u32,
+	pub TokenExpirationHours:u32,
 
 	/// Maximum concurrent auth sessions
 	/// Validation: Range [1, 1000]
 	/// Default: 10
 	#[serde(default = "default_auth_max_sessions")]
-	pub max_sessions:u32,
+	pub MaxSessions:u32,
 }
 
 fn default_auth_enabled() -> bool { true }
@@ -210,35 +210,35 @@ fn default_auth_max_sessions() -> u32 { 10 }
 pub struct UpdateConfig {
 	/// Enable update service
 	#[serde(default = "default_update_enabled")]
-	pub enabled:bool,
+	pub Enabled:bool,
 
 	/// Update check interval in hours
 	/// Validation: Range [1, 168] (1 hour to 1 week)
 	/// Default: 6
 	#[serde(default = "default_update_check_interval")]
-	pub check_interval_hours:u32,
+	pub CheckIntervalHours:u32,
 
 	/// Update server URL
 	/// Validation: Must be a valid HTTPS URL
 	/// Security: HTTPS required for security
 	/// Default: "https://updates.editor.land"
 	#[serde(default = "default_update_server_url")]
-	pub update_server_url:String,
+	pub UpdateServerUrl:String,
 
 	/// Auto-download updates
 	#[serde(default = "default_update_auto_download")]
-	pub auto_download:bool,
+	pub AutoDownload:bool,
 
 	/// Auto-install updates
 	/// Warning: Use with caution in production
 	#[serde(default = "default_update_auto_install")]
-	pub auto_install:bool,
+	pub AutoInstall:bool,
 
 	/// Update channel
 	/// Validation: Must be one of: "stable", "insiders", "preview"
 	/// Default: "stable"
 	#[serde(default = "default_update_channel")]
-	pub channel:String,
+	pub Channel:String,
 }
 
 fn default_update_enabled() -> bool { true }
@@ -258,31 +258,31 @@ fn default_update_channel() -> String { "stable".to_string() }
 pub struct DownloadConfig {
 	/// Enable download service
 	#[serde(default = "default_download_enabled")]
-	pub enabled:bool,
+	pub Enabled:bool,
 
 	/// Maximum concurrent downloads
 	/// Validation: Range [1, 50]
 	/// Default: 5
 	#[serde(default = "default_download_max_concurrent")]
-	pub max_concurrent_downloads:u32,
+	pub MaxConcurrentDownloads:u32,
 
 	/// Download timeout in seconds
 	/// Validation: Range [10, 3600] (10 seconds to 1 hour)
 	/// Default: 300
 	#[serde(default = "default_download_timeout")]
-	pub download_timeout_secs:u64,
+	pub DownloadTimeoutSecs:u64,
 
 	/// Maximum retry attempts
 	/// Validation: Range [0, 10]
 	/// Default: 3
 	#[serde(default = "default_download_max_retries")]
-	pub max_retries:u32,
+	pub MaxRetries:u32,
 
 	/// Download cache directory
 	/// Validation: Must be a valid absolute or home-relative path
 	/// Default: "~/.air/cache"
 	#[serde(default = "default_download_cache_dir")]
-	pub cache_directory:String,
+	pub CacheDirectory:String,
 }
 
 fn default_download_enabled() -> bool { true }
@@ -300,32 +300,32 @@ fn default_download_cache_dir() -> String { "~/.air/cache".to_string() }
 pub struct IndexingConfig {
 	/// Enable indexing service
 	#[serde(default = "default_indexing_enabled")]
-	pub enabled:bool,
+	pub Enabled:bool,
 
 	/// Maximum file size to index (MB)
 	/// Validation: Range [1, 1024] (1MB to 1GB)
 	/// Default: 10
 	#[serde(default = "default_indexing_max_file_size")]
-	pub max_file_size_mb:u32,
+	pub MaxFileSizeMb:u32,
 
 	/// File types to index
 	/// Format: Glob patterns like "*.rs", "*.ts", etc.
 	/// Validation: Each pattern must be a valid glob pattern
 	/// Default: Common source code file types
 	#[serde(default = "default_indexing_file_types")]
-	pub file_types:Vec<String>,
+	pub FileTypes:Vec<String>,
 
 	/// Index update interval in minutes
 	/// Validation: Range [1, 1440] (1 minute to 1 day)
 	/// Default: 30
 	#[serde(default = "default_indexing_update_interval")]
-	pub update_interval_minutes:u32,
+	pub UpdateIntervalMinutes:u32,
 
 	/// Index storage directory
 	/// Validation: Must be a valid absolute or home-relative path
 	/// Default: "~/.air/index"
 	#[serde(default = "default_indexing_directory")]
-	pub index_directory:String,
+	pub IndexDirectory:String,
 }
 
 fn default_indexing_enabled() -> bool { true }
@@ -354,29 +354,29 @@ pub struct LoggingConfig {
 	/// Validation: Must be one of: "trace", "debug", "info", "warn", "error"
 	/// Default: "info"
 	#[serde(default = "default_logging_level")]
-	pub level:String,
+	pub Level:String,
 
 	/// Log file path
 	/// Validation: Must be a valid absolute or home-relative path if provided
 	/// Default: "~/.air/logs/air.log"
 	#[serde(default = "default_logging_file_path")]
-	pub file_path:Option<String>,
+	pub FilePath:Option<String>,
 
 	/// Enable console logging
 	#[serde(default = "default_logging_console_enabled")]
-	pub console_enabled:bool,
+	pub ConsoleEnabled:bool,
 
 	/// Maximum log file size (MB)
 	/// Validation: Range [1, 1000]
 	/// Default: 10
 	#[serde(default = "default_logging_max_file_size")]
-	pub max_file_size_mb:u32,
+	pub MaxFileSizeMb:u32,
 
 	/// Maximum log files to keep
 	/// Validation: Range [1, 50]
 	/// Default: 5
 	#[serde(default = "default_logging_max_files")]
-	pub max_files:u32,
+	pub MaxFiles:u32,
 }
 
 fn default_logging_level() -> String { "info".to_string() }
@@ -396,25 +396,25 @@ pub struct PerformanceConfig {
 	/// Validation: Range [64, 16384] (64MB to 16GB)
 	/// Default: 512
 	#[serde(default = "default_perf_memory_limit")]
-	pub memory_limit_mb:u32,
+	pub MemoryLimitMb:u32,
 
 	/// CPU usage limit (%)
 	/// Validation: Range [10, 100]
 	/// Default: 50
 	#[serde(default = "default_perf_cpu_limit")]
-	pub cpu_limit_percent:u32,
+	pub CpuLimitPercent:u32,
 
 	/// Disk usage limit (MB)
 	/// Validation: Range [100, 102400] (100MB to 100GB)
 	/// Default: 1024
 	#[serde(default = "default_perf_disk_limit")]
-	pub disk_limit_mb:u32,
+	pub DiskLimitMb:u32,
 
 	/// Background task interval in seconds
 	/// Validation: Range [1, 3600] (1 second to 1 hour)
 	/// Default: 60
 	#[serde(default = "default_perf_task_interval")]
-	pub background_task_interval_secs:u64,
+	pub BackgroundTaskIntervalSecs:u64,
 }
 
 fn default_perf_memory_limit() -> u32 { 512 }
@@ -428,53 +428,53 @@ fn default_perf_task_interval() -> u64 { 60 }
 impl Default for AirConfiguration {
 	fn default() -> Self {
 		Self {
-			schema_version:default_schema_version(),
+			SchemaVersion:default_schema_version(),
 			profile:default_profile(),
 			grpc:GrpcConfig {
-				bind_address:default_grpc_bind_address(),
-				max_connections:default_grpc_max_connections(),
-				request_timeout_secs:default_grpc_request_timeout(),
+				BindAddress:default_grpc_bind_address(),
+				MaxConnections:default_grpc_max_connections(),
+				RequestTimeoutSecs:default_grpc_request_timeout(),
 			},
 			authentication:AuthConfig {
 				enabled:default_auth_enabled(),
-				credentials_path:default_auth_credentials_path(),
-				token_expiration_hours:default_auth_token_expiration(),
-				max_sessions:default_auth_max_sessions(),
+				CredentialsPath:default_auth_credentials_path(),
+				TokenExpirationHours:default_auth_token_expiration(),
+				MaxSessions:default_auth_max_sessions(),
 			},
 			updates:UpdateConfig {
 				enabled:default_update_enabled(),
-				check_interval_hours:default_update_check_interval(),
-				update_server_url:default_update_server_url(),
-				auto_download:default_update_auto_download(),
-				auto_install:default_update_auto_install(),
+				CheckIntervalHours:default_update_check_interval(),
+				UpdateServerUrl:default_update_server_url(),
+				AutoDownload:default_update_auto_download(),
+				AutoInstall:default_update_auto_install(),
 				channel:default_update_channel(),
 			},
 			downloader:DownloadConfig {
 				enabled:default_download_enabled(),
-				max_concurrent_downloads:default_download_max_concurrent(),
-				download_timeout_secs:default_download_timeout(),
-				max_retries:default_download_max_retries(),
-				cache_directory:default_download_cache_dir(),
+				MaxConcurrentDownloads:default_download_max_concurrent(),
+				DownloadTimeoutSecs:default_download_timeout(),
+				MaxRetries:default_download_max_retries(),
+				CacheDirectory:default_download_cache_dir(),
 			},
 			indexing:IndexingConfig {
 				enabled:default_indexing_enabled(),
-				max_file_size_mb:default_indexing_max_file_size(),
-				file_types:default_indexing_file_types(),
-				update_interval_minutes:default_indexing_update_interval(),
-				index_directory:default_indexing_directory(),
+				MaxFileSizeMb:default_indexing_max_file_size(),
+				FileTypes:default_indexing_file_types(),
+				UpdateIntervalMinutes:default_indexing_update_interval(),
+				IndexDirectory:default_indexing_directory(),
 			},
 			logging:LoggingConfig {
 				level:default_logging_level(),
-				file_path:default_logging_file_path(),
-				console_enabled:default_logging_console_enabled(),
-				max_file_size_mb:default_logging_max_file_size(),
-				max_files:default_logging_max_files(),
+				FilePath:default_logging_file_path(),
+				ConsoleEnabled:default_logging_console_enabled(),
+				MaxFileSizeMb:default_logging_max_file_size(),
+				MaxFiles:default_logging_max_files(),
 			},
 			performance:PerformanceConfig {
-				memory_limit_mb:default_perf_memory_limit(),
-				cpu_limit_percent:default_perf_cpu_limit(),
-				disk_limit_mb:default_perf_disk_limit(),
-				background_task_interval_secs:default_perf_task_interval(),
+				MemoryLimitMb:default_perf_memory_limit(),
+				CpuLimitPercent:default_perf_cpu_limit(),
+				DiskLimitMb:default_perf_disk_limit(),
+				BackgroundTaskIntervalSecs:default_perf_task_interval(),
 			},
 		}
 	}
@@ -491,9 +491,9 @@ pub fn generate_schema() -> JsonValue {
 		"title": "Air Configuration Schema",
 		"description": "Configuration schema for Air daemon",
 		"type": "object",
-		"required": ["schema_version", "profile"],
+		"required": ["SchemaVersion", "profile"],
 		"properties": {
-			"schema_version": {
+			"SchemaVersion": {
 				"type": "string",
 				"description": "Configuration schema version for migration tracking",
 				"pattern": "^\\d+\\.\\d+\\.\\d+$"
@@ -507,17 +507,17 @@ pub fn generate_schema() -> JsonValue {
 				"type": "object",
 				"description": "gRPC server configuration",
 				"properties": {
-					"bind_address": {
+					"BindAddress": {
 						"type": "string",
 						"description": "gRPC server bind address",
 						"format": "hostname-port"
 					},
-					"max_connections": {
+					"MaxConnections": {
 						"type": "integer",
 						"minimum": 10,
 						"maximum": 10000
 					},
-					"request_timeout_secs": {
+					"RequestTimeoutSecs": {
 						"type": "integer",
 						"minimum": 1,
 						"maximum": 3600
@@ -529,13 +529,13 @@ pub fn generate_schema() -> JsonValue {
 				"description": "Authentication configuration",
 				"properties": {
 					"enabled": {"type": "boolean"},
-					"credentials_path": {"type": "string"},
-					"token_expiration_hours": {
+					"CredentialsPath": {"type": "string"},
+					"TokenExpirationHours": {
 						"type": "integer",
 						"minimum": 1,
 						"maximum": 8760
 					},
-					"max_sessions": {
+					"MaxSessions": {
 						"type": "integer",
 						"minimum": 1,
 						"maximum": 1000
@@ -546,17 +546,17 @@ pub fn generate_schema() -> JsonValue {
 				"type": "object",
 				"properties": {
 					"enabled": {"type": "boolean"},
-					"check_interval_hours": {
+					"CheckIntervalHours": {
 						"type": "integer",
 						"minimum": 1,
 						"maximum": 168
 					},
-					"update_server_url": {
+					"UpdateServerUrl": {
 						"type": "string",
 						"pattern": "^https://"
 					},
-					"auto_download": {"type": "boolean"},
-					"auto_install": {"type": "boolean"},
+					"AutoDownload": {"type": "boolean"},
+					"AutoInstall": {"type": "boolean"},
 					"channel": {
 						"type": "string",
 						"enum": ["stable", "insiders", "preview"]
@@ -567,43 +567,43 @@ pub fn generate_schema() -> JsonValue {
 				"type": "object",
 				"properties": {
 					"enabled": {"type": "boolean"},
-					"max_concurrent_downloads": {
+					"MaxConcurrentDownloads": {
 						"type": "integer",
 						"minimum": 1,
 						"maximum": 50
 					},
-					"download_timeout_secs": {
+					"DownloadTimeoutSecs": {
 						"type": "integer",
 						"minimum": 10,
 						"maximum": 3600
 					},
-					"max_retries": {
+					"MaxRetries": {
 						"type": "integer",
 						"minimum": 0,
 						"maximum": 10
 					},
-					"cache_directory": {"type": "string"}
+					"CacheDirectory": {"type": "string"}
 				}
 			},
 			"indexing": {
 				"type": "object",
 				"properties": {
 					"enabled": {"type": "boolean"},
-					"max_file_size_mb": {
+					"MaxFileSizeMb": {
 						"type": "integer",
 						"minimum": 1,
 						"maximum": 1024
 					},
-					"file_types": {
+					"FileTypes": {
 						"type": "array",
 						"items": {"type": "string"}
 					},
-					"update_interval_minutes": {
+					"UpdateIntervalMinutes": {
 						"type": "integer",
 						"minimum": 1,
 						"maximum": 1440
 					},
-					"index_directory": {"type": "string"}
+					"IndexDirectory": {"type": "string"}
 				}
 			},
 			"logging": {
@@ -613,14 +613,14 @@ pub fn generate_schema() -> JsonValue {
 						"type": "string",
 						"enum": ["trace", "debug", "info", "warn", "error"]
 					},
-					"file_path": {"type": ["string", "null"]},
-					"console_enabled": {"type": "boolean"},
-					"max_file_size_mb": {
+					"FilePath": {"type": ["string", "null"]},
+					"ConsoleEnabled": {"type": "boolean"},
+					"MaxFileSizeMb": {
 						"type": "integer",
 						"minimum": 1,
 						"maximum": 1000
 					},
-					"max_files": {
+					"MaxFiles": {
 						"type": "integer",
 						"minimum": 1,
 						"maximum": 50
@@ -630,22 +630,22 @@ pub fn generate_schema() -> JsonValue {
 			"performance": {
 				"type": "object",
 				"properties": {
-					"memory_limit_mb": {
+					"MemoryLimitMb": {
 						"type": "integer",
 						"minimum": 64,
 						"maximum": 16384
 					},
-					"cpu_limit_percent": {
+					"CpuLimitPercent": {
 						"type": "integer",
 						"minimum": 10,
 						"maximum": 100
 					},
-					"disk_limit_mb": {
+					"DiskLimitMb": {
 						"type": "integer",
 						"minimum": 100,
 						"maximum": 102400
 					},
-					"background_task_interval_secs": {
+					"BackgroundTaskIntervalSecs": {
 						"type": "integer",
 						"minimum": 1,
 						"maximum": 3600
@@ -664,16 +664,16 @@ pub fn generate_schema() -> JsonValue {
 /// support
 pub struct ConfigurationManager {
 	/// Path to configuration file
-	config_path:Option<PathBuf>,
+	ConfigPath:Option<PathBuf>,
 
 	/// Backup configuration directory
-	backup_dir:Option<PathBuf>,
+	BackupDir:Option<PathBuf>,
 
 	/// Enable configuration backup
-	enable_backup:bool,
+	EnableBackup:bool,
 
 	/// Environment variable prefix for overrides
-	env_prefix:String,
+	EnvPrefix:String,
 }
 
 impl ConfigurationManager {
@@ -681,40 +681,40 @@ impl ConfigurationManager {
 	///
 	/// # Arguments
 	///
-	/// * `config_path` - Optional path to configuration file. If None, uses
+	/// * `ConfigPath` - Optional path to configuration file. If None, uses
 	///   default location
 	///
 	/// # Returns
 	///
 	/// Returns a new ConfigurationManager instance
-	pub fn New(config_path:Option<String>) -> Result<Self> {
-		let path = config_path.map(PathBuf::from);
-		let backup_dir = path
+	pub fn New(ConfigPath:Option<String>) -> Result<Self> {
+		let path = ConfigPath.map(PathBuf::from);
+		let BackupDir = path
 			.as_ref()
 			.and_then(|p| p.parent())
-			.map(|parent| parent.join(".config_backups"));
+			.map(|parent| parent.join(".ConfigBackups"));
 
-		Ok(Self { config_path:path, backup_dir, enable_backup:true, env_prefix:"AIR_".to_string() })
+		Ok(Self { ConfigPath:path, BackupDir, EnableBackup:true, EnvPrefix:"AIR_".to_string() })
 	}
 
 	/// Create a new configuration manager with custom settings
 	///
 	/// # Arguments
 	///
-	/// * `config_path` - Optional path to configuration file
-	/// * `enable_backup` - Whether to enable automatic backups
-	/// * `env_prefix` - Prefix for environment variable overrides
-	pub fn NewWithSettings(config_path:Option<String>, enable_backup:bool, env_prefix:String) -> Result<Self> {
-		let path = config_path.map(PathBuf::from);
-		let backup_dir = if enable_backup {
+	/// * `ConfigPath` - Optional path to configuration file
+	/// * `EnableBackup` - Whether to enable automatic backups
+	/// * `EnvPrefix` - Prefix for environment variable overrides
+	pub fn NewWithSettings(ConfigPath:Option<String>, EnableBackup:bool, EnvPrefix:String) -> Result<Self> {
+		let path = ConfigPath.map(PathBuf::from);
+		let BackupDir = if EnableBackup {
 			path.as_ref()
 				.and_then(|p| p.parent())
-				.map(|parent| parent.join(".config_backups"))
+				.map(|parent| parent.join(".ConfigBackups"))
 		} else {
 			None
 		};
 
-		Ok(Self { config_path:path, backup_dir, enable_backup, env_prefix })
+		Ok(Self { ConfigPath:path, BackupDir, EnableBackup, EnvPrefix })
 	}
 
 	/// Load configuration from file, environment, or create default
@@ -732,11 +732,11 @@ impl ConfigurationManager {
 		let mut config = AirConfiguration::default();
 
 		// Try to load from specified or default path
-		let config_path = self.GetConfigPath()?;
+		let ConfigPath = self.GetConfigPath()?;
 
-		if config_path.exists() {
-			log::info!("Loading configuration from: {}", config_path.display());
-			config = self.LoadFromFile(&config_path).await?;
+		if ConfigPath.exists() {
+			log::info!("Loading configuration from: {}", ConfigPath.display());
+			config = self.LoadFromFile(&ConfigPath).await?;
 		} else {
 			log::info!("No configuration file found, using defaults");
 		}
@@ -793,35 +793,35 @@ impl ConfigurationManager {
 		// Validate before saving
 		self.ValidateConfiguration(config)?;
 
-		let config_path = self.GetConfigPath()?;
+		let ConfigPath = self.GetConfigPath()?;
 
 		// Create backup if enabled and file exists
-		if self.enable_backup && config_path.exists() {
-			self.BackupConfiguration(&config_path).await?;
+		if self.EnableBackup && ConfigPath.exists() {
+			self.BackupConfiguration(&ConfigPath).await?;
 		}
 
 		// Create parent directory if it doesn't exist
-		if let Some(parent) = config_path.parent() {
+		if let Some(parent) = ConfigPath.parent() {
 			tokio::fs::create_dir_all(parent).await.map_err(|e| {
 				AirError::Configuration(format!("Failed to create config directory '{}': {}", parent.display(), e))
 			})?;
 		}
 
 		// Atomic write: write to temp file, then rename
-		let temp_path = config_path.with_extension("tmp");
+		let TempPath = ConfigPath.with_extension("tmp");
 		let content = toml::to_string_pretty(config)
 			.map_err(|e| AirError::Configuration(format!("Failed to serialize config: {}", e)))?;
 
-		tokio::fs::write(&temp_path, content).await.map_err(|e| {
-			AirError::Configuration(format!("Failed to write temp config file '{}': {}", temp_path.display(), e))
+		tokio::fs::write(&TempPath, content).await.map_err(|e| {
+			AirError::Configuration(format!("Failed to write temp config file '{}': {}", TempPath.display(), e))
 		})?;
 
 		// Atomic rename
-		tokio::fs::rename(&temp_path, &config_path).await.map_err(|e| {
-			AirError::Configuration(format!("Failed to rename temp config to '{}': {}", config_path.display(), e))
+		tokio::fs::rename(&TempPath, &ConfigPath).await.map_err(|e| {
+			AirError::Configuration(format!("Failed to rename temp config to '{}': {}", ConfigPath.display(), e))
 		})?;
 
-		log::info!("Configuration saved to: {}", config_path.display());
+		log::info!("Configuration saved to: {}", ConfigPath.display());
 		Ok(())
 	}
 
@@ -835,7 +835,7 @@ impl ConfigurationManager {
 	/// - URL validation for network resources
 	fn ValidateConfiguration(&self, config:&AirConfiguration) -> Result<()> {
 		// Schema version validation
-		self.ValidateSchemaVersion(&config.schema_version)?;
+		self.ValidateSchemaVersion(&config.SchemaVersion)?;
 
 		// Profile validation
 		self.ValidateProfile(&config.profile)?;
@@ -897,7 +897,7 @@ impl ConfigurationManager {
 
 	/// Validate profile name
 	fn ValidateProfile(&self, profile:&str) -> Result<()> {
-		let valid_profiles = ["dev", "staging", "prod", "custom"];
+		let ValidProfiles = ["dev", "staging", "prod", "custom"];
 
 		if !valid_profiles.contains(&profile) {
 			return Err(AirError::Configuration(format!(
@@ -913,45 +913,45 @@ impl ConfigurationManager {
 	/// Validate gRPC configuration with range checking
 	fn ValidateGrpcConfig(&self, grpc:&GrpcConfig) -> Result<()> {
 		// Validate bind address
-		if grpc.bind_address.is_empty() {
+		if grpc.BindAddress.is_empty() {
 			return Err(AirError::Configuration("gRPC bind address cannot be empty".to_string()));
 		}
 
 		// Validate address format
-		if !Self::IsValidAddress(&grpc.bind_address) {
+		if !Self::IsValidAddress(&grpc.BindAddress) {
 			return Err(AirError::Configuration(format!(
 				"Invalid gRPC bind address '{}': must be in format host:port or [IPv6]:port",
-				grpc.bind_address
+				grpc.BindAddress
 			)));
 		}
 
-		// Validate max_connections range [10, 10000]
-		if grpc.max_connections < 10 {
+		// Validate MaxConnections range [10, 10000]
+		if grpc.MaxConnections < 10 {
 			return Err(AirError::Configuration(format!(
-				"gRPC max_connections {} is below minimum (10)",
-				grpc.max_connections
+				"gRPC MaxConnections {} is below minimum (10)",
+				grpc.MaxConnections
 			)));
 		}
 
-		if grpc.max_connections > 10000 {
+		if grpc.MaxConnections > 10000 {
 			return Err(AirError::Configuration(format!(
-				"gRPC max_connections {} exceeds maximum (10000)",
-				grpc.max_connections
+				"gRPC MaxConnections {} exceeds maximum (10000)",
+				grpc.MaxConnections
 			)));
 		}
 
-		// Validate request_timeout_secs range [1, 3600]
-		if grpc.request_timeout_secs < 1 {
+		// Validate RequestTimeoutSecs range [1, 3600]
+		if grpc.RequestTimeoutSecs < 1 {
 			return Err(AirError::Configuration(format!(
-				"gRPC request_timeout_secs {} is below minimum (1 second)",
-				grpc.request_timeout_secs
+				"gRPC RequestTimeoutSecs {} is below minimum (1 second)",
+				grpc.RequestTimeoutSecs
 			)));
 		}
 
-		if grpc.request_timeout_secs > 3600 {
+		if grpc.RequestTimeoutSecs > 3600 {
 			return Err(AirError::Configuration(format!(
-				"gRPC request_timeout_secs {} exceeds maximum (3600 seconds = 1 hour)",
-				grpc.request_timeout_secs
+				"gRPC RequestTimeoutSecs {} exceeds maximum (3600 seconds = 1 hour)",
+				grpc.RequestTimeoutSecs
 			)));
 		}
 
@@ -962,43 +962,43 @@ impl ConfigurationManager {
 	fn ValidateAuthConfig(&self, auth:&AuthConfig) -> Result<()> {
 		// If authentication is enabled, validate credentials path
 		if auth.enabled {
-			if auth.credentials_path.is_empty() {
+			if auth.CredentialsPath.is_empty() {
 				return Err(AirError::Configuration(
 					"Authentication credentials path cannot be empty when authentication is enabled".to_string(),
 				));
 			}
 
 			// Validate path for security (prevent directory traversal)
-			self.ValidatePath(&auth.credentials_path)?;
+			self.ValidatePath(&auth.CredentialsPath)?;
 		}
 
-		// Validate token_expiration_hours range [1, 8760]
-		if auth.token_expiration_hours < 1 {
+		// Validate TokenExpirationHours range [1, 8760]
+		if auth.TokenExpirationHours < 1 {
 			return Err(AirError::Configuration(format!(
 				"Token expiration hours {} is below minimum (1 hour)",
-				auth.token_expiration_hours
+				auth.TokenExpirationHours
 			)));
 		}
 
-		if auth.token_expiration_hours > 8760 {
+		if auth.TokenExpirationHours > 8760 {
 			return Err(AirError::Configuration(format!(
 				"Token expiration hours {} exceeds maximum (8760 hours = 1 year)",
-				auth.token_expiration_hours
+				auth.TokenExpirationHours
 			)));
 		}
 
-		// Validate max_sessions range [1, 1000]
-		if auth.max_sessions < 1 {
+		// Validate MaxSessions range [1, 1000]
+		if auth.MaxSessions < 1 {
 			return Err(AirError::Configuration(format!(
 				"Max sessions {} is below minimum (1)",
-				auth.max_sessions
+				auth.MaxSessions
 			)));
 		}
 
-		if auth.max_sessions > 1000 {
+		if auth.MaxSessions > 1000 {
 			return Err(AirError::Configuration(format!(
 				"Max sessions {} exceeds maximum (1000)",
-				auth.max_sessions
+				auth.MaxSessions
 			)));
 		}
 
@@ -1009,41 +1009,41 @@ impl ConfigurationManager {
 	fn ValidateUpdateConfig(&self, updates:&UpdateConfig) -> Result<()> {
 		if updates.enabled {
 			// Validate update server URL
-			if updates.update_server_url.is_empty() {
+			if updates.UpdateServerUrl.is_empty() {
 				return Err(AirError::Configuration(
 					"Update server URL cannot be empty when updates are enabled".to_string(),
 				));
 			}
 
 			// Must be HTTPS for security
-			if !updates.update_server_url.starts_with("https://") {
+			if !updates.UpdateServerUrl.starts_with("https://") {
 				return Err(AirError::Configuration(format!(
 					"Update server URL must use HTTPS, got: {}",
-					updates.update_server_url
+					updates.UpdateServerUrl
 				)));
 			}
 
 			// Validate URL format
-			if !Self::IsValidUrl(&updates.update_server_url) {
+			if !Self::IsValidUrl(&updates.UpdateServerUrl) {
 				return Err(AirError::Configuration(format!(
 					"Invalid update server URL '{}'",
-					updates.update_server_url
+					updates.UpdateServerUrl
 				)));
 			}
 		}
 
-		// Validate check_interval_hours range [1, 168]
-		if updates.check_interval_hours < 1 {
+		// Validate CheckIntervalHours range [1, 168]
+		if updates.CheckIntervalHours < 1 {
 			return Err(AirError::Configuration(format!(
 				"Update check interval {} hours is below minimum (1 hour)",
-				updates.check_interval_hours
+				updates.CheckIntervalHours
 			)));
 		}
 
-		if updates.check_interval_hours > 168 {
+		if updates.CheckIntervalHours > 168 {
 			return Err(AirError::Configuration(format!(
 				"Update check interval {} hours exceeds maximum (168 hours = 1 week)",
-				updates.check_interval_hours
+				updates.CheckIntervalHours
 			)));
 		}
 
@@ -1053,51 +1053,51 @@ impl ConfigurationManager {
 	/// Validate download configuration
 	fn ValidateDownloadConfig(&self, downloader:&DownloadConfig) -> Result<()> {
 		if downloader.enabled {
-			if downloader.cache_directory.is_empty() {
+			if downloader.CacheDirectory.is_empty() {
 				return Err(AirError::Configuration(
 					"Download cache directory cannot be empty when downloader is enabled".to_string(),
 				));
 			}
 
 			// Validate path for security
-			self.ValidatePath(&downloader.cache_directory)?;
+			self.ValidatePath(&downloader.CacheDirectory)?;
 		}
 
-		// Validate max_concurrent_downloads range [1, 50]
-		if downloader.max_concurrent_downloads < 1 {
+		// Validate MaxConcurrentDownloads range [1, 50]
+		if downloader.MaxConcurrentDownloads < 1 {
 			return Err(AirError::Configuration(format!(
 				"Max concurrent downloads {} is below minimum (1)",
-				downloader.max_concurrent_downloads
+				downloader.MaxConcurrentDownloads
 			)));
 		}
 
-		if downloader.max_concurrent_downloads > 50 {
+		if downloader.MaxConcurrentDownloads > 50 {
 			return Err(AirError::Configuration(format!(
 				"Max concurrent downloads {} exceeds maximum (50)",
-				downloader.max_concurrent_downloads
+				downloader.MaxConcurrentDownloads
 			)));
 		}
 
-		// Validate download_timeout_secs range [10, 3600]
-		if downloader.download_timeout_secs < 10 {
+		// Validate DownloadTimeoutSecs range [10, 3600]
+		if downloader.DownloadTimeoutSecs < 10 {
 			return Err(AirError::Configuration(format!(
 				"Download timeout {} seconds is below minimum (10 seconds)",
-				downloader.download_timeout_secs
+				downloader.DownloadTimeoutSecs
 			)));
 		}
 
-		if downloader.download_timeout_secs > 3600 {
+		if downloader.DownloadTimeoutSecs > 3600 {
 			return Err(AirError::Configuration(format!(
 				"Download timeout {} seconds exceeds maximum (3600 seconds = 1 hour)",
-				downloader.download_timeout_secs
+				downloader.DownloadTimeoutSecs
 			)));
 		}
 
-		// Validate max_retries range [0, 10]
-		if downloader.max_retries > 10 {
+		// Validate MaxRetries range [0, 10]
+		if downloader.MaxRetries > 10 {
 			return Err(AirError::Configuration(format!(
 				"Max retries {} exceeds maximum (10)",
-				downloader.max_retries
+				downloader.MaxRetries
 			)));
 		}
 
@@ -1107,24 +1107,24 @@ impl ConfigurationManager {
 	/// Validate indexing configuration
 	fn ValidateIndexingConfig(&self, indexing:&IndexingConfig) -> Result<()> {
 		if indexing.enabled {
-			if indexing.index_directory.is_empty() {
+			if indexing.IndexDirectory.is_empty() {
 				return Err(AirError::Configuration(
 					"Index directory cannot be empty when indexing is enabled".to_string(),
 				));
 			}
 
 			// Validate path for security
-			self.ValidatePath(&indexing.index_directory)?;
+			self.ValidatePath(&indexing.IndexDirectory)?;
 
-			// Validate file_types is not empty
-			if indexing.file_types.is_empty() {
+			// Validate FileTypes is not empty
+			if indexing.FileTypes.is_empty() {
 				return Err(AirError::Configuration(
 					"File types to index cannot be empty when indexing is enabled".to_string(),
 				));
 			}
 
 			// Validate each file type pattern
-			for file_type in &indexing.file_types {
+			for FileType in &indexing.FileTypes {
 				if file_type.is_empty() {
 					return Err(AirError::Configuration("File type pattern cannot be empty".to_string()));
 				}
@@ -1138,33 +1138,33 @@ impl ConfigurationManager {
 			}
 		}
 
-		// Validate max_file_size_mb range [1, 1024]
-		if indexing.max_file_size_mb < 1 {
+		// Validate MaxFileSizeMb range [1, 1024]
+		if indexing.MaxFileSizeMb < 1 {
 			return Err(AirError::Configuration(format!(
 				"Max file size {} MB is below minimum (1 MB)",
-				indexing.max_file_size_mb
+				indexing.MaxFileSizeMb
 			)));
 		}
 
-		if indexing.max_file_size_mb > 1024 {
+		if indexing.MaxFileSizeMb > 1024 {
 			return Err(AirError::Configuration(format!(
 				"Max file size {} MB exceeds maximum (1024 MB = 1 GB)",
-				indexing.max_file_size_mb
+				indexing.MaxFileSizeMb
 			)));
 		}
 
-		// Validate update_interval_minutes range [1, 1440]
-		if indexing.update_interval_minutes < 1 {
+		// Validate UpdateIntervalMinutes range [1, 1440]
+		if indexing.UpdateIntervalMinutes < 1 {
 			return Err(AirError::Configuration(format!(
 				"Index update interval {} minutes is below minimum (1 minute)",
-				indexing.update_interval_minutes
+				indexing.UpdateIntervalMinutes
 			)));
 		}
 
-		if indexing.update_interval_minutes > 1440 {
+		if indexing.UpdateIntervalMinutes > 1440 {
 			return Err(AirError::Configuration(format!(
 				"Index update interval {} minutes exceeds maximum (1440 minutes = 1 day)",
-				indexing.update_interval_minutes
+				indexing.UpdateIntervalMinutes
 			)));
 		}
 
@@ -1174,49 +1174,49 @@ impl ConfigurationManager {
 	/// Validate logging configuration
 	fn ValidateLoggingConfig(&self, logging:&LoggingConfig) -> Result<()> {
 		// Validate log level
-		let valid_levels = ["trace", "debug", "info", "warn", "error"];
-		if !valid_levels.contains(&logging.level.as_str()) {
+		let ValidLevels = ["trace", "debug", "info", "warn", "error"];
+		if !ValidLevels.contains(&logging.level.as_str()) {
 			return Err(AirError::Configuration(format!(
 				"Invalid log level '{}': must be one of: {}",
 				logging.level,
-				valid_levels.join(", ")
+				ValidLevels.join(", ")
 			)));
 		}
 
 		// Validate file path if provided
-		if let Some(ref file_path) = logging.file_path {
-			if !file_path.is_empty() {
-				self.ValidatePath(file_path)?;
+		if let Some(ref FilePath) = logging.FilePath {
+			if !FilePath.is_empty() {
+				self.ValidatePath(FilePath)?;
 			}
 		}
 
-		// Validate max_file_size_mb range [1, 1000]
-		if logging.max_file_size_mb < 1 {
+		// Validate MaxFileSizeMb range [1, 1000]
+		if logging.MaxFileSizeMb < 1 {
 			return Err(AirError::Configuration(format!(
 				"Max log file size {} MB is below minimum (1 MB)",
-				logging.max_file_size_mb
+				logging.MaxFileSizeMb
 			)));
 		}
 
-		if logging.max_file_size_mb > 1000 {
+		if logging.MaxFileSizeMb > 1000 {
 			return Err(AirError::Configuration(format!(
 				"Max log file size {} MB exceeds maximum (1000 MB = 1 GB)",
-				logging.max_file_size_mb
+				logging.MaxFileSizeMb
 			)));
 		}
 
-		// Validate max_files range [1, 50]
-		if logging.max_files < 1 {
+		// Validate MaxFiles range [1, 50]
+		if logging.MaxFiles < 1 {
 			return Err(AirError::Configuration(format!(
 				"Max log files {} is below minimum (1)",
-				logging.max_files
+				logging.MaxFiles
 			)));
 		}
 
-		if logging.max_files > 50 {
+		if logging.MaxFiles > 50 {
 			return Err(AirError::Configuration(format!(
 				"Max log files {} exceeds maximum (50)",
-				logging.max_files
+				logging.MaxFiles
 			)));
 		}
 
@@ -1225,63 +1225,63 @@ impl ConfigurationManager {
 
 	/// Validate performance configuration
 	fn ValidatePerformanceConfig(&self, performance:&PerformanceConfig) -> Result<()> {
-		// Validate memory_limit_mb range [64, 16384]
-		if performance.memory_limit_mb < 64 {
+		// Validate MemoryLimitMb range [64, 16384]
+		if performance.MemoryLimitMb < 64 {
 			return Err(AirError::Configuration(format!(
 				"Memory limit {} MB is below minimum (64 MB)",
-				performance.memory_limit_mb
+				performance.MemoryLimitMb
 			)));
 		}
 
-		if performance.memory_limit_mb > 16384 {
+		if performance.MemoryLimitMb > 16384 {
 			return Err(AirError::Configuration(format!(
 				"Memory limit {} MB exceeds maximum (16384 MB = 16 GB)",
-				performance.memory_limit_mb
+				performance.MemoryLimitMb
 			)));
 		}
 
-		// Validate cpu_limit_percent range [10, 100]
-		if performance.cpu_limit_percent < 10 {
+		// Validate CpuLimitPercent range [10, 100]
+		if performance.CpuLimitPercent < 10 {
 			return Err(AirError::Configuration(format!(
 				"CPU limit {}% is below minimum (10%)",
-				performance.cpu_limit_percent
+				performance.CpuLimitPercent
 			)));
 		}
 
-		if performance.cpu_limit_percent > 100 {
+		if performance.CpuLimitPercent > 100 {
 			return Err(AirError::Configuration(format!(
 				"CPU limit {}% exceeds maximum (100%)",
-				performance.cpu_limit_percent
+				performance.CpuLimitPercent
 			)));
 		}
 
-		// Validate disk_limit_mb range [100, 102400]
-		if performance.disk_limit_mb < 100 {
+		// Validate DiskLimitMb range [100, 102400]
+		if performance.DiskLimitMb < 100 {
 			return Err(AirError::Configuration(format!(
 				"Disk limit {} MB is below minimum (100 MB)",
-				performance.disk_limit_mb
+				performance.DiskLimitMb
 			)));
 		}
 
-		if performance.disk_limit_mb > 102400 {
+		if performance.DiskLimitMb > 102400 {
 			return Err(AirError::Configuration(format!(
 				"Disk limit {} MB exceeds maximum (102400 MB = 100 GB)",
-				performance.disk_limit_mb
+				performance.DiskLimitMb
 			)));
 		}
 
-		// Validate background_task_interval_secs range [1, 3600]
-		if performance.background_task_interval_secs < 1 {
+		// Validate BackgroundTaskIntervalSecs range [1, 3600]
+		if performance.BackgroundTaskIntervalSecs < 1 {
 			return Err(AirError::Configuration(format!(
 				"Background task interval {} seconds is below minimum (1 second)",
-				performance.background_task_interval_secs
+				performance.BackgroundTaskIntervalSecs
 			)));
 		}
 
-		if performance.background_task_interval_secs > 3600 {
+		if performance.BackgroundTaskIntervalSecs > 3600 {
 			return Err(AirError::Configuration(format!(
 				"Background task interval {} seconds exceeds maximum (3600 seconds = 1 hour)",
-				performance.background_task_interval_secs
+				performance.BackgroundTaskIntervalSecs
 			)));
 		}
 
@@ -1353,7 +1353,7 @@ impl ConfigurationManager {
 		let _schema = generate_schema();
 
 		// Convert config to JSON for validation
-		let config_json = serde_json::to_value(config)
+		let ConfigJson = serde_json::to_value(config)
 			.map_err(|e| AirError::Configuration(format!("Failed to serialize config for schema validation: {}", e)))?;
 
 		// Basic schema validation (would use jsonschema crate in production)

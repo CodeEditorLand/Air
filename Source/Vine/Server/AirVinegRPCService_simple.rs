@@ -58,33 +58,33 @@ use crate::{
 #[allow(dead_code)]
 pub struct AirVinegRPCService {
 	/// Application state
-	app_state:Arc<ApplicationState>,
+	AppState:Arc<ApplicationState>,
 
 	/// Authentication service
-	auth_service:Arc<AuthenticationService>,
+	AuthService:Arc<AuthenticationService>,
 
 	/// Update manager
-	update_manager:Arc<UpdateManager>,
+	UpdateManager:Arc<UpdateManager>,
 
 	/// Download manager
-	download_manager:Arc<DownloadManager>,
+	DownloadManager:Arc<DownloadManager>,
 
 	/// File indexer
-	file_indexer:Arc<FileIndexer>,
+	FileIndexer:Arc<FileIndexer>,
 }
 
 impl AirVinegRPCService {
 	/// Creates a new instance of the Air gRPC service
 	pub fn new(
-		app_state:Arc<ApplicationState>,
-		auth_service:Arc<AuthenticationService>,
-		update_manager:Arc<UpdateManager>,
-		download_manager:Arc<DownloadManager>,
-		file_indexer:Arc<FileIndexer>,
+		AppState:Arc<ApplicationState>,
+		AuthService:Arc<AuthenticationService>,
+		UpdateManager:Arc<UpdateManager>,
+		DownloadManager:Arc<DownloadManager>,
+		FileIndexer:Arc<FileIndexer>,
 	) -> Self {
 		info!("[AirVinegRPCService] New instance created");
 
-		Self { app_state, auth_service, update_manager, download_manager, file_indexer }
+		Self { AppState, AuthService, UpdateManager, DownloadManager, FileIndexer }
 	}
 }
 
@@ -95,15 +95,15 @@ impl AirService for AirVinegRPCService {
 		&self,
 		request:Request<AuthenticationRequest>,
 	) -> std::result::Result<Response<AuthenticationResponse>, Status> {
-		let request_data = request.into_inner();
-		let request_id = request_data.request_id.clone();
+		let RequestData = request.into_inner();
+		let RequestId = RequestData.RequestId.clone();
 
-		info!("[AirVinegRPCService] Authentication request received [ID: {}]", request_id);
+		info!("[AirVinegRPCService] Authentication request received [ID: {}]", RequestId);
 
 		// Simple validation
-		if request_data.username.is_empty() || request_data.password.is_empty() {
+		if RequestData.username.is_empty() || RequestData.password.is_empty() {
 			return Ok(Response::new(AuthenticationResponse {
-				request_id,
+				RequestId,
 				success:false,
 				token:String::new(),
 				error:"Invalid authentication parameters".to_string(),
@@ -112,7 +112,7 @@ impl AirService for AirVinegRPCService {
 
 		// Return a mock response for now
 		Ok(Response::new(AuthenticationResponse {
-			request_id,
+			RequestId,
 			success:true,
 			token:"mock_token".to_string(),
 			error:String::new(),
@@ -124,18 +124,18 @@ impl AirService for AirVinegRPCService {
 		&self,
 		request:Request<UpdateCheckRequest>,
 	) -> std::result::Result<Response<UpdateCheckResponse>, Status> {
-		let request_data = request.into_inner();
-		let request_id = request_data.request_id.clone();
+		let RequestData = request.into_inner();
+		let RequestId = RequestData.RequestId.clone();
 
-		info!("[AirVinegRPCService] Update check request received [ID: {}]", request_id);
+		info!("[AirVinegRPCService] Update check request received [ID: {}]", RequestId);
 
 		// Return no updates available
 		Ok(Response::new(UpdateCheckResponse {
-			request_id,
-			update_available:false,
+			RequestId,
+			UpdateAvailable:false,
 			version:String::new(),
-			download_url:String::new(),
-			release_notes:String::new(),
+			DownloadUrl:String::new(),
+			ReleaseNotes:String::new(),
 			error:String::new(),
 		}))
 	}
@@ -145,17 +145,17 @@ impl AirService for AirVinegRPCService {
 		&self,
 		request:Request<DownloadRequest>,
 	) -> std::result::Result<Response<DownloadResponse>, Status> {
-		let request_data = request.into_inner();
-		let request_id = request_data.request_id.clone();
+		let RequestData = request.into_inner();
+		let RequestId = RequestData.RequestId.clone();
 
-		info!("[AirVinegRPCService] Download request received [ID: {}]", request_id);
+		info!("[AirVinegRPCService] Download request received [ID: {}]", RequestId);
 
 		// Return mock failure for now
 		Ok(Response::new(DownloadResponse {
-			request_id,
+			RequestId,
 			success:false,
-			file_path:String::new(),
-			file_size:0,
+			FilePath:String::new(),
+			FileSize:0,
 			checksum:String::new(),
 			error:"Download service not implemented".to_string(),
 		}))
@@ -163,17 +163,17 @@ impl AirService for AirVinegRPCService {
 
 	/// Handle file indexing requests from Mountain
 	async fn index_files(&self, request:Request<IndexRequest>) -> std::result::Result<Response<IndexResponse>, Status> {
-		let request_data = request.into_inner();
-		let request_id = request_data.request_id.clone();
+		let RequestData = request.into_inner();
+		let RequestId = RequestData.RequestId.clone();
 
-		info!("[AirVinegRPCService] Index request received [ID: {}]", request_id);
+		info!("[AirVinegRPCService] Index request received [ID: {}]", RequestId);
 
 		// Return mock response
 		Ok(Response::new(IndexResponse {
-			request_id,
+			RequestId,
 			success:true,
-			files_indexed:0,
-			total_size:0,
+			FilesIndexed:0,
+			TotalSize:0,
 			error:String::new(),
 		}))
 	}
@@ -188,14 +188,14 @@ impl AirService for AirVinegRPCService {
 		// Return mock status
 		Ok(Response::new(StatusResponse {
 			version:VERSION.to_string(),
-			uptime_seconds:0,
-			total_requests:0,
-			successful_requests:0,
-			failed_requests:0,
-			average_response_time:0.0,
-			memory_usage_mb:0.0,
-			cpu_usage_percent:0.0,
-			active_requests:0,
+			UptimeSeconds:0,
+			TotalRequests:0,
+			SuccessfulRequests:0,
+			FailedRequests:0,
+			AverageResponseTime:0.0,
+			MemoryUsageMb:0.0,
+			CpuUsagePercent:0.0,
+			ActiveRequests:0,
 		}))
 	}
 

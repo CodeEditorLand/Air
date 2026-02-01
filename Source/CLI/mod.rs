@@ -156,15 +156,15 @@ pub enum PermissionLevel {
 
 /// CLI arguments parser with validation
 pub struct CliParser {
-	timeout_secs:u64,
+	TimeoutSecs:u64,
 }
 
 impl CliParser {
 	/// Create a new CLI parser with default timeout
-	pub fn new() -> Self { Self { timeout_secs:30 } }
+	pub fn new() -> Self { Self { TimeoutSecs:30 } }
 
 	/// Create a new CLI parser with custom timeout
-	pub fn with_timeout(timeout_secs:u64) -> Self { Self { timeout_secs } }
+	pub fn with_timeout(TimeoutSecs:u64) -> Self { Self { TimeoutSecs } }
 
 	/// Parse command line arguments into Command
 	pub fn parse(args:Vec<String>) -> Result<Command, String> { Self::new().parse_args(args) }
@@ -181,13 +181,13 @@ impl CliParser {
 		let command = &args[0];
 
 		match command.as_str() {
-			"status" => self.parse_status(&args[1..]),
-			"restart" => self.parse_restart(&args[1..]),
-			"config" => self.parse_config(&args[1..]),
-			"metrics" => self.parse_metrics(&args[1..]),
-			"logs" => self.parse_logs(&args[1..]),
-			"debug" => self.parse_debug(&args[1..]),
-			"help" | "-h" | "--help" => self.parse_help(&args[1..]),
+			"status" => self.ParseStatus(&args[1..]),
+			"restart" => self.ParseRestart(&args[1..]),
+			"config" => self.ParseConfig(&args[1..]),
+			"metrics" => self.ParseMetrics(&args[1..]),
+			"logs" => self.ParseLogs(&args[1..]),
+			"debug" => self.ParseDebug(&args[1..]),
+			"help" | "-h" | "--help" => self.ParseHelp(&args[1..]),
 			"version" | "-v" | "--version" => Ok(Command::Version),
 			_ => {
 				Err(format!(
@@ -293,7 +293,7 @@ impl CliParser {
 		match subcommand.as_str() {
 			"get" => {
 				if args.len() < 2 {
-					return Err("config get requires a key\n\nExample: air config get grpc.bind_address".to_string());
+					return Err("config get requires a key\n\nExample: air config get grpc.BindAddress".to_string());
 				}
 				let key = args[1].clone();
 				Self::validate_config_key(&key)?;
@@ -302,7 +302,7 @@ impl CliParser {
 			"set" => {
 				if args.len() < 3 {
 					return Err(
-						"config set requires key and value\n\nExample: air config set grpc.bind_address \
+						"config set requires key and value\n\nExample: air config set grpc.BindAddress \
 						 \"[::1]:50053\""
 							.to_string(),
 					);

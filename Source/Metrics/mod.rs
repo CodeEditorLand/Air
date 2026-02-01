@@ -254,22 +254,22 @@ impl MetricsCollector {
 		let _ = self.errors_total.fetch_add(1, Ordering::Relaxed);
 
 		// Update latency metrics
-		let _ = self.request_latency_sum_ms.fetch_add(latency_ms, Ordering::Relaxed);
+		let _ = self.request_latency_sum_ms.fetch_add(LatencyMs, Ordering::Relaxed);
 		let _ = self.request_latency_count.fetch_add(1, Ordering::Relaxed);
 
 		// Update min/max latency
-		min_max_update(&self.request_latency_min_ms, &self.request_latency_max_ms, latency_ms);
+		MinMaxUpdate(&self.request_latency_min_ms, &self.request_latency_max_ms, LatencyMs);
 
 		// Track error by type with redaction
-		let redacted_error = self.redact_error_type(error_type);
-		let redacted_error_clone = redacted_error.clone();
+		let RedactedError = self.RedactErrorType(ErrorType);
+		let RedactedErrorClone = RedactedError.clone();
 		if let Ok(mut error_map) = self.errors_by_type.lock() {
-			*error_map.entry(redacted_error).or_insert(0) += 1;
+			*error_map.entry(RedactedError).or_insert(0) += 1;
 		}
 
 		debug!(
 			"[Metrics] Recorded failed request: {}, latency: {:.3}s",
-			redacted_error_clone, latency_seconds
+			RedactedErrorClone, LatencySeconds
 		);
 	}
 
@@ -287,7 +287,7 @@ impl MetricsCollector {
 	}
 
 	/// Record authentication operation
-	pub fn RecordAuthenticationOperation(&Self, Success:bool) {
+	pub fn RecordAuthenticationOperation(&self, Success:bool) {
 		let _ = self.authentication_operations.fetch_add(1, Ordering::Relaxed);
 		if !Success {
 			let _ = self.authentication_failures.fetch_add(1, Ordering::Relaxed);
@@ -295,7 +295,7 @@ impl MetricsCollector {
 	}
 
 	/// Record download operation
-	pub fn RecordDownload(&Self, Success:bool, Bytes:u64) {
+	pub fn RecordDownload(&self, Success:bool, Bytes:u64) {
 		let _ = self.downloads_total.fetch_add(1, Ordering::Relaxed);
 		let _ = self.downloads_bytes_total.fetch_add(Bytes, Ordering::Relaxed);
 
@@ -307,13 +307,13 @@ impl MetricsCollector {
 	}
 
 	/// Record indexing operation
-	pub fn RecordIndexingOperation(&Self, EntriesIndexed:u64) {
+	pub fn RecordIndexingOperation(&self, EntriesIndexed:u64) {
 		let _ = self.indexing_operations.fetch_add(1, Ordering::Relaxed);
 		self.indexing_entries.store(EntriesIndexed as i64, Ordering::Relaxed);
 	}
 
 	/// Record update check
-	pub fn RecordUpdateCheck(&Self, UpdatesAvailable:bool) {
+	pub fn RecordUpdateCheck(&self, UpdatesAvailable:bool) {
 		let _ = self.updates_checked.fetch_add(1, Ordering::Relaxed);
 		if UpdatesAvailable {
 			let _ = self.updates_applied.fetch_add(1, Ordering::Relaxed);
@@ -321,7 +321,7 @@ impl MetricsCollector {
 	}
 
 	/// Redact sensitive error types before tracking
-	fn RedactErrorType(&Self, ErrorType:&Str) -> String {
+	fn RedactErrorType(&self, ErrorType:&str) -> String {
 		let Redacted = ErrorType.to_lowercase();
 
 		// Redact common patterns
