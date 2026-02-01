@@ -1,4 +1,4 @@
 //! Generated gRPC code for Air service
 
-pub mod air;
-pub use air::*;
+pub mod Air;
+pub use Air::*;
