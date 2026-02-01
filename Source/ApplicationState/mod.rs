@@ -219,35 +219,35 @@ impl ApplicationState {
 				failed_requests:0,
 				average_response_time:0.0,
 				uptime_seconds:0,
-				last_updated:utils::current_timestamp(),
+				last_updated:utils::CurrentTimestamp(),
 			})),
 			resources:Arc::new(RwLock::new(ResourceUsage {
 				memory_usage_mb:0.0,
 				cpu_usage_percent:0.0,
 				disk_usage_mb:0.0,
 				network_usage_mbps:0.0,
-				last_updated:utils::current_timestamp(),
+				last_updated:utils::CurrentTimestamp(),
 			})),
 			connections:Arc::new(RwLock::new(HashMap::new())),
 			background_tasks:Arc::new(Mutex::new(Vec::new())),
 		};
 
 		// Initialize service status
-		state.initialize_service_status().await?;
+		state.InitializeServiceStatus().await?;
 
 		Ok(state)
 	}
 
 	/// Initialize service status tracking
-	async fn initialize_service_status(&self) -> Result<()> {
-		let mut status = self.service_status.write().await;
+	async fn InitializeServiceStatus(&self) -> Result<()> {
+		let mut Status = self.service_status.write().await;
 
-		status.insert("authentication".to_string(), ServiceStatus::Starting);
-		status.insert("updates".to_string(), ServiceStatus::Starting);
-		status.insert("downloader".to_string(), ServiceStatus::Starting);
-		status.insert("indexing".to_string(), ServiceStatus::Starting);
-		status.insert("grpc".to_string(), ServiceStatus::Starting);
-		status.insert("connections".to_string(), ServiceStatus::Starting);
+		Status.insert("authentication".to_string(), ServiceStatus::Starting);
+		Status.insert("updates".to_string(), ServiceStatus::Starting);
+		Status.insert("downloader".to_string(), ServiceStatus::Starting);
+		Status.insert("indexing".to_string(), ServiceStatus::Starting);
+		Status.insert("grpc".to_string(), ServiceStatus::Starting);
+		Status.insert("connections".to_string(), ServiceStatus::Starting);
 
 		Ok(())
 	}
@@ -256,108 +256,108 @@ impl ApplicationState {
 	/// Supports connection pooling for Mountain clients
 	pub async fn RegisterConnection(
 		&self,
-		connection_id:String,
-		client_id:String,
-		client_version:String,
-		protocol_version:u32,
-		connection_type:ConnectionType,
+		ConnectionId:String,
+		ClientId:String,
+		ClientVersion:String,
+		ProtocolVersion:u32,
+		ConnectionType:ConnectionType,
 	) -> Result<()> {
 		// Validate connection ID
-		if connection_id.is_empty() {
+		if ConnectionId.is_empty() {
 			return Err(AirError::Configuration("Connection ID cannot be empty".to_string()));
 		}
 
 		// Validate client ID
-		if client_id.is_empty() {
+		if ClientId.is_empty() {
 			return Err(AirError::Configuration("Client ID cannot be empty".to_string()));
 		}
 
 		// Validate protocol version
-		if protocol_version == 0 {
+		if ProtocolVersion == 0 {
 			return Err(AirError::Configuration("Protocol version must be greater than 0".to_string()));
 		}
 
-		let mut connections = self.connections.write().await;
+		let mut Connections = self.connections.write().await;
 
 		// Check for duplicate connections
-		if connections.contains_key(&connection_id) {
-			return Err(AirError::Configuration(format!("Connection {} already exists", connection_id)));
+		if Connections.contains_key(&ConnectionId) {
+			return Err(AirError::Configuration(format!("Connection {} already exists", ConnectionId)));
 		}
 
 		// Implement connection pooling for Mountain clients
-		if matches!(connection_type, ConnectionType::MountainMain | ConnectionType::MountainWorker) {
+		if matches!(ConnectionType, ConnectionType::MountainMain | ConnectionType::MountainWorker) {
 			// Check if client has too many connections
-			let client_conn_count = connections
+			let ClientConnCount = Connections
 				.values()
 				.filter(|c| {
-					c.client_id == client_id
+					c.client_id == ClientId
 						&& matches!(c.connection_type, ConnectionType::MountainMain | ConnectionType::MountainWorker)
 				})
 				.count();
 
 			const MAX_CONN_PER_CLIENT:usize = 10;
-			if client_conn_count >= MAX_CONN_PER_CLIENT {
+			if ClientConnCount >= MAX_CONN_PER_CLIENT {
 				return Err(AirError::ResourceLimit(format!(
 					"Client {} exceeds maximum connection limit ({})",
-					client_id, MAX_CONN_PER_CLIENT
+					ClientId, MAX_CONN_PER_CLIENT
 				)));
 			}
 		}
 
-		connections.insert(
-			connection_id.clone(),
+		Connections.insert(
+			ConnectionId.clone(),
 			ConnectionInfo {
-				connection_id:connection_id.clone(),
-				client_id:client_id.clone(),
-				client_version,
-				protocol_version,
-				last_heartbeat:utils::current_timestamp(),
+				connection_id:ConnectionId.clone(),
+				client_id:ClientId.clone(),
+				client_version:ClientVersion,
+				protocol_version:ProtocolVersion,
+				last_heartbeat:utils::CurrentTimestamp(),
 				is_active:true,
-				connection_type:connection_type.clone(),
+				connection_type:ConnectionType.clone(),
 			},
 		);
 
 		log::info!(
 			"Connection registered: {} - {} ({:?})",
-			connection_id,
-			client_id,
-			connection_type
+			ConnectionId,
+			ClientId,
+			ConnectionType
 		);
 		Ok(())
 	}
 
 	/// Update connection heartbeat with validation
 	/// Validates heartbeat timing and connection state
-	pub async fn UpdateHeartbeat(&self, connection_id:&str) -> Result<()> {
-		if connection_id.is_empty() {
+	pub async fn UpdateHeartbeat(&self, ConnectionId:&str) -> Result<()> {
+		if ConnectionId.is_empty() {
 			return Err(AirError::Configuration("Connection ID cannot be empty".to_string()));
 		}
 
-		let mut connections = self.connections.write().await;
+		let mut Connections = self.connections.write().await;
 
-		if let Some(connection) = connections.get_mut(connection_id) {
-			let current_time = utils::current_timestamp();
+		if let Some(Connection) = Connections.get_mut(ConnectionId) {
+			let CurrentTime = utils::CurrentTimestamp();
 			const MAX_HEARTBEAT_INTERVAL:u64 = 120000; // 2 minutes
 
 			// Validate heartbeat timing
-			if current_time - connection.last_heartbeat > MAX_HEARTBEAT_INTERVAL {
+			if CurrentTime - Connection.last_heartbeat > MAX_HEARTBEAT_INTERVAL {
 				log::warn!(
 					"Long heartbeat interval for connection {}: {}ms",
-					connection_id,
-					current_time - connection.last_heartbeat
+					ConnectionId,
+					CurrentTime - Connection.last_heartbeat
 				);
 			}
 
-			connection.last_heartbeat = current_time;
-			connection.is_active = true;
+			Connection.last_heartbeat = CurrentTime;
+			Connection.is_active = true;
 
 			log::debug!(
 				"Heartbeat updated for connection: {} (client: {})",
-				connection_id,
-				connection.client_id
+				ConnectionId,
+				Connection.client_id
 			);
 		} else {
-			return Err(AirError::Internal(format!("Connection {} not found", connection_id)));
+			return Err(AirError::Internal(format!("Connection {} not found", ConnectionId)));
 		}
 
 		Ok(())
@@ -365,19 +365,19 @@ impl ApplicationState {
 
 	/// Remove connection with proper cleanup and validation
 	/// Ensures all resources associated with the connection are cleaned up
-	pub async fn RemoveConnection(&self, connection_id:&str) -> Result<()> {
-		if connection_id.is_empty() {
+	pub async fn RemoveConnection(&self, ConnectionId:&str) -> Result<()> {
+		if ConnectionId.is_empty() {
 			return Err(AirError::Configuration("Connection ID cannot be empty".to_string()));
 		}
 
-		let mut connections = self.connections.write().await;
+		let mut Connections = self.connections.write().await;
 
-		if let Some(connection) = connections.remove(connection_id) {
+		if let Some(Connection) = Connections.remove(ConnectionId) {
 			log::info!(
 				"Connection removed: {} (client: {}, type: {:?})",
-				connection_id,
-				connection.client_id,
-				connection.connection_type
+				ConnectionId,
+				Connection.client_id,
+				Connection.connection_type
 			);
 
 			// TODO: Cleanup any resources associated with this connection
@@ -385,7 +385,7 @@ impl ApplicationState {
 			// - Cancel pending requests
 			// - Release resources
 		} else {
-			log::warn!("Attempted to remove non-existent connection: {}", connection_id);
+			log::warn!("Attempted to remove non-existent connection: {}", ConnectionId);
 		}
 
 		Ok(())
@@ -393,25 +393,25 @@ impl ApplicationState {
 
 	/// Get active connection count with optional filtering by type
 	pub async fn GetActiveConnectionCount(&self) -> usize {
-		let connections = self.connections.read().await;
-		connections.values().filter(|c| c.is_active).count()
+		let Connections = self.connections.read().await;
+		Connections.values().filter(|c| c.is_active).count()
 	}
 
 	/// Get connection count by type
-	pub async fn GetConnectionCountByType(&self, connection_type:ConnectionType) -> usize {
-		let connections = self.connections.read().await;
-		connections
+	pub async fn GetConnectionCountByType(&self, ConnectionType:ConnectionType) -> usize {
+		let Connections = self.connections.read().await;
+		Connections
 			.values()
-			.filter(|c| c.connection_type == connection_type && c.is_active)
+			.filter(|c| c.connection_type == ConnectionType && c.is_active)
 			.count()
 	}
 
 	/// Get connections by type
-	pub async fn GetConnectionsByType(&self, connection_type:ConnectionType) -> Vec<ConnectionInfo> {
-		let connections = self.connections.read().await;
-		connections
+	pub async fn GetConnectionsByType(&self, ConnectionType:ConnectionType) -> Vec<ConnectionInfo> {
+		let Connections = self.connections.read().await;
+		Connections
 			.values()
-			.filter(|c| c.connection_type == connection_type)
+			.filter(|c| c.connection_type == ConnectionType)
 			.cloned()
 			.collect()
 	}
@@ -419,9 +419,9 @@ impl ApplicationState {
 	/// Get connection for load balancing from Mountain pool
 	/// Implements simple round-robin selection for connection pooling
 	pub async fn GetNextMountainConnection(&self) -> Result<ConnectionInfo> {
-		let connections = self.connections.read().await;
+		let Connections = self.connections.read().await;
 
-		let mountain_connections:Vec<_> = connections
+		let MountainConnections:Vec<_> = Connections
 			.values()
 			.filter(|c| {
 				matches!(c.connection_type, ConnectionType::MountainMain | ConnectionType::MountainWorker)
@@ -429,7 +429,7 @@ impl ApplicationState {
 			})
 			.collect();
 
-		if mountain_connections.is_empty() {
+		if MountainConnections.is_empty() {
 			return Err(AirError::ServiceUnavailable(
 				"No active Mountain connections available".to_string(),
 			));
@@ -440,129 +440,129 @@ impl ApplicationState {
 		// - Connection latency
 		// - Connection health status
 		// - Least busy connection strategy
-		let selected = mountain_connections[0].clone();
+		let Selected = MountainConnections[0].clone();
 
-		Ok(selected)
+		Ok(Selected)
 	}
 
 	/// Clean up stale connections with comprehensive tracking
 	/// Removes connections that haven't sent a heartbeat within the timeout
 	/// period
-	pub async fn CleanupStaleConnections(&self, timeout_seconds:u64) -> Result<usize> {
-		let mut connections = self.connections.write().await;
-		let current_time = utils::current_timestamp();
-		let timeout_ms = timeout_seconds * 1000;
+	pub async fn CleanupStaleConnections(&self, TimeoutSeconds:u64) -> Result<usize> {
+		let mut Connections = self.connections.write().await;
+		let CurrentTime = utils::CurrentTimestamp();
+		let TimeoutMs = TimeoutSeconds * 1000;
 
-		let mut removed_count = 0;
-		let mut removed_by_type:HashMap<String, usize> = HashMap::new();
+		let mut RemovedCount = 0;
+		let mut RemovedByType:HashMap<String, usize> = HashMap::new();
 
-		connections.retain(|id, connection| {
-			if current_time - connection.last_heartbeat > timeout_ms {
-				log::warn!(
-					"Removing stale connection: {} - {} ({:?}) - idle: {}ms",
-					id,
-					connection.client_id,
-					connection.connection_type,
-					current_time - connection.last_heartbeat
-				);
+		Connections.retain(|Id, Connection| {
+				if CurrentTime - Connection.last_heartbeat > TimeoutMs {
+					log::warn!(
+						"Removing stale connection: {} - {} ({:?}) - idle: {}ms",
+						Id,
+						Connection.client_id,
+						Connection.connection_type,
+						CurrentTime - Connection.last_heartbeat
+					);
 
-				*removed_by_type.entry(format!("{:?}", connection.connection_type)).or_insert(0) += 1;
+					*RemovedByType.entry(format!("{:?}", Connection.connection_type)).or_insert(0) += 1;
 
-				removed_count += 1;
+					RemovedCount += 1;
 				false
 			} else {
 				true
 			}
 		});
 
-		if removed_count > 0 {
-			log::info!("Cleaned up {} stale connections", removed_count);
-			for (conn_type, count) in removed_by_type {
-				log::info!("  - {} connections: {}", conn_type, count);
+		if RemovedCount > 0 {
+			log::info!("Cleaned up {} stale connections", RemovedCount);
+			for (ConnType, Count) in RemovedByType {
+				log::info!("  - {} connections: {}", ConnType, Count);
 			}
 		}
 
-		Ok(removed_count)
+		Ok(RemovedCount)
 	}
 
 	/// Register background task with tracking
-	pub async fn RegisterBackgroundTask(&self, task:tokio::task::JoinHandle<()>) -> Result<()> {
-		let mut tasks = self.background_tasks.lock().await;
-		tasks.push(task);
-		log::debug!("Background task registered. Total tasks: {}", tasks.len());
+	pub async fn RegisterBackgroundTask(&self, Task:tokio::task::JoinHandle<()>) -> Result<()> {
+		let mut Tasks = self.background_tasks.lock().await;
+		Tasks.push(Task);
+		log::debug!("Background task registered. Total tasks: {}", Tasks.len());
 		Ok(())
 	}
 
 	/// Stop all background tasks with graceful shutdown
 	pub async fn StopAllBackgroundTasks(&self) -> Result<()> {
-		let mut tasks = self.background_tasks.lock().await;
+		let mut Tasks = self.background_tasks.lock().await;
 
-		let task_count = tasks.len();
-		log::info!("Stopping {} background tasks", task_count);
+		let TaskCount = Tasks.len();
+		log::info!("Stopping {} background tasks", TaskCount);
 
 		// Abort all tasks
-		for task in tasks.drain(..) {
-			task.abort();
+		for Task in Tasks.drain(..) {
+			Task.abort();
 		}
 
-		log::info!("Stopped all {} background tasks", task_count);
+		log::info!("Stopped all {} background tasks", TaskCount);
 		Ok(())
 	}
 
 	/// Update service status with validation
-	pub async fn UpdateServiceStatus(&self, service:&str, status:ServiceStatus) -> Result<()> {
-		if service.is_empty() {
+	pub async fn UpdateServiceStatus(&self, Service:&str, Status:ServiceStatus) -> Result<()> {
+		if Service.is_empty() {
 			return Err(AirError::Configuration("Service name cannot be empty".to_string()));
 		}
 
-		let mut service_status = self.service_status.write().await;
-		let status_clone = status.clone();
-		service_status.insert(service.to_string(), status);
-		log::debug!("Service status updated: {} -> {:?}", service, status_clone);
+		let mut ServiceStatus = self.service_status.write().await;
+		let StatusClone = Status.clone();
+		ServiceStatus.insert(Service.to_string(), Status);
+		log::debug!("Service status updated: {} -> {:?}", Service, StatusClone);
 		Ok(())
 	}
 
 	/// Get service status
-	pub async fn GetServiceStatus(&self, service:&str) -> Option<ServiceStatus> {
-		let service_status = self.service_status.read().await;
-		service_status.get(service).cloned()
+	pub async fn GetServiceStatus(&self, Service:&str) -> Option<ServiceStatus> {
+		let ServiceStatus = self.service_status.read().await;
+		ServiceStatus.get(Service).cloned()
 	}
 
 	/// Get all service statuses
 	pub async fn GetAllServiceStatuses(&self) -> HashMap<String, ServiceStatus> {
-		let service_status = self.service_status.read().await;
-		service_status.clone()
+		let ServiceStatus = self.service_status.read().await;
+		ServiceStatus.clone()
 	}
 
 	/// Register a new request with validation
-	pub async fn RegisterRequest(&self, request_id:String, service:String) -> Result<()> {
-		if request_id.is_empty() {
+	pub async fn RegisterRequest(&self, RequestId:String, Service:String) -> Result<()> {
+		if RequestId.is_empty() {
 			return Err(AirError::Configuration("Request ID cannot be empty".to_string()));
 		}
 
-		if service.is_empty() {
+		if Service.is_empty() {
 			return Err(AirError::Configuration("Service name cannot be empty".to_string()));
 		}
 
-		let mut requests = self.active_requests.lock().await;
+		let mut Requests = self.active_requests.lock().await;
 
 		// Check for duplicate request IDs
-		if requests.contains_key(&request_id) {
-			return Err(AirError::Configuration(format!("Request {} already exists", request_id)));
+		if Requests.contains_key(&RequestId) {
+			return Err(AirError::Configuration(format!("Request {} already exists", RequestId)));
 		}
 
-		requests.insert(
-			request_id.clone(),
+		Requests.insert(
+			RequestId.clone(),
 			RequestStatus {
-				request_id:request_id.clone(),
-				service,
-				started_at:utils::current_timestamp(),
+				request_id:RequestId.clone(),
+				service:Service,
+				started_at:utils::CurrentTimestamp(),
 				status:RequestState::Pending,
 				progress:None,
 			},
 		);
 
-		log::debug!("Request registered: {}", request_id);
+		log::debug!("Request registered: {}", RequestId);
 		Ok(())
 	}
 
@@ -621,7 +621,7 @@ impl ApplicationState {
 		let alpha = 0.1; // Smoothing factor
 		metrics.average_response_time = alpha * (response_time as f64) + (1.0 - alpha) * metrics.average_response_time;
 
-		metrics.last_updated = utils::current_timestamp();
+		metrics.last_updated = utils::CurrentTimestamp();
 
 		Ok(())
 	}
@@ -656,7 +656,7 @@ impl ApplicationState {
 		let mut resources = self.resources.write().await;
 		resources.memory_usage_mb = memory_usage;
 		resources.cpu_usage_percent = cpu_usage;
-		resources.last_updated = utils::current_timestamp();
+		resources.last_updated = utils::CurrentTimestamp();
 
 		Ok(())
 	}
@@ -811,14 +811,14 @@ impl ApplicationState {
 	/// Get connection health report
 	pub async fn GetConnectionHealthReport(&self) -> ConnectionHealthReport {
 		let connections = self.connections.read().await;
-		let current_time = utils::current_timestamp();
+		let CurrentTime = utils::CurrentTimestamp();
 
 		let mut healthy = 0;
 		let mut stale = 0;
 		let mut by_type:HashMap<String, usize> = HashMap::new();
 
 		for connection in connections.values() {
-			let is_stale = current_time - connection.last_heartbeat > 120000; // 2 minutes
+			let is_stale = CurrentTime - connection.last_heartbeat > 120000; // 2 minutes
 
 			if is_stale {
 				stale += 1;
@@ -834,7 +834,7 @@ impl ApplicationState {
 			healthy_connections:healthy,
 			stale_connections:stale,
 			connections_by_type:by_type,
-			last_checked:current_time,
+			last_checked:CurrentTime,
 		}
 	}
 }
