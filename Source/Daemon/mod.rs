@@ -101,28 +101,28 @@ use crate::{AirError, Result};
 #[derive(Debug)]
 pub struct DaemonManager {
 	/// PID file path
-	pid_file_path:PathBuf,
+	PidFilePath:PathBuf,
 	/// Whether daemon is running
-	is_running:Arc<RwLock<bool>>,
+	IsRunning:Arc<RwLock<bool>>,
 	/// Platform-specific daemon info
-	platform_info:PlatformInfo,
+	PlatformInfo:PlatformInfo,
 	/// Lock for atomic PID file operations (prevents race conditions)
-	pid_lock:Arc<Mutex<()>>,
+	PidLock:Arc<Mutex<()>>,
 	/// Checksum for PID file integrity verification
-	pid_checksum:Arc<Mutex<Option<String>>>,
+	PidChecksum:Arc<Mutex<Option<String>>>,
 	/// Graceful shutdown flag
-	shutdown_requested:Arc<RwLock<bool>>,
+	ShutdownRequested:Arc<RwLock<bool>>,
 }
 
 /// Platform-specific daemon information
 #[derive(Debug)]
 pub struct PlatformInfo {
 	/// Platform type
-	pub platform:Platform,
+	pub Platform:Platform,
 	/// Service name for system integration
-	pub service_name:String,
+	pub ServiceName:String,
 	/// User under which daemon runs
-	pub run_as_user:Option<String>,
+	pub RunAsUser:Option<String>,
 }
 
 /// Platform enum
@@ -157,12 +157,12 @@ impl DaemonManager {
 		let platform_info = Self::DetectPlatformInfo();
 
 		Ok(Self {
-			pid_file_path,
-			is_running:Arc::new(RwLock::new(false)),
-			platform_info,
-			pid_lock:Arc::new(Mutex::new(())),
-			pid_checksum:Arc::new(Mutex::new(None)),
-			shutdown_requested:Arc::new(RwLock::new(false)),
+			PidFilePath:pid_file_path,
+			IsRunning:Arc::new(RwLock::new(false)),
+			PlatformInfo:platform_info,
+			PidLock:Arc::new(Mutex::new(())),
+			PidChecksum:Arc::new(Mutex::new(None)),
+			ShutdownRequested:Arc::new(RwLock::new(false)),
 		})
 	}
 
@@ -1010,12 +1010,12 @@ WantedBy=multi-user.target
 /// Daemon status information
 #[derive(Debug, Clone)]
 pub struct DaemonStatus {
-	pub is_running:bool,
-	pub pid_file_exists:bool,
-	pub pid:Option<u32>,
-	pub platform:Platform,
-	pub service_name:String,
-	pub shutdown_requested:bool,
+	pub IsRunning:bool,
+	pub PidFileExists:bool,
+	pub Pid:Option<u32>,
+	pub Platform:Platform,
+	pub ServiceName:String,
+	pub ShutdownRequested:bool,
 }
 
 impl DaemonStatus {
