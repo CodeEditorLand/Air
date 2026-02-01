@@ -233,6 +233,12 @@ pub struct UpdateConfig {
 	/// Warning: Use with caution in production
 	#[serde(default = "default_update_auto_install")]
 	pub auto_install:bool,
+
+	/// Update channel
+	/// Validation: Must be one of: "stable", "insiders", "preview"
+	/// Default: "stable"
+	#[serde(default = "default_update_channel")]
+	pub channel:String,
 }
 
 fn default_update_enabled() -> bool { true }
@@ -244,6 +250,8 @@ fn default_update_server_url() -> String { "https://updates.editor.land".to_stri
 fn default_update_auto_download() -> bool { true }
 
 fn default_update_auto_install() -> bool { false }
+
+fn default_update_channel() -> String { "stable".to_string() }
 
 /// Download configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -439,6 +447,7 @@ impl Default for AirConfiguration {
 				update_server_url:default_update_server_url(),
 				auto_download:default_update_auto_download(),
 				auto_install:default_update_auto_install(),
+				channel:default_update_channel(),
 			},
 			downloader:DownloadConfig {
 				enabled:default_download_enabled(),
@@ -547,7 +556,11 @@ pub fn generate_schema() -> JsonValue {
 						"pattern": "^https://"
 					},
 					"auto_download": {"type": "boolean"},
-					"auto_install": {"type": "boolean"}
+					"auto_install": {"type": "boolean"},
+					"channel": {
+						"type": "string",
+						"enum": ["stable", "insiders", "preview"]
+					}
 				}
 			},
 			"downloader": {
