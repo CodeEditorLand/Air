@@ -13,7 +13,7 @@ publish = false
 version = "0.1.0"
 
 [lib]
-name = "Air"
+name = "AirLibrary"
 path = "Source/Library.rs"
 
 [[bin]]
