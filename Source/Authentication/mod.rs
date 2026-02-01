@@ -73,52 +73,53 @@ impl AuthenticationService {
 		let config = &app_state.configuration.authentication;
 
 		// Expand credentials path
-		let credentials_path = ConfigurationManager::ExpandPath(&config.credentials_path)?;
+		let CredentialsPath = ConfigurationManager::ExpandPath(&config.credentials_path)?;
 
 		// Load or create credentials store
-		let credentials_store = Self::load_credentials_store(&credentials_path).await?;
+		let CredentialsStore = Self::LoadCredentialsStore(&CredentialsPath).await?;
 
 		// Generate cryptographic keys
-		let crypto_keys = Self::generate_crypto_keys()?;
+		let CryptoKeys = Self::GenerateCryptoKeys()?;
 		let aead_algo = &aead::AES_256_GCM;
 
-		let service = Self {
+		let Service = Self {
 			app_state,
 			sessions:Arc::new(RwLock::new(HashMap::new())),
-			credentials:Arc::new(Mutex::new(credentials_store)),
-			crypto_keys:Arc::new(Mutex::new(crypto_keys)),
+			credentials:Arc::new(Mutex::new(CredentialsStore)),
+			crypto_keys:Arc::new(Mutex::new(CryptoKeys)),
 			aead_algo,
 		};
 
 		// Initialize service status
-		service
+		Service
 			.app_state
 			.UpdateServiceStatus("authentication", crate::ApplicationState::ServiceStatus::Running)
 			.await
 			.map_err(|e| AirError::Authentication(e.to_string()))?;
 
-		Ok(service)
+		Ok(Service)
 	}
 
 	/// Authenticate a user
-	pub async fn authenticate_user(&self, username:String, password:String, provider:String) -> Result<String> {
+	pub async fn AuthenticateUser(&self, Username:String, Password:String, Provider:String) -> Result<String> {
 		// Validate input
-		if username.is_empty() || password.is_empty() || provider.is_empty() {
+		if Username.is_empty() || Password.is_empty() || Provider.is_empty() {
 			return Err(AirError::Authentication("Invalid authentication parameters".to_string()));
 		}
 
 		// Check credentials
-		let _user_credentials = self.validate_credentials(&username, &password, &provider).await?;
+		let _UserCredentials = self.ValidateCredentials(&Username, &Password, &Provider).await?;
 
 		// Generate session token
-		let token = self.generate_session_token(&username, &provider).await?;
+		let Token = self.GenerateSessionToken(&Username, &Provider).await?;
 
 		// Create session
-		let session = AuthSession {
-			session_id:utils::generate_request_id(),
-			user_id:username.clone(),
-			provider:provider.clone(),
-			token:token.clone(),
+		let SessionId = utils::GenerateRequestId();
+		let Session = AuthSession {
+			session_id:SessionId,
+			user_id:Username.clone(),
+			provider:Provider.clone(),
+			token:Token.clone(),
 			created_at:chrono::Utc::now(),
 			expires_at:chrono::Utc::now()
 				+ chrono::Duration::hours(self.app_state.configuration.authentication.token_expiration_hours as i64),
@@ -127,33 +128,33 @@ impl AuthenticationService {
 
 		// Store session
 		{
-			let mut sessions = self.sessions.write().await;
-			sessions.insert(session.session_id.clone(), session);
+			let mut Sessions = self.sessions.write().await;
+			Sessions.insert(Session.session_id.clone(), Session);
 		}
 
 		// Update credentials usage
-		self.update_credentials_usage(&username, &provider).await?;
+		self.UpdateCredentialsUsage(&Username, &Provider).await?;
 
-		Ok(token)
+		Ok(Token)
 	}
 
 	/// Validate user credentials
-	async fn validate_credentials(&self, username:&str, password:&str, provider:&str) -> Result<UserCredentials> {
-		let credentials_store = self.credentials.lock().await;
+	async fn ValidateCredentials(&self, Username:&str, Password:&str, Provider:&str) -> Result<UserCredentials> {
+		let CredentialsStore = self.credentials.lock().await;
 
-		let key = format!("{}:{}", provider, username);
+		let Key = format!("{}:{}", Provider, Username);
 
-		if let Some(user_credentials) = credentials_store.credentials.get(&key) {
-			if !user_credentials.is_valid {
+		if let Some(UserCredentials) = CredentialsStore.credentials.get(&Key) {
+			if !UserCredentials.is_valid {
 				return Err(AirError::Authentication("Credentials are invalid".to_string()));
 			}
 
 			// Verify password (in a real implementation, this would decrypt and verify)
 			// For now, we'll use a simple approach
-			let decrypted_password = self.decrypt_password(&user_credentials.encrypted_password).await?;
+			let DecryptedPassword = self.DecryptPassword(&UserCredentials.encrypted_password).await?;
 
-			if decrypted_password == password {
-				Ok(user_credentials.clone())
+			if DecryptedPassword == Password {
+				Ok(UserCredentials.clone())
 			} else {
 				Err(AirError::Authentication("Invalid password".to_string()))
 			}
@@ -163,130 +164,130 @@ impl AuthenticationService {
 	}
 
 	/// Generate a session token
-	async fn generate_session_token(&self, username:&str, provider:&str) -> Result<String> {
-		let crypto_keys = self.crypto_keys.lock().await;
+	async fn GenerateSessionToken(&self, Username:&str, Provider:&str) -> Result<String> {
+		let CryptoKeys = self.crypto_keys.lock().await;
 
-		let payload = format!("{}:{}:{}", username, provider, utils::current_timestamp());
+		let Payload = format!("{}:{}:{}", Username, Provider, utils::CurrentTimestamp());
 
 		// Sign the payload
-		let signature = crypto_keys.signing_key.sign(payload.as_bytes());
+		let Signature = CryptoKeys.signing_key.sign(Payload.as_bytes());
 
 		// Encode token
-		let token = URL_SAFE.encode(format!("{}:{}", payload, URL_SAFE.encode(signature.as_ref())));
+		let Token = URL_SAFE.encode(format!("{}:{}", Payload, URL_SAFE.encode(Signature.as_ref())));
 
-		Ok(token)
+		Ok(Token)
 	}
 
 	/// Update credentials usage timestamp
-	async fn update_credentials_usage(&self, username:&str, provider:&str) -> Result<()> {
-		let mut credentials_store = self.credentials.lock().await;
+	async fn UpdateCredentialsUsage(&self, Username:&str, Provider:&str) -> Result<()> {
+		let mut CredentialsStore = self.credentials.lock().await;
 
-		let key = format!("{}:{}", provider, username);
+		let Key = format!("{}:{}", Provider, Username);
 
-		if let Some(user_credentials) = credentials_store.credentials.get_mut(&key) {
-			user_credentials.last_used = Utc::now();
+		if let Some(UserCredentials) = CredentialsStore.credentials.get_mut(&Key) {
+			UserCredentials.last_used = Utc::now();
 		}
 
 		// Save updated credentials
-		self.save_credentials_store(&credentials_store).await?;
+		self.SaveCredentialsStore(&CredentialsStore).await?;
 
 		Ok(())
 	}
 
 	/// Encrypt password
-	async fn encrypt_password(&self, password:&str) -> Result<String> {
-		let crypto_keys = self.crypto_keys.lock().await;
+	async fn EncryptPassword(&self, Password:&str) -> Result<String> {
+		let CryptoKeys = self.crypto_keys.lock().await;
 
 		// Use AES-256-GCM via ring::aead. Prefix nonce to ciphertext and base64 encode.
-		let unbound_key = aead::UnboundKey::new(&aead::AES_256_GCM, &crypto_keys.encryption_key)
+		let UnboundKey = aead::UnboundKey::new(&aead::AES_256_GCM, &CryptoKeys.encryption_key)
 			.map_err(|e| AirError::Authentication(format!("Failed to create AEAD key: {:?}", e)))?;
 
-		let less_safe = aead::LessSafeKey::new(unbound_key);
-		let mut nonce_bytes = [0u8; 12];
+		let LessSafe = aead::LessSafeKey::new(UnboundKey);
+		let mut NonceBytes = [0u8; 12];
 		ring::rand::SystemRandom::new()
-			.fill(&mut nonce_bytes)
+			.fill(&mut NonceBytes)
 			.map_err(|e| AirError::Authentication(format!("Failed to generate nonce: {:?}", e)))?;
 
-		let nonce = aead::Nonce::assume_unique_for_key(nonce_bytes);
+		let Nonce = aead::Nonce::assume_unique_for_key(NonceBytes);
 
-		let mut in_out = password.as_bytes().to_vec();
+		let mut InOut = Password.as_bytes().to_vec();
 		// Reserve space for tag
-		in_out.extend_from_slice(&[0u8; 16]); // AES_256_GCM tag length is 16 bytes
+		InOut.extend_from_slice(&[0u8; 16]); // AES_256_GCM tag length is 16 bytes
 
-		less_safe
-			.seal_in_place_append_tag(nonce, aead::Aad::empty(), &mut in_out)
+		LessSafe
+			.seal_in_place_append_tag(Nonce, aead::Aad::empty(), &mut InOut)
 			.map_err(|e| AirError::Authentication(format!("Encryption failed: {:?}", e)))?;
 
 		// Store nonce + ciphertext
-		let mut out = Vec::with_capacity(nonce_bytes.len() + in_out.len());
-		out.extend_from_slice(&nonce_bytes);
-		out.extend_from_slice(&in_out);
+		let mut Out = Vec::with_capacity(NonceBytes.len() + InOut.len());
+		Out.extend_from_slice(&NonceBytes);
+		Out.extend_from_slice(&InOut);
 
-		Ok(URL_SAFE.encode(&out))
+		Ok(URL_SAFE.encode(&Out))
 	}
 
 	/// Decrypt password
-	async fn decrypt_password(&self, encrypted_password:&str) -> Result<String> {
-		let crypto_keys = self.crypto_keys.lock().await;
+	async fn DecryptPassword(&self, EncryptedPassword:&str) -> Result<String> {
+		let CryptoKeys = self.crypto_keys.lock().await;
 
-		let data = URL_SAFE
-			.decode(encrypted_password)
+		let Data = URL_SAFE
+			.decode(EncryptedPassword)
 			.map_err(|e| AirError::Authentication(format!("Failed to decode password: {}", e)))?;
 
-		if data.len() < 12 + aead::AES_256_GCM.tag_len() {
+		if Data.len() < 12 + aead::AES_256_GCM.tag_len() {
 			return Err(AirError::Authentication("Encrypted data too short".to_string()));
 		}
 
-		let (nonce_bytes, cipher_bytes) = data.split_at(12);
+		let (NonceBytes, CipherBytes) = Data.split_at(12);
 
-		let mut nonce_arr = [0u8; 12];
-		nonce_arr.copy_from_slice(&nonce_bytes[0..12]);
+		let mut NonceArr = [0u8; 12];
+		NonceArr.copy_from_slice(&NonceBytes[0..12]);
 
-		let unbound_key = aead::UnboundKey::new(&aead::AES_256_GCM, &crypto_keys.encryption_key)
+		let UnboundKey = aead::UnboundKey::new(&aead::AES_256_GCM, &CryptoKeys.encryption_key)
 			.map_err(|e| AirError::Authentication(format!("Failed to create AEAD key: {:?}", e)))?;
 
-		let less_safe = aead::LessSafeKey::new(unbound_key);
-		let nonce = aead::Nonce::assume_unique_for_key(nonce_arr);
+		let LessSafe = aead::LessSafeKey::new(UnboundKey);
+		let Nonce = aead::Nonce::assume_unique_for_key(NonceArr);
 
-		let mut cipher_vec = cipher_bytes.to_vec();
-		let plain = less_safe
-			.open_in_place(nonce, aead::Aad::empty(), &mut cipher_vec)
+		let mut CipherVec = CipherBytes.to_vec();
+		let Plain = LessSafe
+			.open_in_place(Nonce, aead::Aad::empty(), &mut CipherVec)
 			.map_err(|e| AirError::Authentication(format!("Decryption failed: {:?}", e)))?;
 
-		String::from_utf8(plain.to_vec())
+		String::from_utf8(Plain.to_vec())
 			.map_err(|e| AirError::Authentication(format!("Failed to decode password string: {}", e)))
 	}
 
 	/// Load credentials store from file
-	async fn load_credentials_store(file_path:&std::path::Path) -> Result<CredentialsStore> {
-		if file_path.exists() {
-			let content = tokio::fs::read_to_string(file_path)
+	async fn LoadCredentialsStore(FilePath:&std::path::Path) -> Result<CredentialsStore> {
+		if FilePath.exists() {
+			let Content = tokio::fs::read_to_string(FilePath)
 				.await
 				.map_err(|e| AirError::Authentication(format!("Failed to read credentials file: {}", e)))?;
 
-			let credentials:HashMap<String, UserCredentials> = serde_json::from_str(&content)
+			let Credentials:HashMap<String, UserCredentials> = serde_json::from_str(&Content)
 				.map_err(|e| AirError::Authentication(format!("Failed to parse credentials file: {}", e)))?;
 
-			Ok(CredentialsStore { credentials, file_path:file_path.to_string_lossy().to_string() })
+			Ok(CredentialsStore { credentials:Credentials, file_path:FilePath.to_string_lossy().to_string() })
 		} else {
 			// Create new credentials store
-			Ok(CredentialsStore { credentials:HashMap::new(), file_path:file_path.to_string_lossy().to_string() })
+			Ok(CredentialsStore { credentials:HashMap::new(), file_path:FilePath.to_string_lossy().to_string() })
 		}
 	}
 
 	/// Save credentials store to file
-	async fn save_credentials_store(&self, store:&CredentialsStore) -> Result<()> {
-		let content = serde_json::to_string_pretty(&store.credentials)
+	async fn SaveCredentialsStore(&self, Store:&CredentialsStore) -> Result<()> {
+		let Content = serde_json::to_string_pretty(&Store.credentials)
 			.map_err(|e| AirError::Authentication(format!("Failed to serialize credentials: {}", e)))?;
 
 		// Create directory if it doesn't exist
-		if let Some(parent) = std::path::Path::new(&store.file_path).parent() {
-			tokio::fs::create_dir_all(parent)
+		if let Some(Parent) = std::path::Path::new(&Store.file_path).parent() {
+			tokio::fs::create_dir_all(Parent)
 				.await
 				.map_err(|e| AirError::Authentication(format!("Failed to create credentials directory: {}", e)))?;
 		}
 
-		tokio::fs::write(&store.file_path, content)
+		tokio::fs::write(&Store.file_path, Content)
 			.await
 			.map_err(|e| AirError::Authentication(format!("Failed to write credentials file: {}", e)))?;
 
@@ -294,71 +295,71 @@ impl AuthenticationService {
 	}
 
 	/// Generate cryptographic keys
-	fn generate_crypto_keys() -> Result<CryptoKeys> {
+	fn GenerateCryptoKeys() -> Result<CryptoKeys> {
 		// Generate signing key
-		let rng = ring::rand::SystemRandom::new();
-		let pkcs8_bytes = ring::signature::Ed25519KeyPair::generate_pkcs8(&rng)
+		let Rng = ring::rand::SystemRandom::new();
+		let Pkcs8Bytes = ring::signature::Ed25519KeyPair::generate_pkcs8(&Rng)
 			.map_err(|e| AirError::Authentication(format!("Failed to generate signing key: {}", e)))?;
 
-		let signing_key = ring::signature::Ed25519KeyPair::from_pkcs8(pkcs8_bytes.as_ref())
+		let SigningKey = ring::signature::Ed25519KeyPair::from_pkcs8(Pkcs8Bytes.as_ref())
 			.map_err(|e| AirError::Authentication(format!("Failed to load signing key: {}", e)))?;
 
 		// Generate encryption key
-		let mut encryption_key = [0u8; 32];
+		let mut EncryptionKey = [0u8; 32];
 		ring::rand::SystemRandom::new()
-			.fill(&mut encryption_key)
+			.fill(&mut EncryptionKey)
 			.map_err(|e| AirError::Authentication(format!("Failed to generate encryption key: {}", e)))
 			.map_err(|e| AirError::Authentication(format!("Failed to generate encryption key: {}", e)))?;
 
-		Ok(CryptoKeys { signing_key, encryption_key })
+		Ok(CryptoKeys { signing_key:SigningKey, encryption_key:EncryptionKey })
 	}
 
 	/// Start background tasks
-	pub async fn start_background_tasks(&self) -> Result<tokio::task::JoinHandle<()>> {
-		let service = self.clone();
+	pub async fn StartBackgroundTasks(&self) -> Result<tokio::task::JoinHandle<()>> {
+		let Service = self.clone();
 
-		let handle = tokio::spawn(async move {
-			service.background_task().await;
+		let Handle = tokio::spawn(async move {
+			Service.BackgroundTask().await;
 		});
 
-		Ok(handle)
+		Ok(Handle)
 	}
 
 	/// Background task for session cleanup
-	async fn background_task(&self) {
-		let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(300)); // 5 minutes
+	async fn BackgroundTask(&self) {
+		let mut Interval = tokio::time::interval(tokio::time::Duration::from_secs(300)); // 5 minutes
 
 		loop {
-			interval.tick().await;
+			Interval.tick().await;
 
 			// Clean up expired sessions
-			self.cleanup_expired_sessions().await;
+			self.CleanupExpiredSessions().await;
 
 			// Save credentials periodically
-			if let Err(e) = self.save_credentials_periodically().await {
-				log::error!("[Authentication] Failed to save credentials: {}", e);
+			if let Err(E) = self.SaveCredentialsPeriodically().await {
+				log::error!("[Authentication] Failed to save credentials: {}", E);
 			}
 		}
 	}
 
 	/// Clean up expired sessions
-	async fn cleanup_expired_sessions(&self) {
-		let now = Utc::now();
-		let mut sessions = self.sessions.write().await;
+	async fn CleanupExpiredSessions(&self) {
+		let Now = Utc::now();
+		let mut Sessions = self.sessions.write().await;
 
-		sessions.retain(|_, session| session.expires_at > now && session.is_valid);
+		Sessions.retain(|_, Session| Session.expires_at > Now && Session.is_valid);
 
 		log::debug!("[Authentication] Cleaned up expired sessions");
 	}
 
 	/// Save credentials periodically
-	async fn save_credentials_periodically(&self) -> Result<()> {
-		let credentials_store = self.credentials.lock().await;
-		self.save_credentials_store(&credentials_store).await
+	async fn SaveCredentialsPeriodically(&self) -> Result<()> {
+		let CredentialsStore = self.credentials.lock().await;
+		self.SaveCredentialsStore(&CredentialsStore).await
 	}
 
 	/// Stop background tasks
-	pub async fn stop_background_tasks(&self) {
+	pub async fn StopBackgroundTasks(&self) {
 		// Implementation for graceful shutdown
 		log::info!("[Authentication] Stopping background tasks");
 	}
