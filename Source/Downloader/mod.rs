@@ -259,7 +259,7 @@ impl Default for DownloadConfig {
 impl DownloadManager {
 	/// Create a new download manager with comprehensive initialization
 	pub async fn new(AppState:Arc<ApplicationState>) -> Result<Self> {
-		let config = &AppState.configuration.downloader;
+		let config = &AppState.Configuration.Downloader;
 
 		// Expand and validate cache directory path
 		let CacheDirectory = ConfigurationManager::ExpandPath(&config.CacheDirectory)?;

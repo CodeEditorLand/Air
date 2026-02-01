@@ -70,7 +70,7 @@ struct CryptoKeys {
 impl AuthenticationService {
 	/// Create a new authentication service
 	pub async fn new(AppState:Arc<ApplicationState>) -> Result<Self> {
-		let config = &AppState.configuration.authentication;
+		let config = &AppState.Configuration.Authentication;
 
 		// Expand credentials path
 		let CredentialsPath = ConfigurationManager::ExpandPath(&config.CredentialsPath)?;
@@ -122,7 +122,7 @@ impl AuthenticationService {
 			Token:Token.clone(),
 			CreatedAt:chrono::Utc::now(),
 			ExpiresAt:chrono::Utc::now()
-				+ chrono::Duration::hours(self.AppState.configuration.authentication.TokenExpirationHours as i64),
+				+ chrono::Duration::hours(self.AppState.Configuration.Authentication.TokenExpirationHours as i64),
 			IsValid:true,
 		};
 
@@ -291,6 +291,8 @@ impl AuthenticationService {
 				.map_err(|e| AirError::Authentication(format!("Failed to write credentials file: {}", e)))?;
 
 			Ok(())
+		} else {
+			Err(AirError::Authentication("Invalid file path - no parent directory".to_string()))
 		}
 	}
 

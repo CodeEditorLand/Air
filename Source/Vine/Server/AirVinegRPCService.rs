@@ -33,11 +33,6 @@ use crate::Vine::Generated::Air::{
 	ConfigurationResponse,
 	DownloadRequest,
 	DownloadResponse,
-	AuthenticationResponse,
-	ConfigurationRequest,
-	ConfigurationResponse,
-	DownloadRequest,
-	DownloadResponse,
 	DownloadStreamRequest,
 	DownloadStreamResponse,
 	FileInfoRequest,
@@ -62,6 +57,7 @@ use crate::Vine::Generated::Air::{
 	UpdateConfigurationRequest,
 	UpdateConfigurationResponse,
 };
+use crate::Vine::Generated::Air::air_service_server::AirService;
 
 /// The concrete implementation of the Air gRPC service
 pub struct AirVinegRPCService {
@@ -117,7 +113,7 @@ impl AirVinegRPCService {
 	}
 
 	/// Track connection for a request
-	async fn TrackConnection(&self, Request:&tonic::Request<()>, ServiceName:&str) -> Result<String, Status> {
+	async fn TrackConnection(&self, Request:&tonic::Request<()>, ServiceName:&str) -> std::result::Result<String, Status> {
 		let Metadata = Request.metadata();
 		let ConnectionId = Metadata
 			.get("connection-id")
@@ -171,7 +167,7 @@ impl AirVinegRPCService {
 	}
 
 	/// Validate protocol version compatibility
-	fn validate_protocol_version(&self, ClientVersion:u32) -> Result<(), Status> {
+	fn validate_protocol_version(&self, ClientVersion:u32) -> std::result::Result<(), Status> {
 		if ClientVersion > crate::ProtocolVersion {
 			return Err(Status::failed_precondition(format!(
 				"Client protocol version {} is newer than server version {}",
@@ -1034,7 +1030,7 @@ impl AirService for AirVinegRPCService {
 	/// Handle streaming download requests with bidirectional streaming and
 	/// chunk delivery
 	type DownloadStreamStream =
-		tokio_stream::wrappers::ReceiverStream<Result<crate::Vine::Generated::Air::DownloadStreamResponse, Status>>;
+		tokio_stream::wrappers::ReceiverStream<std::result::Result<crate::Vine::Generated::Air::DownloadStreamResponse, Status>>;
 
 	async fn download_stream(
 		&self,

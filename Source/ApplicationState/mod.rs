@@ -414,7 +414,7 @@ impl ApplicationState {
 	/// Get connection for load balancing from Mountain pool
 	/// Implements simple round-robin selection for connection pooling
 	pub async fn GetNextMountainConnection(&self) -> Result<ConnectionInfo> {
-		let Connections = self.connections.read().await;
+		let Connections = self.Connections.read().await;
 
 		let MountainConnections:Vec<_> = Connections
 			.values()
@@ -626,7 +626,7 @@ impl ApplicationState {
 
 		// Memory usage - collect outside lock
 		let MemoryUsage = if let Ok(Memory) = Sys.memory() {
-			(Memory.Total.as_u64() - Memory.Free.as_u64()) as f64 / 1024.0 / 1024.0
+			(Memory.total.as_u64() - Memory.free.as_u64()) as f64 / 1024.0 / 1024.0
 		} else {
 			log::warn!("Failed to get memory usage");
 			0.0
@@ -657,7 +657,7 @@ impl ApplicationState {
 
 	/// Get performance metrics
 	pub async fn GetMetrics(&self) -> PerformanceMetrics {
-		let metrics = self.metrics.read().await;
+		let metrics = self.Metrics.read().await;
 		metrics.clone()
 	}
 

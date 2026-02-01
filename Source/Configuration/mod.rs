@@ -750,7 +750,7 @@ impl ConfigurationManager {
 		// Validate all configuration values
 		self.ValidateConfiguration(&config)?;
 
-		log::info!("Configuration loaded successfully (profile: {})", config.profile);
+		log::info!("Configuration loaded successfully (profile: {})", config.Profile);
 		Ok(config)
 	}
 
