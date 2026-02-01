@@ -330,110 +330,110 @@ impl DownloadManager {
 	/// Download a file with detailed configuration
 	pub async fn DownloadFileWithConfig(&self, config:DownloadConfig) -> Result<DownloadResult> {
 		// Defensive: Validate and sanitize URL
-		let sanitized_url = Self::ValidateAndSanitizeUrl(&config.url)?;
+		let SanitizedUrl = Self::ValidateAndSanitizeUrl(&config.url)?
 
 		// Defensive: Check if download is already active
-		let download_id = utils::generate_request_id();
+		let DownloadId = utils::GenerateRequestId();
 
 		log::info!(
 			"[DownloadManager] Starting download [ID: {}] - URL: {}",
-			download_id,
-			sanitized_url
+			DownloadId,
+			SanitizedUrl
 		);
 
 		// Defensive: URL cannot be empty
-		if sanitized_url.is_empty() {
+		if SanitizedUrl.is_empty() {
 			return Err(AirError::Network("URL cannot be empty".to_string()));
 		}
 
 		// Expand and validate destination path
-		let destination = if config.destination.is_empty() {
+		let Destination = if config.destination.is_empty() {
 			// Generate filename from URL
-			let filename = sanitized_url
+			let Filename = SanitizedUrl
 				.split('/')
 				.last()
 				.and_then(|s| s.split('?').next())
 				.unwrap_or("download.bin");
-			self.cache_directory.join(filename)
+			self.cache_directory.join(Filename)
 		} else {
 			ConfigurationManager::ExpandPath(&config.destination)?
 		};
 
 		// Defensive: Validate file path security
-		utils::validate_file_path(
-			destination
+		utils::ValidateFilePath(
+			Destination
 				.to_str()
 				.ok_or_else(|| AirError::Configuration("Invalid destination path".to_string()))?,
 		)?;
 
 		// Prepare download metadata
-		let expected_checksum = if config.checksum.is_empty() { None } else { Some(config.checksum.clone()) };
+		let ExpectedChecksum = if config.checksum.is_empty() { None } else { Some(config.checksum.clone()) };
 
 		// Register download in tracking system
-		self.RegisterDownload(&download_id, &sanitized_url, &destination, expected_checksum.clone())
+		self.RegisterDownload(&DownloadId, &SanitizedUrl, &Destination, ExpectedChecksum.clone())
 			.await?;
 
 		// Defensive: Validate disk space before download
 		if config.validate_disk_space {
-			if let Some(max_size) = config.max_file_size {
-				self.ValidateDiskSpace(&sanitized_url, &destination, max_size * 2).await?;
+			if let Some(MaxSize) = config.max_file_size {
+				self.ValidateDiskSpace(&SanitizedUrl, &Destination, MaxSize * 2).await?;
 			} else {
-				self.ValidateDiskSpace(&sanitized_url, &destination, 1024 * 1024 * 1024).await?; // Default 1GB check
+				self.ValidateDiskSpace(&SanitizedUrl, &Destination, 1024 * 1024 * 1024).await?; // Default 1GB check
 			}
 		}
 
 		// Create destination directory if it doesn't exist
-		if let Some(parent) = destination.parent() {
-			tokio::fs::create_dir_all(parent)
+		if let Some(Parent) = Destination.parent() {
+			tokio::fs::create_dir_all(Parent)
 				.await
 				.map_err(|e| AirError::FileSystem(format!("Failed to create destination directory: {}", e)))?;
 		}
 
-		let start_time = Instant::now();
+		let StartTime = Instant::now();
 
 		// Execute download with full resilience
-		let result = self
-			.DownloadWithRetry(&download_id, &sanitized_url, &destination, &config)
+		let Result = self
+			.DownloadWithRetry(&DownloadId, &SanitizedUrl, &Destination, &config)
 			.await;
 
-		let duration = start_time.elapsed();
+		let Duration = StartTime.elapsed();
 
-		match result {
-			Ok(mut file_info) => {
-				file_info.duration = duration;
+		match Result {
+			Ok(mut FileInfo) => {
+				FileInfo.duration = Duration;
 
 				// Update statistics
-				self.UpdateStatistics(true, file_info.size, duration).await;
+				self.UpdateStatistics(true, FileInfo.size, Duration).await;
 
-				self.UpdateDownloadStatus(&download_id, DownloadState::Completed, Some(100.0), None)
+				self.UpdateDownloadStatus(&DownloadId, DownloadState::Completed, Some(100.0), None)
 					.await?;
 
 				log::info!(
 					"[DownloadManager] Download completed [ID: {}] - Size: {} bytes in {:.2}s ({:.2} MB/s)",
-					download_id,
-					file_info.size,
-					duration.as_secs_f64(),
-					file_info.size as f64 / 1_048_576.0 / duration.as_secs_f64()
+					DownloadId,
+					FileInfo.size,
+					Duration.as_secs_f64(),
+					FileInfo.size as f64 / 1_048_576.0 / Duration.as_secs_f64()
 				);
 
-				Ok(file_info)
+				Ok(FileInfo)
 			},
-			Err(e) => {
+			Err(E) => {
 				// Update statistics
-				self.UpdateStatistics(false, 0, duration).await;
+				self.UpdateStatistics(false, 0, Duration).await;
 
-				self.UpdateDownloadStatus(&download_id, DownloadState::Failed, None, Some(e.to_string()))
+				self.UpdateDownloadStatus(&DownloadId, DownloadState::Failed, None, Some(E.to_string()))
 					.await?;
 
 				// Defensive: Clean up partial/failed download
-				if destination.exists() {
-					let _ = tokio::fs::remove_file(&destination).await;
-					log::warn!("[DownloadManager] Cleaned up failed download: {}", destination.display());
+				if Destination.exists() {
+					let _ = tokio::fs::remove_file(&Destination).await;
+					log::warn!("[DownloadManager] Cleaned up failed download: {}", Destination.display());
 				}
 
-				log::error!("[DownloadManager] Download failed [ID: {}] - Error: {}", download_id, e);
+				log::error!("[DownloadManager] Download failed [ID: {}] - Error: {}", DownloadId, E);
 
-				Err(e)
+				Err(E)
 			},
 		}
 	}
@@ -1246,7 +1246,7 @@ impl DownloadManager {
 		checksum:String,
 		priority:DownloadPriority,
 	) -> Result<String> {
-		let download_id = utils::generate_request_id();
+		let DownloadId = utils::GenerateRequestId();
 
 		let destination = if destination.is_empty() {
 			let filename = url.split('/').last().unwrap_or("download.bin");
@@ -1256,7 +1256,7 @@ impl DownloadManager {
 		};
 
 		let queued_download = QueuedDownload {
-			download_id:download_id.clone(),
+			download_id:DownloadId.clone(),
 			url,
 			destination,
 			checksum,
@@ -1647,7 +1647,7 @@ impl DownloadManager {
 			num_concurrent
 		);
 
-		let download_id = utils::generate_request_id();
+		let DownloadId = utils::GenerateRequestId();
 		let destination_path = if destination.is_empty() {
 			let filename = sanitized_url.split('/').last().unwrap_or("download.bin");
 			self.cache_directory.join(filename)
