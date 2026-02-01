@@ -158,8 +158,6 @@
 /// - **50054**: Reserved for future use (e.g., SideCar service)
 //! - **50055**: Reserved for future metrics endpoints
 
-#![allow(non_snake_case, non_camel_case_types)]
-
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 use log::{debug, error, info, warn};
 use tokio::{signal, time::interval};
