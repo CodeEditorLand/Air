@@ -161,7 +161,7 @@ impl RetryBudget {
 		let OneMinuteAgo = now - Duration::from_secs(60);
 
 		// Remove attempts older than 1 minute
-		self.attempts.retain(|&attempt| attempt > one_minute_ago);
+		self.attempts.retain(|&attempt| attempt > OneMinuteAgo);
 
 		if self.attempts.len() < self.MaxPerMinute as usize {
 			self.attempts.push(now);
@@ -194,11 +194,7 @@ impl RetryManager {
 	/// Create a new retry manager
 	pub fn new(policy:RetryPolicy) -> Self {
 		let (EventTx, _) = broadcast::channel(1000);
-		Self {
-			policy,
-			budgets:Arc::new(Mutex::new(HashMap::new())),
-			EventTx:Arc::new(EventTx),
-		}
+		Self { policy, budgets:Arc::new(Mutex::new(HashMap::new())), EventTx:Arc::new(EventTx) }
 	}
 
 	/// Get the retry event transmitter for subscription
@@ -210,16 +206,15 @@ impl RetryManager {
 			return Duration::from_millis(0);
 		}
 
-		let BaseDelay = (self.policy.InitialIntervalMs as f64
-			* self.policy.BackoffMultiplier.powi(attempt as i32 - 1))
-		.min(self.policy.MaxIntervalMs as f64) as u64;
+		let BaseDelay = (self.policy.InitialIntervalMs as f64 * self.policy.BackoffMultiplier.powi(attempt as i32 - 1))
+			.min(self.policy.MaxIntervalMs as f64) as u64;
 
 		// Add jitter
 		let jitter = (BaseDelay as f64 * self.policy.JitterFactor) as u64;
 		let RandomJitter = (rand::random::<f64>() * jitter as f64) as u64;
-		let FinalDelay = BaseDelay + random_jitter;
+		let FinalDelay = BaseDelay + RandomJitter;
 
-		Duration::from_millis(final_delay)
+		Duration::from_millis(FinalDelay)
 	}
 
 	/// Calculate adaptive retry delay based on error classification
@@ -227,7 +222,7 @@ impl RetryManager {
 		let ErrorClass = self
 			.policy
 			.ErrorClassification
-			.get(error_type)
+			.get(ErrorType)
 			.copied()
 			.unwrap_or(ErrorClass::Unknown);
 
@@ -240,7 +235,7 @@ impl RetryManager {
 			ErrorClass::ServerError => {
 				// Aggressive backoff for server errors
 				let BaseDelay = self.policy.InitialIntervalMs * 2_u64.pow(attempt);
-				Duration::from_millis(base_delay.min(self.policy.MaxIntervalMs))
+				Duration::from_millis(BaseDelay.min(self.policy.MaxIntervalMs))
 			},
 			ErrorClass::Transient => {
 				// Standard exponential backoff
@@ -258,7 +253,7 @@ impl RetryManager {
 		let ErrorLower = ErrorMessage.to_lowercase();
 
 		for (pattern, class) in &self.policy.ErrorClassification {
-			if error_lower.contains(pattern) {
+			if ErrorLower.contains(pattern) {
 				return *class;
 			}
 		}
@@ -421,12 +416,12 @@ impl CircuitBreaker {
 	async fn TransitionState(&self, NewState:CircuitState, reason:&str) -> Result<(), String> {
 		let CurrentState = self.GetState().await;
 
-		if CurrentState == new_state {
+		if CurrentState == NewState {
 			return Ok(()); // No transition needed
 		}
 
 		// Validate the proposed transition
-		match (CurrentState, new_state) {
+		match (CurrentState, NewState) {
 			(CircuitState::Closed, CircuitState::Open) | (CircuitState::HalfOpen, CircuitState::Open) => {
 				// Valid transitions
 			},
@@ -439,7 +434,7 @@ impl CircuitBreaker {
 			_ => {
 				return Err(format!(
 					"Invalid state transition from {:?} to {:?} for {}",
-					current_state, new_state, self.name
+					CurrentState, NewState, self.name
 				));
 			},
 		}
@@ -447,15 +442,15 @@ impl CircuitBreaker {
 		// Publish state transition event
 		let event = CircuitEvent {
 			name:self.name.clone(),
-			FromState:current_state,
-			ToState:new_state,
-			timestamp:crate::utils::CurrentTimestamp(),
+			FromState:CurrentState,
+			ToState:NewState,
+			timestamp:crate::Utility::CurrentTimestamp(),
 			reason:reason.to_string(),
 		};
 		let _ = self.EventTx.send(event);
 
 		// Transition state
-		*self.state.write().await = new_state;
+		*self.state.write().await = NewState;
 
 		// Increment transition counter
 		*self.StateTransitionCounter.write().await += 1;
@@ -463,8 +458,8 @@ impl CircuitBreaker {
 		log::info!(
 			"[CircuitBreaker] State transition for {}: {:?} -> {:?} (reason: {})",
 			self.name,
-			current_state,
-			new_state,
+			CurrentState,
+			NewState,
 			reason
 		);
 

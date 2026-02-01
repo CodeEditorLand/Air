@@ -123,7 +123,7 @@ impl Default for LogRotationConfig {
 	fn default() -> Self {
 		Self {
 			MaxFileSizeBytes:100 * 1024 * 1024, // 100 MB
-			MaxFiles:30,                          // Keep 30 days of logs
+			MaxFiles:30,                        // Keep 30 days of logs
 			Rotation:LogRotation::Daily,
 			Compress:true,
 			LogDirectory:"./logs".to_string(),
@@ -186,25 +186,25 @@ pub struct LogContext {
 	pub SpanId:String,
 	pub UserId:Option<String>,
 	pub SessionId:Option<String>,
-	pub operation:String,
-	pub metadata:HashMap<String, String>,
+	pub Operation:String,
+	pub Metadata:HashMap<String, String>,
 }
 
 impl LogContext {
 	/// Create a new log context
-	pub fn New(operation:impl Into<String>) -> Self {
-		let RequestId = crate::utils::GenerateRequestId();
-		let TraceId = crate::utils::GenerateRequestId();
+	pub fn New(Operation:impl Into<String>) -> Self {
+		let RequestId = crate::Utility::GenerateRequestId();
+		let TraceId = crate::Utility::GenerateRequestId();
 		let SpanId = uuid::Uuid::new_v4().to_string();
 
 		Self {
-			RequestId:RequestId,
-			TraceId:TraceId,
+			RequestId,
+			TraceId,
 			SpanId,
 			UserId:None,
 			SessionId:None,
-			operation:operation.into(),
-			metadata:HashMap::new(),
+			Operation:Operation.into(),
+			Metadata:HashMap::new(),
 		}
 	}
 
@@ -216,8 +216,8 @@ impl LogContext {
 		if self.TraceId.is_empty() {
 			return Err("TraceId cannot be empty".into());
 		}
-		if self.operation.is_empty() {
-			return Err("operation cannot be empty".into());
+		if self.Operation.is_empty() {
+			return Err("Operation cannot be empty".into());
 		}
 		Ok(())
 	}
@@ -235,14 +235,14 @@ impl LogContext {
 	}
 
 	/// Add metadata to context
-	pub fn WithMetadata(mut self, key:String, value:String) -> Self {
-		self.metadata.insert(key, value);
+	pub fn WithMetadata(mut self, Key:String, Value:String) -> Self {
+		self.Metadata.insert(Key, Value);
 		self
 	}
 
 	/// Add multiple metadata entries
-	pub fn WithMetadataMap(mut self, metadata:HashMap<String, String>) -> Self {
-		self.metadata.extend(metadata);
+	pub fn WithMetadataMap(mut self, Metadata:HashMap<String, String>) -> Self {
+		self.Metadata.extend(Metadata);
 		self
 	}
 }
@@ -252,42 +252,42 @@ thread_local! {
 }
 
 /// Set the log context for the current thread
-pub fn SetLogContext(context:LogContext) {
-	if let Err(e) = context.Validate() {
+pub fn SetLogContext(Context:LogContext) {
+	if let Err(e) = Context.Validate() {
 		error!("[Logging] Invalid log context provided: {:?}", e);
 		return;
 	}
-	LOG_CONTEXT.with(|ctx| {
-		*ctx.borrow_mut() = Some(context);
+	LOG_CONTEXT.with(|Context| {
+		*Context.borrow_mut() = Some(Context);
 	});
 }
 
 /// Get the current log context
-pub fn GetLogContext() -> Option<LogContext> { LOG_CONTEXT.with(|ctx| ctx.borrow().clone()) }
+pub fn GetLogContext() -> Option<LogContext> { LOG_CONTEXT.with(|Context| Context.borrow().clone()) }
 
 /// Clear the log context for the current thread
 pub fn ClearLogContext() {
-	LOG_CONTEXT.with(|ctx| {
-		*ctx.borrow_mut() = None;
+	LOG_CONTEXT.with(|Context| {
+		*Context.borrow_mut() = None;
 	});
 }
 
 /// Log file manager for rotation and cleanup
 pub struct LogManager {
-	config:LogRotationConfig,
+	Config:LogRotationConfig,
 	CurrentFile:Arc<Mutex<Option<PathBuf>>>,
 	CurrentSize:Arc<Mutex<u64>>,
 }
 
 impl LogManager {
-	fn new(config:LogRotationConfig) -> Result<Self> {
-		config.Validate()?;
+	fn new(Config:LogRotationConfig) -> Result<Self> {
+		Config.Validate()?;
 
 		// Ensure log directory exists
-		std::fs::create_dir_all(&config.LogDirectory)?;
+		std::fs::create_dir_all(&Config.LogDirectory)?;
 
 		Ok(Self {
-			config,
+			Config,
 			CurrentFile:Arc::new(Mutex::new(None)),
 			CurrentSize:Arc::new(Mutex::new(0)),
 		})
@@ -296,7 +296,7 @@ impl LogManager {
 	/// Check if log rotation is needed
 	fn ShouldRotate(&self) -> bool {
 		let size = *self.CurrentSize.lock().unwrap();
-		size >= self.config.MaxFileSizeBytes
+		size >= self.Config.MaxFileSizeBytes
 	}
 
 	/// Perform log rotation
@@ -312,7 +312,7 @@ impl LogManager {
 			std::fs::rename(FilePath, &RotatedPath)?;
 
 			// Compress if enabled
-			if self.config.Compress {
+			if self.Config.Compress {
 				self.CompressFile(&RotatedPath)?;
 			}
 
@@ -334,7 +334,7 @@ impl LogManager {
 
 	/// Cleanup old log files
 	fn CleanupOldLogs(&self) -> Result<()> {
-		let log_dir = Path::new(&self.config.LogDirectory);
+		let log_dir = Path::new(&self.Config.LogDirectory);
 
 		if !log_dir.exists() {
 			return Ok(());
@@ -359,7 +359,7 @@ impl LogManager {
 		});
 
 		// Keep only max_files
-		for file in log_files.into_iter().skip(self.config.MaxFiles) {
+		for file in log_files.into_iter().skip(self.Config.MaxFiles) {
 			let _ = std::fs::remove_file(file.path());
 		}
 
@@ -391,16 +391,16 @@ impl Default for SensitiveDataFilter {
 }
 
 impl SensitiveDataFilter {
-	fn new(config:SensitiveDataConfig) -> Result<Self> {
+	fn new(Config:SensitiveDataConfig) -> Result<Self> {
 		let mut filter = Self::default();
-		filter.enabled = config.Enabled;
+		filter.enabled = Config.Enabled;
 
-		if !config.IncludeStandardPatterns {
+		if !Config.IncludeStandardPatterns {
 			filter.patterns.clear();
 		}
 
 		// Add custom patterns
-		for pattern in &config.CustomPatterns {
+		for pattern in &Config.CustomPatterns {
 			match regex::Regex::new(pattern) {
 				Ok(re) => filter.patterns.push(re),
 				Err(e) => warn!("[Logging] Failed to compile custom regex '{}': {}", pattern, e),
@@ -429,21 +429,21 @@ impl SensitiveDataFilter {
 /// Structured log entry for validation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StructuredLogEntry {
-	pub timestamp:u64,
-	pub level:String,
-	pub message:String,
-	pub request_id:Option<String>,
-	pub trace_id:Option<String>,
-	pub span_id:Option<String>,
-	pub operation:Option<String>,
-	pub user_id:Option<String>,
-	pub metadata:HashMap<String, String>,
+	pub Timestamp:u64,
+	pub Level:String,
+	pub Message:String,
+	pub RequestId:Option<String>,
+	pub TraceId:Option<String>,
+	pub SpanId:Option<String>,
+	pub Operation:Option<String>,
+	pub UserId:Option<String>,
+	pub Metadata:HashMap<String, String>,
 }
 
 impl StructuredLogEntry {
 	/// Validate log entry structure
 	pub fn Validate(&self) -> Result<()> {
-		if self.level.is_empty() {
+		if self.Level.is_empty() {
 			return Err("log level cannot be empty".into());
 		}
 		if self.message.is_empty() {
@@ -500,8 +500,8 @@ impl ContextLogger {
 	}
 
 	/// Set sensitive data filter configuration
-	pub fn WithSensitiveFilter(mut self, config:SensitiveDataConfig) -> Result<Self> {
-		self.sensitive_filter = Arc::new(SensitiveDataFilter::new(config)?);
+	pub fn WithSensitiveFilter(mut self, Config:SensitiveDataConfig) -> Result<Self> {
+		self.sensitive_filter = Arc::new(SensitiveDataFilter::new(Config)?);
 		Ok(self)
 	}
 
@@ -600,12 +600,12 @@ impl ContextLogger {
 	/// Log with context at info level
 	pub fn Info(&self, message:impl Into<String>) {
 		let msg = self.sensitive_filter.Filter(&message.into());
-		if let Some(ctx) = GetLogContext() {
+		if let Some(Context) = GetLogContext() {
 			info!(
-				request_id = ctx.request_id,
-				trace_id = ctx.trace_id,
-				span_id = ctx.span_id,
-				operation = ctx.operation,
+				RequestId = Context.RequestId,
+				TraceId = Context.TraceId,
+				SpanId = Context.SpanId,
+				Operation = Context.Operation,
 				"{}",
 				msg
 			);
@@ -617,12 +617,12 @@ impl ContextLogger {
 	/// Log with context at debug level
 	pub fn Debug(&self, message:impl Into<String>) {
 		let msg = self.sensitive_filter.Filter(&message.into());
-		if let Some(ctx) = GetLogContext() {
+		if let Some(Context) = GetLogContext() {
 			debug!(
-				request_id = ctx.request_id,
-				trace_id = ctx.trace_id,
-				span_id = ctx.span_id,
-				operation = ctx.operation,
+				RequestId = Context.RequestId,
+				TraceId = Context.TraceId,
+				SpanId = Context.SpanId,
+				Operation = Context.Operation,
 				"{}",
 				msg
 			);
@@ -634,12 +634,12 @@ impl ContextLogger {
 	/// Log with context at warn level
 	pub fn Warn(&self, message:impl Into<String>) {
 		let msg = self.sensitive_filter.Filter(&message.into());
-		if let Some(ctx) = GetLogContext() {
+		if let Some(Context) = GetLogContext() {
 			warn!(
-				request_id = ctx.request_id,
-				trace_id = ctx.trace_id,
-				span_id = ctx.span_id,
-				operation = ctx.operation,
+				RequestId = Context.RequestId,
+				TraceId = Context.TraceId,
+				SpanId = Context.SpanId,
+				Operation = Context.Operation,
 				"{}",
 				msg
 			);
@@ -651,12 +651,12 @@ impl ContextLogger {
 	/// Log with context at error level
 	pub fn Error(&self, message:impl Into<String>) {
 		let msg = self.sensitive_filter.Filter(&message.into());
-		if let Some(ctx) = GetLogContext() {
+		if let Some(Context) = GetLogContext() {
 			error!(
-				request_id = ctx.request_id,
-				trace_id = ctx.trace_id,
-				span_id = ctx.span_id,
-				operation = ctx.operation,
+				RequestId = Context.RequestId,
+				TraceId = Context.TraceId,
+				SpanId = Context.SpanId,
+				Operation = Context.Operation,
 				"{}",
 				msg
 			);

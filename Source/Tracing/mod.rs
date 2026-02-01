@@ -277,7 +277,7 @@ impl TraceGenerator {
 		Ok(PropagationContext {
 			TraceId:trace_id,
 			SpanId:Self::generate_span_id(),
-			CorrelationId:crate::utils::GenerateRequestId(),
+			CorrelationId:crate::Utility::GenerateRequestId(),
 			ParentSpanId:parent_span_id,
 		})
 	}
@@ -298,7 +298,7 @@ impl TraceGenerator {
 			trace_id:trace_id.clone(),
 			parent_span_id:parent_span_id.clone(),
 			operation_name:operation_name.clone(),
-			start_time:crate::utils::CurrentTimestamp(),
+			start_time:crate::Utility::CurrentTimestamp(),
 			end_time:None,
 			status:SpanStatus::Started,
 			attributes:attributes.unwrap_or_default(),
@@ -336,7 +336,7 @@ impl TraceGenerator {
 		attributes:HashMap<String, String>,
 	) -> Result<()> {
 		let event = SpanEvent {
-			timestamp:crate::utils::CurrentTimestamp(),
+			timestamp:crate::Utility::CurrentTimestamp(),
 			name:event_name.into(),
 			attributes:self.sanitize_attributes(attributes),
 		};
@@ -363,7 +363,7 @@ impl TraceGenerator {
 
 	/// Complete a span with optional error
 	pub async fn complete_span(&self, span_id:&str, error:Option<String>) -> Result<u64> {
-		let Now = crate::utils::CurrentTimestamp();
+		let Now = crate::Utility::CurrentTimestamp();
 		let mut spans = self.trace_spans.write().await;
 
 		if let Some(span) = spans.get_mut(span_id) {
@@ -468,7 +468,7 @@ impl TraceGenerator {
 
 	/// Clean up old spans (older than specified milliseconds)
 	pub async fn cleanup_old_spans(&self, older_than_ms:Option<u64>) -> Result<usize> {
-		let Now = crate::utils::CurrentTimestamp();
+		let Now = crate::Utility::CurrentTimestamp();
 		let ttl = older_than_ms.unwrap_or_else(|| {
 			tokio::task::block_in_place(|| {
 				tokio::runtime::Handle::current().block_on(async { self.sampling_config.read().await.trace_ttl_ms })
@@ -615,7 +615,7 @@ pub fn get_propagation_context() -> Option<PropagationContext> { PROPAGATION_CON
 /// Create a propagation context from a trace span
 pub async fn create_propagation_context(TraceId:String, ParentSpanId:Option<String>) -> PropagationContext {
 	let SpanId = TraceGenerator::generate_span_id();
-	let CorrelationId = crate::utils::GenerateRequestId();
+	let CorrelationId = crate::Utility::GenerateRequestId();
 
 	PropagationContext { TraceId, SpanId, CorrelationId, ParentSpanId }
 }

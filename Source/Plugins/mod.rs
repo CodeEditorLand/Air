@@ -27,15 +27,9 @@
 //! ## VSCode Extension Architecture Patterns
 //!
 //! This implementation draws inspiration from VSCode's extension architecture:
-//! - Reference:
-//!   vs/platform/extensions/common/
-//!   extensionHostStarter.ts
-//! - Reference:
-//!   vs/server/node/
-//!   extensionHostConnection.ts
-//! - Reference:
-//!   vs/platform/remote/common/
-//!   remoteAgentConnection.ts
+//! - Reference: vs/platform/extensions/common/ extensionHostStarter.ts
+//! - Reference: vs/server/node/ extensionHostConnection.ts
+//! - Reference: vs/platform/remote/common/ remoteAgentConnection.ts
 //!
 //! Patterns adopted from VSCode extensions:
 //! - Separate extension host process for isolation and crash protection
@@ -153,7 +147,7 @@ pub enum PluginPermission {
 pub struct PluginSandboxConfig {
 	pub enabled:bool,
 	pub MaxMemoryMb:Option<u64>,
-	pub MaxCpuPercent:Option<f64>,
+	pub MaxCPUPercent:Option<f64>,
 	pub NetworkAllowed:bool,
 	pub FilesystemAllowed:bool,
 	pub AllowedPaths:Vec<String>,
@@ -165,7 +159,7 @@ impl Default for PluginSandboxConfig {
 		Self {
 			enabled:true,
 			MaxMemoryMb:Some(128),
-			MaxCpuPercent:Some(10.0),
+			MaxCPUPercent:Some(10.0),
 			NetworkAllowed:false,
 			FilesystemAllowed:false,
 			AllowedPaths:vec![],
@@ -332,8 +326,8 @@ impl PluginManager {
 			MessageQueue:Arc::new(RwLock::new(Vec::new())),
 			AirVersion,
 			EnableSandbox,
-			StartupTimeout:Duration::from_secs(startup_timeout_secs),
-			OperationTimeout:Duration::from_secs(operation_timeout_secs),
+			StartupTimeout:Duration::from_secs(StartupTimeoutSecs),
+			OperationTimeout:Duration::from_secs(OperationTimeoutSecs),
 		}
 	}
 
@@ -393,10 +387,7 @@ impl PluginManager {
 
 		let _load_result = LoadResult
 			.map_err(|_| {
-				AirError::Plugin(format!(
-					"Plugin {} load timeout after {:?}",
-					metadata.name, self.StartupTimeout
-				))
+				AirError::Plugin(format!("Plugin {} load timeout after {:?}", metadata.name, self.StartupTimeout))
 			})?
 			.map_err(|e| {
 				error!("[PluginManager] Failed to load plugin {}: {}", metadata.name, e);
@@ -505,18 +496,18 @@ impl PluginManager {
 					.get(&dep.PluginId)
 					.ok_or_else(|| AirError::Plugin(format!("Required dependency not found: {}", dep.PluginId)))?;
 
-				let DepVersion = &dep_plugin.plugin.metadata().version;
-				if !self.VersionSatisfies(dep_version, &dep.MinVersion) {
+				let DepVersion = &DepPlugin.plugin.metadata().version;
+				if !self.VersionSatisfies(DepVersion, &dep.MinVersion) {
 					return Err(AirError::Plugin(format!(
 						"Dependency {} version {} does not satisfy requirement {}",
-						dep.PluginId, dep_version, dep.MinVersion
+						dep.PluginId, DepVersion, dep.MinVersion
 					)));
 				}
 
-				if dep_plugin.state != PluginState::Running && dep_plugin.state != PluginState::Loaded {
+				if DepPlugin.state != PluginState::Running && DepPlugin.state != PluginState::Loaded {
 					return Err(AirError::Plugin(format!(
 						"Dependency {} is not ready (state: {:?})",
-						dep.PluginId, dep_plugin.state
+						dep.PluginId, DepPlugin.state
 					)));
 				}
 			}
@@ -649,10 +640,10 @@ impl PluginManager {
 	pub async fn stop_all(&self) -> Result<()> {
 		let PluginIds:Vec<String> = self.plugins.read().await.keys().cloned().collect();
 
-		info!("[PluginManager] Stopping {} plugins", plugin_ids.len());
+		info!("[PluginManager] Stopping {} plugins", PluginIds.len());
 
 		// Stop in reverse order to respect dependencies
-		for plugin_id in plugin_ids.into_iter().rev() {
+		for plugin_id in PluginIds.into_iter().rev() {
 			if let Err(e) = self.stop(&plugin_id).await {
 				warn!("[PluginManager] Failed to stop plugin {}: {}", plugin_id, e);
 			}
@@ -766,7 +757,7 @@ impl PluginManager {
 			.get(&message.from)
 			.ok_or_else(|| AirError::Plugin(format!("Sender plugin not found: {}", message.from)))?;
 
-		if !self.CheckInterPluginPermission(sender_metadata, target, &message) {
+		if !self.CheckInterPluginPermission(SenderMetadata, target, &message) {
 			return Err(AirError::Plugin(format!(
 				"Permission denied: {} cannot send to {}",
 				message.from, message.to
@@ -780,7 +771,7 @@ impl PluginManager {
 		let SendResult =
 			tokio::time::timeout(self.OperationTimeout, plugin.handle_message(&message.from, &message)).await;
 
-		send_result
+		SendResult
 			.map_err(|_| AirError::Plugin(format!("Message send timeout: {} -> {}", message.from, message.to)))?
 	}
 
@@ -926,8 +917,8 @@ impl PluginManager {
 		let ActualParts:Vec<&str> = actual.split('.').collect();
 		let RequiredParts:Vec<&str> = required.split('.').collect();
 
-		for (i, required_part) in required_parts.iter().enumerate() {
-			if let (Ok(a), Ok(r)) = (actual_parts.get(i).unwrap_or(&"0").parse::<u32>(), required_part.parse::<u32>()) {
+		for (i, required_part) in RequiredParts.iter().enumerate() {
+			if let (Ok(a), Ok(r)) = (ActualParts.get(i).unwrap_or(&"0").parse::<u32>(), required_part.parse::<u32>()) {
 				if a > r {
 					return true;
 				} else if a < r {

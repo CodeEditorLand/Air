@@ -1537,7 +1537,7 @@ impl UpdateManager {
 			#[cfg(not(target_os = "windows"))]
 			{
 				use std::os::unix::fs::MetadataExt;
-let _device_id = metadata.dev();
+				let _device_id = metadata.dev();
 
 				// TODO: Actually get free space for the device
 				// This would require platform-specific syscalls

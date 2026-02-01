@@ -94,7 +94,7 @@ use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
-use crate::{AirError, Result, utils};
+use crate::{AirError, Result, Utility};
 
 /// Health check manager
 #[derive(Debug)]
@@ -280,12 +280,12 @@ impl HealthCheckManager {
 
 	/// Perform health check for a service
 	pub async fn CheckService(&self, ServiceName:&str) -> Result<HealthStatus> {
-		let StartTime = utils::CurrentTimestamp();
+		let StartTime = Utility::CurrentTimestamp();
 
 		// Perform service-specific health check with timeout
 		let CheckTimeout = tokio::time::Duration::from_secs(10);
 
-		let (status, ErrorMessage) = tokio::time::timeout(check_timeout, async {
+		let (status, ErrorMessage) = tokio::time::timeout(CheckTimeout, async {
 			match ServiceName {
 				"authentication" => self.CheckAuthenticationService().await,
 				"updates" => self.CheckUpdatesService().await,
@@ -308,7 +308,7 @@ impl HealthCheckManager {
 			)
 		})?;
 
-		let ResponseTime = utils::CurrentTimestamp() - StartTime;
+		let ResponseTime = Utility::CurrentTimestamp() - StartTime;
 
 		// Update service health
 		self.UpdateServiceHealth(ServiceName, status.clone(), &ErrorMessage, ResponseTime)
@@ -538,12 +538,12 @@ impl HealthCheckManager {
 
 		if let Some(ServiceHealth) = HealthMap.get_mut(ServiceName) {
 			ServiceHealth.Status = status.clone();
-			ServiceHealth.LastCheck = utils::CurrentTimestamp();
+			ServiceHealth.LastCheck = Utility::CurrentTimestamp();
 			ServiceHealth.ResponseTimeMs = Some(ResponseTime);
 
 			match status {
 				HealthStatus::Healthy => {
-					ServiceHealth.LastSuccess = Some(utils::CurrentTimestamp());
+					ServiceHealth.LastSuccess = Some(Utility::CurrentTimestamp());
 					ServiceHealth.FailureCount = 0;
 					ServiceHealth.ErrorMessage = None;
 				},
@@ -577,7 +577,7 @@ impl HealthCheckManager {
 		let mut history = self.HealthHistory.write().await;
 
 		let record = HealthCheckRecord {
-			Timestamp:utils::CurrentTimestamp(),
+			Timestamp:Utility::CurrentTimestamp(),
 			ServiceName:ServiceName.to_string(),
 			Status:status,
 			ResponseTimeMs:Some(ResponseTime),
@@ -650,10 +650,7 @@ impl HealthCheckManager {
 				// - Trigger connection pool refresh
 			},
 			_ => {
-				warn!(
-					"[HealthCheck] Response time recovery: Generic optimization for {}",
-					ServiceName
-				);
+				warn!("[HealthCheck] Response time recovery: Generic optimization for {}", ServiceName);
 			},
 		}
 	}
@@ -676,12 +673,12 @@ impl HealthCheckManager {
 
 	/// Perform recovery action for a service
 	async fn PerformRecoveryAction(&self, ServiceName:&str) {
-		info!("[HealthCheck] Performing recovery action for {}", service_name);
+		info!("[HealthCheck] Performing recovery action for {}", ServiceName);
 
 		let RecoveryTimeout = tokio::time::Duration::from_secs(self.config.RecoveryTimeoutSec);
 
-		let result = tokio::time::timeout(recovery_timeout, async {
-			match service_name {
+		let result = tokio::time::timeout(RecoveryTimeout, async {
+			match ServiceName {
 				"authentication" => self.RestartAuthenticationService().await,
 				"updates" => self.RestartUpdatesService().await,
 				"downloader" => self.RestartDownloaderService().await,
@@ -689,7 +686,7 @@ impl HealthCheckManager {
 				"grpc" => self.RestartGrpcService().await,
 				"connections" => self.ResetConnectionsService().await,
 				_ => {
-					warn!("[HealthCheck] No specific recovery action for {}", service_name);
+					warn!("[HealthCheck] No specific recovery action for {}", ServiceName);
 					Ok(())
 				},
 			}
@@ -698,13 +695,13 @@ impl HealthCheckManager {
 
 		match result {
 			Ok(Ok(())) => {
-				info!("[HealthCheck] Recovery action completed successfully for {}", service_name);
+				info!("[HealthCheck] Recovery action completed successfully for {}", ServiceName);
 			},
 			Ok(Err(e)) => {
-				warn!("[HealthCheck] Recovery action failed for {}: {:?}", service_name, e);
+				warn!("[HealthCheck] Recovery action failed for {}: {:?}", ServiceName, e);
 			},
 			Err(_) => {
-				warn!("[HealthCheck] Recovery action timed out for {}", service_name);
+				warn!("[HealthCheck] Recovery action timed out for {}", ServiceName);
 			},
 		}
 	}
@@ -787,27 +784,23 @@ impl HealthCheckManager {
 
 	/// Get health check history
 	pub async fn GetHealthHistory(&self, service_name:Option<&str>, limit:Option<usize>) -> Vec<HealthCheckRecord> {
-		let history = self.HealthHistory.read().await;
+		let History = self.HealthHistory.read().await;
 
 		let mut FilteredHistory:Vec<HealthCheckRecord> = if let Some(service) = service_name {
-			history
-				.iter()
-				.filter(|record| record.ServiceName == service)
-				.cloned()
-				.collect()
+			History.iter().filter(|Record| Record.ServiceName == service).cloned().collect()
 		} else {
-			history.clone()
+			History.clone()
 		};
 
 		// Reverse to get most recent first
-		filtered_history.reverse();
+		FilteredHistory.reverse();
 
 		// Apply limit
 		if let Some(limit) = limit {
-			filtered_history.truncate(limit);
+			FilteredHistory.truncate(limit);
 		}
 
-		filtered_history
+		FilteredHistory
 	}
 
 	/// Register a recovery action
@@ -826,21 +819,21 @@ impl HealthCheckManager {
 		let mut DegradedServices = 0;
 		let mut UnhealthyServices = 0;
 
-		for ServiceHealth in health_map.values() {
-			match service_health.Status {
-				HealthStatus::Healthy => healthy_services += 1,
-				HealthStatus::Degraded => degraded_services += 1,
-				HealthStatus::Unhealthy => unhealthy_services += 1,
+		for ServiceHealth in HealthMap.values() {
+			match ServiceHealth.Status {
+				HealthStatus::Healthy => HealthyServices += 1,
+				HealthStatus::Degraded => DegradedServices += 1,
+				HealthStatus::Unhealthy => UnhealthyServices += 1,
 				HealthStatus::Unknown => {},
 			}
 		}
 
 		// Get health statistics
-		let mut stats = HealthStatistics {
-			TotalServices:health_map.len(),
-			HealthyServices:healthy_services,
-			DegradedServices:degraded_services,
-			UnhealthyServices:unhealthy_services,
+		let mut Statistics = HealthStatistics {
+			TotalServices:HealthMap.len(),
+			HealthyServices:HealthyServices,
+			DegradedServices:DegradedServices,
+			UnhealthyServices:UnhealthyServices,
 			TotalChecks:history.len(),
 			AverageResponseTimeMs:0.0,
 			SuccessRate:0.0,
@@ -851,21 +844,21 @@ impl HealthCheckManager {
 			let mut TotalResponseTime = 0;
 			let mut SuccessfulChecks = 0;
 
-			for record in history.iter() {
-				if let Some(ResponseTime) = record.ResponseTimeMs {
-					total_response_time += ResponseTime;
+			for Record in history.iter() {
+				if let Some(ResponseTime) = Record.ResponseTimeMs {
+					TotalResponseTime += ResponseTime;
 				}
 
-				if record.Status == HealthStatus::Healthy {
-					successful_checks += 1;
+				if Record.Status == HealthStatus::Healthy {
+					SuccessfulChecks += 1;
 				}
 			}
 
-			stats.AverageResponseTimeMs = total_response_time as f64 / history.len() as f64;
-			stats.SuccessRate = successful_checks as f64 / history.len() as f64 * 100.0;
+			Statistics.AverageResponseTimeMs = TotalResponseTime as f64 / history.len() as f64;
+			Statistics.SuccessRate = SuccessfulChecks as f64 / history.len() as f64 * 100.0;
 		}
 
-		stats
+		Statistics
 	}
 }
 
@@ -916,7 +909,7 @@ impl HealthCheckResponse {
 			Statistics,
 			PerformanceIndicators:PerformanceIndicators::default(),
 			ResourceWarnings:Vec::new(),
-			Timestamp:utils::CurrentTimestamp(),
+			Timestamp:Utility::CurrentTimestamp(),
 		}
 	}
 
@@ -981,7 +974,7 @@ pub struct ResourceWarning {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ResourceWarningType {
 	HighMemoryUsage,
-	HighCpuUsage,
+	HighCPUUsage,
 	LowDiskSpace,
 	ConnectionPoolExhausted,
 	ThreadPoolExhausted,

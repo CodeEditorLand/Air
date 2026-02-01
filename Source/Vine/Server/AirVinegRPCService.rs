@@ -21,14 +21,18 @@ use crate::{
 	Indexing::FileIndexer,
 	Result,
 	Updates::UpdateManager,
-	utils::CurrentTimestamp,
+	Utility::CurrentTimestamp,
 };
 use crate::Vine::Generated::Air::{
-	// Import from the generated air module
-	AirService,
+	// Import from the generated Air module (PascalCase - messages)
 	ApplyUpdateRequest,
 	ApplyUpdateResponse,
 	AuthenticationRequest,
+	AuthenticationResponse,
+	ConfigurationRequest,
+	ConfigurationResponse,
+	DownloadRequest,
+	DownloadResponse,
 	AuthenticationResponse,
 	ConfigurationRequest,
 	ConfigurationResponse,
@@ -113,43 +117,43 @@ impl AirVinegRPCService {
 	}
 
 	/// Track connection for a request
-	async fn TrackConnection(&self, request:&tonic::Request<()>, ServiceName:&str) -> Result<String, Status> {
-		let metadata = request.metadata();
-		let ConnectionId = metadata
+	async fn TrackConnection(&self, Request:&tonic::Request<()>, ServiceName:&str) -> Result<String, Status> {
+		let Metadata = Request.metadata();
+		let ConnectionId = Metadata
 			.get("connection-id")
 			.map(|v| v.to_str().unwrap_or_default().to_string())
-			.unwrap_or_else(|| crate::utils::GenerateRequestId());
+			.unwrap_or_else(|| crate::Utility::GenerateRequestId());
 
-		let ClientId = metadata
+		let ClientId = Metadata
 			.get("client-id")
 			.map(|v| v.to_str().unwrap_or_default().to_string())
 			.unwrap_or_else(|| "unknown".to_string());
 
-		let ClientVersion = metadata
+		let ClientVersion = Metadata
 			.get("client-version")
 			.map(|v| v.to_str().unwrap_or_default().to_string())
 			.unwrap_or_else(|| "unknown".to_string());
 
-		let ProtocolVersion = metadata
+		let ProtocolVersion = Metadata
 			.get("protocol-version")
 			.map(|v| v.to_str().unwrap_or_default().parse().unwrap_or(1))
 			.unwrap_or(1);
 
 		// Update connection tracking
-		let mut connections = self.ActiveConnections.write().await;
-		let ConnectionMetadata = connections.entry(ConnectionId.clone()).or_insert_with(|| {
+		let mut Connections = self.ActiveConnections.write().await;
+		let ConnectionMetadata = Connections.entry(ConnectionId.clone()).or_insert_with(|| {
 			ConnectionMetadata {
 				ClientId:ClientId.clone(),
 				ClientVersion:ClientVersion.clone(),
 				ProtocolVersion,
-				LastRequestTime:crate::utils::CurrentTimestamp(),
+				LastRequestTime:crate::Utility::CurrentTimestamp(),
 				RequestCount:0,
 				ConnectionType:crate::ApplicationState::ConnectionType::MountainMain,
 			}
 		});
 
-		connection_metadata.LastRequestTime = crate::utils::CurrentTimestamp();
-		connection_metadata.RequestCount += 1;
+		ConnectionMetadata.LastRequestTime = crate::Utility::CurrentTimestamp();
+		ConnectionMetadata.RequestCount += 1;
 
 		// Register connection with application state
 		self.AppState
@@ -168,19 +172,19 @@ impl AirVinegRPCService {
 
 	/// Validate protocol version compatibility
 	fn validate_protocol_version(&self, ClientVersion:u32) -> Result<(), Status> {
-		if ClientVersion > crate::PROTOCOL_VERSION {
+		if ClientVersion > crate::ProtocolVersion {
 			return Err(Status::failed_precondition(format!(
 				"Client protocol version {} is newer than server version {}",
 				ClientVersion,
-				crate::PROTOCOL_VERSION
+				crate::ProtocolVersion
 			)));
 		}
 
-		if ClientVersion < crate::PROTOCOL_VERSION {
+		if ClientVersion < crate::ProtocolVersion {
 			warn!(
 				"Client using older protocol version {} (server: {})",
 				ClientVersion,
-				crate::PROTOCOL_VERSION
+				crate::ProtocolVersion
 			);
 		}
 
@@ -193,13 +197,13 @@ impl AirService for AirVinegRPCService {
 	/// Handle authentication requests from Mountain
 	async fn authenticate(
 		&self,
-		request:Request<AuthenticationRequest>,
+		Request:Request<AuthenticationRequest>,
 	) -> std::result::Result<Response<AuthenticationResponse>, Status> {
-		let RequestData = request.into_inner();
+		let RequestData = Request.into_inner();
 		let RequestId = RequestData.RequestId.clone();
 
 		// Track connection and validate protocol
-		let ConnectionId = self.TrackConnection(&request, "authentication").await?;
+		let ConnectionId = self.TrackConnection(&Request, "authentication").await?;
 
 		info!(
 			"[AirVinegRPCService] Authentication request received [ID: {}] [Connection: {}]",
@@ -212,12 +216,12 @@ impl AirService for AirVinegRPCService {
 			.map_err(|e| Status::internal(e.to_string()))?;
 
 		// Additional security validation
-		if RequestData.username.is_empty() || RequestData.password.is_empty() || RequestData.provider.is_empty() {
-			let ErrorMsg = "Invalid authentication parameters".to_string();
+		if RequestData.Username.is_empty() || RequestData.Password.is_empty() || RequestData.Provider.is_empty() {
+			let ErrorMessage = "Invalid authentication parameters".to_string();
 			self.AppState
 				.update_request_status(
 					&RequestId,
-					crate::ApplicationState::RequestState::Failed(ErrorMsg.clone()),
+					crate::ApplicationState::RequestState::Failed(ErrorMessage.clone()),
 					None,
 				)
 				.await
@@ -227,13 +231,13 @@ impl AirService for AirVinegRPCService {
 				RequestId,
 				success:false,
 				token:String::new(),
-				error:ErrorMsg,
+				error:ErrorMessage,
 			}));
 		}
 
 		let result = self
 			.AuthService
-			.authenticate_user(RequestData.username, RequestData.password, RequestData.provider)
+			.authenticate_user(RequestData.Username, RequestData.Password, RequestData.Provider)
 			.await;
 
 		match result {
@@ -246,7 +250,7 @@ impl AirService for AirVinegRPCService {
 				// Log successful authentication
 				info!(
 					"[AirVinegRPCService] Authentication successful for user: {} [Connection: {}]",
-					RequestData.username, ConnectionId
+					RequestData.Username, ConnectionId
 				);
 
 				Ok(Response::new(crate::Vine::Generated::Air::AuthenticationResponse {
@@ -269,7 +273,7 @@ impl AirService for AirVinegRPCService {
 				// Log failed authentication attempt
 				warn!(
 					"[AirVinegRPCService] Authentication failed for user: {} [Connection: {}] - {}",
-					RequestData.username, ConnectionId, e
+					RequestData.Username, ConnectionId, e
 				);
 
 				Ok(Response::new(crate::Vine::Generated::Air::AuthenticationResponse {
@@ -302,36 +306,36 @@ impl AirService for AirVinegRPCService {
 
 		// Validate CurrentVersion
 		if RequestData.CurrentVersion.is_empty() {
-			let ErrorMsg = crate::AirError::Validation("CurrentVersion cannot be empty".to_string());
+			let ErrorMessage = crate::AirError::Validation("CurrentVersion cannot be empty".to_string());
 			self.AppState
 				.update_request_status(
 					&RequestId,
-					crate::ApplicationState::RequestState::Failed(ErrorMsg.to_string()),
+					crate::ApplicationState::RequestState::Failed(ErrorMessage.to_string()),
 					None,
 				)
 				.await
 				.ok();
-			return Err(Status::invalid_argument(ErrorMsg.to_string()));
+			return Err(Status::invalid_argument(ErrorMessage.to_string()));
 		}
 
 		// Validate channel
 		let ValidChannels = ["stable", "beta", "nightly"];
-		let channel = if RequestData.channel.is_empty() {
+		let Channel = if RequestData.Channel.is_empty() {
 			"stable".to_string()
 		} else {
-			RequestData.channel.clone()
+			RequestData.Channel.clone()
 		};
-		if !valid_channels.contains(&channel.as_str()) {
-			let ErrorMsg = format!("Invalid channel: {}. Valid values are: {}", channel, valid_channels.join(", "));
+		if !ValidChannels.contains(&Channel.as_str()) {
+			let ErrorMessage = format!("Invalid channel: {}. Valid values are: {}", Channel, ValidChannels.join(", "));
 			self.AppState
 				.update_request_status(
 					&RequestId,
-					crate::ApplicationState::RequestState::Failed(ErrorMsg.clone()),
+					crate::ApplicationState::RequestState::Failed(ErrorMessage.clone()),
 					None,
 				)
 				.await
 				.ok();
-			return Err(Status::invalid_argument(ErrorMsg));
+			return Err(Status::invalid_argument(ErrorMessage));
 		}
 
 		// Check for updates using UpdateManager
@@ -402,10 +406,10 @@ impl AirService for AirVinegRPCService {
 		);
 
 		// Request ID for tracking (use provided or generate)
-		let DownloadRequestId = if request_id.is_empty() {
-			crate::utils::GenerateRequestId()
+		let DownloadRequestId = if RequestId.is_empty() {
+			crate::Utility::GenerateRequestId()
 		} else {
-			request_id.clone()
+			RequestId.clone()
 		};
 
 		self.app_state
@@ -414,7 +418,7 @@ impl AirService for AirVinegRPCService {
 			.map_err(|e| Status::internal(e.to_string()))?;
 
 		// Validate URL
-		if request_data.url.is_empty() {
+		if RequestData.url.is_empty() {
 			let error_msg = "URL cannot be empty".to_string();
 			self.app_state
 				.update_request_status(
@@ -425,7 +429,7 @@ impl AirService for AirVinegRPCService {
 				.await
 				.ok();
 			return Ok(Response::new(DownloadResponse {
-				request_id:DownloadRequestId,
+				RequestId:DownloadRequestId,
 				success:false,
 				file_path:String::new(),
 				file_size:0,
@@ -435,8 +439,8 @@ impl AirService for AirVinegRPCService {
 		}
 
 		// Validate URL format
-		if !match_url_scheme(&request_data.url) {
-			let error_msg = format!("Invalid URL scheme: {}", request_data.url);
+		if !match_url_scheme(&RequestData.url) {
+			let error_msg = format!("Invalid URL scheme: {}", RequestData.url);
 			self.app_state
 				.update_request_status(
 					&DownloadRequestId,
@@ -446,7 +450,7 @@ impl AirService for AirVinegRPCService {
 				.await
 				.ok();
 			return Ok(Response::new(DownloadResponse {
-				request_id:DownloadRequestId,
+				RequestId:DownloadRequestId,
 				success:false,
 				file_path:String::new(),
 				file_size:0,
@@ -456,16 +460,16 @@ impl AirService for AirVinegRPCService {
 		}
 
 		// Validate or use cache directory
-		let destination_path = if request_data.destination_path.is_empty() {
+		let DestinationPath = if RequestData.DestinationPath.is_empty() {
 			// Use cache directory from configuration
 			let config = &self.app_state.configuration.downloader;
 			config.cache_directory.clone()
 		} else {
-			request_data.destination_path.clone()
+			RequestData.DestinationPath.clone()
 		};
 
 		// Validate target directory exists
-		let dest_path = std::path::Path::new(&destination_path);
+		let dest_path = std::path::Path::new(&DestinationPath);
 		if let Some(parent) = dest_path.parent() {
 			if !parent.exists() {
 				match tokio::fs::create_dir_all(parent).await {
@@ -483,7 +487,7 @@ impl AirService for AirVinegRPCService {
 							.await
 							.ok();
 						return Ok(Response::new(DownloadResponse {
-							request_id:DownloadRequestId,
+							RequestId:DownloadRequestId,
 							success:false,
 							file_path:String::new(),
 							file_size:0,
@@ -513,9 +517,9 @@ impl AirService for AirVinegRPCService {
 		let result = self
 			.download_file_with_retry(
 				&DownloadRequestId,
-				request_data.url.clone(),
-				destination_path,
-				request_data.checksum,
+				RequestData.url.clone(),
+				DestinationPath,
+				RequestData.checksum,
 				Some(progress_callback),
 			)
 			.await;
@@ -537,7 +541,7 @@ impl AirService for AirVinegRPCService {
 				);
 
 				Ok(Response::new(DownloadResponse {
-					request_id:DownloadRequestId,
+					RequestId:DownloadRequestId,
 					success:true,
 					file_path:file_info.path,
 					file_size:file_info.size,
@@ -561,7 +565,7 @@ impl AirService for AirVinegRPCService {
 				);
 
 				Ok(Response::new(DownloadResponse {
-					request_id:DownloadRequestId,
+					RequestId:DownloadRequestId,
 					success:false,
 					file_path:String::new(),
 					file_size:0,
@@ -574,33 +578,33 @@ impl AirService for AirVinegRPCService {
 
 	/// Handle file indexing requests from Mountain
 	async fn index_files(&self, request:Request<IndexRequest>) -> std::result::Result<Response<IndexResponse>, Status> {
-		let request_data = request.into_inner();
-		let request_id = request_data.request_id;
+		let RequestData = request.into_inner();
+		let RequestId = RequestData.RequestId;
 
 		info!(
 			"[AirVinegRPCService] Index request received [ID: {}] - Path: {}",
-			request_id, request_data.path
+			RequestId, RequestData.path
 		);
 
 		self.app_state
-			.register_request(request_id.clone(), "indexing".to_string())
+			.register_request(RequestId.clone(), "indexing".to_string())
 			.await
 			.map_err(|e| Status::internal(e.to_string()))?;
 
 		let result = self
 			.file_indexer
-			.index_directory(request_data.path, request_data.patterns)
+			.index_directory(RequestData.path, RequestData.patterns)
 			.await;
 
 		match result {
 			Ok(index_info) => {
 				self.app_state
-					.update_request_status(&request_id, crate::ApplicationState::RequestState::Completed, Some(100.0))
+					.update_request_status(&RequestId, crate::ApplicationState::RequestState::Completed, Some(100.0))
 					.await
 					.ok();
 
 				Ok(Response::new(crate::Vine::Generated::Air::IndexResponse {
-					request_id,
+					RequestId,
 					success:true,
 					files_indexed:index_info.files_indexed,
 					total_size:index_info.total_size,
@@ -610,7 +614,7 @@ impl AirService for AirVinegRPCService {
 			Err(e) => {
 				self.app_state
 					.update_request_status(
-						&request_id,
+						&RequestId,
 						crate::ApplicationState::RequestState::Failed(e.to_string()),
 						None,
 					)
@@ -618,7 +622,7 @@ impl AirService for AirVinegRPCService {
 					.ok();
 
 				Ok(Response::new(crate::Vine::Generated::Air::IndexResponse {
-					request_id,
+					RequestId,
 					success:false,
 					files_indexed:0,
 					total_size:0,
@@ -633,7 +637,7 @@ impl AirService for AirVinegRPCService {
 		&self,
 		request:Request<StatusRequest>,
 	) -> std::result::Result<Response<StatusResponse>, Status> {
-		let request_data = request.into_inner();
+		let RequestData = request.into_inner();
 
 		debug!("[AirVinegRPCService] Status request received");
 
@@ -649,7 +653,7 @@ impl AirService for AirVinegRPCService {
 			average_response_time:metrics.average_response_time,
 			memory_usage_mb:resources.memory_usage_mb,
 			cpu_usage_percent:resources.cpu_usage_percent,
-			active_requests:self.app_state.get_active_request_count().await as u32,
+			ActiveRequests:self.app_state.get_active_request_count().await as u32,
 		}))
 	}
 
@@ -673,25 +677,25 @@ impl AirService for AirVinegRPCService {
 		&self,
 		request:Request<DownloadRequest>,
 	) -> std::result::Result<Response<DownloadResponse>, Status> {
-		let request_data = request.into_inner();
-		let request_id = request_data.request_id.clone();
+		let RequestData = request.into_inner();
+		let RequestId = RequestData.RequestId.clone();
 
 		info!(
 			"[AirVinegRPCService] Download update request received [ID: {}] - URL: {}, Destination: {}",
-			request_id, request_data.url, request_data.destination_path
+			RequestId, RequestData.url, RequestData.DestinationPath
 		);
 
 		self.app_state
-			.register_request(request_id.clone(), "download_update".to_string())
+			.register_request(RequestId.clone(), "download_update".to_string())
 			.await
 			.map_err(|e| Status::internal(e.to_string()))?;
 
 		// Validate URL is not empty
-		if request_data.url.is_empty() {
+		if RequestData.url.is_empty() {
 			let error_msg = crate::AirError::Validation("URL cannot be empty".to_string());
 			self.app_state
 				.update_request_status(
-					&request_id,
+					&RequestId,
 					crate::ApplicationState::RequestState::Failed(error_msg.to_string()),
 					None,
 				)
@@ -701,11 +705,11 @@ impl AirService for AirVinegRPCService {
 		}
 
 		// Validate URL format
-		if !request_data.url.starts_with("http://") && !request_data.url.starts_with("https://") {
+		if !RequestData.url.starts_with("http://") && !RequestData.url.starts_with("https://") {
 			let error_msg = crate::AirError::Validation("URL must start with http:// or https://".to_string());
 			self.app_state
 				.update_request_status(
-					&request_id,
+					&RequestId,
 					crate::ApplicationState::RequestState::Failed(error_msg.to_string()),
 					None,
 				)
@@ -715,7 +719,7 @@ impl AirService for AirVinegRPCService {
 		}
 
 		// Validate destination path is writeable
-		let destination = if request_data.destination_path.is_empty() {
+		let destination = if RequestData.DestinationPath.is_empty() {
 			// Default to cache directory if not specified
 			self.update_manager
 				.get_cache_directory()
@@ -724,21 +728,21 @@ impl AirService for AirVinegRPCService {
 				.to_string()
 		} else {
 			// Use provided destination
-			let dest_path = std::path::Path::new(&request_data.destination_path);
+			let dest_path = std::path::Path::new(&RequestData.DestinationPath);
 			if let Some(parent) = dest_path.parent() {
 				if parent.as_os_str().is_empty() {
 					// Relative path in cache directory
 					self.update_manager
 						.get_cache_directory()
-						.join(&request_data.destination_path)
+						.join(&RequestData.DestinationPath)
 						.to_string_lossy()
 						.to_string()
 				} else {
 					// Absolute or full path
-					request_data.destination_path.clone()
+					RequestData.DestinationPath.clone()
 				}
 			} else {
-				request_data.destination_path.clone()
+				RequestData.DestinationPath.clone()
 			}
 		};
 
@@ -757,7 +761,7 @@ impl AirService for AirVinegRPCService {
 				let error_msg = crate::AirError::FileSystem(format!("Destination directory not writeable: {}", e));
 				self.app_state
 					.update_request_status(
-						&request_id,
+						&RequestId,
 						crate::ApplicationState::RequestState::Failed(error_msg.to_string()),
 						None,
 					)
@@ -773,13 +777,13 @@ impl AirService for AirVinegRPCService {
 		// tracking, and retry logic
 		let download_result = self
 			.download_manager
-			.download_file(request_data.url, destination.clone(), request_data.checksum)
+			.download_file(RequestData.url, destination.clone(), RequestData.checksum)
 			.await;
 
 		match download_result {
 			Ok(result) => {
 				self.app_state
-					.update_request_status(&request_id, crate::ApplicationState::RequestState::Completed, Some(100.0))
+					.update_request_status(&RequestId, crate::ApplicationState::RequestState::Completed, Some(100.0))
 					.await
 					.ok();
 
@@ -789,7 +793,7 @@ impl AirService for AirVinegRPCService {
 				);
 
 				Ok(Response::new(DownloadResponse {
-					request_id,
+					RequestId,
 					success:true,
 					file_path:result.path,
 					file_size:result.size,
@@ -799,7 +803,7 @@ impl AirService for AirVinegRPCService {
 			},
 			Err(crate::AirError::Network(e)) => {
 				self.app_state
-					.update_request_status(&request_id, crate::ApplicationState::RequestState::Failed(e.clone()), None)
+					.update_request_status(&RequestId, crate::ApplicationState::RequestState::Failed(e.clone()), None)
 					.await
 					.ok();
 				error!("[AirVinegRPCService] Download update network error: {}", e);
@@ -807,7 +811,7 @@ impl AirService for AirVinegRPCService {
 			},
 			Err(crate::AirError::FileSystem(e)) => {
 				self.app_state
-					.update_request_status(&request_id, crate::ApplicationState::RequestState::Failed(e.clone()), None)
+					.update_request_status(&RequestId, crate::ApplicationState::RequestState::Failed(e.clone()), None)
 					.await
 					.ok();
 				error!("[AirVinegRPCService] Download update filesystem error: {}", e);
@@ -816,7 +820,7 @@ impl AirService for AirVinegRPCService {
 			Err(e) => {
 				self.app_state
 					.update_request_status(
-						&request_id,
+						&RequestId,
 						crate::ApplicationState::RequestState::Failed(e.to_string()),
 						None,
 					)
@@ -824,7 +828,7 @@ impl AirService for AirVinegRPCService {
 					.ok();
 				error!("[AirVinegRPCService] Download update failed: {}", e);
 				Ok(Response::new(DownloadResponse {
-					request_id,
+					RequestId,
 					success:false,
 					file_path:String::new(),
 					file_size:0,
@@ -840,25 +844,25 @@ impl AirService for AirVinegRPCService {
 		&self,
 		request:Request<ApplyUpdateRequest>,
 	) -> std::result::Result<Response<ApplyUpdateResponse>, Status> {
-		let request_data = request.into_inner();
-		let request_id = request_data.request_id.clone();
+		let RequestData = request.into_inner();
+		let RequestId = RequestData.RequestId.clone();
 
 		info!(
 			"[AirVinegRPCService] Apply update request received [ID: {}] - Version: {}, Path: {}",
-			request_id, request_data.version, request_data.update_path
+			RequestId, RequestData.version, RequestData.update_path
 		);
 
 		self.app_state
-			.register_request(request_id.clone(), "apply_update".to_string())
+			.register_request(RequestId.clone(), "apply_update".to_string())
 			.await
 			.map_err(|e| Status::internal(e.to_string()))?;
 
 		// Validate version
-		if request_data.version.is_empty() {
+		if RequestData.version.is_empty() {
 			let error_msg = crate::AirError::Validation("version cannot be empty".to_string());
 			self.app_state
 				.update_request_status(
-					&request_id,
+					&RequestId,
 					crate::ApplicationState::RequestState::Failed(error_msg.to_string()),
 					None,
 				)
@@ -868,11 +872,11 @@ impl AirService for AirVinegRPCService {
 		}
 
 		// Validate update path is not empty
-		if request_data.update_path.is_empty() {
+		if RequestData.update_path.is_empty() {
 			let error_msg = crate::AirError::Validation("update_path cannot be empty".to_string());
 			self.app_state
 				.update_request_status(
-					&request_id,
+					&RequestId,
 					crate::ApplicationState::RequestState::Failed(error_msg.to_string()),
 					None,
 				)
@@ -881,14 +885,14 @@ impl AirService for AirVinegRPCService {
 			return Err(Status::invalid_argument(error_msg.to_string()));
 		}
 
-		let update_path = std::path::Path::new(&request_data.update_path);
+		let update_path = std::path::Path::new(&RequestData.update_path);
 
 		// Validate update file exists
 		if !update_path.exists() {
-			let error_msg = crate::AirError::FileSystem(format!("Update file not found: {}", request_data.update_path));
+			let error_msg = crate::AirError::FileSystem(format!("Update file not found: {}", RequestData.update_path));
 			self.app_state
 				.update_request_status(
-					&request_id,
+					&RequestId,
 					crate::ApplicationState::RequestState::Failed(error_msg.to_string()),
 					None,
 				)
@@ -904,7 +908,7 @@ impl AirService for AirVinegRPCService {
 				let error_msg = crate::AirError::FileSystem(format!("Failed to read update file metadata: {}", e));
 				self.app_state
 					.update_request_status(
-						&request_id,
+						&RequestId,
 						crate::ApplicationState::RequestState::Failed(error_msg.to_string()),
 						None,
 					)
@@ -918,7 +922,7 @@ impl AirService for AirVinegRPCService {
 			let error_msg = crate::AirError::Validation("Update file is empty".to_string());
 			self.app_state
 				.update_request_status(
-					&request_id,
+					&RequestId,
 					crate::ApplicationState::RequestState::Failed(error_msg.to_string()),
 					None,
 				)
@@ -928,7 +932,7 @@ impl AirService for AirVinegRPCService {
 		}
 
 		// Prepare rollback capability before applying update
-		let rollback_backup_path = self.prepare_rollback_backup(&request_data.version).await;
+		let rollback_backup_path = self.prepare_rollback_backup(&RequestData.version).await;
 		if let Err(ref e) = rollback_backup_path {
 			warn!(
 				"[AirVinegRPCService] Failed to prepare rollback backup: {}. Proceeding without rollback capability.",
@@ -937,18 +941,18 @@ impl AirService for AirVinegRPCService {
 		}
 
 		// Verify update file integrity (checksum check)
-		match self.update_manager.verify_update(&request_data.update_path, None).await {
+		match self.update_manager.verify_update(&RequestData.update_path, None).await {
 			Ok(true) => {
 				info!("[AirVinegRPCService] Update verification successful, preparing for installation");
 
 				self.app_state
-					.update_request_status(&request_id, crate::ApplicationState::RequestState::Completed, Some(100.0))
+					.update_request_status(&RequestId, crate::ApplicationState::RequestState::Completed, Some(100.0))
 					.await
 					.ok();
 
 				// Trigger graceful shutdown after returning response
 				let app_state = self.app_state.clone();
-				let version = request_data.version.clone();
+				let version = RequestData.version.clone();
 
 				tokio::spawn(async move {
 					tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
@@ -971,13 +975,13 @@ impl AirService for AirVinegRPCService {
 					}
 				});
 
-				Ok(Response::new(ApplyUpdateResponse { request_id, success:true, error:None }))
+				Ok(Response::new(ApplyUpdateResponse { RequestId, success:true, error:None }))
 			},
 			Ok(false) => {
 				let error_msg = "Update verification failed: checksum mismatch".to_string();
 				self.app_state
 					.update_request_status(
-						&request_id,
+						&RequestId,
 						crate::ApplicationState::RequestState::Failed(error_msg.clone()),
 						None,
 					)
@@ -986,26 +990,26 @@ impl AirService for AirVinegRPCService {
 				error!("[AirVinegRPCService] {}", error_msg);
 
 				// Clean up rollback backup if verification failed
-				let _ = self.cleanup_rollback_backup(&request_data.version).await;
+				let _ = self.cleanup_rollback_backup(&RequestData.version).await;
 
 				Err(Status::failed_precondition(error_msg))
 			},
 			Err(crate::AirError::FileSystem(e)) => {
 				self.app_state
-					.update_request_status(&request_id, crate::ApplicationState::RequestState::Failed(e.clone()), None)
+					.update_request_status(&RequestId, crate::ApplicationState::RequestState::Failed(e.clone()), None)
 					.await
 					.ok();
 				error!("[AirVinegRPCService] Update verification filesystem error: {}", e);
 
 				// Clean up rollback backup if verification failed
-				let _ = self.cleanup_rollback_backup(&request_data.version).await;
+				let _ = self.cleanup_rollback_backup(&RequestData.version).await;
 
 				Err(Status::internal(e))
 			},
 			Err(e) => {
 				self.app_state
 					.update_request_status(
-						&request_id,
+						&RequestId,
 						crate::ApplicationState::RequestState::Failed(e.to_string()),
 						None,
 					)
@@ -1014,10 +1018,10 @@ impl AirService for AirVinegRPCService {
 				error!("[AirVinegRPCService] Update verification error: {}", e);
 
 				// Clean up rollback backup if verification failed
-				let _ = self.cleanup_rollback_backup(&request_data.version).await;
+				let _ = self.cleanup_rollback_backup(&RequestData.version).await;
 
 				Ok(Response::new(ApplyUpdateResponse {
-					request_id,
+					RequestId,
 					success:false,
 					error:Some(e.to_string()),
 				}))
@@ -1036,25 +1040,25 @@ impl AirService for AirVinegRPCService {
 		&self,
 		request:Request<DownloadStreamRequest>,
 	) -> std::result::Result<Response<Self::DownloadStreamStream>, Status> {
-		let request_data = request.into_inner();
-		let request_id = request_data.request_id.clone();
+		let RequestData = request.into_inner();
+		let RequestId = RequestData.RequestId.clone();
 
 		info!(
 			"[AirVinegRPCService] Download stream request received [ID: {}] - URL: {}",
-			request_id, request_data.url
+			RequestId, RequestData.url
 		);
 
 		self.app_state
-			.register_request(request_id.clone(), "downloader_stream".to_string())
+			.register_request(RequestId.clone(), "downloader_stream".to_string())
 			.await
 			.map_err(|e| Status::internal(e.to_string()))?;
 
 		// Validate URL
-		if request_data.url.is_empty() {
+		if RequestData.url.is_empty() {
 			let error_msg = "URL cannot be empty".to_string();
 			self.app_state
 				.update_request_status(
-					&request_id,
+					&RequestId,
 					crate::ApplicationState::RequestState::Failed(error_msg.clone()),
 					None,
 				)
@@ -1064,11 +1068,11 @@ impl AirService for AirVinegRPCService {
 		}
 
 		// Validate URL scheme
-		if !match_url_scheme(&request_data.url) {
-			let error_msg = format!("Invalid URL scheme: {}", request_data.url);
+		if !match_url_scheme(&RequestData.url) {
+			let error_msg = format!("Invalid URL scheme: {}", RequestData.url);
 			self.app_state
 				.update_request_status(
-					&request_id,
+					&RequestId,
 					crate::ApplicationState::RequestState::Failed(error_msg.clone()),
 					None,
 				)
@@ -1078,7 +1082,7 @@ impl AirService for AirVinegRPCService {
 		}
 
 		// Validate URL supports range headers for streaming
-		match self.validate_range_support(&request_data.url).await {
+		match self.validate_range_support(&RequestData.url).await {
 			Ok(true) => {
 				debug!("[AirVinegRPCService] URL supports range headers");
 			},
@@ -1089,7 +1093,7 @@ impl AirService for AirVinegRPCService {
 				let error_msg = format!("Failed to validate range support: {}", e);
 				self.app_state
 					.update_request_status(
-						&request_id,
+						&RequestId,
 						crate::ApplicationState::RequestState::Failed(error_msg.clone()),
 						None,
 					)
@@ -1106,9 +1110,9 @@ impl AirService for AirVinegRPCService {
 		let chunk_size = 8 * 1024 * 1024; // 8MB
 
 		// Clone necessary data for spawn task
-		let url = request_data.url.clone();
-		let headers = request_data.headers;
-		let download_request_id = request_id.clone();
+		let url = RequestData.url.clone();
+		let headers = RequestData.headers;
+		let download_RequestId = RequestId.clone();
 		let download_manager = self.download_manager.clone();
 		let app_state = self.app_state.clone();
 
@@ -1117,7 +1121,7 @@ impl AirService for AirVinegRPCService {
 			// Send initial status
 			if tx
 				.send(Ok(DownloadStreamResponse {
-					request_id:download_request_id.clone(),
+					RequestId:download_RequestId.clone(),
 					chunk:vec![].into(),
 					total_size:0,
 					downloaded:0,
@@ -1129,7 +1133,7 @@ impl AirService for AirVinegRPCService {
 			{
 				log::warn!(
 					"[AirVinegRPCService] Client disconnected before streaming started [ID: {}]",
-					download_request_id
+					download_RequestId
 				);
 				return;
 			}
@@ -1145,7 +1149,7 @@ impl AirService for AirVinegRPCService {
 				let error = client.unwrap_err().to_string();
 				let _ = tx
 					.send(Ok(DownloadStreamResponse {
-						request_id:download_request_id.clone(),
+						RequestId:download_RequestId.clone(),
 						chunk:vec![].into(),
 						total_size:0,
 						downloaded:0,
@@ -1155,7 +1159,7 @@ impl AirService for AirVinegRPCService {
 					.await;
 				app_state
 					.update_request_status(
-						&download_request_id,
+						&download_RequestId,
 						crate::ApplicationState::RequestState::Failed(error),
 						None,
 					)
@@ -1171,7 +1175,7 @@ impl AirService for AirVinegRPCService {
 					let _ = tx.send(Err(Status::internal(error.clone())));
 					app_state
 						.update_request_status(
-							&download_request_id,
+							&download_RequestId,
 							crate::ApplicationState::RequestState::Failed(error),
 							None,
 						)
@@ -1207,7 +1211,7 @@ impl AirService for AirVinegRPCService {
 						let error = format!("Download failed with status: {}", response.status());
 						let _ = tx
 							.send(Ok(DownloadStreamResponse {
-								request_id:download_request_id.clone(),
+								RequestId:download_RequestId.clone(),
 								chunk:vec![].into(),
 								total_size:0,
 								downloaded:0,
@@ -1217,7 +1221,7 @@ impl AirService for AirVinegRPCService {
 							.await;
 						app_state
 							.update_request_status(
-								&download_request_id,
+								&download_RequestId,
 								crate::ApplicationState::RequestState::Failed(error),
 								None,
 							)
@@ -1228,7 +1232,7 @@ impl AirService for AirVinegRPCService {
 
 					total_size = response.content_length().unwrap_or(0);
 					let response_tx = tx.clone();
-					let response_id = download_request_id.clone();
+					let response_id = download_RequestId.clone();
 
 					// Stream chunks to client
 					let mut stream = response.bytes_stream();
@@ -1236,14 +1240,14 @@ impl AirService for AirVinegRPCService {
 					let mut last_progress:f32 = 0.0;
 
 					while let Some(chunk_result) = TokioStreamExt::next(&mut stream).await {
-						if app_state.is_request_cancelled(&download_request_id).await {
+						if app_state.is_request_cancelled(&download_RequestId).await {
 							log::info!(
 								"[AirVinegRPCService] Download cancelled by client [ID: {}]",
-								download_request_id
+								download_RequestId
 							);
 							app_state
 								.update_request_status(
-									&download_request_id,
+									&download_RequestId,
 									crate::ApplicationState::RequestState::Cancelled,
 									None,
 								)
@@ -1273,7 +1277,7 @@ impl AirService for AirVinegRPCService {
 									if progress - last_progress >= 5.0 {
 										app_state
 											.update_request_status(
-												&download_request_id,
+												&download_RequestId,
 												crate::ApplicationState::RequestState::InProgress,
 												Some(progress),
 											)
@@ -1284,7 +1288,7 @@ impl AirService for AirVinegRPCService {
 
 									if response_tx
 										.send(Ok(DownloadStreamResponse {
-											request_id:response_id.clone(),
+											RequestId:response_id.clone(),
 											chunk:buffer.clone().into(),
 											total_size,
 											downloaded:total_downloaded,
@@ -1296,11 +1300,11 @@ impl AirService for AirVinegRPCService {
 									{
 										log::warn!(
 											"[AirVinegRPCService] Client disconnected during streaming [ID: {}]",
-											download_request_id
+											download_RequestId
 										);
 										app_state
 											.update_request_status(
-												&download_request_id,
+												&download_RequestId,
 												crate::ApplicationState::RequestState::Failed(
 													"Client disconnected".to_string(),
 												),
@@ -1314,7 +1318,7 @@ impl AirService for AirVinegRPCService {
 									debug!(
 										"[AirVinegRPCService] Sent chunk of {} bytes [ID: {}] - Progress: {:.1}%",
 										buffer.len(),
-										download_request_id,
+										download_RequestId,
 										progress
 									);
 
@@ -1325,13 +1329,13 @@ impl AirService for AirVinegRPCService {
 								let error = format!("Download error: {}", e);
 								log::error!(
 									"[AirVinegRPCService] Stream download failed [ID: {}]: {}",
-									download_request_id,
+									download_RequestId,
 									error
 								);
 
 								let _ = response_tx
 									.send(Ok(DownloadStreamResponse {
-										request_id:response_id.clone(),
+										RequestId:response_id.clone(),
 										chunk:vec![].into(),
 										total_size,
 										downloaded:total_downloaded,
@@ -1342,7 +1346,7 @@ impl AirService for AirVinegRPCService {
 
 								app_state
 									.update_request_status(
-										&download_request_id,
+										&download_RequestId,
 										crate::ApplicationState::RequestState::Failed(error),
 										None,
 									)
@@ -1359,7 +1363,7 @@ impl AirService for AirVinegRPCService {
 
 						if tx
 							.send(Ok(DownloadStreamResponse {
-								request_id:download_request_id.clone(),
+								RequestId:download_RequestId.clone(),
 								chunk:buffer.into(),
 								total_size,
 								downloaded:total_downloaded,
@@ -1371,7 +1375,7 @@ impl AirService for AirVinegRPCService {
 						{
 							log::warn!(
 								"[AirVinegRPCService] Client disconnected while sending final chunk [ID: {}]",
-								download_request_id
+								download_RequestId
 							);
 							return;
 						}
@@ -1380,7 +1384,7 @@ impl AirService for AirVinegRPCService {
 					// Send completion signal
 					app_state
 						.update_request_status(
-							&download_request_id,
+							&download_RequestId,
 							crate::ApplicationState::RequestState::Completed,
 							Some(100.0),
 						)
@@ -1389,7 +1393,7 @@ impl AirService for AirVinegRPCService {
 
 					let _ = tx
 						.send(Ok(DownloadStreamResponse {
-							request_id,
+							RequestId,
 							chunk:vec![].into(),
 							total_size,
 							downloaded:total_downloaded,
@@ -1400,20 +1404,20 @@ impl AirService for AirVinegRPCService {
 
 					info!(
 						"[AirVinegRPCService] Stream download completed [ID: {}] - Total: {} bytes",
-						download_request_id, total_downloaded
+						download_RequestId, total_downloaded
 					);
 				},
 				Err(e) => {
 					let error = format!("Failed to start streaming download: {}", e);
 					log::error!(
 						"[AirVinegRPCService] Stream download error [ID: {}]: {}",
-						download_request_id,
+						download_RequestId,
 						error
 					);
 
 					let _ = tx
 						.send(Ok(DownloadStreamResponse {
-							request_id:download_request_id.clone(),
+							RequestId:download_RequestId.clone(),
 							chunk:vec![].into(),
 							total_size:0,
 							downloaded:0,
@@ -1424,7 +1428,7 @@ impl AirService for AirVinegRPCService {
 
 					app_state
 						.update_request_status(
-							&download_request_id,
+							&download_RequestId,
 							crate::ApplicationState::RequestState::Failed(error),
 							None,
 						)
@@ -1444,18 +1448,18 @@ impl AirService for AirVinegRPCService {
 		&self,
 		request:Request<SearchRequest>,
 	) -> std::result::Result<Response<SearchResponse>, Status> {
-		let request_data = request.into_inner();
-		let request_id = request_data.request_id.clone();
+		let RequestData = request.into_inner();
+		let RequestId = RequestData.RequestId.clone();
 
 		debug!(
 			"[AirVinegRPCService] Search files request: query='{}' in path='{}'",
-			request_data.query, request_data.path
+			RequestData.query, RequestData.path
 		);
 
 		// Validate search query
-		if request_data.query.is_empty() {
+		if RequestData.query.is_empty() {
 			return Ok(Response::new(SearchResponse {
-				request_id,
+				RequestId,
 				results:vec![],
 				total_results:0,
 				error:"Search query cannot be empty".to_string(),
@@ -1463,16 +1467,16 @@ impl AirService for AirVinegRPCService {
 		}
 
 		// Use file indexer to search - convert to match the existing signature
-		let path = if request_data.path.is_empty() {
+		let path = if RequestData.path.is_empty() {
 			None
 		} else {
-			Some(request_data.path.clone())
+			Some(RequestData.path.clone())
 		};
 		let search_path = path.as_deref();
 
 		match self
 			.file_indexer
-			.search_files(request_data.query.clone(), path, request_data.max_results)
+			.search_files(RequestData.query.clone(), path, RequestData.max_results)
 			.await
 		{
 			Ok(search_results) => {
@@ -1501,7 +1505,7 @@ impl AirService for AirVinegRPCService {
 				info!("[AirVinegRPCService] Search completed: {} results found", file_results.len());
 
 				Ok(Response::new(SearchResponse {
-					request_id,
+					RequestId,
 					results:file_results,
 					total_results:file_results.len() as u32,
 					error:None,
@@ -1510,7 +1514,7 @@ impl AirService for AirVinegRPCService {
 			Err(e) => {
 				error!("[AirVinegRPCService] Search failed: {}", e);
 				Ok(Response::new(SearchResponse {
-					request_id,
+					RequestId,
 					results:vec![],
 					total_results:0,
 					error:Some(e.to_string()),
@@ -1524,15 +1528,15 @@ impl AirService for AirVinegRPCService {
 		&self,
 		request:Request<FileInfoRequest>,
 	) -> std::result::Result<Response<FileInfoResponse>, Status> {
-		let request_data = request.into_inner();
-		let request_id = request_data.request_id.clone();
+		let RequestData = request.into_inner();
+		let RequestId = RequestData.RequestId.clone();
 
-		debug!("[AirVinegRPCService] Get file info request: {}", request_data.path);
+		debug!("[AirVinegRPCService] Get file info request: {}", RequestData.path);
 
 		// Validate path
-		if request_data.path.is_empty() {
+		if RequestData.path.is_empty() {
 			return Ok(Response::new(FileInfoResponse {
-				request_id,
+				RequestId,
 				exists:false,
 				size:0,
 				mime_type:String::new(),
@@ -1544,11 +1548,11 @@ impl AirService for AirVinegRPCService {
 
 		// Get file metadata
 		use std::path::Path;
-		let path = Path::new(&request_data.path);
+		let path = Path::new(&RequestData.path);
 
 		if !path.exists() {
 			return Ok(Response::new(FileInfoResponse {
-				request_id,
+				RequestId,
 				exists:false,
 				size:0,
 				mime_type:String::new(),
@@ -1578,7 +1582,7 @@ impl AirService for AirVinegRPCService {
 				});
 
 				Ok(Response::new(FileInfoResponse {
-					request_id,
+					RequestId,
 					exists:true,
 					size:metadata.len(),
 					mime_type,
@@ -1590,7 +1594,7 @@ impl AirService for AirVinegRPCService {
 			Err(e) => {
 				error!("[AirVinegRPCService] Failed to get file metadata: {}", e);
 				Ok(Response::new(FileInfoResponse {
-					request_id,
+					RequestId,
 					exists:false,
 					size:0,
 					mime_type:String::new(),
@@ -1609,16 +1613,16 @@ impl AirService for AirVinegRPCService {
 		&self,
 		request:Request<MetricsRequest>,
 	) -> std::result::Result<Response<MetricsResponse>, Status> {
-		let request_data = request.into_inner();
-		let request_id = request_data.request_id.clone();
+		let RequestData = request.into_inner();
+		let RequestId = RequestData.RequestId.clone();
 
-		debug!("[AirVinegRPCService] Get metrics request: type='{}'", request_data.metric_type);
+		debug!("[AirVinegRPCService] Get metrics request: type='{}'", RequestData.metric_type);
 
 		let metrics = self.app_state.get_metrics().await;
 		let mut metrics_map = std::collections::HashMap::new();
 
 		// Performance metrics
-		if request_data.metric_type.is_empty() || request_data.metric_type == "performance" {
+		if RequestData.metric_type.is_empty() || RequestData.metric_type == "performance" {
 			metrics_map.insert("uptime_seconds".to_string(), metrics.uptime_seconds.to_string());
 			metrics_map.insert("total_requests".to_string(), metrics.total_requests.to_string());
 			metrics_map.insert("successful_requests".to_string(), metrics.successful_requests.to_string());
@@ -1630,14 +1634,14 @@ impl AirService for AirVinegRPCService {
 		}
 
 		// Request metrics
-		if request_data.metric_type.is_empty() || request_data.metric_type == "requests" {
+		if RequestData.metric_type.is_empty() || RequestData.metric_type == "requests" {
 			metrics_map.insert(
-				"active_requests".to_string(),
+				"ActiveRequests".to_string(),
 				self.app_state.get_active_request_count().await.to_string(),
 			);
 		}
 
-		Ok(Response::new(MetricsResponse { request_id, metrics:metrics_map, error:None }))
+		Ok(Response::new(MetricsResponse { RequestId, metrics:metrics_map, error:None }))
 	}
 
 	/// Handle get resource usage requests
@@ -1645,15 +1649,15 @@ impl AirService for AirVinegRPCService {
 		&self,
 		request:Request<ResourceUsageRequest>,
 	) -> std::result::Result<Response<ResourceUsageResponse>, Status> {
-		let request_data = request.into_inner();
-		let request_id = request_data.request_id.clone();
+		let RequestData = request.into_inner();
+		let RequestId = RequestData.RequestId.clone();
 
 		debug!("[AirVinegRPCService] Get resource usage request");
 
 		let resources = self.app_state.get_resource_usage().await;
 
 		Ok(Response::new(ResourceUsageResponse {
-			request_id,
+			RequestId,
 			memory_usage_mb:resources.memory_usage_mb,
 			cpu_usage_percent:resources.cpu_usage_percent,
 			disk_usage_mb:resources.disk_usage_mb,
@@ -1667,26 +1671,26 @@ impl AirService for AirVinegRPCService {
 		&self,
 		request:Request<ResourceLimitsRequest>,
 	) -> std::result::Result<Response<ResourceLimitsResponse>, Status> {
-		let request_data = request.into_inner();
-		let request_id = request_data.request_id.clone();
+		let RequestData = request.into_inner();
+		let RequestId = RequestData.RequestId.clone();
 
 		info!(
 			"[AirVinegRPCService] Set resource limits: memory={}MB, cpu={}%, disk={}MB",
-			request_data.memory_limit_mb, request_data.cpu_limit_percent, request_data.disk_limit_mb
+			RequestData.memory_limit_mb, RequestData.cpu_limit_percent, RequestData.disk_limit_mb
 		);
 
 		// Validate limits
-		if request_data.memory_limit_mb == 0 {
+		if RequestData.memory_limit_mb == 0 {
 			return Ok(Response::new(ResourceLimitsResponse {
-				request_id,
+				RequestId,
 				success:false,
 				error:"Memory limit must be greater than 0".to_string(),
 			}));
 		}
 
-		if request_data.cpu_limit_percent > 100 {
+		if RequestData.cpu_limit_percent > 100 {
 			return Ok(Response::new(ResourceLimitsResponse {
-				request_id,
+				RequestId,
 				success:false,
 				error:"CPU limit cannot exceed 100%".to_string(),
 			}));
@@ -1696,17 +1700,17 @@ impl AirService for AirVinegRPCService {
 		let result = self
 			.app_state
 			.set_resource_limits(
-				Some(request_data.memory_limit_mb as u64),
-				Some(request_data.cpu_limit_percent),
-				Some(request_data.disk_limit_mb as u64),
+				Some(RequestData.memory_limit_mb as u64),
+				Some(RequestData.cpu_limit_percent),
+				Some(RequestData.disk_limit_mb as u64),
 			)
 			.await;
 
 		match result {
-			Ok(_) => Ok(Response::new(ResourceLimitsResponse { request_id, success:true, error:None })),
+			Ok(_) => Ok(Response::new(ResourceLimitsResponse { RequestId, success:true, error:None })),
 			Err(e) => {
 				Ok(Response::new(ResourceLimitsResponse {
-					request_id,
+					RequestId,
 					success:false,
 					error:Some(e.to_string()),
 				}))
@@ -1721,12 +1725,12 @@ impl AirService for AirVinegRPCService {
 		&self,
 		request:Request<ConfigurationRequest>,
 	) -> std::result::Result<Response<ConfigurationResponse>, Status> {
-		let request_data = request.into_inner();
-		let request_id = request_data.request_id.clone();
+		let RequestData = request.into_inner();
+		let RequestId = RequestData.RequestId.clone();
 
 		debug!(
 			"[AirVinegRPCService] Get configuration request: section='{}'",
-			request_data.section
+			RequestData.section
 		);
 
 		// Get configuration from ApplicationState
@@ -1734,7 +1738,7 @@ impl AirService for AirVinegRPCService {
 		let mut config_map = std::collections::HashMap::new();
 
 		// Serialize config to map, filter by section if specified
-		match request_data.section.as_str() {
+		match RequestData.section.as_str() {
 			"grpc" => {
 				config_map.insert("bind_address".to_string(), config.grpc.bind_address);
 				config_map.insert("max_connections".to_string(), config.grpc.max_connections.to_string());
@@ -1788,7 +1792,7 @@ impl AirService for AirVinegRPCService {
 		}
 
 		Ok(Response::new(ConfigurationResponse {
-			request_id,
+			RequestId,
 			configuration:config_map,
 			error:None,
 		}))
@@ -1799,19 +1803,19 @@ impl AirService for AirVinegRPCService {
 		&self,
 		request:Request<UpdateConfigurationRequest>,
 	) -> std::result::Result<Response<UpdateConfigurationResponse>, Status> {
-		let request_data = request.into_inner();
-		let request_id = request_data.request_id.clone();
+		let RequestData = request.into_inner();
+		let RequestId = RequestData.RequestId.clone();
 
 		info!(
 			"[AirVinegRPCService] Update configuration request: section='{}'",
-			request_data.section
+			RequestData.section
 		);
 
 		// Validate section
-		if !["grpc", "authentication", "updates", "downloader", "indexing", ""].contains(&request_data.section.as_str())
+		if !["grpc", "authentication", "updates", "downloader", "indexing", ""].contains(&RequestData.section.as_str())
 		{
 			return Ok(Response::new(UpdateConfigurationResponse {
-				request_id,
+				RequestId,
 				success:false,
 				error:"Invalid configuration section".to_string(),
 			}));
@@ -1820,20 +1824,20 @@ impl AirService for AirVinegRPCService {
 		// Update configuration via ApplicationState
 		let result = self
 			.app_state
-			.update_configuration(request_data.section, request_data.updates)
+			.update_configuration(RequestData.section, RequestData.updates)
 			.await;
 
 		match result {
 			Ok(_) => {
 				Ok(Response::new(UpdateConfigurationResponse {
-					request_id,
+					RequestId,
 					success:true,
 					error:None,
 				}))
 			},
 			Err(e) => {
 				Ok(Response::new(UpdateConfigurationResponse {
-					request_id,
+					RequestId,
 					success:false,
 					error:Some(e.to_string()),
 				}))
@@ -1875,9 +1879,9 @@ impl AirVinegRPCService {
 	/// Returns file_info (path, size, checksum) from DownloadManager
 	async fn download_file_with_retry(
 		&self,
-		request_id:&str,
+		RequestId:&str,
 		url:String,
-		destination_path:String,
+		DestinationPath:String,
 		checksum:String,
 		progress_callback:Option<Box<dyn Fn(f32) + Send>>,
 	) -> Result<crate::Downloader::DownloadResult> {
@@ -1887,7 +1891,7 @@ impl AirVinegRPCService {
 		loop {
 			match self
 				.download_manager
-				.download_file(url.clone(), destination_path.clone(), checksum.clone())
+				.download_file(url.clone(), DestinationPath.clone(), checksum.clone())
 				.await
 			{
 				Ok(file_info) => {
@@ -1903,7 +1907,7 @@ impl AirVinegRPCService {
 						warn!(
 							"[AirVinegRPCService] Download failed [ID: {}], retrying (attempt {}/{}): {} - Backing \
 							 off {} seconds",
-							request_id, retries, config.max_retries, e, backoff_secs
+							RequestId, retries, config.max_retries, e, backoff_secs
 						);
 
 						if let Some(ref callback) = progress_callback {
@@ -1916,7 +1920,7 @@ impl AirVinegRPCService {
 					} else {
 						error!(
 							"[AirVinegRPCService] Download failed after {} retries [ID: {}]: {}",
-							config.max_retries, request_id, e
+							config.max_retries, RequestId, e
 						);
 						return Err(e);
 					}

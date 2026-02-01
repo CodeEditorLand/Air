@@ -274,15 +274,15 @@ impl MetricsCollector {
 	}
 
 	/// Update resource usage metrics with thread-safe atomic updates
-	pub fn UpdateResourceMetrics(&self, MemoryBytes:u64, CpuPercent:f64, ActiveConns:u64, ActiveThreads:u64) {
+	pub fn UpdateResourceMetrics(&self, MemoryBytes:u64, CPUPercent:f64, ActiveConns:u64, ActiveThreads:u64) {
 		self.memory_usage_bytes.store(MemoryBytes as i64, Ordering::Relaxed);
-		self.cpu_usage_percent.store((CpuPercent * 100.0) as u64, Ordering::Relaxed);
+		self.cpu_usage_percent.store((CPUPercent * 100.0) as u64, Ordering::Relaxed);
 		self.active_connections.store(ActiveConns, Ordering::Relaxed);
 		self.threads_active.store(ActiveThreads, Ordering::Relaxed);
 
 		debug!(
 			"[Metrics] Updated resource metrics - Memory: {}B, CPU: {:.1}%, Connections: {}, Threads: {}",
-			MemoryBytes, CpuPercent, ActiveConns, ActiveThreads
+			MemoryBytes, CPUPercent, ActiveConns, ActiveThreads
 		);
 	}
 
@@ -428,7 +428,7 @@ impl MetricsCollector {
 		};
 
 		MetricsData {
-			timestamp:crate::utils::CurrentTimestamp(),
+			timestamp:crate::Utility::CurrentTimestamp(),
 			requests_total:self.requests_total.load(Ordering::Relaxed),
 			requests_successful:self.requests_successful.load(Ordering::Relaxed),
 			requests_failed:self.requests_failed.load(Ordering::Relaxed),

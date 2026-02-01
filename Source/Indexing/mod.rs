@@ -1238,8 +1238,8 @@ impl FileIndexer {
 
 			// Check word boundary after
 			let MatchEnd = ActualPos + Word.len();
-			let ValidAfter = MatchEnd == Line.len()
-				|| Line.chars().nth(MatchEnd).map_or(true, |c| !c.is_alphanumeric() && c != '_');
+			let ValidAfter =
+				MatchEnd == Line.len() || Line.chars().nth(MatchEnd).map_or(true, |c| !c.is_alphanumeric() && c != '_');
 
 			if ValidBefore && ValidAfter {
 				return Some(ActualPos);

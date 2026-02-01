@@ -12,7 +12,7 @@ use tokio::sync::{Mutex, RwLock};
 use base64::{Engine as _, engine::general_purpose::URL_SAFE};
 use ring::{aead, rand::SecureRandom};
 
-use crate::{AirError, ApplicationState::ApplicationState, Configuration::ConfigurationManager, Result, utils};
+use crate::{AirError, ApplicationState::ApplicationState, Configuration::ConfigurationManager, Result, Utility};
 
 /// Authentication service implementation
 pub struct AuthenticationService {
@@ -83,7 +83,7 @@ impl AuthenticationService {
 		let AeadAlgo = &aead::AES_256_GCM;
 
 		let Service = Self {
-			AppState:AppState,
+			AppState,
 			Sessions:Arc::new(RwLock::new(HashMap::new())),
 			Credentials:Arc::new(Mutex::new(CredentialsStore)),
 			CryptoKeys:Arc::new(Mutex::new(CryptoKeys)),
@@ -114,9 +114,9 @@ impl AuthenticationService {
 		let Token = self.GenerateSessionToken(&Username, &Provider).await?;
 
 		// Create session
-		let SessionId = utils::GenerateRequestId();
+		let SessionId = Utility::GenerateRequestId();
 		let Session = AuthSession {
-			SessionId:SessionId,
+			SessionId,
 			UserId:Username.clone(),
 			Provider:Provider.clone(),
 			Token:Token.clone(),
@@ -167,7 +167,7 @@ impl AuthenticationService {
 	async fn GenerateSessionToken(&self, Username:&str, Provider:&str) -> Result<String> {
 		let CryptoKeys = self.CryptoKeys.lock().await;
 
-		let Payload = format!("{}:{}:{}", Username, Provider, utils::CurrentTimestamp());
+		let Payload = format!("{}:{}:{}", Username, Provider, Utility::CurrentTimestamp());
 
 		// Sign the payload
 		let Signature = CryptoKeys.SigningKey.sign(Payload.as_bytes());
@@ -268,7 +268,7 @@ impl AuthenticationService {
 			let Credentials:HashMap<String, UserCredentials> = serde_json::from_str(&Content)
 				.map_err(|e| AirError::Authentication(format!("Failed to parse credentials file: {}", e)))?;
 
-			Ok(CredentialsStore { Credentials:Credentials, FilePath:FilePath.to_string_lossy().to_string() })
+			Ok(CredentialsStore { Credentials, FilePath:FilePath.to_string_lossy().to_string() })
 		} else {
 			// Create new credentials store
 			Ok(CredentialsStore { Credentials:HashMap::new(), FilePath:FilePath.to_string_lossy().to_string() })
@@ -294,7 +294,6 @@ impl AuthenticationService {
 		}
 	}
 
-
 	/// Generate cryptographic keys
 	fn GenerateCryptoKeys() -> Result<CryptoKeys> {
 		// Generate signing key
@@ -312,7 +311,7 @@ impl AuthenticationService {
 			.map_err(|e| AirError::Authentication(format!("Failed to generate encryption key: {}", e)))
 			.map_err(|e| AirError::Authentication(format!("Failed to generate encryption key: {}", e)))?;
 
-		Ok(CryptoKeys { signing_key:SigningKey, encryption_key:EncryptionKey })
+		Ok(CryptoKeys { SigningKey, EncryptionKey })
 	}
 
 	/// Start background tasks
@@ -346,16 +345,16 @@ impl AuthenticationService {
 	/// Clean up expired sessions
 	async fn CleanupExpiredSessions(&self) {
 		let Now = Utc::now();
-		let mut Sessions = self.sessions.write().await;
+		let mut Sessions = self.Sessions.write().await;
 
-		Sessions.retain(|_, Session| Session.expires_at > Now && Session.is_valid);
+		Sessions.retain(|_, Session| Session.ExpiresAt > Now && Session.IsValid);
 
 		log::debug!("[Authentication] Cleaned up expired sessions");
 	}
 
 	/// Save credentials periodically
 	async fn SaveCredentialsPeriodically(&self) -> Result<()> {
-		let CredentialsStore = self.credentials.lock().await;
+		let CredentialsStore = self.Credentials.lock().await;
 		self.SaveCredentialsStore(&CredentialsStore).await
 	}
 

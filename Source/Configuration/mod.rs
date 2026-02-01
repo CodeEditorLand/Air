@@ -402,7 +402,7 @@ pub struct PerformanceConfig {
 	/// Validation: Range [10, 100]
 	/// Default: 50
 	#[serde(default = "default_perf_cpu_limit")]
-	pub CpuLimitPercent:u32,
+	pub CPULimitPercent:u32,
 
 	/// Disk usage limit (MB)
 	/// Validation: Range [100, 102400] (100MB to 100GB)
@@ -429,50 +429,50 @@ impl Default for AirConfiguration {
 	fn default() -> Self {
 		Self {
 			SchemaVersion:default_schema_version(),
-			profile:default_profile(),
-			grpc:GrpcConfig {
+			Profile:default_profile(),
+			Grpc:GrpcConfig {
 				BindAddress:default_grpc_bind_address(),
 				MaxConnections:default_grpc_max_connections(),
 				RequestTimeoutSecs:default_grpc_request_timeout(),
 			},
-			authentication:AuthConfig {
-				enabled:default_auth_enabled(),
+			Authentication:AuthConfig {
+				Enabled:default_auth_enabled(),
 				CredentialsPath:default_auth_credentials_path(),
 				TokenExpirationHours:default_auth_token_expiration(),
 				MaxSessions:default_auth_max_sessions(),
 			},
-			updates:UpdateConfig {
-				enabled:default_update_enabled(),
+			Updates:UpdateConfig {
+				Enabled:default_update_enabled(),
 				CheckIntervalHours:default_update_check_interval(),
 				UpdateServerUrl:default_update_server_url(),
 				AutoDownload:default_update_auto_download(),
 				AutoInstall:default_update_auto_install(),
-				channel:default_update_channel(),
+				Channel:default_update_channel(),
 			},
-			downloader:DownloadConfig {
-				enabled:default_download_enabled(),
+			Downloader:DownloadConfig {
+				Enabled:default_download_enabled(),
 				MaxConcurrentDownloads:default_download_max_concurrent(),
 				DownloadTimeoutSecs:default_download_timeout(),
 				MaxRetries:default_download_max_retries(),
 				CacheDirectory:default_download_cache_dir(),
 			},
-			indexing:IndexingConfig {
-				enabled:default_indexing_enabled(),
+			Indexing:IndexingConfig {
+				Enabled:default_indexing_enabled(),
 				MaxFileSizeMb:default_indexing_max_file_size(),
 				FileTypes:default_indexing_file_types(),
 				UpdateIntervalMinutes:default_indexing_update_interval(),
 				IndexDirectory:default_indexing_directory(),
 			},
-			logging:LoggingConfig {
-				level:default_logging_level(),
+			Logging:LoggingConfig {
+				Level:default_logging_level(),
 				FilePath:default_logging_file_path(),
 				ConsoleEnabled:default_logging_console_enabled(),
 				MaxFileSizeMb:default_logging_max_file_size(),
 				MaxFiles:default_logging_max_files(),
 			},
-			performance:PerformanceConfig {
+			Performance:PerformanceConfig {
 				MemoryLimitMb:default_perf_memory_limit(),
-				CpuLimitPercent:default_perf_cpu_limit(),
+				CPULimitPercent:default_perf_cpu_limit(),
 				DiskLimitMb:default_perf_disk_limit(),
 				BackgroundTaskIntervalSecs:default_perf_task_interval(),
 			},
@@ -635,7 +635,7 @@ pub fn generate_schema() -> JsonValue {
 						"minimum": 64,
 						"maximum": 16384
 					},
-					"CpuLimitPercent": {
+					"CPULimitPercent": {
 						"type": "integer",
 						"minimum": 10,
 						"maximum": 100
@@ -899,11 +899,11 @@ impl ConfigurationManager {
 	fn ValidateProfile(&self, profile:&str) -> Result<()> {
 		let ValidProfiles = ["dev", "staging", "prod", "custom"];
 
-		if !valid_profiles.contains(&profile) {
+		if !ValidProfiles.contains(&profile) {
 			return Err(AirError::Configuration(format!(
 				"Invalid profile '{}': must be one of: {}",
 				profile,
-				valid_profiles.join(", ")
+				ValidProfiles.join(", ")
 			)));
 		}
 
@@ -961,7 +961,7 @@ impl ConfigurationManager {
 	/// Validate authentication configuration
 	fn ValidateAuthConfig(&self, auth:&AuthConfig) -> Result<()> {
 		// If authentication is enabled, validate credentials path
-		if auth.enabled {
+		if auth.Enabled {
 			if auth.CredentialsPath.is_empty() {
 				return Err(AirError::Configuration(
 					"Authentication credentials path cannot be empty when authentication is enabled".to_string(),
@@ -1007,7 +1007,7 @@ impl ConfigurationManager {
 
 	/// Validate update configuration
 	fn ValidateUpdateConfig(&self, updates:&UpdateConfig) -> Result<()> {
-		if updates.enabled {
+		if updates.Enabled {
 			// Validate update server URL
 			if updates.UpdateServerUrl.is_empty() {
 				return Err(AirError::Configuration(
@@ -1052,7 +1052,7 @@ impl ConfigurationManager {
 
 	/// Validate download configuration
 	fn ValidateDownloadConfig(&self, downloader:&DownloadConfig) -> Result<()> {
-		if downloader.enabled {
+		if downloader.Enabled {
 			if downloader.CacheDirectory.is_empty() {
 				return Err(AirError::Configuration(
 					"Download cache directory cannot be empty when downloader is enabled".to_string(),
@@ -1106,7 +1106,7 @@ impl ConfigurationManager {
 
 	/// Validate indexing configuration
 	fn ValidateIndexingConfig(&self, indexing:&IndexingConfig) -> Result<()> {
-		if indexing.enabled {
+		if indexing.Enabled {
 			if indexing.IndexDirectory.is_empty() {
 				return Err(AirError::Configuration(
 					"Index directory cannot be empty when indexing is enabled".to_string(),
@@ -1125,14 +1125,14 @@ impl ConfigurationManager {
 
 			// Validate each file type pattern
 			for FileType in &indexing.FileTypes {
-				if file_type.is_empty() {
+				if FileType.is_empty() {
 					return Err(AirError::Configuration("File type pattern cannot be empty".to_string()));
 				}
 
-				if !file_type.contains('*') {
+				if !FileType.contains('*') {
 					log::warn!(
 						"File type pattern '{}' does not contain wildcards, may not match as expected",
-						file_type
+						FileType
 					);
 				}
 			}
@@ -1175,7 +1175,7 @@ impl ConfigurationManager {
 	fn ValidateLoggingConfig(&self, logging:&LoggingConfig) -> Result<()> {
 		// Validate log level
 		let ValidLevels = ["trace", "debug", "info", "warn", "error"];
-		if !ValidLevels.contains(&logging.level.as_str()) {
+		if !ValidLevels.contains(&logging.Level.as_str()) {
 			return Err(AirError::Configuration(format!(
 				"Invalid log level '{}': must be one of: {}",
 				logging.level,
@@ -1240,18 +1240,18 @@ impl ConfigurationManager {
 			)));
 		}
 
-		// Validate CpuLimitPercent range [10, 100]
-		if performance.CpuLimitPercent < 10 {
+		// Validate CPULimitPercent range [10, 100]
+		if performance.CPULimitPercent < 10 {
 			return Err(AirError::Configuration(format!(
 				"CPU limit {}% is below minimum (10%)",
-				performance.CpuLimitPercent
+				performance.CPULimitPercent
 			)));
 		}
 
-		if performance.CpuLimitPercent > 100 {
+		if performance.CPULimitPercent > 100 {
 			return Err(AirError::Configuration(format!(
 				"CPU limit {}% exceeds maximum (100%)",
-				performance.CpuLimitPercent
+				performance.CPULimitPercent
 			)));
 		}
 
@@ -1358,7 +1358,7 @@ impl ConfigurationManager {
 
 		// Basic schema validation (would use jsonschema crate in production)
 		// For now, we do manual validation
-		if !config_json.is_object() {
+		if !ConfigJson.is_object() {
 			return Err(AirError::Configuration("Configuration must be an object".to_string()));
 		}
 
@@ -1378,49 +1378,49 @@ impl ConfigurationManager {
 		let mut override_count = 0;
 
 		// gRPC overrides
-		if let Ok(val) = env::var(&format!("{}GRPC_BIND_ADDRESS", self.env_prefix)) {
-			config.grpc.bind_address = val;
+		if let Ok(val) = env::var(&format!("{}GRPC_BIND_ADDRESS", self.EnvPrefix)) {
+			config.Grpc.BindAddress = val;
 			override_count += 1;
 		}
 
-		if let Ok(val) = env::var(&format!("{}GRPC_MAX_CONNECTIONS", self.env_prefix)) {
-			config.grpc.max_connections = val
+		if let Ok(val) = env::var(&format!("{}GRPC_MAX_CONNECTIONS", self.EnvPrefix)) {
+			config.Grpc.MaxConnections = val
 				.parse()
 				.map_err(|e| AirError::Configuration(format!("Invalid GRPC_MAX_CONNECTIONS value: {}", e)))?;
 			override_count += 1;
 		}
 
 		// Authentication overrides
-		if let Ok(val) = env::var(&format!("{}AUTH_ENABLED", self.env_prefix)) {
-			config.authentication.enabled = val
+		if let Ok(val) = env::var(&format!("{}AUTH_ENABLED", self.EnvPrefix)) {
+			config.Authentication.Enabled = val
 				.parse()
 				.map_err(|e| AirError::Configuration(format!("Invalid AUTH_ENABLED value: {}", e)))?;
 			override_count += 1;
 		}
 
-		if let Ok(val) = env::var(&format!("{}AUTH_CREDENTIALS_PATH", self.env_prefix)) {
-			config.authentication.credentials_path = val;
+		if let Ok(val) = env::var(&format!("{}AUTH_CREDENTIALS_PATH", self.EnvPrefix)) {
+			config.Authentication.CredentialsPath = val;
 			override_count += 1;
 		}
 
 		// Update overrides
-		if let Ok(val) = env::var(&format!("{}UPDATE_ENABLED", self.env_prefix)) {
-			config.updates.enabled = val
+		if let Ok(val) = env::var(&format!("{}UPDATE_ENABLED", self.EnvPrefix)) {
+			config.Updates.Enabled = val
 				.parse()
 				.map_err(|e| AirError::Configuration(format!("Invalid UPDATE_ENABLED value: {}", e)))?;
 			override_count += 1;
 		}
 
-		if let Ok(val) = env::var(&format!("{}UPDATE_AUTO_DOWNLOAD", self.env_prefix)) {
-			config.updates.auto_download = val
+		if let Ok(val) = env::var(&format!("{}UPDATE_AUTO_DOWNLOAD", self.EnvPrefix)) {
+			config.Updates.AutoDownload = val
 				.parse()
 				.map_err(|e| AirError::Configuration(format!("Invalid UPDATE_AUTO_DOWNLOAD value: {}", e)))?;
 			override_count += 1;
 		}
 
 		// Logging overrides
-		if let Ok(val) = env::var(&format!("{}LOGGING_LEVEL", self.env_prefix)) {
-			config.logging.level = val.to_lowercase();
+		if let Ok(val) = env::var(&format!("{}LOGGING_LEVEL", self.EnvPrefix)) {
+			config.Logging.Level = val.to_lowercase();
 			override_count += 1;
 		}
 
@@ -1437,7 +1437,7 @@ impl ConfigurationManager {
 	/// in the configured backup directory.
 	async fn BackupConfiguration(&self, config_path:&Path) -> Result<()> {
 		let backup_dir = self
-			.backup_dir
+			.BackupDir
 			.as_ref()
 			.ok_or_else(|| AirError::Configuration("Backup directory not configured".to_string()))?;
 
@@ -1473,7 +1473,7 @@ impl ConfigurationManager {
 		let config_path = self.GetConfigPath()?;
 
 		let backup_dir = self
-			.backup_dir
+			.BackupDir
 			.as_ref()
 			.ok_or_else(|| AirError::Configuration("Backup directory not configured".to_string()))?;
 
@@ -1519,7 +1519,7 @@ impl ConfigurationManager {
 	///
 	/// Returns the configured path or the default path
 	fn GetConfigPath(&self) -> Result<PathBuf> {
-		if let Some(ref path) = self.config_path {
+		if let Some(ref path) = self.ConfigPath {
 			Ok(path.clone())
 		} else {
 			Self::GetDefaultConfigPath()
@@ -1558,14 +1558,14 @@ impl ConfigurationManager {
 				config.performance.cpu_limit_percent = 80;
 			},
 			"staging" => {
-				config.logging.level = "info".to_string();
+				config.Logging.Level = "info".to_string();
 				config.performance.memory_limit_mb = 768;
 				config.performance.cpu_limit_percent = 70;
 			},
 			"dev" | _ => {
 				// Dev defaults are already set
-				config.logging.level = "debug".to_string();
-				config.logging.console_enabled = true;
+				config.Logging.Level = "debug".to_string();
+				config.Logging.ConsoleEnabled = true;
 				config.performance.memory_limit_mb = 512;
 				config.performance.cpu_limit_percent = 50;
 			},
@@ -1657,7 +1657,7 @@ impl ConfigurationManager {
 	///
 	/// Returns a mapping of configuration paths to environment variable names
 	pub fn GetEnvironmentMappings(&self) -> HashMap<String, String> {
-		let prefix = &self.env_prefix;
+		let prefix = &self.EnvPrefix;
 		let mut mappings = HashMap::new();
 
 		mappings.insert("grpc.bind_address".to_string(), format!("{}GRPC_BIND_ADDRESS", prefix));
@@ -1698,22 +1698,22 @@ mod tests {
 	#[test]
 	fn test_default_configuration() {
 		let config = AirConfiguration::default();
-		assert_eq!(config.schema_version, "1.0.0");
-		assert_eq!(config.profile, "dev");
-		assert!(config.authentication.enabled);
-		assert!(config.logging.console_enabled);
+		assert_eq!(config.SchemaVersion, "1.0.0");
+		assert_eq!(config.Profile, "dev");
+		assert!(config.Authentication.Enabled);
+		assert!(config.Logging.ConsoleEnabled);
 	}
 
 	#[test]
 	fn test_profile_defaults() {
 		let DevConfig = ConfigurationManager::GetProfileDefaults("dev");
-		assert_eq!(DevConfig.profile, "dev");
-		assert_eq!(DevConfig.logging.level, "debug");
+		assert_eq!(DevConfig.Profile, "dev");
+		assert_eq!(DevConfig.Logging.Level, "debug");
 
 		let ProdConfig = ConfigurationManager::GetProfileDefaults("prod");
-		assert_eq!(ProdConfig.profile, "prod");
-		assert_eq!(ProdConfig.logging.level, "warn");
-		assert!(!ProdConfig.logging.console_enabled);
+		assert_eq!(ProdConfig.Profile, "prod");
+		assert_eq!(ProdConfig.Logging.Level, "warn");
+		assert!(!ProdConfig.Logging.ConsoleEnabled);
 	}
 
 	#[test]
@@ -1757,9 +1757,9 @@ mod tests {
 		let json_str = ConfigurationManager::ExportToJson(&config).unwrap();
 
 		let imported = ConfigurationManager::ImportFromJson(&json_str).unwrap();
-		assert_eq!(imported.schema_version, config.schema_version);
-		assert_eq!(imported.profile, config.profile);
-		assert_eq!(imported.grpc.bind_address, config.grpc.bind_address);
+		assert_eq!(imported.SchemaVersion, config.SchemaVersion);
+		assert_eq!(imported.Profile, config.Profile);
+		assert_eq!(imported.Grpc.BindAddress, config.Grpc.BindAddress);
 	}
 
 	#[test]
@@ -1770,7 +1770,7 @@ mod tests {
 		assert_eq!(hash1, hash2);
 
 		let mut modified = config;
-		modified.grpc.bind_address = "[::1]:50054".to_string();
+		modified.Grpc.BindAddress = "[::1]:50054".to_string();
 		let hash3 = ConfigurationManager::ComputeHash(&modified).unwrap();
 		assert_ne!(hash1, hash3);
 	}

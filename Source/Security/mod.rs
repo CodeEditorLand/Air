@@ -581,7 +581,7 @@ impl SecureStorage {
 
 		// Log key generation event
 		let event = SecurityEvent {
-			Timestamp:crate::utils::CurrentTimestamp(),
+			Timestamp:crate::Utility::CurrentTimestamp(),
 			EventType:SecurityEventType::KeyGenerated,
 			Severity:SecuritySeverity::Warning,
 			SourceIp:None,
@@ -658,7 +658,7 @@ impl SecureStorage {
 			salt:salt_b64,
 			nonce:nonce_b64,
 			key_version:self.key_version,
-			created_at:crate::utils::CurrentTimestamp(),
+			created_at:crate::Utility::CurrentTimestamp(),
 		};
 
 		let mut storage = self.credentials.write().await;
@@ -666,7 +666,7 @@ impl SecureStorage {
 
 		// Log credential storage event
 		let event = SecurityEvent {
-			Timestamp:crate::utils::CurrentTimestamp(),
+			Timestamp:crate::Utility::CurrentTimestamp(),
 			EventType:SecurityEventType::ConfigChange,
 			Severity:SecuritySeverity::Informational,
 			SourceIp:None,
@@ -698,7 +698,7 @@ impl SecureStorage {
 
 				// Log credential retrieval event (without exposing the credential)
 				let event = SecurityEvent {
-					Timestamp:crate::utils::CurrentTimestamp(),
+					Timestamp:crate::Utility::CurrentTimestamp(),
 					EventType:SecurityEventType::AuthSuccess,
 					Severity:SecuritySeverity::Informational,
 					SourceIp:None,
@@ -803,7 +803,7 @@ impl SecureStorage {
 
 		// Log key rotation event
 		let event = SecurityEvent {
-			Timestamp:crate::utils::CurrentTimestamp(),
+			Timestamp:crate::Utility::CurrentTimestamp(),
 			EventType:SecurityEventType::KeyRotation,
 			Severity:SecuritySeverity::Warning,
 			SourceIp:None,
@@ -829,7 +829,7 @@ impl SecureStorage {
 			old_key_version,
 			new_key_version:old_key_version + 1,
 			credentials_rotated,
-			timestamp:crate::utils::CurrentTimestamp(),
+			timestamp:crate::Utility::CurrentTimestamp(),
 		})
 	}
 
@@ -841,7 +841,7 @@ impl SecureStorage {
 
 		// Log clear event
 		let event = SecurityEvent {
-			Timestamp:crate::utils::CurrentTimestamp(),
+			Timestamp:crate::Utility::CurrentTimestamp(),
 			EventType:SecurityEventType::ConfigChange,
 			Severity:SecuritySeverity::Warning,
 			SourceIp:None,
@@ -965,7 +965,7 @@ mod tests {
 		let auditor = SecurityAuditor::new(10);
 
 		let event = SecurityEvent {
-			timestamp:crate::utils::CurrentTimestamp(),
+			timestamp:crate::Utility::CurrentTimestamp(),
 			event_type:SecurityEventType::AuthSuccess,
 			severity:SecuritySeverity::Informational,
 			source_ip:Some("127.0.0.1".to_string()),

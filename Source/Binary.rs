@@ -162,7 +162,7 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 use log::{debug, error, info, warn};
 use tokio::{signal, time::interval};
 
-use AirLibrary::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Configuration::ConfigurationManager, Daemon::DaemonManager, Downloader::DownloadManager, HealthCheck::{HealthCheckManager, HealthCheckLevel}, Indexing::FileIndexer, Logging, Metrics, Tracing, Updates::UpdateManager, CLI::{CliParser, Command, ConfigCommand, DebugCommand, OutputFormatter}, Vine::Server::AirVinegRPCService_simple::AirVinegRPCService, VERSION, DefaultBindAddress, ProtocolVersion};
+use AirLibrary::{ApplicationState::ApplicationState, Authentication::AuthenticationService, Configuration::ConfigurationManager, Daemon::DaemonManager, Downloader::DownloadManager, HealthCheck::{HealthCheckManager, HealthCheckLevel}, Indexing::FileIndexer, Logging, Metrics, Tracing, Updates::UpdateManager, CLI::{CliParser, Command, ConfigCommand, DebugCommand, OutputFormatter}, Vine::Server::AirVinegRPCService::AirVinegRPCService, VERSION, DefaultConfigFile, DefaultBindAddress, ProtocolVersion};
 
 // =============================================================================
 // Debug Helpers
@@ -1449,7 +1449,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
     info!("[Boot] [Vine] Configuring gRPC server on {}", bind_addr);
 
     // Create gRPC service implementation with all dependencies
-    let vine_service = match AirLibrary::Vine::Server::AirVinegRPCService_simple::AirVinegRPCService::new(
+    let vine_service = match AirLibrary::Vine::Server::AirVinegRPCService::AirVinegRPCService::new(
         app_state.clone(),
         auth_service.clone(),
         update_manager.clone(),

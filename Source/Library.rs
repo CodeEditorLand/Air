@@ -319,8 +319,8 @@ impl From<tonic::transport::Error> for AirError {
 	fn from(err:tonic::transport::Error) -> Self { AirError::Grpc(err.to_string()) }
 }
 
-impl From<SerdeJson::Error> for AirError {
-	fn from(err:SerdeJson::Error) -> Self { AirError::Serialization(err.to_string()) }
+impl From<serde_json::Error> for AirError {
+	fn from(err:serde_json::Error) -> Self { AirError::Serialization(err.to_string()) }
 }
 
 impl From<toml::de::Error> for AirError {
@@ -360,7 +360,7 @@ pub type Result<T> = std::result::Result<T, AirError>;
 /// These utilities provide defensive helper functions used throughout
 /// the Air library for validation, ID generation, timestamp handling,
 /// and common operations with proper error handling.
-pub mod utils {
+pub mod Utility {
 	use super::*;
 
 	/// Generate a unique request ID
@@ -394,17 +394,17 @@ pub mod utils {
 	/// Returns 0 if the system time is not available or is before the epoch.
 	pub fn CurrentTimestamp() -> u64 {
 		std::time::SystemTime::now()
-			.DurationSince(std::time::UNIX_EPOCH)
-			.UnwrapOrDefault()
-			.AsMillis() as u64
+			.duration_since(std::time::UNIX_EPOCH)
+			.unwrap_or_default()
+			.as_millis() as u64
 	}
 
 	/// Get current timestamp in seconds since UNIX epoch
 	pub fn CurrentTimestampSeconds() -> u64 {
 		std::time::SystemTime::now()
-			.DurationSince(std::time::UNIX_EPOCH)
-			.UnwrapOrDefault()
-			.AsSecs()
+			.duration_since(std::time::UNIX_EPOCH)
+			.unwrap_or_default()
+			.as_secs()
 	}
 
 	/// Convert timestamp millis to ISO 8601 string
@@ -417,13 +417,13 @@ pub mod utils {
 	///
 	/// ISO 8601 formatted string or "Invalid timestamp" on error
 	pub fn TimestampToISO8601(Millis:u64) -> String {
-		match std::time::UNIX_EPOCH.CheckedAdd(std::time::Duration::from_millis(Millis)) {
-			Some(time) => {
+		match std::time::UNIX_EPOCH.checked_add(std::time::Duration::from_millis(Millis)) {
+			Some(Time) => {
 				use std::time::SystemTime;
-				match SystemTime::try_from(time) {
-					Ok(st) => {
-						let datetime:chrono::DateTime<chrono::Utc> = st.into();
-						datetime.ToRfc3339()
+				match SystemTime::try_from(Time) {
+					Ok(SystemTime) => {
+						let DateTime:chrono::DateTime<chrono::Utc> = SystemTime.into();
+						DateTime.to_rfc3339()
 					},
 					Err(_) => "Invalid timestamp".to_string(),
 				}
@@ -622,9 +622,9 @@ pub mod utils {
 		// Add jitter (±25%)
 		use std::time::SystemTime;
 		let Seed = SystemTime::now()
-			.DurationSince(SystemTime::UNIX_EPOCH)
-			.UnwrapOrDefault()
-			.SubsecNanos() as u64;
+			.duration_since(SystemTime::UNIX_EPOCH)
+			.unwrap_or_default()
+			.subsec_nanos() as u64;
 
 		let JitterRange = (CappedDelay / 4).max(1); // 25% of delay, at least 1ms
 		let Jitter = (Seed % (2 * JitterRange)) as i64 - JitterRange as i64;

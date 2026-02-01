@@ -49,7 +49,7 @@
 //! ```
 //! Config file changed → File watcher detected → Load & Validate
 //!        ↓                                               ↓
-//!   Atomic swap成功 ←- Validation passed ←-- Migration applied
+//!   Atomic swap ←- Validation passed ←-- Migration applied
 //!        ↓
 //!   Notify subscribers → Wind services update → Mountain sync
 //!        ↓
@@ -228,31 +228,31 @@ pub struct GrpcConfigValidator;
 
 impl ConfigValidator for GrpcConfigValidator {
 	fn validate(&self, config:&AirConfiguration) -> Result<()> {
-		if config.grpc.bind_address.is_empty() {
+		if config.Grpc.BindAddress.is_empty() {
 			return Err(AirError::Configuration("gRPC bind address cannot be empty".to_string()));
 		}
 
 		// Validate address format
-		if !crate::Configuration::ConfigurationManager::IsValidAddress(&config.grpc.bind_address) {
+		if !crate::Configuration::ConfigurationManager::IsValidAddress(&config.Grpc.BindAddress) {
 			return Err(AirError::Configuration(format!(
 				"Invalid gRPC bind address '{}': must be host:port or [IPv6]:port",
-				config.grpc.bind_address
+				config.Grpc.BindAddress
 			)));
 		}
 
 		// Validate range [10, 10000]
-		if config.grpc.max_connections < 10 || config.grpc.max_connections > 10000 {
+		if config.Grpc.MaxConnections < 10 || config.Grpc.MaxConnections > 10000 {
 			return Err(AirError::Configuration(format!(
-				"gRPC max_connections {} is out of range [10, 10000]",
-				config.grpc.max_connections
+				"gRPC MaxConnections {} is out of range [10, 10000]",
+				config.Grpc.MaxConnections
 			)));
 		}
 
 		// Validate range [1, 3600]
-		if config.grpc.request_timeout_secs < 1 || config.grpc.request_timeout_secs > 3600 {
+		if config.Grpc.RequestTimeoutSecs < 1 || config.Grpc.RequestTimeoutSecs > 3600 {
 			return Err(AirError::Configuration(format!(
-				"gRPC request_timeout_secs {} is out of range [1, 3600]",
-				config.grpc.request_timeout_secs
+				"gRPC RequestTimeoutSecs {} is out of range [1, 3600]",
+				config.Grpc.RequestTimeoutSecs
 			)));
 		}
 
@@ -271,15 +271,15 @@ pub struct AuthConfigValidator;
 
 impl ConfigValidator for AuthConfigValidator {
 	fn validate(&self, config:&AirConfiguration) -> Result<()> {
-		if config.authentication.enabled {
-			if config.authentication.credentials_path.is_empty() {
+		if config.Authentication.Enabled {
+			if config.Authentication.CredentialsPath.is_empty() {
 				return Err(AirError::Configuration(
 					"Authentication credentials path cannot be empty when enabled".to_string(),
 				));
 			}
 
 			// Validate path security
-			if config.authentication.credentials_path.contains("..") {
+			if config.Authentication.CredentialsPath.contains("..") {
 				return Err(AirError::Configuration(
 					"Authentication credentials path contains '..' which is not allowed".to_string(),
 				));
@@ -287,18 +287,18 @@ impl ConfigValidator for AuthConfigValidator {
 		}
 
 		// Validate range [1, 8760]
-		if config.authentication.token_expiration_hours < 1 || config.authentication.token_expiration_hours > 8760 {
+		if config.Authentication.TokenExpirationHours < 1 || config.Authentication.TokenExpirationHours > 8760 {
 			return Err(AirError::Configuration(format!(
 				"Token expiration {} hours is out of range [1, 8760]",
-				config.authentication.token_expiration_hours
+				config.Authentication.TokenExpirationHours
 			)));
 		}
 
 		// Validate range [1, 1000]
-		if config.authentication.max_sessions < 1 || config.authentication.max_sessions > 1000 {
+		if config.Authentication.MaxSessions < 1 || config.Authentication.MaxSessions > 1000 {
 			return Err(AirError::Configuration(format!(
 				"Max sessions {} is out of range [1, 1000]",
-				config.authentication.max_sessions
+				config.Authentication.MaxSessions
 			)));
 		}
 
@@ -317,35 +317,35 @@ pub struct UpdateConfigValidator;
 
 impl ConfigValidator for UpdateConfigValidator {
 	fn validate(&self, config:&AirConfiguration) -> Result<()> {
-		if config.updates.enabled {
-			if config.updates.update_server_url.is_empty() {
+		if config.Updates.Enabled {
+			if config.Updates.UpdateServerUrl.is_empty() {
 				return Err(AirError::Configuration(
 					"Update server URL cannot be empty when updates are enabled".to_string(),
 				));
 			}
 
 			// Must be HTTPS
-			if !config.updates.update_server_url.starts_with("https://") {
+			if !config.Updates.UpdateServerUrl.starts_with("https://") {
 				return Err(AirError::Configuration(format!(
 					"Update server URL must use HTTPS: {}",
-					config.updates.update_server_url
+					config.Updates.UpdateServerUrl
 				)));
 			}
 
 			// Validate URL format
-			if !crate::Configuration::ConfigurationManager::IsValidUrl(&config.updates.update_server_url) {
+			if !crate::Configuration::ConfigurationManager::IsValidUrl(&config.Updates.UpdateServerUrl) {
 				return Err(AirError::Configuration(format!(
 					"Invalid update server URL: {}",
-					config.updates.update_server_url
+					config.Updates.UpdateServerUrl
 				)));
 			}
 		}
 
 		// Validate range [1, 168]
-		if config.updates.check_interval_hours < 1 || config.updates.check_interval_hours > 168 {
+		if config.Updates.CheckIntervalHours < 1 || config.Updates.CheckIntervalHours > 168 {
 			return Err(AirError::Configuration(format!(
 				"Update check interval {} hours is out of range [1, 168]",
-				config.updates.check_interval_hours
+				config.Updates.CheckIntervalHours
 			)));
 		}
 
@@ -364,41 +364,41 @@ pub struct DownloadConfigValidator;
 
 impl ConfigValidator for DownloadConfigValidator {
 	fn validate(&self, config:&AirConfiguration) -> Result<()> {
-		if config.downloader.enabled {
-			if config.downloader.cache_directory.is_empty() {
+		if config.Downloader.Enabled {
+			if config.Downloader.CacheDirectory.is_empty() {
 				return Err(AirError::Configuration(
 					"Download cache directory cannot be empty when enabled".to_string(),
 				));
 			}
 
 			// Validate path security
-			if config.downloader.cache_directory.contains("..") {
+			if config.Downloader.CacheDirectory.contains("..") {
 				return Err(AirError::Configuration(
 					"Download cache directory contains '..' which is not allowed".to_string(),
 				));
 			}
 
 			// Validate range [1, 50]
-			if config.downloader.max_concurrent_downloads < 1 || config.downloader.max_concurrent_downloads > 50 {
+			if config.Downloader.MaxConcurrentDownloads < 1 || config.Downloader.MaxConcurrentDownloads > 50 {
 				return Err(AirError::Configuration(format!(
 					"Max concurrent downloads {} is out of range [1, 50]",
-					config.downloader.max_concurrent_downloads
+					config.Downloader.MaxConcurrentDownloads
 				)));
 			}
 
 			// Validate range [10, 3600]
-			if config.downloader.download_timeout_secs < 10 || config.downloader.download_timeout_secs > 3600 {
+			if config.Downloader.DownloadTimeoutSecs < 10 || config.Downloader.DownloadTimeoutSecs > 3600 {
 				return Err(AirError::Configuration(format!(
 					"Download timeout {} seconds is out of range [10, 3600]",
-					config.downloader.download_timeout_secs
+					config.Downloader.DownloadTimeoutSecs
 				)));
 			}
 
 			// Validate range [0, 10]
-			if config.downloader.max_retries > 10 {
+			if config.Downloader.MaxRetries > 10 {
 				return Err(AirError::Configuration(format!(
 					"Max retries {} exceeds maximum (10)",
-					config.downloader.max_retries
+					config.Downloader.MaxRetries
 				)));
 			}
 		}
@@ -418,40 +418,40 @@ pub struct IndexingConfigValidator;
 
 impl ConfigValidator for IndexingConfigValidator {
 	fn validate(&self, config:&AirConfiguration) -> Result<()> {
-		if config.indexing.enabled {
-			if config.indexing.index_directory.is_empty() {
+		if config.Indexing.Enabled {
+			if config.Indexing.IndexDirectory.is_empty() {
 				return Err(AirError::Configuration(
 					"Index directory cannot be empty when indexing is enabled".to_string(),
 				));
 			}
 
 			// Validate path security
-			if config.indexing.index_directory.contains("..") {
+			if config.Indexing.IndexDirectory.contains("..") {
 				return Err(AirError::Configuration(
 					"Index directory contains '..' which is not allowed".to_string(),
 				));
 			}
 
 			// Validate file types is not empty
-			if config.indexing.file_types.is_empty() {
+			if config.Indexing.FileTypes.is_empty() {
 				return Err(AirError::Configuration(
 					"File types to index cannot be empty when indexing is enabled".to_string(),
 				));
 			}
 
 			// Validate range [1, 1024]
-			if config.indexing.max_file_size_mb < 1 || config.indexing.max_file_size_mb > 1024 {
+			if config.Indexing.MaxFileSizeMb < 1 || config.Indexing.MaxFileSizeMb > 1024 {
 				return Err(AirError::Configuration(format!(
 					"Max file size {} MB is out of range [1, 1024]",
-					config.indexing.max_file_size_mb
+					config.Indexing.MaxFileSizeMb
 				)));
 			}
 
 			// Validate range [1, 1440]
-			if config.indexing.update_interval_minutes < 1 || config.indexing.update_interval_minutes > 1440 {
+			if config.Indexing.UpdateIntervalMinutes < 1 || config.Indexing.UpdateIntervalMinutes > 1440 {
 				return Err(AirError::Configuration(format!(
 					"Index update interval {} minutes is out of range [1, 1440]",
-					config.indexing.update_interval_minutes
+					config.Indexing.UpdateIntervalMinutes
 				)));
 			}
 		}
@@ -473,27 +473,27 @@ impl ConfigValidator for LoggingConfigValidator {
 	fn validate(&self, config:&AirConfiguration) -> Result<()> {
 		let valid_levels = ["trace", "debug", "info", "warn", "error"];
 
-		if !valid_levels.contains(&config.logging.level.as_str()) {
+		if !valid_levels.contains(&config.Logging.Level.as_str()) {
 			return Err(AirError::Configuration(format!(
 				"Invalid log level '{}': must be one of: {}",
-				config.logging.level,
+				config.Logging.Level,
 				valid_levels.join(", ")
 			)));
 		}
 
 		// Validate range [1, 1000]
-		if config.logging.max_file_size_mb < 1 || config.logging.max_file_size_mb > 1000 {
+		if config.Logging.MaxFileSizeMb < 1 || config.Logging.MaxFileSizeMb > 1000 {
 			return Err(AirError::Configuration(format!(
 				"Max log file size {} MB is out of range [1, 1000]",
-				config.logging.max_file_size_mb
+				config.Logging.MaxFileSizeMb
 			)));
 		}
 
 		// Validate range [1, 50]
-		if config.logging.max_files < 1 || config.logging.max_files > 50 {
+		if config.Logging.MaxFiles < 1 || config.Logging.MaxFiles > 50 {
 			return Err(AirError::Configuration(format!(
 				"Max log files {} is out of range [1, 50]",
-				config.logging.max_files
+				config.Logging.MaxFiles
 			)));
 		}
 
@@ -513,36 +513,34 @@ pub struct PerformanceConfigValidator;
 impl ConfigValidator for PerformanceConfigValidator {
 	fn validate(&self, config:&AirConfiguration) -> Result<()> {
 		// Validate range [64, 16384]
-		if config.performance.memory_limit_mb < 64 || config.performance.memory_limit_mb > 16384 {
+		if config.Performance.MemoryLimitMb < 64 || config.Performance.MemoryLimitMb > 16384 {
 			return Err(AirError::Configuration(format!(
 				"Memory limit {} MB is out of range [64, 16384]",
-				config.performance.memory_limit_mb
+				config.Performance.MemoryLimitMb
 			)));
 		}
 
 		// Validate range [10, 100]
-		if config.performance.cpu_limit_percent < 10 || config.performance.cpu_limit_percent > 100 {
+		if config.Performance.CPULimitPercent < 10 || config.Performance.CPULimitPercent > 100 {
 			return Err(AirError::Configuration(format!(
 				"CPU limit {}% is out of range [10, 100]",
-				config.performance.cpu_limit_percent
+				config.Performance.CPULimitPercent
 			)));
 		}
 
 		// Validate range [100, 102400]
-		if config.performance.disk_limit_mb < 100 || config.performance.disk_limit_mb > 102400 {
+		if config.Performance.DiskLimitMb < 100 || config.Performance.DiskLimitMb > 102400 {
 			return Err(AirError::Configuration(format!(
 				"Disk limit {} MB is out of range [100, 102400]",
-				config.performance.disk_limit_mb
+				config.Performance.DiskLimitMb
 			)));
 		}
 
 		// Validate range [1, 3600]
-		if config.performance.background_task_interval_secs < 1
-			|| config.performance.background_task_interval_secs > 3600
-		{
+		if config.Performance.BackgroundTaskIntervalSecs < 1 || config.Performance.BackgroundTaskIntervalSecs > 3600 {
 			return Err(AirError::Configuration(format!(
 				"Background task interval {} seconds is out of range [1, 3600]",
-				config.performance.background_task_interval_secs
+				config.Performance.BackgroundTaskIntervalSecs
 			)));
 		}
 
@@ -1030,55 +1028,55 @@ impl ConfigHotReload {
 		let parts:Vec<&str> = path.split('.').collect();
 
 		match parts.as_slice() {
-			["grpc", "bind_address"] => config.grpc.bind_address = value.to_string(),
+			["grpc", "bind_address"] => config.Grpc.BindAddress = value.to_string(),
 			["grpc", "max_connections"] => {
-				config.grpc.max_connections = value
+				config.Grpc.MaxConnections = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},
 			["grpc", "request_timeout_secs"] => {
-				config.grpc.request_timeout_secs = value
+				config.Grpc.RequestTimeoutSecs = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},
 			["authentication", "enabled"] => {
-				config.authentication.enabled = value
+				config.Authentication.Enabled = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},
 			["authentication", "credentials_path"] => {
-				config.authentication.credentials_path = value.to_string();
+				config.Authentication.CredentialsPath = value.to_string();
 			},
 			["updates", "enabled"] => {
-				config.updates.enabled = value
+				config.Updates.Enabled = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},
 			["updates", "auto_download"] => {
-				config.updates.auto_download = value
+				config.Updates.AutoDownload = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},
 			["updates", "auto_install"] => {
-				config.updates.auto_install = value
+				config.Updates.AutoInstall = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},
 			["downloader", "enabled"] => {
-				config.downloader.enabled = value
+				config.Downloader.Enabled = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},
 			["indexing", "enabled"] => {
-				config.indexing.enabled = value
+				config.Indexing.Enabled = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},
 			["logging", "level"] => {
-				config.logging.level = value.to_lowercase();
+				config.Logging.Level = value.to_lowercase();
 			},
 			["logging", "console_enabled"] => {
-				config.logging.console_enabled = value
+				config.Logging.ConsoleEnabled = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},

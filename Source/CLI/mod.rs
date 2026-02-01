@@ -301,11 +301,9 @@ impl CliParser {
 			},
 			"set" => {
 				if args.len() < 3 {
-					return Err(
-						"config set requires key and value\n\nExample: air config set grpc.BindAddress \
-						 \"[::1]:50053\""
-							.to_string(),
-					);
+					return Err("config set requires key and value\n\nExample: air config set grpc.BindAddress \
+					            \"[::1]:50053\""
+						.to_string());
 				}
 				let key = args[1].clone();
 				let value = args[2].clone();
