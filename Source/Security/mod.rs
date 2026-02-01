@@ -120,50 +120,50 @@ use crate::{AirError, Result};
 #[derive(Clone, Deserialize, Serialize)]
 pub struct SecureBytes {
 	/// The underlying bytes
-	data:Vec<u8>,
+	Data:Vec<u8>,
 }
 
 impl SecureBytes {
 	/// Create a new secure byte array
-	pub fn new(data:Vec<u8>) -> Self { Self { data } }
+	pub fn new(Data:Vec<u8>) -> Self { Self { Data } }
 
 	/// Create from a string
-	pub fn from_str(s:&str) -> Self { Self { data:s.as_bytes().to_vec() } }
+	pub fn from_str(S:&str) -> Self { Self { Data:S.as_bytes().to_vec() } }
 
 	/// Get the data as a slice (constant-time)
-	pub fn as_slice(&self) -> &[u8] { &self.data }
+	pub fn as_slice(&self) -> &[u8] { &self.Data }
 
 	/// Get the length
-	pub fn len(&self) -> usize { self.data.len() }
+	pub fn len(&self) -> usize { self.Data.len() }
 
 	/// Check if empty
-	pub fn is_empty(&self) -> bool { self.data.is_empty() }
+	pub fn is_empty(&self) -> bool { self.Data.is_empty() }
 
 	/// Constant-time comparison
-	pub fn ct_eq(&self, other:&Self) -> bool { self.data.ct_eq(&other.data).into() }
+	pub fn ct_eq(&self, Other:&Self) -> bool { self.Data.ct_eq(&Other.Data).into() }
 }
 
 impl Drop for SecureBytes {
-	fn drop(&mut self) { self.data.zeroize(); }
+	fn drop(&mut self) { self.Data.zeroize(); }
 }
 
 /// Security event audit log
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SecurityEvent {
 	/// Event timestamp
-	pub timestamp:u64,
+	pub Timestamp:u64,
 	/// Event type
-	pub event_type:SecurityEventType,
+	pub EventType:SecurityEventType,
 	/// Event severity
-	pub severity:SecuritySeverity,
+	pub Severity:SecuritySeverity,
 	/// Source IP address (if applicable)
-	pub source_ip:Option<String>,
+	pub SourceIp:Option<String>,
 	/// Client ID (if applicable)
-	pub client_id:Option<String>,
+	pub ClientId:Option<String>,
 	/// Event details
-	pub details:String,
+	pub Details:String,
 	/// Additional metadata
-	pub metadata:HashMap<String, String>,
+	pub Metadata:HashMap<String, String>,
 }
 
 /// Security event types
@@ -581,7 +581,7 @@ impl SecureStorage {
 
 		// Log key generation event
 		let event = SecurityEvent {
-			timestamp:crate::utils::current_timestamp(),
+			timestamp:crate::utils::CurrentTimestamp(),
 			event_type:SecurityEventType::KeyGenerated,
 			severity:SecuritySeverity::Warning,
 			source_ip:None,
@@ -658,7 +658,7 @@ impl SecureStorage {
 			salt:salt_b64,
 			nonce:nonce_b64,
 			key_version:self.key_version,
-			created_at:crate::utils::current_timestamp(),
+			created_at:crate::utils::CurrentTimestamp(),
 		};
 
 		let mut storage = self.credentials.write().await;
@@ -666,7 +666,7 @@ impl SecureStorage {
 
 		// Log credential storage event
 		let event = SecurityEvent {
-			timestamp:crate::utils::current_timestamp(),
+			timestamp:crate::utils::CurrentTimestamp(),
 			event_type:SecurityEventType::ConfigChange,
 			severity:SecuritySeverity::Informational,
 			source_ip:None,
@@ -698,7 +698,7 @@ impl SecureStorage {
 
 				// Log credential retrieval event (without exposing the credential)
 				let event = SecurityEvent {
-					timestamp:crate::utils::current_timestamp(),
+					timestamp:crate::utils::CurrentTimestamp(),
 					event_type:SecurityEventType::AuthSuccess,
 					severity:SecuritySeverity::Informational,
 					source_ip:None,
@@ -712,7 +712,7 @@ impl SecureStorage {
 				self.auditor.LogEvent(event).await;
 
 				Ok(Some(credential))
-			}
+			},
 			None => Ok(None),
 		}
 	}
@@ -803,7 +803,7 @@ impl SecureStorage {
 
 		// Log key rotation event
 		let event = SecurityEvent {
-			timestamp:crate::utils::current_timestamp(),
+			timestamp:crate::utils::CurrentTimestamp(),
 			event_type:SecurityEventType::KeyRotation,
 			severity:SecuritySeverity::Warning,
 			source_ip:None,
@@ -829,7 +829,7 @@ impl SecureStorage {
 			old_key_version,
 			new_key_version:old_key_version + 1,
 			credentials_rotated,
-			timestamp:crate::utils::current_timestamp(),
+			timestamp:crate::utils::CurrentTimestamp(),
 		})
 	}
 
@@ -841,7 +841,7 @@ impl SecureStorage {
 
 		// Log clear event
 		let event = SecurityEvent {
-			timestamp:crate::utils::current_timestamp(),
+			timestamp:crate::utils::CurrentTimestamp(),
 			event_type:SecurityEventType::ConfigChange,
 			severity:SecuritySeverity::Warning,
 			source_ip:None,
@@ -892,7 +892,7 @@ fn standard_decode(input:&str) -> Result<Vec<u8>> {
 }
 
 /// Helper function for zeroizing secure bytes
-/// 
+///
 /// TODO: Implement actual zeroization before drop if needed
 fn zeroize(_bytes:&mut SecureBytes) {
 	// The Drop implementation will zeroize the data
@@ -965,7 +965,7 @@ mod tests {
 		let auditor = SecurityAuditor::new(10);
 
 		let event = SecurityEvent {
-			timestamp:crate::utils::current_timestamp(),
+			timestamp:crate::utils::CurrentTimestamp(),
 			event_type:SecurityEventType::AuthSuccess,
 			severity:SecuritySeverity::Informational,
 			source_ip:Some("127.0.0.1".to_string()),
