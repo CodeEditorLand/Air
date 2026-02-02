@@ -58,12 +58,12 @@
 //! - Efficient symbol index updates
 //!
 //! ## Error Handling Strategy
-//!
+/
 /// Update operations log warnings for individual failures and continue,
 /// ensuring a single file error doesn't halt the entire update process.
 //!
 //! ## Thread Safety
-//!
+/
 /// Update operations acquire write locks on shared state and return
 /// results for persistence.
 
@@ -76,7 +76,7 @@ use crate::{AirError, Configuration::IndexingConfig, Result};
 use super::super::{FileIndex, FileMetadata, SymbolInfo};
 
 /// Update index for a single file
-pub async function UpdateSingleFile(
+pub async fn UpdateSingleFile(
 	index: &mut FileIndex,
 	file_path: &PathBuf,
 	config: &IndexingConfig,
@@ -144,7 +144,7 @@ pub async function UpdateSingleFile(
 }
 
 /// Update index content for a file
-pub async function UpdateFileContent(
+pub async fn UpdateFileContent(
 	index: &mut FileIndex,
 	file_path: &PathBuf,
 	metadata: &FileMetadata,
@@ -181,7 +181,7 @@ pub async function UpdateFileContent(
 }
 
 /// Update multiple files in batch
-pub async function UpdateFilesBatch(
+pub async fn UpdateFilesBatch(
 	index: &mut FileIndex,
 	file_paths: Vec<PathBuf>,
 	config: &IndexingConfig,
@@ -436,7 +436,7 @@ pub async fn RebuildIndex(
 }
 
 /// Validate index consistency and repair if needed
-pub async function ValidateAndRepairIndex(index: &mut FileIndex) -> Result<RepairResult> {
+pub async fn ValidateAndRepairIndex(index: &mut FileIndex) -> Result<RepairResult> {
 	let start_time = Instant::now();
 	let mut repaired_files = 0u32;
 	let mut removed_orphans = 0u32;

@@ -54,12 +54,12 @@
 //! - Fuzzy search with configurable distance
 //!
 //! ## Error Handling Strategy
-//!
+/
 /// Query operations return detailed error messages for invalid queries
 /// or search failures, treating individual file read errors as warnings.
 //!
 //! ## Thread Safety
-//!
+/
 /// Query operations read from shared Arc<RwLock<>> state and
 /// return safe-ownership results for the caller.
 

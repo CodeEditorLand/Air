@@ -17,7 +17,7 @@
 //! - File watcher initialization and lifecycle management
 //! - Periodic background re-indexing
 //! - Watcher event debouncing
-/// - Background task cleanup
+//! - Background task cleanup
 //!
 //! ## Dependencies
 //!
@@ -55,13 +55,13 @@
 //!
 //! ## Error Handling Strategy
 //!
-/// Background tasks log errors and continue running, ensuring
-/// temporary failures don't stop the indexing service.
+//! Background tasks log errors and continue running, ensuring
+//! temporary failures don't stop the indexing service.
 //!
 //! ## Thread Safety
 //!
-/// Background tasks use Arc for shared state and async/await
-/// for safe concurrent operations.
+//! Background tasks use Arc for shared state and async/await
+//! for safe concurrent operations.
 
 use std::{
 	path::PathBuf,

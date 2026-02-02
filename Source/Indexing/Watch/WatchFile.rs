@@ -56,13 +56,13 @@
 //!
 //! ## Error Handling Strategy
 //!
-/// Event operations log warnings for individual errors and continue,
-/// ensuring a single event failure doesn't stop the watcher.
+//! Event operations log warnings for individual errors and continue,
+//! ensuring a single event failure doesn't stop the watcher.
 //!
 //! ## Thread Safety
 //!
-/// Event handlers acquire write locks on shared state and process
-/// events asynchronously to avoid blocking the watcher loop.
+//! Event handlers acquire write locks on shared state and process
+//! events asynchronously to avoid blocking the watcher loop.
 
 use std::path::PathBuf;
 use tokio::sync::{Mutex, RwLock};

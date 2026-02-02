@@ -193,6 +193,11 @@ pub fn MergeSymbolLists(symbol_lists: Vec<Vec<SymbolInfo>>) -> Vec<SymbolInfo> {
 	DeduplicateSymbols(merged)
 }
 
+/// Deduplicate multiple symbol lists
+pub fn DeduplicateLists(symbol_lists: Vec<Vec<SymbolInfo>>) -> Vec<Vec<SymbolInfo>> {
+	symbol_lists.into_iter().map(|list| DeduplicateSymbols(list)).collect()
+}
+
 /// Create a symbol search index (name -> symbols)
 pub fn CreateSymbolIndex(symbols: &[SymbolInfo]) -> std::collections::HashMap<String, Vec<usize>> {
 	let mut index = std::collections::HashMap::new();

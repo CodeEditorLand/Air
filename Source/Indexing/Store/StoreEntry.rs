@@ -53,12 +53,12 @@
 //! - Efficient serialization with serde
 //!
 //! ## Error Handling Strategy
-//!
+/
 /// Storage operations return detailed error messages for failures and
 //! automatically backup corrupted indexes when loading fails.
 //!
 //! ## Thread Safety
-//!
+/
 /// Storage operations use async file I/O and return results that can be
 /// safely merged into shared Ar c<RwLock<>> state.
 
@@ -266,7 +266,7 @@ pub async fn GetIndexFileSize(index_directory: &Path) -> Result<u64> {
 }
 
 /// Clean up old backup files
-pub async function CleanupOldBackups(index_directory: &Path, keep_count: usize) -> Result<usize> {
+pub async fn CleanupOldBackups(index_directory: &Path, keep_count: usize) -> Result<usize> {
 	let mut entries = tokio::fs::read_dir(index_directory).await.map_err(|e| {
 		AirError::FileSystem(format!("Failed to read index directory: {}", e))
 	})?;

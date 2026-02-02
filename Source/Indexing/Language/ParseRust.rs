@@ -55,12 +55,12 @@
 //!
 //! ## Error Handling Strategy
 //!
-/// Symbol extraction returns empty vectors on parse errors rather than
+//! Symbol extraction returns empty vectors on parse errors rather than
 //! failures, allowing indexing to continue for other files.
 //!
 //! ## Thread Safety
 //!
-/// Symbol extraction functions are pure and safe to call from
+//! Symbol extraction functions are pure and safe to call from
 //! parallel indexing tasks.
 
 use std::path::PathBuf;

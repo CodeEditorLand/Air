@@ -18,10 +18,10 @@
 //! - Extract class definitions
 //! - Extract interface definitions
 //! - Extract function declarations
-/// - Extract arrow functions
-/// - Extract variable declarations (const, let, var)
-/// - Extract type definitions
-/// - Extract enum definitions
+//! - Extract arrow functions
+//! - Extract variable declarations (const, let, var)
+//! - Extract type definitions
+//! - Extract enum definitions
 //!
 //! ## Dependencies
 //!
