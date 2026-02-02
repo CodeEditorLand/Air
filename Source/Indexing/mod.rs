@@ -154,7 +154,7 @@ pub enum SearchMode {
 /// - Parallel indexing with resource limits
 pub struct FileIndexer {
 	/// Application state
-	app_state:Arc<ApplicationState>,
+	AppState:Arc<ApplicationState>,
 
 	/// File index with metadata and symbols
 	file_index:Arc<RwLock<FileIndex>>,
@@ -309,11 +309,11 @@ impl FileIndexer {
 	/// - Existing index loading or fresh creation
 	/// - Index corruption detection
 	/// - Service status initialization
-	pub async fn new(app_state:Arc<ApplicationState>) -> Result<Self> {
-		let config = &app_state.configuration.indexing;
+	pub async fn new(AppState:Arc<ApplicationState>) -> Result<Self> {
+		let config = &AppState.Configuration.Indexing;
 
 		// Expand index directory path with validation
-		let index_directory = Self::ValidateAndExpandPath(&config.index_directory)?;
+		let index_directory = Self::ValidateAndExpandPath(&config.IndexDirectory)?;
 
 		// Create index directory if it doesn't exist with error handling
 		Self::EnsureIndexDirectory(&index_directory).await?;
@@ -322,7 +322,7 @@ impl FileIndexer {
 		let file_index = Self::LoadOrCreateIndex(&index_directory).await?;
 
 		let indexer = Self {
-			app_state:app_state.clone(),
+			AppState:AppState.clone(),
 			file_index:Arc::new(RwLock::new(file_index)),
 			index_directory:index_directory.clone(),
 			file_watcher:Arc::new(Mutex::new(None)),
@@ -335,7 +335,7 @@ impl FileIndexer {
 
 		// Initialize service status
 		indexer
-			.app_state
+			.AppState
 			.UpdateServiceStatus("indexing", crate::ApplicationState::ServiceStatus::Running)
 			.await
 			.map_err(|e| AirError::Internal(e.to_string()))?;
@@ -396,14 +396,14 @@ impl FileIndexer {
 		// Check directory permissions
 		Self::CheckDirectoryPermissions(&directory_path).await?;
 
-		let config = &self.app_state.configuration.indexing;
+		let config = &self.AppState.Configuration.Indexing;
 		let mut files_indexed = 0u32;
 		let mut total_size = 0u64;
 		let mut symbols_extracted = 0u32;
 		let mut files_with_errors = 0u32;
 
 		// Build file patterns
-		let include_patterns = if patterns.is_empty() { config.file_types.clone() } else { patterns };
+		let include_patterns = if patterns.is_empty() { config.FileTypes.clone() } else { patterns };
 
 		// Walk directory with .gitignore support
 		let walker = ignore::WalkBuilder::new(&directory_path)
@@ -638,10 +638,10 @@ impl FileIndexer {
 
 		// Check if file size exceeds limit
 		let FileSize = Metadata.len();
-		if FileSize > Config.max_file_size_mb as u64 * 1024 * 1024 {
+		if FileSize > Config.MaxFileSizeMb as u64 * 1024 * 1024 {
 			return Err(AirError::FileSystem(format!(
 				"File size {} exceeds limit {} MB",
-				FileSize, Config.max_file_size_mb
+				FileSize, Config.MaxFileSizeMb
 			)));
 		}
 
@@ -826,9 +826,9 @@ impl FileIndexer {
 
 	/// Index a single file (public API)
 	pub async fn IndexFile(&self, file_path:&PathBuf) -> Result<FileMetadata> {
-		let config = &self.app_state.configuration.indexing;
+		let config = &self.AppState.Configuration.Indexing;
 		let index_ref = self.file_index.clone();
-		let patterns = &config.file_types;
+		let patterns = &config.FileTypes;
 
 		let (metadata, symbols) = Self::IndexFileInternal(file_path, config, &index_ref, patterns).await?;
 
@@ -2259,9 +2259,9 @@ impl FileIndexer {
 
 	/// Start background tasks for periodic indexing
 	pub async fn StartBackgroundTasks(&self) -> Result<tokio::task::JoinHandle<()>> {
-		let config = &self.app_state.configuration.indexing;
+		let config = &self.AppState.Configuration.Indexing;
 
-		if !config.enabled {
+		if !config.Enabled {
 			log::info!("[FileIndexer] Background indexing disabled in configuration");
 			return Err(AirError::Configuration("Background indexing is disabled".to_string()));
 		}
@@ -2279,14 +2279,14 @@ impl FileIndexer {
 
 	/// Background task for periodic indexing
 	async fn BackgroundTask(&self) {
-		let config = &self.app_state.configuration.indexing;
+		let config = &self.AppState.Configuration.Indexing;
 
-		let interval = tokio::time::Duration::from_secs(config.update_interval_minutes as u64 * 60);
+		let interval = tokio::time::Duration::from_secs(config.UpdateIntervalMinutes as u64 * 60);
 		let mut interval = tokio::time::interval(interval);
 
 		log::info!(
 			"[FileIndexer] Background indexing configured for {} minute intervals",
-			config.update_interval_minutes
+			config.UpdateIntervalMinutes
 		);
 
 		loop {
@@ -2352,7 +2352,7 @@ pub struct IndexStatistics {
 impl Clone for FileIndexer {
 	fn clone(&self) -> Self {
 		Self {
-			app_state:self.app_state.clone(),
+			AppState:self.AppState.clone(),
 			file_index:self.file_index.clone(),
 			index_directory:self.index_directory.clone(),
 			file_watcher:self.file_watcher.clone(),
