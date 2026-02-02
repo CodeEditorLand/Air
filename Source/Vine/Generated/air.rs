@@ -462,11 +462,11 @@ pub mod air_service_client {
                 })?;
             let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/air.AirService/Authenticate",
+                "/Air.AirService/Authenticate",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("air.AirService", "Authenticate"));
+                .insert(GrpcMethod::new("Air.AirService", "Authenticate"));
             self.inner.unary(req, path, codec).await
         }
         /// Update operations
@@ -487,11 +487,11 @@ pub mod air_service_client {
                 })?;
             let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/air.AirService/CheckForUpdates",
+                "/Air.AirService/CheckForUpdates",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("air.AirService", "CheckForUpdates"));
+                .insert(GrpcMethod::new("Air.AirService", "CheckForUpdates"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn download_update(
@@ -511,11 +511,11 @@ pub mod air_service_client {
                 })?;
             let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/air.AirService/DownloadUpdate",
+                "/Air.AirService/DownloadUpdate",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("air.AirService", "DownloadUpdate"));
+                .insert(GrpcMethod::new("Air.AirService", "DownloadUpdate"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn apply_update(
@@ -535,11 +535,11 @@ pub mod air_service_client {
                 })?;
             let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/air.AirService/ApplyUpdate",
+                "/Air.AirService/ApplyUpdate",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("air.AirService", "ApplyUpdate"));
+                .insert(GrpcMethod::new("Air.AirService", "ApplyUpdate"));
             self.inner.unary(req, path, codec).await
         }
         /// Download operations
@@ -560,11 +560,11 @@ pub mod air_service_client {
                 })?;
             let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/air.AirService/DownloadFile",
+                "/Air.AirService/DownloadFile",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("air.AirService", "DownloadFile"));
+                .insert(GrpcMethod::new("Air.AirService", "DownloadFile"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn download_stream(
@@ -584,11 +584,11 @@ pub mod air_service_client {
                 })?;
             let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/air.AirService/DownloadStream",
+                "/Air.AirService/DownloadStream",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("air.AirService", "DownloadStream"));
+                .insert(GrpcMethod::new("Air.AirService", "DownloadStream"));
             self.inner.server_streaming(req, path, codec).await
         }
         /// File indexing operations
@@ -606,10 +606,10 @@ pub mod air_service_client {
                 })?;
             let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/air.AirService/IndexFiles",
+                "/Air.AirService/IndexFiles",
             );
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("air.AirService", "IndexFiles"));
+            req.extensions_mut().insert(GrpcMethod::new("Air.AirService", "IndexFiles"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn search_files(
@@ -626,11 +626,11 @@ pub mod air_service_client {
                 })?;
             let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/air.AirService/SearchFiles",
+                "/Air.AirService/SearchFiles",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("air.AirService", "SearchFiles"));
+                .insert(GrpcMethod::new("Air.AirService", "SearchFiles"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn get_file_info(
@@ -650,11 +650,11 @@ pub mod air_service_client {
                 })?;
             let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/air.AirService/GetFileInfo",
+                "/Air.AirService/GetFileInfo",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("air.AirService", "GetFileInfo"));
+                .insert(GrpcMethod::new("Air.AirService", "GetFileInfo"));
             self.inner.unary(req, path, codec).await
         }
         /// Status and monitoring
@@ -671,9 +671,9 @@ pub mod air_service_client {
                     )
                 })?;
             let codec = tonic_prost::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/air.AirService/GetStatus");
+            let path = http::uri::PathAndQuery::from_static("/Air.AirService/GetStatus");
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("air.AirService", "GetStatus"));
+            req.extensions_mut().insert(GrpcMethod::new("Air.AirService", "GetStatus"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn health_check(
@@ -693,11 +693,11 @@ pub mod air_service_client {
                 })?;
             let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/air.AirService/HealthCheck",
+                "/Air.AirService/HealthCheck",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("air.AirService", "HealthCheck"));
+                .insert(GrpcMethod::new("Air.AirService", "HealthCheck"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn get_metrics(
@@ -717,10 +717,10 @@ pub mod air_service_client {
                 })?;
             let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/air.AirService/GetMetrics",
+                "/Air.AirService/GetMetrics",
             );
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("air.AirService", "GetMetrics"));
+            req.extensions_mut().insert(GrpcMethod::new("Air.AirService", "GetMetrics"));
             self.inner.unary(req, path, codec).await
         }
         /// Resource management
@@ -741,11 +741,11 @@ pub mod air_service_client {
                 })?;
             let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/air.AirService/GetResourceUsage",
+                "/Air.AirService/GetResourceUsage",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("air.AirService", "GetResourceUsage"));
+                .insert(GrpcMethod::new("Air.AirService", "GetResourceUsage"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn set_resource_limits(
@@ -765,11 +765,11 @@ pub mod air_service_client {
                 })?;
             let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/air.AirService/SetResourceLimits",
+                "/Air.AirService/SetResourceLimits",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("air.AirService", "SetResourceLimits"));
+                .insert(GrpcMethod::new("Air.AirService", "SetResourceLimits"));
             self.inner.unary(req, path, codec).await
         }
         /// Configuration management
@@ -790,11 +790,11 @@ pub mod air_service_client {
                 })?;
             let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/air.AirService/GetConfiguration",
+                "/Air.AirService/GetConfiguration",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("air.AirService", "GetConfiguration"));
+                .insert(GrpcMethod::new("Air.AirService", "GetConfiguration"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn update_configuration(
@@ -814,11 +814,11 @@ pub mod air_service_client {
                 })?;
             let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/air.AirService/UpdateConfiguration",
+                "/Air.AirService/UpdateConfiguration",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("air.AirService", "UpdateConfiguration"));
+                .insert(GrpcMethod::new("Air.AirService", "UpdateConfiguration"));
             self.inner.unary(req, path, codec).await
         }
     }
@@ -1027,7 +1027,7 @@ pub mod air_service_server {
         }
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             match req.uri().path() {
-                "/air.AirService/Authenticate" => {
+                "/Air.AirService/Authenticate" => {
                     #[allow(non_camel_case_types)]
                     struct AuthenticateSvc<T: AirService>(pub Arc<T>);
                     impl<
@@ -1072,7 +1072,7 @@ pub mod air_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/air.AirService/CheckForUpdates" => {
+                "/Air.AirService/CheckForUpdates" => {
                     #[allow(non_camel_case_types)]
                     struct CheckForUpdatesSvc<T: AirService>(pub Arc<T>);
                     impl<
@@ -1117,7 +1117,7 @@ pub mod air_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/air.AirService/DownloadUpdate" => {
+                "/Air.AirService/DownloadUpdate" => {
                     #[allow(non_camel_case_types)]
                     struct DownloadUpdateSvc<T: AirService>(pub Arc<T>);
                     impl<
@@ -1162,7 +1162,7 @@ pub mod air_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/air.AirService/ApplyUpdate" => {
+                "/Air.AirService/ApplyUpdate" => {
                     #[allow(non_camel_case_types)]
                     struct ApplyUpdateSvc<T: AirService>(pub Arc<T>);
                     impl<
@@ -1207,7 +1207,7 @@ pub mod air_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/air.AirService/DownloadFile" => {
+                "/Air.AirService/DownloadFile" => {
                     #[allow(non_camel_case_types)]
                     struct DownloadFileSvc<T: AirService>(pub Arc<T>);
                     impl<
@@ -1252,7 +1252,7 @@ pub mod air_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/air.AirService/DownloadStream" => {
+                "/Air.AirService/DownloadStream" => {
                     #[allow(non_camel_case_types)]
                     struct DownloadStreamSvc<T: AirService>(pub Arc<T>);
                     impl<
@@ -1298,7 +1298,7 @@ pub mod air_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/air.AirService/IndexFiles" => {
+                "/Air.AirService/IndexFiles" => {
                     #[allow(non_camel_case_types)]
                     struct IndexFilesSvc<T: AirService>(pub Arc<T>);
                     impl<T: AirService> tonic::server::UnaryService<super::IndexRequest>
@@ -1341,7 +1341,7 @@ pub mod air_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/air.AirService/SearchFiles" => {
+                "/Air.AirService/SearchFiles" => {
                     #[allow(non_camel_case_types)]
                     struct SearchFilesSvc<T: AirService>(pub Arc<T>);
                     impl<T: AirService> tonic::server::UnaryService<super::SearchRequest>
@@ -1384,7 +1384,7 @@ pub mod air_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/air.AirService/GetFileInfo" => {
+                "/Air.AirService/GetFileInfo" => {
                     #[allow(non_camel_case_types)]
                     struct GetFileInfoSvc<T: AirService>(pub Arc<T>);
                     impl<
@@ -1429,7 +1429,7 @@ pub mod air_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/air.AirService/GetStatus" => {
+                "/Air.AirService/GetStatus" => {
                     #[allow(non_camel_case_types)]
                     struct GetStatusSvc<T: AirService>(pub Arc<T>);
                     impl<T: AirService> tonic::server::UnaryService<super::StatusRequest>
@@ -1472,7 +1472,7 @@ pub mod air_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/air.AirService/HealthCheck" => {
+                "/Air.AirService/HealthCheck" => {
                     #[allow(non_camel_case_types)]
                     struct HealthCheckSvc<T: AirService>(pub Arc<T>);
                     impl<
@@ -1517,7 +1517,7 @@ pub mod air_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/air.AirService/GetMetrics" => {
+                "/Air.AirService/GetMetrics" => {
                     #[allow(non_camel_case_types)]
                     struct GetMetricsSvc<T: AirService>(pub Arc<T>);
                     impl<
@@ -1562,7 +1562,7 @@ pub mod air_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/air.AirService/GetResourceUsage" => {
+                "/Air.AirService/GetResourceUsage" => {
                     #[allow(non_camel_case_types)]
                     struct GetResourceUsageSvc<T: AirService>(pub Arc<T>);
                     impl<
@@ -1607,7 +1607,7 @@ pub mod air_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/air.AirService/SetResourceLimits" => {
+                "/Air.AirService/SetResourceLimits" => {
                     #[allow(non_camel_case_types)]
                     struct SetResourceLimitsSvc<T: AirService>(pub Arc<T>);
                     impl<
@@ -1653,7 +1653,7 @@ pub mod air_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/air.AirService/GetConfiguration" => {
+                "/Air.AirService/GetConfiguration" => {
                     #[allow(non_camel_case_types)]
                     struct GetConfigurationSvc<T: AirService>(pub Arc<T>);
                     impl<
@@ -1698,7 +1698,7 @@ pub mod air_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/air.AirService/UpdateConfiguration" => {
+                "/Air.AirService/UpdateConfiguration" => {
                     #[allow(non_camel_case_types)]
                     struct UpdateConfigurationSvc<T: AirService>(pub Arc<T>);
                     impl<
@@ -1779,7 +1779,7 @@ pub mod air_service_server {
         }
     }
     /// Generated gRPC service name
-    pub const SERVICE_NAME: &str = "air.AirService";
+    pub const SERVICE_NAME: &str = "Air.AirService";
     impl<T> tonic::server::NamedService for AirServiceServer<T> {
         const NAME: &'static str = SERVICE_NAME;
     }

@@ -69,26 +69,22 @@ use std::{collections::HashSet, path::Path, sync::Arc};
 use tokio::sync::{RwLock, Semaphore};
 
 use crate::{AirError, Configuration::IndexingConfig, Result};
-
-use super::super::{
-	FileIndex,
-	FileMetadata,
-	SymbolInfo,
+use super::{
+	super::{FileIndex, FileMetadata, SymbolInfo},
+	ScanFile::{IndexFileInternal, ValidateFileAccess},
 };
-
-use super::ScanFile::{IndexFileInternal, ValidateFileAccess};
 
 /// Scan directory result with statistics
 #[derive(Debug, Clone)]
 pub struct ScanDirectoryResult {
 	/// Number of files discovered
-	pub files_found: u32,
+	pub files_found:u32,
 	/// Number of files skipped (due to patterns/size)
-	pub files_skipped: u32,
+	pub files_skipped:u32,
 	/// Number of errors encountered
-	pub errors: u32,
+	pub errors:u32,
 	/// Total size of discovered files in bytes
-	pub total_size: u64,
+	pub total_size:u64,
 }
 
 /// Scan a directory recursively and collect matching files
@@ -101,10 +97,10 @@ pub struct ScanDirectoryResult {
 /// - Include/exclude pattern support
 /// - Parallel scanning with semaphore limits
 pub async fn ScanDirectory(
-	path: &str,
-	patterns: Vec<String>,
-	config: &IndexingConfig,
-	max_parallel: usize,
+	path:&str,
+	patterns:Vec<String>,
+	config:&IndexingConfig,
+	max_parallel:usize,
 ) -> Result<(Vec<crate::std::path::PathBuf>, ScanDirectoryResult)> {
 	let directory_path = crate::Configuration::ConfigurationManager::ExpandPath(path)?;
 
@@ -121,11 +117,7 @@ pub async fn ScanDirectory(
 	CheckDirectoryPermissions(&directory_path).await?;
 
 	// Build file patterns
-	let include_patterns = if patterns.is_empty() {
-		config.FileTypes.clone()
-	} else {
-		patterns
-	};
+	let include_patterns = if patterns.is_empty() { config.FileTypes.clone() } else { patterns };
 
 	// Walk directory with .gitignore support
 	let walker = ignore::WalkBuilder::new(&directory_path)
@@ -134,7 +126,7 @@ pub async fn ScanDirectory(
 		.follow_links(false) // Don't follow symlinks by default
 		.build();
 
-	let mut files_to_scan: Vec<crate::std::path::PathBuf> = Vec::new();
+	let mut files_to_scan:Vec<crate::std::path::PathBuf> = Vec::new();
 	let mut files_found = 0u32;
 	let mut files_skipped = 0u32;
 	let mut errors = 0u32;
@@ -208,22 +200,14 @@ pub async fn ScanDirectory(
 
 	Ok((
 		files_to_scan,
-		ScanDirectoryResult {
-			files_found,
-			files_skipped,
-			errors,
-			total_size,
-		},
+		ScanDirectoryResult { files_found, files_skipped, errors, total_size },
 	))
 }
 
 /// Scan a directory and remove deleted files from index
-pub async fn ScanAndRemoveDeleted(
-	index: &mut FileIndex,
-	directory_path: &Path,
-) -> Result<u32> {
+pub async fn ScanAndRemoveDeleted(index:&mut FileIndex, directory_path:&Path) -> Result<u32> {
 	let mut paths_to_remove = Vec::new();
-	let all_paths: Vec<_> = index.files.keys().cloned().collect();
+	let all_paths:Vec<_> = index.files.keys().cloned().collect();
 
 	for path in all_paths {
 		if !path.exists() && path.starts_with(directory_path) {
@@ -250,7 +234,7 @@ pub async fn ScanAndRemoveDeleted(
 }
 
 /// Check directory read permissions
-async fn CheckDirectoryPermissions(path: &Path) -> Result<()> {
+async fn CheckDirectoryPermissions(path:&Path) -> Result<()> {
 	tokio::task::spawn_blocking({
 		let path = path.to_path_buf();
 		move || {
@@ -263,7 +247,7 @@ async fn CheckDirectoryPermissions(path: &Path) -> Result<()> {
 }
 
 /// Check if file path matches any of the provided patterns
-pub fn MatchesPatterns(file_path: &crate::std::path::Path, patterns: &[String]) -> bool {
+pub fn MatchesPatterns(file_path:&crate::std::path::Path, patterns:&[String]) -> bool {
 	if patterns.is_empty() {
 		return true;
 	}
@@ -280,7 +264,7 @@ pub fn MatchesPatterns(file_path: &crate::std::path::Path, patterns: &[String]) 
 }
 
 /// Check if filename matches a single pattern
-pub fn MatchesPattern(filename: &str, pattern: &str) -> bool {
+pub fn MatchesPattern(filename:&str, pattern:&str) -> bool {
 	if pattern.starts_with("*.") {
 		let extension = &pattern[2..];
 		filename.ends_with(extension)
@@ -317,19 +301,14 @@ pub fn GetDefaultExcludePatterns() -> Vec<String> {
 
 /// Parallel scan of multiple directories
 pub async fn ScanDirectoriesParallel(
-	directories: Vec<String>,
-	patterns: Vec<String>,
-	config: &IndexingConfig,
-	max_parallel: usize,
+	directories:Vec<String>,
+	patterns:Vec<String>,
+	config:&IndexingConfig,
+	max_parallel:usize,
 ) -> Result<(Vec<crate::std::path::PathBuf>, ScanDirectoryResult)> {
 	let semaphore = Arc::new(Semaphore::new(max_parallel));
 	let mut all_files = Vec::new();
-	let mut total_result = ScanDirectoryResult {
-		files_found: 0,
-		files_skipped: 0,
-		errors: 0,
-		total_size: 0,
-	};
+	let mut total_result = ScanDirectoryResult { files_found:0, files_skipped:0, errors:0, total_size:0 };
 
 	let mut scan_tasks = Vec::new();
 
@@ -371,10 +350,7 @@ pub async fn ScanDirectoriesParallel(
 }
 
 /// Get file count statistics for a directory without full scan
-pub async fn GetDirectoryStatistics(
-	path: &str,
-	max_depth: Option<usize>,
-) -> Result<DirectoryStatistics> {
+pub async fn GetDirectoryStatistics(path:&str, max_depth:Option<usize>) -> Result<DirectoryStatistics> {
 	let directory_path = crate::Configuration::ConfigurationManager::ExpandPath(path)?;
 
 	if !directory_path.exists() || !directory_path.is_dir() {
@@ -404,28 +380,24 @@ pub async fn GetDirectoryStatistics(
 			directory_count += 1;
 		}
 
-		if entry.depth() > 0 && entry.path().components().any(|c| {
-			c.as_os_str()
-				.to_string_lossy()
-				.starts_with('.')
-		}) {
+		if entry.depth() > 0
+			&& entry
+				.path()
+				.components()
+				.any(|c| c.as_os_str().to_string_lossy().starts_with('.'))
+		{
 			hidden_count += 1;
 		}
 	}
 
-	Ok(DirectoryStatistics {
-		file_count,
-		directory_count,
-		hidden_count,
-		total_size,
-	})
+	Ok(DirectoryStatistics { file_count, directory_count, hidden_count, total_size })
 }
 
 /// Directory statistics
 #[derive(Debug, Clone)]
 pub struct DirectoryStatistics {
-	pub file_count: u64,
-	pub directory_count: u64,
-	pub hidden_count: u64,
-	pub total_size: u64,
+	pub file_count:u64,
+	pub directory_count:u64,
+	pub hidden_count:u64,
+	pub total_size:u64,
 }

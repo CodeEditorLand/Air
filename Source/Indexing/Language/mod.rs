@@ -4,7 +4,8 @@
 //!
 //! ## Role in Air Architecture
 //!
-//! Provides language-specific parsing functionality for the File Indexer service.
+//! Provides language-specific parsing functionality for the File Indexer
+//! service.
 //!
 //! ## Modules
 //!

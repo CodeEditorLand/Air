@@ -5,8 +5,8 @@
 //! ## Role in Air Architecture
 //!
 //! Provides TypeScript/JavaScript-specific symbol extraction functionality for
-//! the File Indexer service, identifying TS/JS language constructs like classes,
-//! interfaces, functions, constants, and types.
+//! the File Indexer service, identifying TS/JS language constructs like
+//! classes, interfaces, functions, constants, and types.
 //!
 //! ## Primary Responsibility
 //!
@@ -65,13 +65,12 @@
 
 use std::path::PathBuf;
 
-use super::super::SymbolInfo;
-use super::super::SymbolKind;
+use super::super::{SymbolInfo, SymbolKind};
 
 /// Extract TypeScript/JavaScript symbols (class, interface, function, etc.)
-pub fn ExtractTypeScriptSymbols(content: &str, file_path: &PathBuf) -> Vec<SymbolInfo> {
+pub fn ExtractTypeScriptSymbols(content:&str, file_path:&PathBuf) -> Vec<SymbolInfo> {
 	let mut symbols = Vec::new();
-	let lines: Vec<&str> = content.lines().collect();
+	let lines:Vec<&str> = content.lines().collect();
 
 	for (line_idx, line) in lines.iter().enumerate() {
 		let line_content = line.trim();
@@ -90,7 +89,7 @@ pub fn ExtractTypeScriptSymbols(content: &str, file_path: &PathBuf) -> Vec<Symbo
 }
 
 /// Extract symbols from a single line of TypeScript/JavaScript code
-fn ExtractTypeScriptSymbolsFromLine(line_content: &str, line_num: u32, line: &str, file_path: &PathBuf) -> Vec<SymbolInfo> {
+fn ExtractTypeScriptSymbolsFromLine(line_content:&str, line_num:u32, line:&str, file_path:&PathBuf) -> Vec<SymbolInfo> {
 	let mut symbols = Vec::new();
 
 	// Class
@@ -99,11 +98,11 @@ fn ExtractTypeScriptSymbolsFromLine(line_content: &str, line_num: u32, line: &st
 		if !name.is_empty() {
 			if let Some(col) = line.find("class") {
 				symbols.push(SymbolInfo {
-					name: name.to_string(),
-					kind: SymbolKind::Class,
-					line: line_num,
-					column: col as u32,
-					full_path: format!("{}::{}", file_path.display(), name),
+					name:name.to_string(),
+					kind:SymbolKind::Class,
+					line:line_num,
+					column:col as u32,
+					full_path:format!("{}::{}", file_path.display(), name),
 				});
 			}
 		}
@@ -115,11 +114,11 @@ fn ExtractTypeScriptSymbolsFromLine(line_content: &str, line_num: u32, line: &st
 		if !name.is_empty() {
 			if let Some(col) = line.find("interface") {
 				symbols.push(SymbolInfo {
-					name: name.to_string(),
-					kind: SymbolKind::Interface,
-					line: line_num,
-					column: col as u32,
-					full_path: format!("{}::{}", file_path.display(), name),
+					name:name.to_string(),
+					kind:SymbolKind::Interface,
+					line:line_num,
+					column:col as u32,
+					full_path:format!("{}::{}", file_path.display(), name),
 				});
 			}
 		}
@@ -132,11 +131,11 @@ fn ExtractTypeScriptSymbolsFromLine(line_content: &str, line_num: u32, line: &st
 		if !name.is_empty() {
 			if let Some(col) = line.find("type") {
 				symbols.push(SymbolInfo {
-					name: name.to_string(),
-					kind: SymbolKind::TypeParameter,
-					line: line_num,
-					column: col as u32,
-					full_path: format!("{}::{}", file_path.display(), name),
+					name:name.to_string(),
+					kind:SymbolKind::TypeParameter,
+					line:line_num,
+					column:col as u32,
+					full_path:format!("{}::{}", file_path.display(), name),
 				});
 			}
 		}
@@ -148,11 +147,11 @@ fn ExtractTypeScriptSymbolsFromLine(line_content: &str, line_num: u32, line: &st
 		if !name.is_empty() {
 			if let Some(col) = line.find("enum") {
 				symbols.push(SymbolInfo {
-					name: name.to_string(),
-					kind: SymbolKind::Enum,
-					line: line_num,
-					column: col as u32,
-					full_path: format!("{}::{}", file_path.display(), name),
+					name:name.to_string(),
+					kind:SymbolKind::Enum,
+					line:line_num,
+					column:col as u32,
+					full_path:format!("{}::{}", file_path.display(), name),
 				});
 			}
 		}
@@ -166,11 +165,11 @@ fn ExtractTypeScriptSymbolsFromLine(line_content: &str, line_num: u32, line: &st
 			if !name.contains("=") {
 				if let Some(col) = line.find("function") {
 					symbols.push(SymbolInfo {
-						name: name.to_string(),
-						kind: SymbolKind::Function,
-						line: line_num,
-						column: col as u32,
-						full_path: format!("{}::{}", file_path.display(), name),
+						name:name.to_string(),
+						kind:SymbolKind::Function,
+						line:line_num,
+						column:col as u32,
+						full_path:format!("{}::{}", file_path.display(), name),
 					});
 				}
 			}
@@ -182,15 +181,10 @@ fn ExtractTypeScriptSymbolsFromLine(line_content: &str, line_num: u32, line: &st
 		if let Some(col) = line.find("=>") {
 			let before_arrow = &line[..col];
 			// Try to extract function name
-			let name_part = before_arrow
-				.split('=')
-				.next()
-				.unwrap_or("")
-				.trim();
+			let name_part = before_arrow.split('=').next().unwrap_or("").trim();
 
 			let func_name = if name_part.contains("(") || name_part.contains("<") {
-				let mut parts = name_part
-					.split(|c| c == '(' || c == '<' || c == ':');
+				let mut parts = name_part.split(|c| c == '(' || c == '<' || c == ':');
 				let name = parts.next().unwrap_or("").trim();
 				name
 			} else {
@@ -200,11 +194,11 @@ fn ExtractTypeScriptSymbolsFromLine(line_content: &str, line_num: u32, line: &st
 			// Filter out keywords and non-names
 			if !func_name.is_empty() && func_name != "const" && func_name != "let" && func_name != "var" {
 				symbols.push(SymbolInfo {
-					name: func_name.to_string(),
-					kind: SymbolKind::Function,
-					line: line_num,
-					column: col as u32,
-					full_path: format!("{}::{}", file_path.display(), func_name),
+					name:func_name.to_string(),
+					kind:SymbolKind::Function,
+					line:line_num,
+					column:col as u32,
+					full_path:format!("{}::{}", file_path.display(), func_name),
 				});
 			}
 		}
@@ -229,11 +223,11 @@ fn ExtractTypeScriptSymbolsFromLine(line_content: &str, line_num: u32, line: &st
 
 				if let Some(col) = line.find(kw) {
 					symbols.push(SymbolInfo {
-						name: name.to_string(),
+						name:name.to_string(),
 						kind,
-						line: line_num,
-						column: col as u32,
-						full_path: format!("{}::{}", file_path.display(), name),
+						line:line_num,
+						column:col as u32,
+						full_path:format!("{}::{}", file_path.display(), name),
 					});
 				}
 			}
@@ -246,11 +240,11 @@ fn ExtractTypeScriptSymbolsFromLine(line_content: &str, line_num: u32, line: &st
 		if !name.is_empty() {
 			if let Some(col) = line.find("namespace") {
 				symbols.push(SymbolInfo {
-					name: name.to_string(),
-					kind: SymbolKind::Namespace,
-					line: line_num,
-					column: col as u32,
-					full_path: format!("{}::{}", file_path.display(), name),
+					name:name.to_string(),
+					kind:SymbolKind::Namespace,
+					line:line_num,
+					column:col as u32,
+					full_path:format!("{}::{}", file_path.display(), name),
 				});
 			}
 		}
@@ -260,7 +254,7 @@ fn ExtractTypeScriptSymbolsFromLine(line_content: &str, line_num: u32, line: &st
 }
 
 /// Check if a line contains a TypeScript/JavaScript class definition
-pub fn IsTypeScriptClass(line: &str) -> bool {
+pub fn IsTypeScriptClass(line:&str) -> bool {
 	let trimmed = line.trim();
 	let after_keywords = trimmed
 		.strip_prefix("export ")
@@ -271,7 +265,7 @@ pub fn IsTypeScriptClass(line: &str) -> bool {
 }
 
 /// Check if a line contains a TypeScript/JavaScript interface definition
-pub fn IsTypeScriptInterface(line: &str) -> bool {
+pub fn IsTypeScriptInterface(line:&str) -> bool {
 	let trimmed = line.trim();
 	let after_keywords = trimmed
 		.strip_prefix("export ")
@@ -282,7 +276,7 @@ pub fn IsTypeScriptInterface(line: &str) -> bool {
 }
 
 /// Check if a line contains a TypeScript/JavaScript function definition
-pub fn IsTypeScriptFunction(line: &str) -> bool {
+pub fn IsTypeScriptFunction(line:&str) -> bool {
 	let trimmed = line.trim();
 	let after_keywords = trimmed
 		.strip_prefix("export ")
@@ -294,7 +288,7 @@ pub fn IsTypeScriptFunction(line: &str) -> bool {
 }
 
 /// Extract TypeScript/JavaScript export modifier if present
-pub fn ExtractExportModifier(line: &str) -> Option<&str> {
+pub fn ExtractExportModifier(line:&str) -> Option<&str> {
 	let trimmed = line.trim();
 	if trimmed.starts_with("export ") {
 		Some("export")
@@ -316,7 +310,7 @@ pub fn ExtractExportModifier(line: &str) -> Option<&str> {
 }
 
 /// Extract TypeScript/JavaScript type annotation from a declaration
-pub fn ExtractTypeAnnotation(line: &str) -> Option<String> {
+pub fn ExtractTypeAnnotation(line:&str) -> Option<String> {
 	if let Some(colon_idx) = line.find(':') {
 		let rest = &line[colon_idx + 1..];
 		// Find the end of the type annotation (before =, {, ;, or <)
@@ -324,18 +318,14 @@ pub fn ExtractTypeAnnotation(line: &str) -> Option<String> {
 			.find(|c| c == '=' || c == '{' || c == ';' || c == ',')
 			.unwrap_or(rest.len());
 		let type_str = rest[..end_idx].trim();
-		if !type_str.is_empty() {
-			Some(type_str.to_string())
-		} else {
-			None
-		}
+		if !type_str.is_empty() { Some(type_str.to_string()) } else { None }
 	} else {
 		None
 	}
 }
 
 /// Parse TypeScript/JavaScript generic parameters
-pub fn ExtractGenericParameters(line: &str) -> Vec<String> {
+pub fn ExtractGenericParameters(line:&str) -> Vec<String> {
 	let mut generics = Vec::new();
 	if let Some(start) = line.find('<') {
 		if let Some(end) = line.rfind('>') {

@@ -117,53 +117,53 @@
 //!   - 50052: Cocoon (NodeJS/web services)
 //!
 //! TODO: Add TLS/mTLS support for production security
-/// ## TODO: Missing Functionality
-///
-/// ### High Priority
-/// - [ ] Implement metrics HTTP endpoint (/metrics)
-/// - [ ] Add Prometheus metric export with labels
-/// - [ ] Implement TLS/mTLS for gRPC connections
-/// - [ ] Add connection authentication/authorization
-/// - [ ] Implement configuration hot-reload (SIGHUP)
-/// - [ ] Add comprehensive integration tests
-/// - [ ] Implement graceful shutdown with operation completion
-///
-/// ### Medium Priority
-/// - [ ] Implement plugin hot-reload
-/// - [ ] Add structured logging with correlation IDs
-/// - [ ] Implement distributed tracing (OpenTelemetry)
-/// - [ ] Add health check HTTP endpoint for load balancers
-/// - [ ] Implement connection pooling optimizations
-/// - [ ] Add metrics export to external systems
-/// - [ ] Implement telemetry/observability export
-///
-/// ### Low Priority
-/// - [ ] Add A/B testing framework for features
-/// - [ ] Implement query optimizer for file index
-/// - [ ] Add caching layer for frequently accessed data
-/// - [ ] Implement adaptive timeout based on load
-/// - [ ] Add predictive scaling based on metrics
-/// - [ ] Implement chaos testing/metrics
-///
-/// ## Error Handling Strategy
-///
-/// All modules use defensive coding practices:
-///
-/// 1. **Input Validation**: All public functions validate inputs with
-///    descriptive errors
-/// 2. **Timeout Handling**: Default timeouts with configuration overrides
-/// 3. **Resource Cleanup**: Drop trait + explicit cleanup methods
-/// 4. **Circuit Breaker**: Fail-fast for external dependencies
-/// 5. **Retry Logic**: Exponential backoff for transient failures
-/// 6. **Metrics Recording**: All operations record success/failure metrics
-/// 7. **Panic Recovery**: Catch panics in critical async tasks
-///
-/// ## Constants
-///
-/// - **VERSION**: Air daemon version from Cargo.toml
-/// - **DefaultConfigFile**: Default config filename (air.toml)
-/// - **DefaultBindAddress**: gRPC bind address ([::1]:50053)
-/// - **ProtocolVersion**: Vine protocol version (1)
+//! ## TODO: Missing Functionality
+//!
+//! ### High Priority
+//! - [ ] Implement metrics HTTP endpoint (/metrics)
+//! - [ ] Add Prometheus metric export with labels
+//! - [ ] Implement TLS/mTLS for gRPC connections
+//! - [ ] Add connection authentication/authorization
+//! - [ ] Implement configuration hot-reload (SIGHUP)
+//! - [ ] Add comprehensive integration tests
+//! - [ ] Implement graceful shutdown with operation completion
+//!
+//! ### Medium Priority
+//! - [ ] Implement plugin hot-reload
+//! - [ ] Add structured logging with correlation IDs
+//! - [ ] Implement distributed tracing (OpenTelemetry)
+//! - [ ] Add health check HTTP endpoint for load balancers
+//! - [ ] Implement connection pooling optimizations
+//! - [ ] Add metrics export to external systems
+//! - [ ] Implement telemetry/observability export
+//!
+//! ### Low Priority
+//! - [ ] Add A/B testing framework for features
+//! - [ ] Implement query optimizer for file index
+//! - [ ] Add caching layer for frequently accessed data
+//! - [ ] Implement adaptive timeout based on load
+//! - [ ] Add predictive scaling based on metrics
+//! - [ ] Implement chaos testing/metrics
+//!
+//! ## Error Handling Strategy
+//!
+//! All modules use defensive coding practices:
+//!
+//! 1. **Input Validation**: All public functions validate inputs with
+//!    descriptive errors
+//! 2. **Timeout Handling**: Default timeouts with configuration overrides
+//! 3. **Resource Cleanup**: Drop trait + explicit cleanup methods
+//! 4. **Circuit Breaker**: Fail-fast for external dependencies
+//! 5. **Retry Logic**: Exponential backoff for transient failures
+//! 6. **Metrics Recording**: All operations record success/failure metrics
+//! 7. **Panic Recovery**: Catch panics in critical async tasks
+//!
+//! ## Constants
+//!
+//! - **VERSION**: Air daemon version from Cargo.toml
+//! - **DefaultConfigFile**: Default config filename (Air.toml)
+//! - **DefaultBindAddress**: gRPC bind address ([::1]:50053)
+//! - **ProtocolVersion**: Vine protocol version (1)
 
 pub mod ApplicationState;
 pub mod Authentication;
@@ -182,26 +182,6 @@ pub mod Tracing;
 pub mod Updates;
 pub mod Vine;
 
-// Re-export commonly used types for easier access
-
-pub use Authentication::AuthenticationService;
-pub use Configuration::ConfigurationManager;
-pub use Downloader::DownloadManager;
-pub use Indexing::FileIndexer;
-pub use Resilience::{
-	BulkheadConfig,
-	BulkheadExecutor,
-	CircuitBreaker,
-	CircuitBreakerConfig,
-	CircuitState,
-	ResilienceOrchestrator,
-	RetryManager,
-	RetryPolicy,
-	TimeoutManager,
-};
-pub use Security::{ChecksumVerifier, RateLimitConfig, RateLimiter, SecureStorage};
-pub use Updates::UpdateManager;
-
 /// Air Daemon version information
 ///
 /// This is automatically populated from Cargo.toml at build time
@@ -211,10 +191,10 @@ pub const VERSION:&str = env!("CARGO_PKG_VERSION");
 ///
 /// The daemon searches for this configuration file in:
 /// 1. The path specified via --config flag
-/// 2. ~/.config/air/air.toml
-/// 3. /etc/air/air.toml
-/// 4. Working directory (air.toml)
-pub const DefaultConfigFile:&str = "air.toml";
+/// 2. ~/.config/Air/Air.toml
+/// 3. /etc/Air/Air.toml
+/// 4. Working directory (Air.toml)
+pub const DefaultConfigFile:&str = "Air.toml";
 
 /// Default gRPC bind address for the Vine server
 ///

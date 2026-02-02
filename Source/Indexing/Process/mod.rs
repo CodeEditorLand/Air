@@ -4,7 +4,8 @@
 //!
 //! ## Role in Air Architecture
 //!
-//! Provides content processing and symbol extraction functionality for the File Indexer service.
+//! Provides content processing and symbol extraction functionality for the File
+//! Indexer service.
 //!
 //! ## Modules
 //!

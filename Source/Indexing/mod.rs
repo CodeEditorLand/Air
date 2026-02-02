@@ -66,132 +66,24 @@
 pub mod State {
 	pub mod CreateState;
 	pub mod UpdateState;
-
-	// Re-export commonly used types
-	pub use CreateState::{
-		CreateFileMetadata,
-		CreateNewIndex,
-		CreateSymbolInfo,
-		CreateSymbolLocation,
-		CalculateIndexChecksum,
-		FileIndex,
-		FileMetadata,
-		GenerateIndexVersion,
-		GetPermissionsString,
-		MAX_FILE_SIZE_BYTES,
-		SymbolInfo,
-		SymbolKind,
-		SymbolLocation,
-		ValidateFileSize,
-		ValidateIndexSize,
-	};
-
-	pub use UpdateState::{
-		AddFileToIndex,
-		CleanupOrphanedEntries,
-		GetIndexSizeEstimate,
-		MergeIndexes,
-		RemoveFileFromIndex,
-		RemoveFilesFromIndex,
-		UpdateContentIndex,
-		UpdateFileMetadata,
-		UpdateFileSymbols,
-		UpdateIndexMetadata,
-		ValidateIndexConsistency,
-		NeedsUpdate,
-	};
 }
 
 // Re-export scanning modules
 pub mod Scan {
 	pub mod ScanDirectory;
 	pub mod ScanFile;
-
-	pub use ScanDirectory::{
-		GetDefaultExcludePatterns,
-		GetDirectoryStatistics,
-		MatchesPattern,
-		MatchesPatterns,
-		ScanAndRemoveDeleted,
-		ScanDirectoriesParallel,
-		ScanDirectory,
-		ScanDirectoryResult,
-	};
-
-	pub use ScanFile::{
-		CalculateChecksum,
-		FileModifiedSince,
-		GetFileSize,
-		GetPermissionsString,
-		IsBinaryFile,
-		IsTextFile,
-		ScanFileMetadata,
-		ValidateFileAccess,
-		IndexFileInternal,
-	};
 }
 
 // Re-export processing modules
 pub mod Process {
 	pub mod ProcessContent;
 	pub mod ExtractSymbols;
-
-	pub use ProcessContent::{
-		ContentToString,
-		DetectEncoding,
-		DetectLanguage,
-		DetectMimeType,
-		GetCharCount,
-		GetLineCount,
-		IsBinaryContent,
-		SanitizeContent,
-		TokenizeContent,
-		TruncateContent,
-	};
-
-	pub use ExtractSymbols::{
-		CreateSymbolIndex,
-		DeduplicateLists,
-		DeduplicateSymbols,
-		FilterSymbolsByName,
-		FindSymbolsInRange,
-		FindSymbolsMatching,
-		FindSymbolAtLine,
-		GetSymbolsByKind,
-		GetSymbolStatistics,
-		GroupSymbolsByKind,
-		MergeSymbolLists,
-		SortSymbolsByLine,
-		ValidateSymbol,
-		SymbolStatistics,
-		ExtractSymbols as ExtractSymbolsInternal,
-	};
 }
 
 // Re-export language modules
 pub mod Language {
 	pub mod ParseRust;
 	pub mod ParseTypeScript;
-
-	pub use ParseRust::{
-		ExtractRustSymbols,
-		ExtractRustSymbolsFromLine,
-		ExtractVisibilityModifier,
-		IsRustFunction,
-		IsRustImpl,
-		IsRustStruct,
-	};
-
-	pub use ParseTypeScript::{
-		ExtractGenericParameters,
-		ExtractExportModifier,
-		ExtractTypeAnnotation,
-		ExtractTypeScriptSymbols,
-		ExtractTypeScriptSymbolsFromLine,
-		IsTypeScriptClass,
-		IsTypeScriptFunction,
-		IsTypeScriptInterface,
-	};
 }
 
 // Re-export store modules
@@ -199,149 +91,53 @@ pub mod Store {
 	pub mod StoreEntry;
 	pub mod QueryIndex;
 	pub mod UpdateIndex;
-
-	pub use StoreEntry::{
-		CleanupOldBackups,
-		EnsureIndexDirectory,
-		GetIndexFilePath,
-		GetIndexFileSize,
-		IndexFileExists,
-		LoadIndex,
-		LoadIndexWithRecovery,
-		LoadOrCreateIndex,
-		SaveIndex,
-		ValidateIndexFormat,
-	};
-
-	pub use QueryIndex::{
-		FindExactMatches,
-		FindFuzzyMatches,
-		FindMatchesWithContext,
-		FindMatchesInFile,
-		FindRegexMatches,
-		FindWholeWordMatch,
-		MatchesFilters,
-		QueryIndexExact,
-		QueryIndexFuzzy,
-		QueryIndexLiteral,
-		QueryIndexRegex,
-		QueryIndexSearch,
-		SanitizeSearchQuery,
-		CalculateLevenshteinDistance,
-		CalculateRelevance,
-		MAX_SEARCH_RESULTS_DEFAULT,
-		PaginatedSearchResults,
-		SearchMatch,
-		SearchMode,
-		SearchQuery,
-		SearchResult,
-	};
-
-	pub use UpdateIndex::{
-		CleanupRemovedFiles,
-		ProcessWatcherEvent,
-		RebuildIndex,
-		RepairResult,
-		UpdateBatchResult,
-		UpdateFileContent,
-		ValidateAndRepairIndex,
-		WatcherEventResult,
-		UpdateFilesBatch,
-		UpdateSingleFile,
-	};
 }
 
 // Re-export watch module
 pub mod Watch {
 	pub mod WatchFile;
-
-	pub use WatchFile::{
-		DebouncedEventHandler,
-		EventKindToChangeType,
-		FileChangeType,
-		GetDefaultIgnoredPatterns,
-		HandleFileEvent,
-		ProcessedChange,
-		ProcessedChangeResult,
-		ShouldWatchPath,
-		ValidateWatchPath,
-	};
 }
 
 // Re-export background module
 pub mod Background {
 	pub mod StartWatcher;
-
-	pub use StartWatcher::{
-		BackgroundIndexerContext,
-		BackgroundTask,
-		GetWatcherStatus,
-		StartAll,
-		StartBackgroundTasks,
-		StartDebounceProcessor,
-		StartFileWatcher,
-		StopAll,
-		StopBackgroundTasks,
-		StopFileWatcher,
-		WatcherStatus,
-	};
 }
 
 // Re-export commonly used types at the root level
-pub use CreateState::{
-	FileIndex,
-	FileMetadata,
-	SymbolInfo,
-	SymbolKind,
-	SymbolLocation,
-};
-
-pub use Store::QueryIndex::{
-	SearchMode,
-	SearchQuery,
-	SearchResult,
-	SearchMatch,
-	PaginatedSearchResults,
-};
-
 // Import types and functions needed for the FileIndexer implementation
-use std::{
-	collections::HashMap,
-path::PathBuf,
-sync::Arc,
-};
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
 use tokio::sync::{Mutex, RwLock};
 
 use crate::{AirError, ApplicationState::ApplicationState, Configuration::ConfigurationManager, Result};
 
 /// Maximum number of parallel indexing operations
-const MAX_PARALLEL_INDEXING: usize = 10;
+const MAX_PARALLEL_INDEXING:usize = 10;
 
 /// Indexing result with statistics
 #[derive(Debug, Clone)]
 pub struct IndexResult {
 	/// Number of files successfully indexed
-	pub files_indexed: u32,
+	pub files_indexed:u32,
 	/// Total size of indexed files in bytes
-	pub total_size: u64,
+	pub total_size:u64,
 	/// Time taken in seconds
-	pub duration_seconds: f64,
+	pub duration_seconds:f64,
 	/// Number of symbols extracted
-	pub symbols_extracted: u32,
+	pub symbols_extracted:u32,
 	/// Number of files with errors
-	pub files_with_errors: u32,
+	pub files_with_errors:u32,
 }
 
 /// Index statistics
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct IndexStatistics {
-	pub file_count: u32,
-	pub total_size: u64,
-	pub total_symbols: u32,
-	pub language_counts: HashMap<String, u32>,
-	pub last_updated: chrono::DateTime<chrono::Utc>,
-	pub index_version: String,
+	pub file_count:u32,
+	pub total_size:u64,
+	pub total_symbols:u32,
+	pub language_counts:HashMap<String, u32>,
+	pub last_updated:chrono::DateTime<chrono::Utc>,
+	pub index_version:String,
 }
 
 /// File indexer implementation with comprehensive search capabilities
@@ -355,22 +151,22 @@ pub struct IndexStatistics {
 /// - Parallel indexing with resource limits
 pub struct FileIndexer {
 	/// Application state
-	AppState: Arc<ApplicationState>,
+	AppState:Arc<ApplicationState>,
 
 	/// File index with metadata and symbols
-	file_index: Arc<RwLock<FileIndex>>,
+	file_index:Arc<RwLock<FileIndex>>,
 
 	/// Index storage directory
-	index_directory: PathBuf,
+	index_directory:PathBuf,
 
 	/// File watcher for incremental updates
-	file_watcher: Arc<Mutex<Option<notify::RecommendedWatcher>>>,
+	file_watcher:Arc<Mutex<Option<notify::RecommendedWatcher>>>,
 
 	/// Semaphore for limiting parallel indexing operations
-	indexing_semaphore: Arc<tokio::sync::Semaphore>,
+	indexing_semaphore:Arc<tokio::sync::Semaphore>,
 
 	/// Index corruption detection state
-	corruption_detected: Arc<Mutex<bool>>,
+	corruption_detected:Arc<Mutex<bool>>,
 }
 
 impl FileIndexer {
@@ -381,7 +177,7 @@ impl FileIndexer {
 	/// - Existing index loading or fresh creation
 	/// - Index corruption detection
 	/// - Service status initialization
-	pub async fn new(AppState: Arc<ApplicationState>) -> Result<Self> {
+	pub async fn new(AppState:Arc<ApplicationState>) -> Result<Self> {
 		let config = &AppState.Configuration.Indexing;
 
 		// Expand index directory path with validation
@@ -394,12 +190,12 @@ impl FileIndexer {
 		let file_index = Store::LoadOrCreateIndex(&index_directory).await?;
 
 		let indexer = Self {
-			AppState: AppState.clone(),
-			file_index: Arc::new(RwLock::new(file_index)),
-			index_directory: index_directory.clone(),
-			file_watcher: Arc::new(Mutex::new(None)),
-			indexing_semaphore: Arc::new(tokio::sync::Semaphore::new(MAX_PARALLEL_INDEXING)),
-			corruption_detected: Arc::new(Mutex::new(false)),
+			AppState:AppState.clone(),
+			file_index:Arc::new(RwLock::new(file_index)),
+			index_directory:index_directory.clone(),
+			file_watcher:Arc::new(Mutex::new(None)),
+			indexing_semaphore:Arc::new(tokio::sync::Semaphore::new(MAX_PARALLEL_INDEXING)),
+			corruption_detected:Arc::new(Mutex::new(false)),
 		};
 
 		// Verify index integrity
@@ -418,7 +214,7 @@ impl FileIndexer {
 	}
 
 	/// Validate and expand path with traversal protection
-	fn ValidateAndExpandPath(path: &str) -> Result<PathBuf> {
+	fn ValidateAndExpandPath(path:&str) -> Result<PathBuf> {
 		let expanded = ConfigurationManager::ExpandPath(path)?;
 
 		// Prevent path traversal attacks
@@ -455,7 +251,7 @@ impl FileIndexer {
 	}
 
 	/// Index a directory with comprehensive validation and parallel processing
-	pub async fn IndexDirectory(&self, path: String, patterns: Vec<String>) -> Result<IndexResult> {
+	pub async fn IndexDirectory(&self, path:String, patterns:Vec<String>) -> Result<IndexResult> {
 		let start_time = std::time::Instant::now();
 
 		log::info!("[FileIndexer] Starting directory index: {}", path);
@@ -463,7 +259,8 @@ impl FileIndexer {
 		let config = &self.AppState.Configuration.Indexing;
 
 		// Scan directory
-		let (files_to_index, scan_result) = Scan::ScanDirectoriesParallel(vec![path], patterns.clone(), config, MAX_PARALLEL_INDEXING).await?;
+		let (files_to_index, scan_result) =
+			Scan::ScanDirectoriesParallel(vec![path], patterns.clone(), config, MAX_PARALLEL_INDEXING).await?;
 
 		// Index files in parallel
 		let index_arc = self.file_index.clone();
@@ -515,11 +312,7 @@ impl FileIndexer {
 							.symbol_index
 							.entry(symbol.name.clone())
 							.or_insert_with(Vec::new)
-							.push(State::SymbolLocation {
-								file_path: file_path.clone(),
-								line: symbol.line,
-								symbol,
-							});
+							.push(State::SymbolLocation { file_path:file_path.clone(), line:symbol.line, symbol });
 					}
 
 					files_indexed += 1;
@@ -558,7 +351,7 @@ impl FileIndexer {
 		Ok(IndexResult {
 			files_indexed,
 			total_size,
-			duration_seconds: duration,
+			duration_seconds:duration,
 			symbols_extracted,
 			files_with_errors,
 		})
@@ -567,16 +360,16 @@ impl FileIndexer {
 	/// Search files with multiple modes
 	pub async fn SearchFiles(
 		&self,
-		query: SearchQuery,
-		path: Option<String>,
-		language: Option<String>,
+		query:SearchQuery,
+		path:Option<String>,
+		language:Option<String>,
 	) -> Result<PaginatedSearchResults> {
 		let index = self.file_index.read().await;
 		Store::QueryIndexSearch(&index, query, path, language).await
 	}
 
 	/// Search symbols across all files (for VSCode Go to Symbol)
-	pub async fn SearchSymbols(&self, query: &str, max_results: u32) -> Result<Vec<SymbolInfo>> {
+	pub async fn SearchSymbols(&self, query:&str, max_results:u32) -> Result<Vec<SymbolInfo>> {
 		let index = self.file_index.read().await;
 		let query_lower = query.to_lowercase();
 		let mut results = Vec::new();
@@ -596,13 +389,13 @@ impl FileIndexer {
 	}
 
 	/// Get symbols for a specific file (for VSCode Outline View)
-	pub async fn GetFileSymbols(&self, file_path: &PathBuf) -> Result<Vec<SymbolInfo>> {
+	pub async fn GetFileSymbols(&self, file_path:&PathBuf) -> Result<Vec<SymbolInfo>> {
 		let index = self.file_index.read().await;
 		Ok(index.file_symbols.get(file_path).cloned().unwrap_or_default())
 	}
 
 	/// Get file information
-	pub async fn GetFileInfo(&self, path: String) -> Result<Option<FileMetadata>> {
+	pub async fn GetFileInfo(&self, path:String) -> Result<Option<FileMetadata>> {
 		let file_path = Self::ValidateAndExpandPath(&path)?;
 		let index = self.file_index.read().await;
 
@@ -613,7 +406,7 @@ impl FileIndexer {
 	pub async fn GetIndexStatistics(&self) -> Result<IndexStatistics> {
 		let index = self.file_index.read().await;
 
-		let mut language_counts: HashMap<String, u32> = HashMap::new();
+		let mut language_counts:HashMap<String, u32> = HashMap::new();
 		let total_size = index.files.values().map(|m| m.size).sum();
 		let total_symbols = index.files.values().map(|m| m.symbol_count).sum();
 
@@ -624,12 +417,12 @@ impl FileIndexer {
 		}
 
 		Ok(IndexStatistics {
-			file_count: index.files.len() as u32,
+			file_count:index.files.len() as u32,
 			total_size,
 			total_symbols,
 			language_counts,
-			last_updated: index.last_updated,
-			index_version: index.index_version.clone(),
+			last_updated:index.last_updated,
+			index_version:index.index_version.clone(),
 		})
 	}
 
@@ -656,12 +449,12 @@ impl FileIndexer {
 impl Clone for FileIndexer {
 	fn clone(&self) -> Self {
 		Self {
-			AppState: self.AppState.clone(),
-			file_index: self.file_index.clone(),
-			index_directory: self.index_directory.clone(),
-			file_watcher: self.file_watcher.clone(),
-			indexing_semaphore: self.indexing_semaphore.clone(),
-			corruption_detected: self.corruption_detected.clone(),
+			AppState:self.AppState.clone(),
+			file_index:self.file_index.clone(),
+			index_directory:self.index_directory.clone(),
+			file_watcher:self.file_watcher.clone(),
+			indexing_semaphore:self.indexing_semaphore.clone(),
+			corruption_detected:self.corruption_detected.clone(),
 		}
 	}
 }

@@ -64,9 +64,10 @@
 use std::path::PathBuf;
 
 use crate::Result;
-
-use super::super::SymbolInfo;
-use super::Language::{ExtractRustSymbols, ExtractTypeScriptSymbols, ExtractGoSymbols, ExtractPythonSymbols};
+use super::{
+	super::SymbolInfo,
+	Language::{ExtractGoSymbols, ExtractPythonSymbols, ExtractRustSymbols, ExtractTypeScriptSymbols},
+};
 
 /// Extract symbols from code for VSCode Outline View and Go to Symbol
 ///
@@ -75,11 +76,7 @@ use super::Language::{ExtractRustSymbols, ExtractTypeScriptSymbols, ExtractGoSym
 /// - TypeScript/JavaScript: class, interface, function, const, let, var
 /// - Python: class, def
 /// - Go: type, func, struct, interface
-pub async fn ExtractSymbols(
-	file_path: &PathBuf,
-	content: &[u8],
-	language: &str,
-) -> Result<Vec<SymbolInfo>> {
+pub async fn ExtractSymbols(file_path:&PathBuf, content:&[u8], language:&str) -> Result<Vec<SymbolInfo>> {
 	let content_str = String::from_utf8_lossy(content);
 	let mut symbols = Vec::new();
 
@@ -95,7 +92,9 @@ pub async fn ExtractSymbols(
 }
 
 /// Group symbols by kind for organization
-pub fn GroupSymbolsByKind(symbols: &[SymbolInfo]) -> std::collections::HashMap<super::super::SymbolKind, Vec<&SymbolInfo>> {
+pub fn GroupSymbolsByKind(
+	symbols:&[SymbolInfo],
+) -> std::collections::HashMap<super::super::SymbolKind, Vec<&SymbolInfo>> {
 	let mut grouped = std::collections::HashMap::new();
 
 	for symbol in symbols {
@@ -106,12 +105,10 @@ pub fn GroupSymbolsByKind(symbols: &[SymbolInfo]) -> std::collections::HashMap<s
 }
 
 /// Sort symbols by line number
-pub fn SortSymbolsByLine(symbols: &mut Vec<SymbolInfo>) {
-	symbols.sort_by(|a, b| a.line.cmp(&b.line));
-}
+pub fn SortSymbolsByLine(symbols:&mut Vec<SymbolInfo>) { symbols.sort_by(|a, b| a.line.cmp(&b.line)); }
 
 /// Filter symbols by name pattern
-pub fn FilterSymbolsByName(symbols: &[SymbolInfo], pattern: &str) -> Vec<&SymbolInfo> {
+pub fn FilterSymbolsByName<'a>(symbols:&'a [SymbolInfo], pattern:&str) -> Vec<&'a SymbolInfo> {
 	let pattern_lower = pattern.to_lowercase();
 	symbols
 		.iter()
@@ -120,29 +117,23 @@ pub fn FilterSymbolsByName(symbols: &[SymbolInfo], pattern: &str) -> Vec<&Symbol
 }
 
 /// Get symbols of a specific kind
-pub fn GetSymbolsByKind(symbols: &[SymbolInfo], kind: super::super::SymbolKind) -> Vec<&SymbolInfo> {
+pub fn GetSymbolsByKind(symbols:&[SymbolInfo], kind:super::super::SymbolKind) -> Vec<&SymbolInfo> {
 	symbols.iter().filter(|s| s.kind == kind).collect()
 }
 
 /// Find symbol at specific line
-pub fn FindSymbolAtLine(symbols: &[SymbolInfo], line: u32) -> Option<&SymbolInfo> {
+pub fn FindSymbolAtLine(symbols:&[SymbolInfo], line:u32) -> Option<&SymbolInfo> {
 	symbols.iter().find(|s| s.line == line)
 }
 
 /// Find symbols in line range
-pub fn FindSymbolsInRange(symbols: &[SymbolInfo], start_line: u32, end_line: u32) -> Vec<&SymbolInfo> {
-	symbols
-		.iter()
-		.filter(|s| s.line >= start_line && s.line <= end_line)
-		.collect()
+pub fn FindSymbolsInRange(symbols:&[SymbolInfo], start_line:u32, end_line:u32) -> Vec<&SymbolInfo> {
+	symbols.iter().filter(|s| s.line >= start_line && s.line <= end_line).collect()
 }
 
 /// Create symbol summary statistics
-pub fn GetSymbolStatistics(symbols: &[SymbolInfo]) -> SymbolStatistics {
-	let mut stats = SymbolStatistics {
-		total: symbols.len(),
-		by_kind: std::collections::HashMap::new(),
-	};
+pub fn GetSymbolStatistics(symbols:&[SymbolInfo]) -> SymbolStatistics {
+	let mut stats = SymbolStatistics { total:symbols.len(), by_kind:std::collections::HashMap::new() };
 
 	for symbol in symbols {
 		*stats.by_kind.entry(symbol.kind.clone()).or_insert(0) += 1;
@@ -154,12 +145,12 @@ pub fn GetSymbolStatistics(symbols: &[SymbolInfo]) -> SymbolStatistics {
 /// Symbol statistics
 #[derive(Debug, Clone)]
 pub struct SymbolStatistics {
-	pub total: usize,
-	pub by_kind: std::collections::HashMap<super::super::SymbolKind, usize>,
+	pub total:usize,
+	pub by_kind:std::collections::HashMap<super::super::SymbolKind, usize>,
 }
 
 impl std::fmt::Display for SymbolStatistics {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, f:&mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		write!(f, "Total symbols: {}", self.total)?;
 		for (kind, count) in &self.by_kind {
 			write!(f, ", {:?}: {}", kind, count)?;
@@ -169,23 +160,18 @@ impl std::fmt::Display for SymbolStatistics {
 }
 
 /// Validate symbol information
-pub fn ValidateSymbol(symbol: &SymbolInfo) -> bool {
-	!symbol.name.is_empty()
-		&& symbol.line > 0
-		&& !symbol.full_path.is_empty()
+pub fn ValidateSymbol(symbol:&SymbolInfo) -> bool {
+	!symbol.name.is_empty() && symbol.line > 0 && !symbol.full_path.is_empty()
 }
 
 /// Deduplicate symbols by name and line
-pub fn DeduplicateSymbols(symbols: Vec<SymbolInfo>) -> Vec<SymbolInfo> {
+pub fn DeduplicateSymbols(symbols:Vec<SymbolInfo>) -> Vec<SymbolInfo> {
 	let mut seen = std::collections::HashSet::new();
-	symbols
-		.into_iter()
-		.filter(|s| seen.insert((s.name.clone(), s.line)))
-		.collect()
+	symbols.into_iter().filter(|s| seen.insert((s.name.clone(), s.line))).collect()
 }
 
 /// Merge symbol lists from multiple files
-pub fn MergeSymbolLists(symbol_lists: Vec<Vec<SymbolInfo>>) -> Vec<SymbolInfo> {
+pub fn MergeSymbolLists(symbol_lists:Vec<Vec<SymbolInfo>>) -> Vec<SymbolInfo> {
 	let mut merged = Vec::new();
 	for symbols in symbol_lists {
 		merged.extend(symbols);
@@ -194,28 +180,25 @@ pub fn MergeSymbolLists(symbol_lists: Vec<Vec<SymbolInfo>>) -> Vec<SymbolInfo> {
 }
 
 /// Deduplicate multiple symbol lists
-pub fn DeduplicateLists(symbol_lists: Vec<Vec<SymbolInfo>>) -> Vec<Vec<SymbolInfo>> {
+pub fn DeduplicateLists(symbol_lists:Vec<Vec<SymbolInfo>>) -> Vec<Vec<SymbolInfo>> {
 	symbol_lists.into_iter().map(|list| DeduplicateSymbols(list)).collect()
 }
 
 /// Create a symbol search index (name -> symbols)
-pub fn CreateSymbolIndex(symbols: &[SymbolInfo]) -> std::collections::HashMap<String, Vec<usize>> {
+pub fn CreateSymbolIndex(symbols:&[SymbolInfo]) -> std::collections::HashMap<String, Vec<usize>> {
 	let mut index = std::collections::HashMap::new();
 	for (idx, symbol) in symbols.iter().enumerate() {
-		index
-			.entry(symbol.name.to_lowercase())
-			.or_insert_with(Vec::new)
-			.push(idx);
+		index.entry(symbol.name.to_lowercase()).or_insert_with(Vec::new).push(idx);
 	}
 	index
 }
 
 /// Find symbols matching multiple criteria
 pub fn FindSymbolsMatching(
-	symbols: &[SymbolInfo],
-	name_pattern: Option<&str>,
-	kind: Option<super::super::SymbolKind>,
-	line_range: Option<(u32, u32)>,
+	symbols:&[SymbolInfo],
+	name_pattern:Option<&str>,
+	kind:Option<super::super::SymbolKind>,
+	line_range:Option<(u32, u32)>,
 ) -> Vec<&SymbolInfo> {
 	symbols
 		.iter()

@@ -65,11 +65,11 @@
 //! events asynchronously to avoid blocking the watcher loop.
 
 use std::path::PathBuf;
+
 use tokio::sync::{Mutex, RwLock};
 
 use crate::{AirError, Configuration::IndexingConfig, Result};
-
-use super::super::{FileIndex};
+use super::super::FileIndex;
 
 /// Handle file watcher event for incremental indexing
 ///
@@ -78,17 +78,14 @@ use super::super::{FileIndex};
 /// - File Created: Index the new file
 /// - File Modified: Re-index the modified file
 /// - File Removed: Remove from index
-pub async fn HandleFileEvent(
-	event: notify::Event,
-	index_arc: &RwLock<FileIndex>,
-	config: &IndexingConfig,
-) -> Result<()> {
+pub async fn HandleFileEvent(event:notify::Event, index_arc:&RwLock<FileIndex>, config:&IndexingConfig) -> Result<()> {
 	match event.kind {
 		notify::EventKind::Create(notify::event::CreateKind::File) => {
 			for path in event.paths {
 				log::debug!("[WatchFile] File created: {}", path.display());
 				if let Ok(mut index) = index_arc.write().await {
-					if let Err(e) = super::super::Store::UpdateIndex::UpdateSingleFile(&mut index, &path, config).await {
+					if let Err(e) = super::super::Store::UpdateIndex::UpdateSingleFile(&mut index, &path, config).await
+					{
 						log::warn!("[WatchFile] Failed to index new file {}: {}", path.display(), e);
 					}
 				}
@@ -99,7 +96,8 @@ pub async fn HandleFileEvent(
 			for path in event.paths {
 				log::debug!("[WatchFile] File modified: {}", path.display());
 				if let Ok(mut index) = index_arc.write().await {
-					if let Err(e) = super::super::Store::UpdateIndex::UpdateSingleFile(&mut index, &path, config).await {
+					if let Err(e) = super::super::Store::UpdateIndex::UpdateSingleFile(&mut index, &path, config).await
+					{
 						log::warn!("[WatchFile] Failed to re-index modified file {}: {}", path.display(), e);
 					}
 				}
@@ -118,7 +116,8 @@ pub async fn HandleFileEvent(
 		notify::EventKind::Create(notify::event::CreateKind::Folder) => {
 			for path in event.paths {
 				log::debug!("[WatchFile] Directory created: {}", path.display());
-				// Directories themselves don't need indexing, just their contents
+				// Directories themselves don't need indexing, just their
+				// contents
 			}
 		},
 		notify::EventKind::Remove(notify::event::RemoveKind::Folder) => {
@@ -133,7 +132,8 @@ pub async fn HandleFileEvent(
 						}
 					}
 					for indexed_path in paths_to_remove {
-						if let Err(e) = super::super::State::UpdateState::RemoveFileFromIndex(&mut index, &indexed_path) {
+						if let Err(e) = super::super::State::UpdateState::RemoveFileFromIndex(&mut index, &indexed_path)
+						{
 							log::warn!("[WatchFile] Failed to remove file {}: {}", indexed_path.display(), e);
 						}
 					}
@@ -153,18 +153,14 @@ pub async fn HandleFileEvent(
 ///
 /// Prevents rapid successive changes from causing excessive re-indexing
 pub struct DebouncedEventHandler {
-	pending_changes: Mutex<std::collections::HashMap<PathBuf, FileChangeInfo>>,
+	pending_changes:Mutex<std::collections::HashMap<PathBuf, FileChangeInfo>>,
 }
 
 impl DebouncedEventHandler {
-	pub fn new() -> Self {
-		Self {
-			pending_changes: Mutex::new(std::collections::HashMap::new()),
-		}
-	}
+	pub fn new() -> Self { Self { pending_changes:Mutex::new(std::collections::HashMap::new()) } }
 
 	/// Add a file change event
-	pub async fn AddChange(&self, path: PathBuf, change_type: FileChangeType) {
+	pub async fn AddChange(&self, path:PathBuf, change_type:FileChangeType) {
 		let mut pending = self.pending_changes.lock().await;
 
 		let now = std::time::Instant::now();
@@ -178,23 +174,18 @@ impl DebouncedEventHandler {
 			None => {
 				pending.insert(
 					path.clone(),
-					FileChangeInfo {
-						path: path.clone(),
-						change_type,
-						last_seen: now,
-						suppressed_count: 0,
-					},
+					FileChangeInfo { path:path.clone(), change_type, last_seen:now, suppressed_count:0 },
 				);
-			}
+			},
 		}
 	}
 
 	/// Process pending changes older than the specified duration
 	pub async fn ProcessPendingChanges(
 		&self,
-		age_cutoff: std::time::Duration,
-		index_arc: &RwLock<FileIndex>,
-		config: &IndexingConfig,
+		age_cutoff:std::time::Duration,
+		index_arc:&RwLock<FileIndex>,
+		config:&IndexingConfig,
 	) -> Result<Vec<ProcessedChange>> {
 		let mut processed = Vec::new();
 		let expired_paths = {
@@ -256,8 +247,8 @@ impl DebouncedEventHandler {
 
 			processed.push(ProcessedChange {
 				path,
-				change_type: change_info.change_type,
-				suppressed_count: change_info.suppressed_count,
+				change_type:change_info.change_type,
+				suppressed_count:change_info.suppressed_count,
 				result,
 			});
 		}
@@ -281,9 +272,7 @@ impl DebouncedEventHandler {
 }
 
 impl Default for DebouncedEventHandler {
-	fn default() -> Self {
-		Self::new()
-	}
+	fn default() -> Self { Self::new() }
 }
 
 /// File change type for debouncing
@@ -295,7 +284,7 @@ pub enum FileChangeType {
 }
 
 impl FileChangeType {
-	pub fn max(self, other: Self) -> Self {
+	pub fn max(self, other:Self) -> Self {
 		// Removed takes precedence over Modified, which takes precedence over Created
 		match (self, other) {
 			(Self::Removed, _) | (_, Self::Removed) => Self::Removed,
@@ -308,10 +297,10 @@ impl FileChangeType {
 /// File change information for debouncing
 #[derive(Debug, Clone)]
 struct FileChangeInfo {
-	path: PathBuf,
-	change_type: FileChangeType,
-	last_seen: std::time::Instant,
-	suppressed_count: usize,
+	path:PathBuf,
+	change_type:FileChangeType,
+	last_seen:std::time::Instant,
+	suppressed_count:usize,
 }
 
 /// Result of processing a debounced change
@@ -324,14 +313,14 @@ pub enum ProcessedChangeResult {
 /// Describes a processed file change
 #[derive(Debug, Clone)]
 pub struct ProcessedChange {
-	pub path: PathBuf,
-	pub change_type: FileChangeType,
-	pub suppressed_count: usize,
-	pub result: ProcessedChangeResult,
+	pub path:PathBuf,
+	pub change_type:FileChangeType,
+	pub suppressed_count:usize,
+	pub result:ProcessedChangeResult,
 }
 
 /// Convert notify event kind to FileChangeType
-pub fn EventKindToChangeType(kind: notify::EventKind) -> Option<FileChangeType> {
+pub fn EventKindToChangeType(kind:notify::EventKind) -> Option<FileChangeType> {
 	match kind {
 		notify::EventKind::Create(_) => Some(FileChangeType::Created),
 		notify::EventKind::Modify(_) => Some(FileChangeType::Modified),
@@ -341,7 +330,7 @@ pub fn EventKindToChangeType(kind: notify::EventKind) -> Option<FileChangeType> 
 }
 
 /// Check if a path should be watched (not in ignored paths)
-pub fn ShouldWatchPath(path: &PathBuf, ignored_patterns: &[String]) -> bool {
+pub fn ShouldWatchPath(path:&PathBuf, ignored_patterns:&[String]) -> bool {
 	let path_str = path.to_string_lossy();
 
 	// Check against ignore patterns
@@ -383,13 +372,16 @@ pub fn GetDefaultIgnoredPatterns() -> Vec<String> {
 }
 
 /// Validate that a watch path exists and is accessible
-pub fn ValidateWatchPath(path: &PathBuf) -> Result<()> {
+pub fn ValidateWatchPath(path:&PathBuf) -> Result<()> {
 	if !path.exists() {
 		return Err(AirError::FileSystem(format!("Watch path does not exist: {}", path.display())));
 	}
 
 	if !path.is_dir() {
-		return Err(AirError::FileSystem(format!("Watch path is not a directory: {}", path.display())));
+		return Err(AirError::FileSystem(format!(
+			"Watch path is not a directory: {}",
+			path.display()
+		)));
 	}
 
 	// Check read access

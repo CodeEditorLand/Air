@@ -4,12 +4,14 @@
 //!
 //! ## Role in Air Architecture
 //!
-//! Validates and selects the binding address for the Vine gRPC server. The Vine server
-//! is the primary communication channel between Air and Mountain, running on port 50053.
+//! Validates and selects the binding address for the Vine gRPC server. The Vine
+//! server is the primary communication channel between Air and Mountain,
+//! running on port 50053.
 //!
 //! ## Primary Responsibility
 //!
-//! Parse and validate the gRPC server bind address from command-line arguments or defaults.
+//! Parse and validate the gRPC server bind address from command-line arguments
+//! or defaults.
 //!
 //! ## Secondary Responsibilities
 //!
@@ -57,6 +59,7 @@
 //! - Thread-safe for any context
 
 use std::net::SocketAddr;
+
 use AirLibrary::DefaultBindAddress;
 
 /// Parse and select the gRPC server bind address
@@ -105,25 +108,27 @@ use AirLibrary::DefaultBindAddress;
 /// - Add support for IPv6-only binding ([::]:50053)
 /// - Add port conflict detection before binding
 /// - Add wildcard binding for all interfaces
-pub fn SelectPort(bind_address: Option<String>) -> Result<SocketAddr, String> {
-    match bind_address {
-        Some(addr) => {
-            // Custom address from command-line
-            let parsed = addr.parse::<SocketAddr>()
-                .map_err(|e| format!("Invalid bind address '{}': {}", addr, e))?;
-            
-            log::info!("[Boot] [Port] Using custom bind address: {}", parsed);
-            Ok(parsed)
-        }
-        None => {
-            // Use default address
-            let parsed = DefaultBindAddress.parse::<SocketAddr>()
-                .map_err(|e| format!("Invalid default bind address '{}': {}", DefaultBindAddress, e))?;
-            
-            log::info!("[Boot] [Port] Using default bind address: {}", parsed);
-            Ok(parsed)
-        }
-    }
+pub fn SelectPort(bind_address:Option<String>) -> Result<SocketAddr, String> {
+	match bind_address {
+		Some(addr) => {
+			// Custom address from command-line
+			let parsed = addr
+				.parse::<SocketAddr>()
+				.map_err(|e| format!("Invalid bind address '{}': {}", addr, e))?;
+
+			log::info!("[Boot] [Port] Using custom bind address: {}", parsed);
+			Ok(parsed)
+		},
+		None => {
+			// Use default address
+			let parsed = DefaultBindAddress
+				.parse::<SocketAddr>()
+				.map_err(|e| format!("Invalid default bind address '{}': {}", DefaultBindAddress, e))?;
+
+			log::info!("[Boot] [Port] Using default bind address: {}", parsed);
+			Ok(parsed)
+		},
+	}
 }
 
 /// Validate that a port number is in valid range
@@ -140,54 +145,53 @@ pub fn SelectPort(bind_address: Option<String>) -> Result<SocketAddr, String> {
 ///
 /// Port 0 is valid for OS-assigned ports but not for configuration.
 /// Ports 1-1023 require root/admin privileges.
-///
-pub fn ValidatePort(port: u16) -> Result<(), String> {
-    if port == 0 {
-        return Err("Port cannot be 0 for explicit configuration".to_string());
-    }
-    if port == 50052 {
-        return Err("Port 50052 is reserved for Cocoon (NodeJS host)".to_string());
-    }
-    Ok(())
+pub fn ValidatePort(port:u16) -> Result<(), String> {
+	if port == 0 {
+		return Err("Port cannot be 0 for explicit configuration".to_string());
+	}
+	if port == 50052 {
+		return Err("Port 50052 is reserved for Cocoon (NodeJS host)".to_string());
+	}
+	Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_select_port_default() {
-        let addr = SelectPort(None).unwrap();
-        assert_eq!(addr.port(), 50053);
-    }
-    
-    #[test]
-    fn test_select_port_custom() {
-        let custom = "127.0.0.1:54321".to_string();
-        let addr = SelectPort(Some(custom)).unwrap();
-        assert_eq!(addr.ip(), std::net::Ipv4Addr::new(127, 0, 0, 1));
-        assert_eq!(addr.port(), 54321);
-    }
-    
-    #[test]
-    fn test_select_port_invalid() {
-        let invalid = "not-an-address".to_string();
-        assert!(SelectPort(Some(invalid)).is_err());
-    }
-    
-    #[test]
-    fn test_validate_port_zero() {
-        assert!(ValidatePort(0).is_err());
-    }
-    
-    #[test]
-    fn test_validate_port_cocoon_reserved() {
-        assert!(ValidatePort(50052).is_err());
-    }
-    
-    #[test]
-    fn test_validate_port_valid() {
-        assert!(ValidatePort(50053).is_ok());
-        assert!(ValidatePort(54321).is_ok());
-    }
+	use super::*;
+
+	#[test]
+	fn test_select_port_default() {
+		let addr = SelectPort(None).unwrap();
+		assert_eq!(addr.port(), 50053);
+	}
+
+	#[test]
+	fn test_select_port_custom() {
+		let custom = "127.0.0.1:54321".to_string();
+		let addr = SelectPort(Some(custom)).unwrap();
+		assert_eq!(addr.ip(), std::net::Ipv4Addr::new(127, 0, 0, 1));
+		assert_eq!(addr.port(), 54321);
+	}
+
+	#[test]
+	fn test_select_port_invalid() {
+		let invalid = "not-an-address".to_string();
+		assert!(SelectPort(Some(invalid)).is_err());
+	}
+
+	#[test]
+	fn test_validate_port_zero() {
+		assert!(ValidatePort(0).is_err());
+	}
+
+	#[test]
+	fn test_validate_port_cocoon_reserved() {
+		assert!(ValidatePort(50052).is_err());
+	}
+
+	#[test]
+	fn test_validate_port_valid() {
+		assert!(ValidatePort(50053).is_ok());
+		assert!(ValidatePort(54321).is_ok());
+	}
 }

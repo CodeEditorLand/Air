@@ -4,13 +4,15 @@
 //!
 //! ## Role in Air Architecture
 //!
-//! Initializes the Echo scheduler service, which provides simple request/response
-//! echo functionality for testing and connectivity verification. This is a minimal
-//! service useful for verifying gRPC connectivity.
+//! Initializes the Echo scheduler service, which provides simple
+//! request/response echo functionality for testing and connectivity
+//! verification. This is a minimal service useful for verifying gRPC
+//! connectivity.
 //!
 //! ## Primary Responsibility
 //!
-//! Initialize the Echo scheduler for request testing and connectivity verification.
+//! Initialize the Echo scheduler for request testing and connectivity
+//! verification.
 //!
 //! ## Secondary Responsibilities
 //!
@@ -50,7 +52,6 @@
 //!
 //! - Graceful degradation if unavailable
 //! - Logs errors but continues boot sequence
-///
 /// # TODO
 /// - Implement actual Echo service if needed
 /// - Add configurable echo delay for testing
@@ -72,24 +73,24 @@
 /// - Add error handling for service failures
 /// - Implement echo endpoint with timeout
 pub async fn StartEcho() -> Result<(), String> {
-    log::info!("[Echo] Starting Echo scheduler service...");
-    
-    // TODO: Implement Echo service initialization
-    // The Echo service would provide simple request/response functionality
-    // for testing gRPC connectivity and basic request handling.
-    
-    log::warn!("[Echo] Echo service not yet implemented");
-    Err("Echo service not yet implemented".to_string())
+	log::info!("[Echo] Starting Echo scheduler service...");
+
+	// TODO: Implement Echo service initialization
+	// The Echo service would provide simple request/response functionality
+	// for testing gRPC connectivity and basic request handling.
+
+	log::warn!("[Echo] Echo service not yet implemented");
+	Err("Echo service not yet implemented".to_string())
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    
-    #[test]
-    #[ignore] // Async test, requires tokio runtime
-    async fn test_start_echo() {
-        let result = StartEcho().await;
-        assert!(result.is_err() || result.is_ok()); // Should not panic
-    }
+	use super::*;
+
+	#[test]
+	#[ignore] // Async test, requires tokio runtime
+	async fn test_start_echo() {
+		let result = StartEcho().await;
+		assert!(result.is_err() || result.is_ok()); // Should not panic
+	}
 }

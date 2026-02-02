@@ -22,6 +22,7 @@ use crate::{
 	Result,
 	Updates::UpdateManager,
 	Utility::CurrentTimestamp,
+	Vine::Generated::Air::air_service_server::AirService,
 };
 use crate::Vine::Generated::Air::{
 	// Import from the generated Air module (PascalCase - messages)
@@ -57,7 +58,6 @@ use crate::Vine::Generated::Air::{
 	UpdateConfigurationRequest,
 	UpdateConfigurationResponse,
 };
-use crate::Vine::Generated::Air::air_service_server::AirService;
 
 /// The concrete implementation of the Air gRPC service
 pub struct AirVinegRPCService {
@@ -113,7 +113,11 @@ impl AirVinegRPCService {
 	}
 
 	/// Track connection for a request
-	async fn TrackConnection(&self, Request:&tonic::Request<()>, ServiceName:&str) -> std::result::Result<String, Status> {
+	async fn TrackConnection(
+		&self,
+		Request:&tonic::Request<()>,
+		ServiceName:&str,
+	) -> std::result::Result<String, Status> {
 		let Metadata = Request.metadata();
 		let ConnectionId = Metadata
 			.get("connection-id")
@@ -587,10 +591,7 @@ impl AirService for AirVinegRPCService {
 			.await
 			.map_err(|e| Status::internal(e.to_string()))?;
 
-		let result = self
-			.file_indexer
-			.index_directory(RequestData.path, RequestData.patterns)
-			.await;
+		let result = self.file_indexer.index_directory(RequestData.path, RequestData.patterns).await;
 
 		match result {
 			Ok(index_info) => {
@@ -1029,8 +1030,9 @@ impl AirService for AirVinegRPCService {
 
 	/// Handle streaming download requests with bidirectional streaming and
 	/// chunk delivery
-	type DownloadStreamStream =
-		tokio_stream::wrappers::ReceiverStream<std::result::Result<crate::Vine::Generated::Air::DownloadStreamResponse, Status>>;
+	type DownloadStreamStream = tokio_stream::wrappers::ReceiverStream<
+		std::result::Result<crate::Vine::Generated::Air::DownloadStreamResponse, Status>,
+	>;
 
 	async fn download_stream(
 		&self,
@@ -1463,11 +1465,7 @@ impl AirService for AirVinegRPCService {
 		}
 
 		// Use file indexer to search - convert to match the existing signature
-		let path = if RequestData.path.is_empty() {
-			None
-		} else {
-			Some(RequestData.path.clone())
-		};
+		let path = if RequestData.path.is_empty() { None } else { Some(RequestData.path.clone()) };
 		let search_path = path.as_deref();
 
 		match self
@@ -1795,7 +1793,7 @@ impl AirService for AirVinegRPCService {
 	}
 
 	/// Handle update configuration requests
-	async fn update_configuration(
+	async fn UpdateConfiguration(
 		&self,
 		request:Request<UpdateConfigurationRequest>,
 	) -> std::result::Result<Response<UpdateConfigurationResponse>, Status> {
@@ -1820,7 +1818,7 @@ impl AirService for AirVinegRPCService {
 		// Update configuration via ApplicationState
 		let result = self
 			.AppState
-			.update_configuration(RequestData.section, RequestData.updates)
+			.UpdateConfiguration(RequestData.section, RequestData.updates)
 			.await;
 
 		match result {

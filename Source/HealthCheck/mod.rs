@@ -831,9 +831,9 @@ impl HealthCheckManager {
 		// Get health statistics
 		let mut Statistics = HealthStatistics {
 			TotalServices:HealthMap.len(),
-			HealthyServices:HealthyServices,
-			DegradedServices:DegradedServices,
-			UnhealthyServices:UnhealthyServices,
+			HealthyServices,
+			DegradedServices,
+			UnhealthyServices,
 			TotalChecks:history.len(),
 			AverageResponseTimeMs:0.0,
 			SuccessRate:0.0,

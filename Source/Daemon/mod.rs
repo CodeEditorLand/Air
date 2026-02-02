@@ -58,19 +58,19 @@
 //! ## Platform-Specific Considerations
 //!
 //! ### Linux (systemd)
-//! - PID file location: `/var/run/air.pid`
-//! - Service file: `/etc/systemd/system/air-daemon.service`
+//! - PID file location: `/var/run/Air.pid`
+//! - Service file: `/etc/systemd/system/Air-daemon.service`
 //! - Requires root privileges for installation
 //! - Supports socket activation and notify-ready
 //!
 //! ### macOS (launchd)
-//! - PID file location: `/tmp/air.pid`
-//! - Service file: `/Library/LaunchDaemons/air-daemon.plist`
+//! - PID file location: `/tmp/Air.pid`
+//! - Service file: `/Library/LaunchDaemons/Air-daemon.plist`
 //! - Requires root privileges for system daemon
 //! - Supports launchctl unload/start/stop commands
 //!
 //! ### Windows
-//! - PID file location: `C:\ProgramData\Air\air.pid`
+//! - PID file location: `C:\ProgramData\Air\Air.pid`
 //! - Service registration via SCManager API
 //! - Requires Administrator privileges
 //! - Uses winsvc crate or similar for service management
@@ -170,10 +170,10 @@ impl DaemonManager {
 	fn DefaultPidFilePath() -> PathBuf {
 		let platform = Self::DetectPlatform();
 		match platform {
-			Platform::Linux => PathBuf::from("/var/run/air.pid"),
-			Platform::MacOS => PathBuf::from("/tmp/air.pid"),
-			Platform::Windows => PathBuf::from("C:\\ProgramData\\Air\\air.pid"),
-			Platform::Unknown => PathBuf::from("./air.pid"),
+			Platform::Linux => PathBuf::from("/var/run/Air.pid"),
+			Platform::MacOS => PathBuf::from("/tmp/Air.pid"),
+			Platform::Windows => PathBuf::from("C:\\ProgramData\\Air\\Air.pid"),
+			Platform::Unknown => PathBuf::from("./Air.pid"),
 		}
 	}
 
@@ -193,7 +193,7 @@ impl DaemonManager {
 	/// Detect platform-specific information
 	fn DetectPlatformInfo() -> PlatformInfo {
 		let platform = Self::DetectPlatform();
-		let ServiceName = "air-daemon".to_string();
+		let ServiceName = "Air-daemon".to_string();
 
 		// Get current user
 		let RunAsUser = std::env::var("USER").ok().or_else(|| std::env::var("USERNAME").ok());
@@ -376,7 +376,7 @@ impl DaemonManager {
 						stdout
 							.lines()
 							.skip(1)
-							.any(|line| line.contains("air") || line.contains("daemon"))
+							.any(|line| line.contains("Air") || line.contains("daemon"))
 					} else {
 						false
 					}
@@ -403,7 +403,7 @@ impl DaemonManager {
 					if output.status.success() {
 						let stdout = String::from_utf8_lossy(&output.stdout);
 						stdout.lines().any(|line| {
-							line.contains(&pid.to_string()) && (line.contains("air") || line.contains("daemon"))
+							line.contains(&pid.to_string()) && (line.contains("Air") || line.contains("daemon"))
 						})
 					} else {
 						false
@@ -551,7 +551,7 @@ impl DaemonManager {
 		let ServiceContent = format!(
 			r#"[Unit]
 Description=Air Daemon - Background service for Land code editor
-Documentation=man:air(1)
+Documentation=man:Air(1)
 After=network-online.target
 Wants=network-online.target
 StartLimitIntervalSec=0
@@ -577,7 +577,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/log/air /var/run/air
+ReadWritePaths=/var/log/Air /var/run/Air
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 RestrictRealtime=true
 
@@ -596,7 +596,7 @@ WantedBy=multi-user.target
 	fn GenerateLaunchdService(&self) -> Result<String> {
 		let ExePath = std::env::current_exe()
 			.map(|p| p.display().to_string())
-			.unwrap_or_else(|_| "/usr/local/bin/air".to_string());
+			.unwrap_or_else(|_| "/usr/local/bin/Air".to_string());
 
 		let ServiceName = &self.PlatformInfo.ServiceName;
 		let user = self.PlatformInfo.RunAsUser.as_deref().unwrap_or("root");
@@ -634,13 +634,13 @@ WantedBy=multi-user.target
     <string>{}</string>
     
     <key>StandardOutPath</key>
-    <string>/var/log/air/daemon.log</string>
+    <string>/var/log/Air/daemon.log</string>
     
     <key>StandardErrorPath</key>
-    <string>/var/log/air/daemon.err</string>
+    <string>/var/log/Air/daemon.err</string>
     
     <key>WorkingDirectory</key>
-    <string>/var/lib/air</string>
+    <string>/var/lib/Air</string>
     
     <key>ProcessType</key>
     <string>Background</string>
@@ -682,7 +682,7 @@ WantedBy=multi-user.target
 	fn GenerateWindowsService(&self) -> Result<String> {
 		let ExePath = std::env::current_exe()
 			.map(|p| p.display().to_string())
-			.unwrap_or_else(|_| "C:\\Program Files\\Air\\air.exe".to_string());
+			.unwrap_or_else(|_| "C:\\Program Files\\Air\\Air.exe".to_string());
 
 		let ServiceName = &self.PlatformInfo.ServiceName;
 		let DisplayName = "Air Daemon Service";
@@ -845,7 +845,7 @@ WantedBy=multi-user.target
 		info!("[Daemon] Launchd service installed at {}", ServiceFilePath);
 
 		// No need to load immediately - launchd will pick it up automatically
-		// User can run: sudo launchctl load -w /Library/LaunchDaemons/air-daemon.plist
+		// User can run: sudo launchctl load -w /Library/LaunchDaemons/Air-daemon.plist
 
 		Ok(())
 	}

@@ -10,7 +10,7 @@
 //!
 //! ## Primary Responsibility
 //!
-/// Parse command-line arguments and determine execution mode.
+//! Parse command-line arguments and determine execution mode.
 //!
 //! ## Secondary Responsibilities
 //!
@@ -33,8 +33,8 @@
 //!
 //! ## VSCode Pattern Reference
 //!
-/// Inspired by VSCode's CLI parsing in
-/// `src/vs/code/node/cli.ts`
+//! Inspired by VSCode's CLI parsing in
+//! `src/vs/code/node/cli.ts`
 //!
 //! ## Security Considerations
 //!
@@ -48,10 +48,10 @@
 //! - Minimal memory allocation
 //!
 //! ## Error Handling Strategy
-///
-/// - Invalid arguments exit with helpful error
-/// - Unknown flags are logged but ignored
-/// - Partial inputs are rejected completely
+//!
+//! - Invalid arguments exit with helpful error
+//! - Unknown flags are logged but ignored
+//! - Partial inputs are rejected completely
 
 use AirLibrary::CLI::{CliParser, Command};
 
@@ -99,14 +99,14 @@ pub struct ParsedArguments {
 //!
 //! ```bash
 //! # CLI mode
-//! air status              # Show daemon status
-//! air version             # Show version
-//! air config get log.level # Get config value
+//! Air status              # Show daemon status
+//! Air version             # Show version
+//! Air config get log.level # Get config value
 //!
 //! # Daemon mode
-//! air --daemon            # Start with defaults
-//! air --config /path/to/air.toml
-//! air --bind 0.0.0.0:50053
+//! Air --daemon            # Start with defaults
+//! Air --config /path/to/Air.toml
+//! Air --bind 0.0.0.0:50053
 //! ```
 //!
 //! # TODO
@@ -152,7 +152,7 @@ pub fn ParseArguments() -> ParsedArguments {
                     }
                     Err(e) => {
                         eprintln!("[ERROR] Error parsing CLI command: {}", e);
-                        eprintln!("[ERROR] Run 'air help' for usage information");
+                        eprintln!("[ERROR] Run 'Air help' for usage information");
                         std::process::exit(1);
                     }
                 }
@@ -228,7 +228,7 @@ mod tests {
     
     #[test]
     fn test_parse_arguments_default() {
-        let args = vec!["air".to_string()];
+        let args = vec!["Air".to_string()];
         let parsed = ParsedArguments();
         assert!(parsed.command.is_none());
     }

@@ -4,8 +4,9 @@
 //!
 //! ## Role in Air Architecture
 //!
-//! Constructs and configures the Vine gRPC service implementation with all its dependencies.
-//! This module ensures the gRPC server has access to all Air services for request routing.
+//! Constructs and configures the Vine gRPC service implementation with all its
+//! dependencies. This module ensures the gRPC server has access to all Air
+//! services for request routing.
 //!
 //! ## Primary Responsibility
 //!
@@ -23,9 +24,11 @@
 //! - `tokio::sync::oneshot` - Shutdown signaling
 //!
 //! **Internal Modules:**
-//! - `AirLibrary::Vine::Server::AirVinegRPCService::AirVinegRPCService` - Service implementation
+//! - `AirLibrary::Vine::Server::AirVinegRPCService::AirVinegRPCService` -
+//!   Service implementation
 //! - `AirLibrary::ApplicationState` - Shared application state
-//! - `AirLibrary::Authentication::AuthenticationService` - Authentication service
+//! - `AirLibrary::Authentication::AuthenticationService` - Authentication
+//!   service
 //! - `AirLibrary::Updates::UpdateManager` - Update management service
 //! - `AirLibrary::Downloader::DownloadManager` - Download service
 //! - `AirLibrary::Indexing::FileIndexer` - File indexing service
@@ -61,17 +64,16 @@
 //! - All services are wrapped in Arc for thread-safe sharing
 //! - Safe for concurrent gRPC request handling
 
-use std::net::SocketAddr;
-use std::sync::Arc;
-use log::{error, info};
+use std::{net::SocketAddr, sync::Arc};
 
+use log::{error, info};
 use AirLibrary::{
-    ApplicationState,
-    Authentication::AuthenticationService,
-    Downloader::DownloadManager,
-    Indexing::FileIndexer,
-    Updates::UpdateManager,
-    Vine::Server::AirVinegRPCService::AirVinegRPCService,
+	ApplicationState,
+	Authentication::AuthenticationService,
+	Downloader::DownloadManager,
+	Indexing::FileIndexer,
+	Updates::UpdateManager,
+	Vine::Server::AirVinegRPCService::AirVinegRPCService,
 };
 
 /// Built Vine gRPC service with shutdown channel
@@ -79,12 +81,12 @@ use AirLibrary::{
 /// Contains the configured Vine service and the sending half of a
 /// shutdown channel used to signal graceful server termination.
 pub struct BuiltServer {
-    /// The configured Vine gRPC service
-    pub service: AirVinegRPCService,
-    /// Sender for shutdown signal
-    pub shutdown_tx: tokio::sync::oneshot::Sender<()>,
-    /// Bind address for the server
-    pub bind_addr: SocketAddr,
+	/// The configured Vine gRPC service
+	pub service:AirVinegRPCService,
+	/// Sender for shutdown signal
+	pub shutdown_tx:tokio::sync::oneshot::Sender<()>,
+	/// Bind address for the server
+	pub bind_addr:SocketAddr,
 }
 
 /// Build the Vine gRPC service with all dependencies
@@ -103,7 +105,8 @@ pub struct BuiltServer {
 ///
 /// # Returns
 ///
-/// Returns a `BuiltServer` containing the configured service and shutdown channel.
+/// Returns a `BuiltServer` containing the configured service and shutdown
+/// channel.
 ///
 /// # Errors
 ///
@@ -114,55 +117,47 @@ pub struct BuiltServer {
 /// - Add dependency injection validation
 /// - Add service version compatibility checks
 pub fn BuildServer(
-    app_state: Arc<ApplicationState>,
-    auth_service: Arc<AuthenticationService>,
-    update_manager: Arc<UpdateManager>,
-    download_manager: Arc<DownloadManager>,
-    file_indexer: Arc<FileIndexer>,
-    bind_addr: SocketAddr,
+	app_state:Arc<ApplicationState>,
+	auth_service:Arc<AuthenticationService>,
+	update_manager:Arc<UpdateManager>,
+	download_manager:Arc<DownloadManager>,
+	file_indexer:Arc<FileIndexer>,
+	bind_addr:SocketAddr,
 ) -> Result<BuiltServer, String> {
-    info!("[Build] Building Vine gRPC service...");
-    
-    // Create the Vine gRPC service with all dependencies
-    let service = AirVinegRPCService::new(
-        app_state,
-        auth_service,
-        update_manager,
-        download_manager,
-        file_indexer,
-    ).map_err(|e| {
-        error!("[Build] Failed to create Vine gRPC service: {}", e);
-        format!("Vine service creation failed: {}", e)
-    })?;
-    
-    // Create a oneshot channel to signal server shutdown
-    let (shutdown_tx, _shutdown_rx) = tokio::sync::oneshot::channel::<()>();
-    
-    info!("[Build] Vine gRPC service built successfully");
-    info!("[Build] Service configured with:");
-    info!("  - Bind address: {}", bind_addr);
-    info!("  - Authentication service: ✅");
-    info!("  - Update manager: ✅");
-    info!("  - Download manager: ✅");
-    info!("  - File indexer: ✅");
-    
-    Ok(BuiltServer {
-        service,
-        shutdown_tx,
-        bind_addr,
-    })
+	info!("[Build] Building Vine gRPC service...");
+
+	// Create the Vine gRPC service with all dependencies
+	let service = AirVinegRPCService::new(app_state, auth_service, update_manager, download_manager, file_indexer)
+		.map_err(|e| {
+			error!("[Build] Failed to create Vine gRPC service: {}", e);
+			format!("Vine service creation failed: {}", e)
+		})?;
+
+	// Create a oneshot channel to signal server shutdown
+	let (shutdown_tx, _shutdown_rx) = tokio::sync::oneshot::channel::<()>();
+
+	info!("[Build] Vine gRPC service built successfully");
+	info!("[Build] Service configured with:");
+	info!("  - Bind address: {}", bind_addr);
+	info!("  - Authentication service: ✅");
+	info!("  - Update manager: ✅");
+	info!("  - Download manager: ✅");
+	info!("  - File indexer: ✅");
+
+	Ok(BuiltServer { service, shutdown_tx, bind_addr })
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::sync::Arc;
-    
-    #[test]
-    #[ignore] // Requires actual app state setup
-    fn test_build_server() {
-        // This test requires proper initialization of all services
-        // and is ignored for automated test runs.
-        // In practice, this would be an integration test.
-    }
+	use std::sync::Arc;
+
+	use super::*;
+
+	#[test]
+	#[ignore] // Requires actual app state setup
+	fn test_build_server() {
+		// This test requires proper initialization of all services
+		// and is ignored for automated test runs.
+		// In practice, this would be an integration test.
+	}
 }

@@ -75,21 +75,21 @@ use sha2::{Digest, Sha256};
 use crate::{AirError, Result};
 
 /// Maximum file size allowed for indexing (100MB)
-pub const MAX_FILE_SIZE_BYTES: u64 = 100 * 1024 * 1024;
+pub const MAX_FILE_SIZE_BYTES:u64 = 100 * 1024 * 1024;
 
 /// Symbol information extracted from files for VSCode Outline View
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SymbolInfo {
 	/// Symbol name (function, class, variable, etc.)
-	pub name: String,
+	pub name:String,
 	/// Symbol kind (function, class, struct, interface, etc.)
-	pub kind: SymbolKind,
+	pub kind:SymbolKind,
 	/// Line number where symbol is defined
-	pub line: u32,
+	pub line:u32,
 	/// Column number
-	pub column: u32,
+	pub column:u32,
 	/// Full qualified path
-	pub full_path: String,
+	pub full_path:String,
 }
 
 /// Symbol kind for VSCode compatibility
@@ -127,83 +127,81 @@ pub enum SymbolKind {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SymbolLocation {
 	/// File containing the symbol
-	pub file_path: PathBuf,
+	pub file_path:PathBuf,
 	/// Line number
-	pub line: u32,
+	pub line:u32,
 	/// Symbol information
-	pub symbol: SymbolInfo,
+	pub symbol:SymbolInfo,
 }
 
 /// File metadata with comprehensive information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileMetadata {
 	/// File path
-	pub path: PathBuf,
+	pub path:PathBuf,
 	/// File size in bytes
-	pub size: u64,
+	pub size:u64,
 	/// Last modification timestamp
-	pub modified: chrono::DateTime<chrono::Utc>,
+	pub modified:chrono::DateTime<chrono::Utc>,
 	/// MIME type
-	pub mime_type: String,
+	pub mime_type:String,
 	/// Detected programming language
-	pub language: Option<String>,
+	pub language:Option<String>,
 	/// Line count for text files
-	pub line_count: Option<u32>,
+	pub line_count:Option<u32>,
 	/// SHA-256 checksum for change detection
-	pub checksum: String,
+	pub checksum:String,
 	/// Whether file is a symbolic link
-	pub is_symlink: bool,
+	pub is_symlink:bool,
 	/// File permissions (format: "rwxrwxrwx")
-	pub permissions: String,
+	pub permissions:String,
 	/// File encoding (UTF-8, ASCII, etc.)
-	pub encoding: Option<String>,
+	pub encoding:Option<String>,
 	/// Last indexed timestamp
-	pub indexed_at: chrono::DateTime<chrono::Utc>,
+	pub indexed_at:chrono::DateTime<chrono::Utc>,
 	/// Number of symbols extracted
-	pub symbol_count: u32,
+	pub symbol_count:u32,
 }
 
 /// File index structure with comprehensive metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileIndex {
 	/// Indexed files with complete metadata
-	pub files: HashMap<PathBuf, FileMetadata>,
+	pub files:HashMap<PathBuf, FileMetadata>,
 	/// Content index for fast text search
 	/// Maps words/tokens to file paths where they appear
-	pub content_index: HashMap<String, Vec<PathBuf>>,
+	pub content_index:HashMap<String, Vec<PathBuf>>,
 	/// Symbol index for VSCode Outline View and Go to Symbol
 	/// Maps symbol names to their definitions
-	pub symbol_index: HashMap<String, Vec<SymbolLocation>>,
+	pub symbol_index:HashMap<String, Vec<SymbolLocation>>,
 	/// Reverse symbol index for cross-referencing
-	pub file_symbols: HashMap<PathBuf, Vec<SymbolInfo>>,
+	pub file_symbols:HashMap<PathBuf, Vec<SymbolInfo>>,
 	/// Last update timestamp for all indexes
-	pub last_updated: chrono::DateTime<chrono::Utc>,
+	pub last_updated:chrono::DateTime<chrono::Utc>,
 	/// Index version for corruption detection
-	pub index_version: String,
+	pub index_version:String,
 	/// Index checksum for integrity verification
-	pub index_checksum: String,
+	pub index_checksum:String,
 }
 
 /// Create a new empty file index
 pub fn CreateNewIndex() -> FileIndex {
 	FileIndex {
-		files: HashMap::new(),
-		content_index: HashMap::new(),
-		symbol_index: HashMap::new(),
-		file_symbols: HashMap::new(),
-		last_updated: chrono::Utc::now(),
-		index_version: GenerateIndexVersion(),
-		index_checksum: String::new(),
+		files:HashMap::new(),
+		content_index:HashMap::new(),
+		symbol_index:HashMap::new(),
+		file_symbols:HashMap::new(),
+		last_updated:chrono::Utc::now(),
+		index_version:GenerateIndexVersion(),
+		index_checksum:String::new(),
 	}
 }
 
 /// Generate index version string
-pub fn GenerateIndexVersion() -> String {
-	format!("{}-{}", env!("CARGO_PKG_VERSION"), chrono::Utc::now().timestamp())
-}
+pub fn GenerateIndexVersion() -> String { format!("{}-{}", env!("CARGO_PKG_VERSION"), chrono::Utc::now().timestamp()) }
 
 /// Calculate index checksum for integrity verification
-pub fn CalculateIndexChecksum(index: &FileIndex) -> Result<String> {
+pub fn CalculateIndexChecksum(index:&FileIndex) -> Result<String> {
 	let checksum_input = format!(
 		"{}:{}:{}:{}",
 		index.files.len(),
@@ -219,17 +217,17 @@ pub fn CalculateIndexChecksum(index: &FileIndex) -> Result<String> {
 
 /// Create file metadata from raw information
 pub fn CreateFileMetadata(
-	path: PathBuf,
-	size: u64,
-	modified: chrono::DateTime<chrono::Utc>,
-	mime_type: String,
-	language: Option<String>,
-	line_count: Option<u32>,
-	checksum: String,
-	is_symlink: bool,
-	permissions: String,
-	encoding: Option<String>,
-	symbol_count: u32,
+	path:PathBuf,
+	size:u64,
+	modified:chrono::DateTime<chrono::Utc>,
+	mime_type:String,
+	language:Option<String>,
+	line_count:Option<u32>,
+	checksum:String,
+	is_symlink:bool,
+	permissions:String,
+	encoding:Option<String>,
+	symbol_count:u32,
 ) -> FileMetadata {
 	FileMetadata {
 		path,
@@ -242,34 +240,24 @@ pub fn CreateFileMetadata(
 		is_symlink,
 		permissions,
 		encoding,
-		indexed_at: chrono::Utc::now(),
+		indexed_at:chrono::Utc::now(),
 		symbol_count,
 	}
 }
 
 /// Create symbol info with validation
-pub fn CreateSymbolInfo(name: String, kind: SymbolKind, line: u32, column: u32, full_path: String) -> SymbolInfo {
-	SymbolInfo {
-		name,
-		kind,
-		line,
-		column,
-		full_path,
-	}
+pub fn CreateSymbolInfo(name:String, kind:SymbolKind, line:u32, column:u32, full_path:String) -> SymbolInfo {
+	SymbolInfo { name, kind, line, column, full_path }
 }
 
 /// Create symbol location for cross-referencing
-pub fn CreateSymbolLocation(file_path: PathBuf, line: u32, symbol: SymbolInfo) -> SymbolLocation {
-	SymbolLocation {
-		file_path,
-		line,
-		symbol,
-	}
+pub fn CreateSymbolLocation(file_path:PathBuf, line:u32, symbol:SymbolInfo) -> SymbolLocation {
+	SymbolLocation { file_path, line, symbol }
 }
 
 /// Get file permissions as string from metadata
 #[cfg(unix)]
-pub fn GetPermissionsString(metadata: &std::fs::Metadata) -> String {
+pub fn GetPermissionsString(metadata:&std::fs::Metadata) -> String {
 	let mode = metadata.permissions().mode();
 	let mut perms = String::new();
 	// Read permission
@@ -291,12 +279,10 @@ pub fn GetPermissionsString(metadata: &std::fs::Metadata) -> String {
 
 /// Get file permissions as string for non-Unix systems
 #[cfg(not(unix))]
-pub fn GetPermissionsString(_metadata: &std::fs::Metadata) -> String {
-	"--------".to_string()
-}
+pub fn GetPermissionsString(_metadata:&std::fs::Metadata) -> String { "--------".to_string() }
 
 /// Validate file size against maximum allowed
-pub fn ValidateFileSize(size: u64) -> Result<()> {
+pub fn ValidateFileSize(size:u64) -> Result<()> {
 	if size > MAX_FILE_SIZE_BYTES {
 		return Err(AirError::FileSystem(format!(
 			"File size {} exceeds maximum allowed size of {} bytes",
@@ -307,9 +293,9 @@ pub fn ValidateFileSize(size: u64) -> Result<()> {
 }
 
 /// Check if index size is within sane limits
-pub fn ValidateIndexSize(index: &FileIndex) -> Result<()> {
-	const MAX_INDEXED_FILES: usize = 1_000_000;
-	const MAX_SYMBOLS: usize = 10_000_000;
+pub fn ValidateIndexSize(index:&FileIndex) -> Result<()> {
+	const MAX_INDEXED_FILES:usize = 1_000_000;
+	const MAX_SYMBOLS:usize = 10_000_000;
 
 	if index.files.len() > MAX_INDEXED_FILES {
 		return Err(AirError::Internal(format!(
@@ -319,12 +305,11 @@ pub fn ValidateIndexSize(index: &FileIndex) -> Result<()> {
 		)));
 	}
 
-	let total_symbols: usize = index.file_symbols.values().map(|v| v.len()).sum();
+	let total_symbols:usize = index.file_symbols.values().map(|v| v.len()).sum();
 	if total_symbols > MAX_SYMBOLS {
 		return Err(AirError::Internal(format!(
 			"Index exceeds maximum symbol count: {} > {}",
-			total_symbols,
-			MAX_SYMBOLS
+			total_symbols, MAX_SYMBOLS
 		)));
 	}
 

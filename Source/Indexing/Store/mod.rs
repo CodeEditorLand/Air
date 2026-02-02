@@ -4,7 +4,8 @@
 //!
 //! ## Role in Air Architecture
 //!
-//! Provides index storage and querying functionality for the File Indexer service.
+//! Provides index storage and querying functionality for the File Indexer
+//! service.
 //!
 //! ## Modules
 //!

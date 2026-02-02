@@ -5,6 +5,3 @@
 pub mod Generated;
 pub mod Server;
 pub mod Error;
-
-// Re-export commonly used types
-pub use Server::AirVinegRPCService;

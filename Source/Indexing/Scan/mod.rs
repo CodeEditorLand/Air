@@ -4,7 +4,8 @@
 //!
 //! ## Role in Air Architecture
 //!
-//! Provides directory and file scanning functionality for the File Indexer service.
+//! Provides directory and file scanning functionality for the File Indexer
+//! service.
 //!
 //! ## Modules
 //!

@@ -10,22 +10,22 @@
 //!
 //! ## Primary Responsibility
 //!
-/// Start background monitoring tasks for daemon health and resources.
+//! Start background monitoring tasks for daemon health and resources.
 //!
 //! ## Secondary Responsibilities
-///
-/// - Monitor resource usage (CPU, memory, connections)
-/// - Perform periodic health checks
+//!
+//! - Monitor resource usage (CPU, memory, connections)
+//! - Perform periodic health checks
 //! - Update metrics with monitoring data
 //! - Clean up stale connections
 //!
 //! ## Dependencies
-///
-/// **External Crates:**
+//!
+//! **External Crates:**
 //! - `tokio::task` - Async task spawning
 //! - `tokio::time` - Interval timers
 //!
-/// **Internal Modules:**
+//! **Internal Modules:**
 //! - `AirLibrary::ApplicationState` - Shared application state
 //! - `AirLibrary::HealthCheck::HealthCheckManager` - Health check manager
 //! - `AirLibrary::Metrics` - Metrics collection
@@ -35,30 +35,30 @@
 //! - `Binary::Binary::Main` - Starts monitoring after server initialization
 //!
 //! ## VSCode Pattern Reference
-///
-/// Inspired by VSCode's monitoring in
-/// `src/vs/platform/monitor/common/monitorService.ts`
-///
-/// ## Security Considerations
-///
-/// - Monitoring data doesn't contain sensitive information
+//!
+//! Inspired by VSCode's monitoring in
+//! `src/vs/platform/monitor/common/monitorService.ts`
+//!
+//! ## Security Considerations
+//!
+//! - Monitoring data doesn't contain sensitive information
 //! - Health checks bypass auth (internal only)
-///
+//!
 //! ## Performance Considerations
-///
-/// - Tasks run on configurable intervals
-/// - Lightweight operations to minimize overhead
+//!
+//! - Tasks run on configurable intervals
+//! - Lightweight operations to minimize overhead
 //! - Async execution doesn't block main operations
-///
+//!
 //! ## Error Handling Strategy
-///
-/// - Individual monitoring failures logged but don't halt daemon
-/// - Failed health checks recorded but continue monitoring
+//!
+//! - Individual monitoring failures logged but don't halt daemon
+//! - Failed health checks recorded but continue monitoring
 //! - Connection cleanup errors logged but don't stop task
 //!
 //! ## Thread Safety
-///
-/// - Each monitor task runs independently
+//!
+//! - Each monitor task runs independently
 //! - Arc ensures thread-safe state sharing
 
 use std::sync::Arc;

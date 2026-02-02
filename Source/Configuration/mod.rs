@@ -48,7 +48,7 @@
 //! ```
 //! Mountain (User Settings) → Air config file → Wind services
 //!        ↓                         ↓                    ↓
-//!  settings.json           ~/.air/config.toml    Service-specific overrides
+//!  settings.json           ~/.Air/config.toml    Service-specific overrides
 //!        ↓                         ↓                    ↓
 //!  Workspace settings    Environment variables    Hot-reload notifications
 //! ```
@@ -180,7 +180,7 @@ pub struct AuthConfig {
 	/// Path to credentials storage
 	/// Validation: Must be a valid absolute or home-relative path
 	/// Security: Ensures directory traversal prevention
-	/// Default: "~/.air/credentials"
+	/// Default: "~/.Air/credentials"
 	#[serde(default = "default_auth_credentials_path")]
 	pub CredentialsPath:String,
 
@@ -199,7 +199,7 @@ pub struct AuthConfig {
 
 fn default_auth_enabled() -> bool { true }
 
-fn default_auth_credentials_path() -> String { "~/.air/credentials".to_string() }
+fn default_auth_credentials_path() -> String { "~/.Air/credentials".to_string() }
 
 fn default_auth_token_expiration() -> u32 { 24 }
 
@@ -280,7 +280,7 @@ pub struct DownloadConfig {
 
 	/// Download cache directory
 	/// Validation: Must be a valid absolute or home-relative path
-	/// Default: "~/.air/cache"
+	/// Default: "~/.Air/cache"
 	#[serde(default = "default_download_cache_dir")]
 	pub CacheDirectory:String,
 }
@@ -293,7 +293,7 @@ fn default_download_timeout() -> u64 { 300 }
 
 fn default_download_max_retries() -> u32 { 3 }
 
-fn default_download_cache_dir() -> String { "~/.air/cache".to_string() }
+fn default_download_cache_dir() -> String { "~/.Air/cache".to_string() }
 
 /// Indexing configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -323,7 +323,7 @@ pub struct IndexingConfig {
 
 	/// Index storage directory
 	/// Validation: Must be a valid absolute or home-relative path
-	/// Default: "~/.air/index"
+	/// Default: "~/.Air/index"
 	#[serde(default = "default_indexing_directory")]
 	pub IndexDirectory:String,
 }
@@ -345,7 +345,7 @@ fn default_indexing_file_types() -> Vec<String> {
 
 fn default_indexing_update_interval() -> u32 { 30 }
 
-fn default_indexing_directory() -> String { "~/.air/index".to_string() }
+fn default_indexing_directory() -> String { "~/.Air/index".to_string() }
 
 /// Logging configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -358,7 +358,7 @@ pub struct LoggingConfig {
 
 	/// Log file path
 	/// Validation: Must be a valid absolute or home-relative path if provided
-	/// Default: "~/.air/logs/air.log"
+	/// Default: "~/.Air/logs/Air.log"
 	#[serde(default = "default_logging_file_path")]
 	pub FilePath:Option<String>,
 
@@ -381,7 +381,7 @@ pub struct LoggingConfig {
 
 fn default_logging_level() -> String { "info".to_string() }
 
-fn default_logging_file_path() -> Option<String> { Some("~/.air/logs/air.log".to_string()) }
+fn default_logging_file_path() -> Option<String> { Some("~/.Air/logs/Air.log".to_string()) }
 
 fn default_logging_console_enabled() -> bool { true }
 

@@ -62,7 +62,7 @@
 use std::path::PathBuf;
 
 /// Detect file encoding (simplified detection)
-pub fn DetectEncoding(content: &[u8]) -> Option<String> {
+pub fn DetectEncoding(content:&[u8]) -> Option<String> {
 	if content.is_empty() {
 		return None;
 	}
@@ -98,7 +98,7 @@ pub fn DetectEncoding(content: &[u8]) -> Option<String> {
 }
 
 /// Detect MIME type with comprehensive file type detection
-pub fn DetectMimeType(file_path: &PathBuf, content: &[u8]) -> String {
+pub fn DetectMimeType(file_path:&PathBuf, content:&[u8]) -> String {
 	if let Some(extension) = file_path.extension() {
 		match extension.to_string_lossy().to_lowercase().as_str() {
 			"rs" => "text/x-rust".to_string(),
@@ -167,7 +167,7 @@ pub fn DetectMimeType(file_path: &PathBuf, content: &[u8]) -> String {
 }
 
 /// Detect MIME type from content (magic numbers)
-fn DetectMimeTypeFromContent(content: &[u8]) -> String {
+fn DetectMimeTypeFromContent(content:&[u8]) -> String {
 	if content.is_empty() {
 		return "application/octet-stream".to_string();
 	}
@@ -190,7 +190,7 @@ fn DetectMimeTypeFromContent(content: &[u8]) -> String {
 }
 
 /// Detect programming language from file extension and shebang
-pub fn DetectLanguage(file_path: &PathBuf) -> Option<String> {
+pub fn DetectLanguage(file_path:&PathBuf) -> Option<String> {
 	if let Some(extension) = file_path.extension() {
 		let lang = match extension.to_string_lossy().to_lowercase().as_str() {
 			"rs" => "rust",
@@ -283,7 +283,7 @@ pub fn DetectLanguage(file_path: &PathBuf) -> Option<String> {
 }
 
 /// Tokenize content for indexing with improved word boundary handling
-pub fn TokenizeContent(content: &str) -> Vec<String> {
+pub fn TokenizeContent(content:&str) -> Vec<String> {
 	let mut tokens = Vec::new();
 	let mut current_token = String::new();
 	let mut in_token = false;
@@ -309,20 +309,19 @@ pub fn TokenizeContent(content: &str) -> Vec<String> {
 }
 
 /// Remove null bytes and control characters from content
-pub fn SanitizeContent(content: &str) -> String {
-	content.chars().filter(|c| *c != '\0' && !c.is_control()).collect()
-}
+pub fn SanitizeContent(content:&str) -> String { content.chars().filter(|c| *c != '\0' && !c.is_control()).collect() }
 
 /// Convert content to UTF-8 string with error handling
-pub fn ContentToString(content: &[u8]) -> Result<String> {
+pub fn ContentToString(content:&[u8]) -> Result<String> {
 	String::from_utf8(content.to_vec())
 		.map_err(|e| crate::AirError::FileSystem(format!("Invalid UTF-8 content: {}", e)))
 }
 
-/// Check if content is likely binary (contains null bytes or high ratio of non-text)
-pub fn IsBinaryContent(content: &[u8]) -> bool {
-	const MAX_NULL_BYTES: usize = 10;
-	const BINARY_SCAN_LIMIT: usize = 8000;
+/// Check if content is likely binary (contains null bytes or high ratio of
+/// non-text)
+pub fn IsBinaryContent(content:&[u8]) -> bool {
+	const MAX_NULL_BYTES:usize = 10;
+	const BINARY_SCAN_LIMIT:usize = 8000;
 
 	let scan_length = content.len().min(BINARY_SCAN_LIMIT);
 	let null_count = content[..scan_length].iter().filter(|&&b| b == 0).count();
@@ -333,15 +332,17 @@ pub fn IsBinaryContent(content: &[u8]) -> bool {
 
 	// Check for high ratio of non-text bytes in first chunk
 	let scan_bytes = &content[..scan_length];
-	let text_ratio = scan_bytes.iter().filter(|&&b| {
-		b.is_ascii_graphic() || b.is_ascii_whitespace() || b >= 0x80
-	}).count() as f64 / scan_length as f64;
+	let text_ratio = scan_bytes
+		.iter()
+		.filter(|&&b| b.is_ascii_graphic() || b.is_ascii_whitespace() || b >= 0x80)
+		.count() as f64
+		/ scan_length as f64;
 
 	text_ratio < 0.7
 }
 
 /// Get line count from content
-pub fn GetLineCount(content: &str) -> u32 {
+pub fn GetLineCount(content:&str) -> u32 {
 	if content.is_empty() {
 		return 0;
 	}
@@ -349,12 +350,10 @@ pub fn GetLineCount(content: &str) -> u32 {
 }
 
 /// Get char count from content
-pub fn GetCharCount(content: &str) -> usize {
-	content.chars().count()
-}
+pub fn GetCharCount(content:&str) -> usize { content.chars().count() }
 
 /// Truncate content to specified maximum size in characters
-pub fn TruncateContent(content: &str, max_chars: usize) -> String {
-	let chars: Vec<char> = content.chars().take(max_chars).collect();
+pub fn TruncateContent(content:&str, max_chars:usize) -> String {
+	let chars:Vec<char> = content.chars().take(max_chars).collect();
 	chars.into_iter().collect()
 }

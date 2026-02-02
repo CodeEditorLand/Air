@@ -7,6 +7,3 @@
 //! Provides daemon connection functionality for CLI commands.
 
 pub mod ConnectDaemon;
-
-// Convenience re-exports
-pub use ConnectDaemon::Connect;

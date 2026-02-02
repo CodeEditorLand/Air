@@ -126,8 +126,8 @@ impl Default for LogRotationConfig {
 			MaxFiles:30,                        // Keep 30 days of logs
 			Rotation:LogRotation::Daily,
 			Compress:true,
-			LogDirectory:"./logs".to_string(),
-			LogFilePrefix:"air".to_string(),
+			LogDirectory:"./Log".to_string(),
+			LogFilePrefix:"Air".to_string(),
 		}
 	}
 }
@@ -536,7 +536,7 @@ impl ContextLogger {
 				let log_dir = std::path::Path::new(log_path).parent().unwrap_or(std::path::Path::new("."));
 				let log_file = std::path::Path::new(log_path)
 					.file_name()
-					.unwrap_or(std::ffi::OsStr::new("air.log"));
+					.unwrap_or(std::ffi::OsStr::new("Air.log"));
 
 				let file_appender = tracing_appender::rolling::daily(log_dir, log_file);
 				let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
@@ -573,7 +573,7 @@ impl ContextLogger {
 				let log_dir = std::path::Path::new(log_path).parent().unwrap_or(std::path::Path::new("."));
 				let log_file = std::path::Path::new(log_path)
 					.file_name()
-					.unwrap_or(std::ffi::OsStr::new("air.log"));
+					.unwrap_or(std::ffi::OsStr::new("Air.log"));
 
 				let file_appender = tracing_appender::rolling::daily(log_dir, log_file);
 				let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);

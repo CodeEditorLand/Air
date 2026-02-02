@@ -191,7 +191,7 @@ impl CliParser {
 			"version" | "-v" | "--version" => Ok(Command::Version),
 			_ => {
 				Err(format!(
-					"Unknown command: {}\n\nUse 'air help' for available commands.",
+					"Unknown command: {}\n\nUse 'Air help' for available commands.",
 					command
 				))
 			},
@@ -282,7 +282,7 @@ impl CliParser {
 	fn parse_config(&self, args:&[String]) -> Result<Command, String> {
 		if args.is_empty() {
 			return Err(
-				"config requires a subcommand: get, set, reload, show, validate\n\nUse 'air help config' for more \
+				"config requires a subcommand: get, set, reload, show, validate\n\nUse 'Air help config' for more \
 				 information."
 					.to_string(),
 			);
@@ -293,7 +293,7 @@ impl CliParser {
 		match subcommand.as_str() {
 			"get" => {
 				if args.len() < 2 {
-					return Err("config get requires a key\n\nExample: air config get grpc.BindAddress".to_string());
+					return Err("config get requires a key\n\nExample: Air config get grpc.BindAddress".to_string());
 				}
 				let key = args[1].clone();
 				Self::validate_config_key(&key)?;
@@ -301,7 +301,7 @@ impl CliParser {
 			},
 			"set" => {
 				if args.len() < 3 {
-					return Err("config set requires key and value\n\nExample: air config set grpc.BindAddress \
+					return Err("config set requires key and value\n\nExample: Air config set grpc.BindAddress \
 					            \"[::1]:50053\""
 						.to_string());
 				}
@@ -429,7 +429,7 @@ impl CliParser {
 	fn parse_debug(&self, args:&[String]) -> Result<Command, String> {
 		if args.is_empty() {
 			return Err(
-				"debug requires a subcommand: dump-state, dump-connections, health-check, diagnostics\n\nUse 'air \
+				"debug requires a subcommand: dump-state, dump-connections, health-check, diagnostics\n\nUse 'Air \
 				 help debug' for more information."
 					.to_string(),
 			);
@@ -844,7 +844,7 @@ impl DaemonClient {
 		Ok(ConfigResponse {
 			key:Some(key.to_string()),
 			value:serde_json::json!("example_value"),
-			path:"/air/config.json".to_string(),
+			path:"/Air/config.json".to_string(),
 			modified:Utc::now().to_rfc3339(),
 		})
 	}
@@ -1214,7 +1214,7 @@ Air 🪁 - Background Daemon for Land Code Editor
 Version: {version}
 
 USAGE:
-    air [COMMAND] [OPTIONS]
+    Air [COMMAND] [OPTIONS]
 
 COMMANDS:
     status           Show daemon and service status
@@ -1231,20 +1231,20 @@ OPTIONS:
     -v, --version    Show version
 
 EXAMPLES:
-    air status --verbose
-    air config get grpc.bind_address
-    air metrics --json
-    air logs --tail=100 --follow
-    air debug health-check
+    Air status --verbose
+    Air config get grpc.bind_address
+    Air metrics --json
+    Air logs --tail=100 --follow
+    Air debug health-check
 
-Use 'air help <command>' for more information about a command.
+Use 'Air help <command>' for more information about a command.
 "#;
 
 pub const HELP_STATUS:&str = r#"
 Show daemon and service status
 
 USAGE:
-    air status [OPTIONS]
+    Air status [OPTIONS]
 
 OPTIONS:
     -s, --service <NAME>    Show status of specific service
@@ -1252,32 +1252,32 @@ OPTIONS:
     --json                  Output in JSON format
 
 EXAMPLES:
-    air status
-    air status --service authentication --verbose
-    air status --json
+    Air status
+    Air status --service authentication --verbose
+    Air status --json
 "#;
 
 pub const HELP_RESTART:&str = r#"
 Restart services
 
 USAGE:
-    air restart [OPTIONS]
+    Air restart [OPTIONS]
 
 OPTIONS:
     -s, --service <NAME>    Restart specific service
     -f, --force             Force restart without graceful shutdown
 
 EXAMPLES:
-    air restart
-    air restart --service updates
-    air restart --force
+    Air restart
+    Air restart --service updates
+    Air restart --force
 "#;
 
 pub const HELP_CONFIG:&str = r#"
 Manage configuration
 
 USAGE:
-    air config <SUBCOMMAND> [OPTIONS]
+    Air config <SUBCOMMAND> [OPTIONS]
 
 SUBCOMMANDS:
     get <KEY>               Get configuration value
@@ -1291,33 +1291,33 @@ OPTIONS:
     --validate              Validate before reloading
 
 EXAMPLES:
-    air config get grpc.bind_address
-    air config set updates.auto_download true
-    air config reload --validate
-    air config show --json
+    Air config get grpc.bind_address
+    Air config set updates.auto_download true
+    Air config reload --validate
+    Air config show --json
 "#;
 
 pub const HELP_METRICS:&str = r#"
 View performance metrics
 
 USAGE:
-    air metrics [OPTIONS]
+    Air metrics [OPTIONS]
 
 OPTIONS:
     -s, --service <NAME>    Show metrics for specific service
     --json                  Output in JSON format
 
 EXAMPLES:
-    air metrics
-    air metrics --service downloader
-    air metrics --json
+    Air metrics
+    Air metrics --service downloader
+    Air metrics --json
 "#;
 
 pub const HELP_LOGS:&str = r#"
 View daemon logs
 
 USAGE:
-    air logs [OPTIONS]
+    Air logs [OPTIONS]
 
 OPTIONS:
     -s, --service <NAME>    Show logs from specific service
@@ -1326,16 +1326,16 @@ OPTIONS:
     --follow                Follow logs in real-time
 
 EXAMPLES:
-    air logs
-    air logs --service updates --tail=100
-    air logs --filter "ERROR" --follow
+    Air logs
+    Air logs --service updates --tail=100
+    Air logs --filter "ERROR" --follow
 "#;
 
 pub const HELP_DEBUG:&str = r#"
 Debug and diagnostics
 
 USAGE:
-    air debug <SUBCOMMAND> [OPTIONS]
+    Air debug <SUBCOMMAND> [OPTIONS]
 
 SUBCOMMANDS:
     dump-state              Dump current daemon state
@@ -1350,10 +1350,10 @@ OPTIONS:
     --full                  Full diagnostic level
 
 EXAMPLES:
-    air debug dump-state
-    air debug dump-connections --json
-    air debug health-check --verbose
-    air debug diagnostics --full
+    Air debug dump-state
+    Air debug dump-connections --json
+    Air debug health-check --verbose
+    Air debug diagnostics --full
 "#;
 
 // =============================================================================
@@ -1479,7 +1479,7 @@ impl OutputFormatter {
 			Some("debug") => HELP_DEBUG.to_string(),
 			_ => {
 				format!(
-					"Unknown help topic: {}\n\nUse 'air help' for general help.",
+					"Unknown help topic: {}\n\nUse 'Air help' for general help.",
 					topic.unwrap_or("unknown")
 				)
 			},
@@ -1493,7 +1493,7 @@ mod tests {
 
 	#[test]
 	fn test_parse_status_command() {
-		let args = vec!["air".to_string(), "status".to_string(), "--verbose".to_string()];
+		let args = vec!["Air".to_string(), "status".to_string(), "--verbose".to_string()];
 		let cmd = CliParser::parse(args).unwrap();
 		if let Command::Status { service, verbose, json } = cmd {
 			assert!(verbose);
@@ -1507,7 +1507,7 @@ mod tests {
 	#[test]
 	fn test_parse_config_set() {
 		let args = vec![
-			"air".to_string(),
+			"Air".to_string(),
 			"config".to_string(),
 			"set".to_string(),
 			"grpc.bind_address".to_string(),

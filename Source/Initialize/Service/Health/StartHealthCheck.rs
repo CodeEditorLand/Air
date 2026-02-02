@@ -30,7 +30,8 @@
 //! ## Dependents
 //!
 //! - `Initialize::Binary::Binary` - Initializes health monitoring at boot
-//! - `Initialize::Service::Vine::StartService` - Registers services for monitoring
+//! - `Initialize::Service::Vine::StartService` - Registers services for
+//!   monitoring
 //!
 //! ## VSCode Pattern Reference
 //!
@@ -49,7 +50,6 @@
 //! - Non-blocking async checks
 //!
 //! ## Error Handling Strategy
-//!
 /// - Health check failures are logged but non-fatal
 /// - Service registration failures logged but don't halt boot
 ///
@@ -57,20 +57,21 @@
 /// - Add custom health check interval configuration
 /// - Implement health check aggregation for dashboard
 /// - Add external health check endpoint
-
 use std::sync::Arc;
-use log::info;
 
-use AirLibrary::HealthCheck::{HealthCheckManager, HealthCheckLevel};
+use log::info;
+use AirLibrary::HealthCheck::{HealthCheckLevel, HealthCheckManager};
 
 /// Start the health check system
 ///
-/// Creates the health check manager that monitors the status of all Air services.
-/// Services can be registered for monitoring with configurable health check levels.
+/// Creates the health check manager that monitors the status of all Air
+/// services. Services can be registered for monitoring with configurable health
+/// check levels.
 ///
 /// # Returns
 ///
-/// Returns an `Arc<HealthCheckManager>` for registering and checking service health.
+/// Returns an `Arc<HealthCheckManager>` for registering and checking service
+/// health.
 ///
 /// # Health Check Levels
 ///
@@ -82,10 +83,12 @@ use AirLibrary::HealthCheck::{HealthCheckManager, HealthCheckLevel};
 ///
 /// ```rust
 /// let health_manager = StartHealthCheck().await?;
-/// 
+///
 /// // Register a service
-/// health_manager.register_service("authentication".to_string(), HealthCheckLevel::Functional).await?;
-/// 
+/// health_manager
+/// 	.register_service("authentication".to_string(), HealthCheckLevel::Functional)
+/// 	.await?;
+///
 /// // Check health
 /// let health = health_manager.check_service("authentication").await?;
 /// ```
@@ -95,24 +98,24 @@ use AirLibrary::HealthCheck::{HealthCheckManager, HealthCheckLevel};
 /// - Implement health-based auto-recovery
 /// - Add health notification hooks
 pub async fn StartHealthCheck() -> Arc<HealthCheckManager> {
-    info!("[Health] Starting health check system...");
-    
-    // Create health check manager
-    let health_manager = Arc::new(HealthCheckManager::new(None));
-    
-    info!("[Health] Health check system initialized");
-    
-    health_manager
+	info!("[Health] Starting health check system...");
+
+	// Create health check manager
+	let health_manager = Arc::new(HealthCheckManager::new(None));
+
+	info!("[Health] Health check system initialized");
+
+	health_manager
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    
-    #[test]
-    #[ignore] // Async test
-    async fn test_start_health_check() {
-        let health_manager = StartHealthCheck().await;
-        assert_eq!(Arc::strong_count(&health_manager), 1);
-    }
+	use super::*;
+
+	#[test]
+	#[ignore] // Async test
+	async fn test_start_health_check() {
+		let health_manager = StartHealthCheck().await;
+		assert_eq!(Arc::strong_count(&health_manager), 1);
+	}
 }

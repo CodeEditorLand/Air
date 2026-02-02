@@ -87,7 +87,7 @@ background operations.
 ```mermaid
 graph LR
     classDef mountain fill:#f9f,stroke:#333,stroke-width:2px;
-    classDef air fill:#9cf,stroke:#333,stroke-width:2px;
+    classDef Air fill:#9cf,stroke:#333,stroke-width:2px;
     classDef external fill:#ddd,stroke:#666,stroke-dasharray: 5 5;
 
     subgraph "Land Runtime Ecosystem"
@@ -100,10 +100,10 @@ graph LR
         end
 
         subgraph "Air 🪁 (Daemon Sidecar)"
-            IPC_Server[gRPC Server]:::air
-            UpdateMgr[Update Manager]:::air
-            Downloader[Resilient Downloader]:::air
-            AuthService[Signer & Auth]:::air
+            IPC_Server[gRPC Server]:::Air
+            UpdateMgr[Update Manager]:::Air
+            Downloader[Resilient Downloader]:::Air
+            AuthService[Signer & Auth]:::Air
 
             IPC_Server -- Routes to --> UpdateMgr
             IPC_Server -- Routes to --> Downloader

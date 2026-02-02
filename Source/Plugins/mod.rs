@@ -771,8 +771,7 @@ impl PluginManager {
 		let SendResult =
 			tokio::time::timeout(self.OperationTimeout, plugin.handle_message(&message.from, &message)).await;
 
-		SendResult
-			.map_err(|_| AirError::Plugin(format!("Message send timeout: {} -> {}", message.from, message.to)))?
+		SendResult.map_err(|_| AirError::Plugin(format!("Message send timeout: {} -> {}", message.from, message.to)))?
 	}
 
 	/// Check inter-plugin communication permission
@@ -1032,8 +1031,8 @@ impl PluginLoader {
 	pub fn new() -> Self {
 		Self {
 			PluginPaths:vec![
-				"/usr/local/lib/air/plugins".to_string(),
-				"~/.local/share/air/plugins".to_string(),
+				"/usr/local/lib/Air/plugins".to_string(),
+				"~/.local/share/Air/plugins".to_string(),
 			],
 		}
 	}

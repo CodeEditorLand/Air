@@ -66,21 +66,15 @@
 
 use std::path::PathBuf;
 
-use crate::{
-	AirError,
-	Result,
-	ApplicationState::ApplicationState,
-	Configuration::IndexingConfig,
-};
-
+use crate::{AirError, ApplicationState::ApplicationState, Configuration::IndexingConfig, Result};
 use super::super::{FileIndex, FileMetadata, SymbolInfo, SymbolLocation};
 
 /// Add a file to the index with its metadata and symbols
 pub fn AddFileToIndex(
-	index: &mut FileIndex,
-	file_path: PathBuf,
-	metadata: FileMetadata,
-	symbols: Vec<SymbolInfo>,
+	index:&mut FileIndex,
+	file_path:PathBuf,
+	metadata:FileMetadata,
+	symbols:Vec<SymbolInfo>,
 ) -> Result<()> {
 	// Check if file already exists and update accordingly
 	let is_new = !index.files.contains_key(&file_path);
@@ -103,18 +97,14 @@ pub fn AddFileToIndex(
 			.symbol_index
 			.entry(symbol.name.clone())
 			.or_insert_with(Vec::new)
-			.push(SymbolLocation {
-				file_path: file_path.clone(),
-				line: symbol.line,
-				symbol,
-			});
+			.push(SymbolLocation { file_path:file_path.clone(), line:symbol.line, symbol });
 	}
 
 	Ok(())
 }
 
 /// Remove a file from all indexes (content, symbols, files)
-pub fn RemoveFileFromIndex(index: &mut FileIndex, file_path: &PathBuf) -> Result<()> {
+pub fn RemoveFileFromIndex(index:&mut FileIndex, file_path:&PathBuf) -> Result<()> {
 	// Remove from files index
 	index.files.remove(file_path);
 
@@ -135,7 +125,7 @@ pub fn RemoveFileFromIndex(index: &mut FileIndex, file_path: &PathBuf) -> Result
 }
 
 /// Remove multiple files from the index in a batch operation
-pub fn RemoveFilesFromIndex(index: &mut FileIndex, file_paths: &[PathBuf]) -> Result<()> {
+pub fn RemoveFilesFromIndex(index:&mut FileIndex, file_paths:&[PathBuf]) -> Result<()> {
 	for file_path in file_paths {
 		RemoveFileFromIndex(index, file_path)?;
 	}
@@ -143,7 +133,7 @@ pub fn RemoveFilesFromIndex(index: &mut FileIndex, file_paths: &[PathBuf]) -> Re
 }
 
 /// Update index metadata (version, timestamp, checksum)
-pub fn UpdateIndexMetadata(index: &mut FileIndex) -> Result<()> {
+pub fn UpdateIndexMetadata(index:&mut FileIndex) -> Result<()> {
 	use super::CreateState::{CalculateIndexChecksum, GenerateIndexVersion};
 
 	index.last_updated = chrono::Utc::now();
@@ -154,7 +144,7 @@ pub fn UpdateIndexMetadata(index: &mut FileIndex) -> Result<()> {
 }
 
 /// Update file metadata for an existing file
-pub fn UpdateFileMetadata(index: &mut FileIndex, file_path: &PathBuf, metadata: FileMetadata) -> Result<()> {
+pub fn UpdateFileMetadata(index:&mut FileIndex, file_path:&PathBuf, metadata:FileMetadata) -> Result<()> {
 	if !index.files.contains_key(file_path) {
 		return Err(AirError::Internal(format!(
 			"Cannot update metadata for file not in index: {}",
@@ -167,7 +157,7 @@ pub fn UpdateFileMetadata(index: &mut FileIndex, file_path: &PathBuf, metadata: 
 }
 
 /// Update symbols for a file
-pub fn UpdateFileSymbols(index: &mut FileIndex, file_path: &PathBuf, symbols: Vec<SymbolInfo>) -> Result<()> {
+pub fn UpdateFileSymbols(index:&mut FileIndex, file_path:&PathBuf, symbols:Vec<SymbolInfo>) -> Result<()> {
 	if !index.files.contains_key(file_path) {
 		return Err(AirError::Internal(format!(
 			"Cannot update symbols for file not in index: {}",
@@ -192,18 +182,14 @@ pub fn UpdateFileSymbols(index: &mut FileIndex, file_path: &PathBuf, symbols: Ve
 			.symbol_index
 			.entry(symbol.name.clone())
 			.or_insert_with(Vec::new)
-			.push(SymbolLocation {
-				file_path: file_path.clone(),
-				line: symbol.line,
-				symbol,
-			});
+			.push(SymbolLocation { file_path:file_path.clone(), line:symbol.line, symbol });
 	}
 
 	Ok(())
 }
 
 /// Update content index for a file
-pub fn UpdateContentIndex(index: &mut FileIndex, file_path: &PathBuf, tokens: Vec<String>) -> Result<()> {
+pub fn UpdateContentIndex(index:&mut FileIndex, file_path:&PathBuf, tokens:Vec<String>) -> Result<()> {
 	// Remove file from existing content index entries
 	for (_, files) in index.content_index.iter_mut() {
 		files.retain(|p| p != file_path);
@@ -225,13 +211,13 @@ pub fn UpdateContentIndex(index: &mut FileIndex, file_path: &PathBuf, tokens: Ve
 }
 
 /// Clean up orphaned entries (files with no matching content/symbols)
-pub fn CleanupOrphanedEntries(index: &mut FileIndex) -> Result<u32> {
+pub fn CleanupOrphanedEntries(index:&mut FileIndex) -> Result<u32> {
 	let mut removed_count = 0;
 
-	let files_to_keep: Vec<_> = index.files.keys().cloned().collect();
+	let files_to_keep:Vec<_> = index.files.keys().cloned().collect();
 
 	// Clean up content index entries with no files
-	let orphaned_tokens: Vec<_> = index
+	let orphaned_tokens:Vec<_> = index
 		.content_index
 		.iter()
 		.filter(|(_, files)| files.is_empty())
@@ -244,7 +230,7 @@ pub fn CleanupOrphanedEntries(index: &mut FileIndex) -> Result<u32> {
 	}
 
 	// Clean up symbol index entries with no locations
-	let orphaned_symbols: Vec<_> = index
+	let orphaned_symbols:Vec<_> = index
 		.symbol_index
 		.iter()
 		.filter(|(_, locations)| locations.is_empty())
@@ -260,7 +246,7 @@ pub fn CleanupOrphanedEntries(index: &mut FileIndex) -> Result<u32> {
 }
 
 /// Merge another index into this one
-pub fn MergeIndexes(target: &mut FileIndex, source: FileIndex) -> Result<u32> {
+pub fn MergeIndexes(target:&mut FileIndex, source:FileIndex) -> Result<u32> {
 	let mut merged_files = 0;
 
 	// Merge files
@@ -273,11 +259,7 @@ pub fn MergeIndexes(target: &mut FileIndex, source: FileIndex) -> Result<u32> {
 
 	// Merge content index
 	for (token, mut files) in source.content_index {
-		target
-			.content_index
-			.entry(token)
-			.or_insert_with(Vec::new)
-			.append(&mut files);
+		target.content_index.entry(token).or_insert_with(Vec::new).append(&mut files);
 	}
 
 	// Merge symbol index
@@ -303,7 +285,7 @@ pub fn MergeIndexes(target: &mut FileIndex, source: FileIndex) -> Result<u32> {
 }
 
 /// Validate that index is in a consistent state
-pub fn ValidateIndexConsistency(index: &FileIndex) -> Result<()> {
+pub fn ValidateIndexConsistency(index:&FileIndex) -> Result<()> {
 	// Check that all files in content_index exist in files
 	for (_, files) in &index.content_index {
 		for file_path in files {
@@ -342,7 +324,7 @@ pub fn ValidateIndexConsistency(index: &FileIndex) -> Result<()> {
 }
 
 /// Get index size estimate in bytes
-pub fn GetIndexSizeEstimate(index: &FileIndex) -> usize {
+pub fn GetIndexSizeEstimate(index:&FileIndex) -> usize {
 	let mut size = 0;
 
 	// File metadata
@@ -373,7 +355,7 @@ pub fn GetIndexSizeEstimate(index: &FileIndex) -> usize {
 }
 
 /// Check if periodic update is needed based on age
-pub fn NeedsUpdate(index: &FileIndex, max_age_minutes: u64) -> bool {
+pub fn NeedsUpdate(index:&FileIndex, max_age_minutes:u64) -> bool {
 	let age_minutes = (chrono::Utc::now() - index.last_updated).num_minutes().abs() as u64;
 	age_minutes >= max_age_minutes
 }

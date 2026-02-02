@@ -246,7 +246,7 @@ pub struct Binary {
 /// # Configuration Sources
 ///
 /// Configuration is loaded from:
-/// 1. Default configuration file (~/.air/config.toml)
+/// 1. Default configuration file (~/.Air/config.toml)
 /// 2. Command-line arguments (override defaults)
 /// 3. Environment variables (optional)
 ///
@@ -277,7 +277,7 @@ pub struct BinaryConfig {
 
     /// Path to the configuration file
     ///
-    /// Defaults to `~/.air/config.toml`.
+    /// Defaults to `~/.Air/config.toml`.
     pub config_file: PathBuf,
 
     /// Mode of operation (daemon or foreground)
@@ -446,10 +446,10 @@ impl Binary {
 
         // Note: config will be converted to AirConfiguration during initialize()
         // Placeholder for now
-        let air_config = Arc::new(AirConfiguration::default());
+        let Air_config = Arc::new(AirConfiguration::default());
 
         let binary = Self {
-            config: air_config,
+            config: Air_config,
             application_state,
             server_handle: None,
             monitoring_handles: None,
@@ -506,8 +506,8 @@ impl Binary {
         self.initialize_observability(&binary_config).await?;
 
         // Phase 2: Load and validate configuration
-        let air_config = self.load_configuration(&binary_config).await?;
-        self.config = Arc::new(air_config);
+        let Air_config = self.load_configuration(&binary_config).await?;
+        self.config = Arc::new(Air_config);
 
         // Phase 3: Validate runtime environment
         self.validate_environment(&binary_config).await?;
@@ -665,7 +665,7 @@ impl BinaryConfig {
     /// Provides sensible defaults for all configuration values:
     /// - Bind: [::1]:50053 (loopback only for security)
     /// - Cocoon: [::1]:50052
-    /// - Config file: ~/.air/config.toml
+    /// - Config file: ~/.Air/config.toml
     /// - Mode: Background daemon
     /// - Shutdown timeout: 30 seconds
     /// - Verbose: false
@@ -731,7 +731,7 @@ impl BinaryConfig {
     /// ```no_run
     /// # use Source::Binary::BinaryConfig;
     /// let args = vec![
-    ///     "air".to_string(),
+    ///     "Air".to_string(),
     ///     "--bind".to_string(),
     ///     "127.0.0.1:8080".to_string(),
     ///     "--foreground".to_string(),
@@ -1118,12 +1118,12 @@ impl Binary {
         }
 
         // Load configuration
-        let air_config = ConfigurationManager::load(&config.config_file).map_err(|e| {
+        let Air_config = ConfigurationManager::load(&config.config_file).map_err(|e| {
             Error::InvalidConfiguration(format!("Failed to load configuration: {}", e))
         })?;
 
         info!("Configuration loaded and validated successfully");
-        Ok(air_config)
+        Ok(Air_config)
     }
 
     /// Validates the runtime environment before starting services.

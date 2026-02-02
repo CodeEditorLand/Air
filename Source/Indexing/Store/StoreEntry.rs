@@ -53,14 +53,14 @@
 //! - Efficient serialization with serde
 //!
 //! ## Error Handling Strategy
-/
-/// Storage operations return detailed error messages for failures and
+//!
+//! Storage operations return detailed error messages for failures and
 //! automatically backup corrupted indexes when loading fails.
 //!
 //! ## Thread Safety
-/
-/// Storage operations use async file I/O and return results that can be
-/// safely merged into shared Ar c<RwLock<>> state.
+//!
+//! Storage operations use async file I/O and return results that can be
+//! safely merged into shared Ar c<RwLock<>> state.
 
 use std::path::{Path, PathBuf};
 use tokio::sync::RwLock;

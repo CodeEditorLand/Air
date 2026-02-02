@@ -65,13 +65,12 @@
 
 use std::path::PathBuf;
 
-use super::super::SymbolInfo;
-use super::super::SymbolKind;
+use super::super::{SymbolInfo, SymbolKind};
 
 /// Extract Rust symbols (struct, impl, fn, mod, enum, trait)
-pub fn ExtractRustSymbols(content: &str, file_path: &PathBuf) -> Vec<SymbolInfo> {
+pub fn ExtractRustSymbols(content:&str, file_path:&PathBuf) -> Vec<SymbolInfo> {
 	let mut symbols = Vec::new();
-	let lines: Vec<&str> = content.lines().collect();
+	let lines:Vec<&str> = content.lines().collect();
 
 	for (line_idx, line) in lines.iter().enumerate() {
 		let line_content = line.trim();
@@ -90,7 +89,7 @@ pub fn ExtractRustSymbols(content: &str, file_path: &PathBuf) -> Vec<SymbolInfo>
 }
 
 /// Extract symbols from a single line of Rust code
-fn ExtractRustSymbolsFromLine(line_content: &str, line_num: u32, line: &str, file_path: &PathBuf) -> Vec<SymbolInfo> {
+fn ExtractRustSymbolsFromLine(line_content:&str, line_num:u32, line:&str, file_path:&PathBuf) -> Vec<SymbolInfo> {
 	let mut symbols = Vec::new();
 
 	// Struct
@@ -99,11 +98,11 @@ fn ExtractRustSymbolsFromLine(line_content: &str, line_num: u32, line: &str, fil
 		if !name.is_empty() {
 			if let Some(col) = line.find("struct") {
 				symbols.push(SymbolInfo {
-					name: name.to_string(),
-					kind: SymbolKind::Struct,
-					line: line_num,
-					column: col as u32,
-					full_path: format!("{}::{}", file_path.display(), name),
+					name:name.to_string(),
+					kind:SymbolKind::Struct,
+					line:line_num,
+					column:col as u32,
+					full_path:format!("{}::{}", file_path.display(), name),
 				});
 			}
 		}
@@ -115,11 +114,11 @@ fn ExtractRustSymbolsFromLine(line_content: &str, line_num: u32, line: &str, fil
 		if !name.is_empty() {
 			if let Some(col) = line.find("impl") {
 				symbols.push(SymbolInfo {
-					name: name.to_string(),
-					kind: SymbolKind::Method,
-					line: line_num,
-					column: col as u32,
-					full_path: format!("{}::{}::", file_path.display(), name),
+					name:name.to_string(),
+					kind:SymbolKind::Method,
+					line:line_num,
+					column:col as u32,
+					full_path:format!("{}::{}::", file_path.display(), name),
 				});
 			}
 		}
@@ -131,11 +130,11 @@ fn ExtractRustSymbolsFromLine(line_content: &str, line_num: u32, line: &str, fil
 		if !name.is_empty() {
 			if let Some(col) = line.find("fn") {
 				symbols.push(SymbolInfo {
-					name: name.to_string(),
-					kind: SymbolKind::Function,
-					line: line_num,
-					column: col as u32,
-					full_path: format!("{}::{}", file_path.display(), name),
+					name:name.to_string(),
+					kind:SymbolKind::Function,
+					line:line_num,
+					column:col as u32,
+					full_path:format!("{}::{}", file_path.display(), name),
 				});
 			}
 		}
@@ -147,11 +146,11 @@ fn ExtractRustSymbolsFromLine(line_content: &str, line_num: u32, line: &str, fil
 		if !name.is_empty() {
 			if let Some(col) = line.find("mod") {
 				symbols.push(SymbolInfo {
-					name: name.to_string(),
-					kind: SymbolKind::Module,
-					line: line_num,
-					column: col as u32,
-					full_path: format!("{}::{}::", file_path.display(), name),
+					name:name.to_string(),
+					kind:SymbolKind::Module,
+					line:line_num,
+					column:col as u32,
+					full_path:format!("{}::{}::", file_path.display(), name),
 				});
 			}
 		}
@@ -163,11 +162,11 @@ fn ExtractRustSymbolsFromLine(line_content: &str, line_num: u32, line: &str, fil
 		if !name.is_empty() {
 			if let Some(col) = line.find("enum") {
 				symbols.push(SymbolInfo {
-					name: name.to_string(),
-					kind: SymbolKind::Enum,
-					line: line_num,
-					column: col as u32,
-					full_path: format!("{}::{}", file_path.display(), name),
+					name:name.to_string(),
+					kind:SymbolKind::Enum,
+					line:line_num,
+					column:col as u32,
+					full_path:format!("{}::{}", file_path.display(), name),
 				});
 			}
 		}
@@ -179,11 +178,11 @@ fn ExtractRustSymbolsFromLine(line_content: &str, line_num: u32, line: &str, fil
 		if !name.is_empty() {
 			if let Some(col) = line.find("trait") {
 				symbols.push(SymbolInfo {
-					name: name.to_string(),
-					kind: SymbolKind::Interface,
-					line: line_num,
-					column: col as u32,
-					full_path: format!("{}::{}", file_path.display(), name),
+					name:name.to_string(),
+					kind:SymbolKind::Interface,
+					line:line_num,
+					column:col as u32,
+					full_path:format!("{}::{}", file_path.display(), name),
 				});
 			}
 		}
@@ -195,11 +194,11 @@ fn ExtractRustSymbolsFromLine(line_content: &str, line_num: u32, line: &str, fil
 		if !name.is_empty() {
 			if let Some(col) = line.find("type") {
 				symbols.push(SymbolInfo {
-					name: name.to_string(),
-					kind: SymbolKind::TypeParameter,
-					line: line_num,
-					column: col as u32,
-					full_path: format!("{}::{}", file_path.display(), name),
+					name:name.to_string(),
+					kind:SymbolKind::TypeParameter,
+					line:line_num,
+					column:col as u32,
+					full_path:format!("{}::{}", file_path.display(), name),
 				});
 			}
 		}
@@ -212,11 +211,11 @@ fn ExtractRustSymbolsFromLine(line_content: &str, line_num: u32, line: &str, fil
 			if !name.is_empty() {
 				if let Some(col) = line.find("const") {
 					symbols.push(SymbolInfo {
-						name: name.to_string(),
-						kind: SymbolKind::Constant,
-						line: line_num,
-						column: col as u32,
-						full_path: format!("{}::{}", file_path.display(), name),
+						name:name.to_string(),
+						kind:SymbolKind::Constant,
+						line:line_num,
+						column:col as u32,
+						full_path:format!("{}::{}", file_path.display(), name),
 					});
 				}
 			}
@@ -230,11 +229,11 @@ fn ExtractRustSymbolsFromLine(line_content: &str, line_num: u32, line: &str, fil
 			if !name.is_empty() {
 				if let Some(col) = line.find("static") {
 					symbols.push(SymbolInfo {
-						name: name.to_string(),
-						kind: SymbolKind::Variable,
-						line: line_num,
-						column: col as u32,
-						full_path: format!("{}::{}", file_path.display(), name),
+						name:name.to_string(),
+						kind:SymbolKind::Variable,
+						line:line_num,
+						column:col as u32,
+						full_path:format!("{}::{}", file_path.display(), name),
 					});
 				}
 			}
@@ -245,7 +244,7 @@ fn ExtractRustSymbolsFromLine(line_content: &str, line_num: u32, line: &str, fil
 }
 
 /// Check if a line contains a Rust struct definition
-pub fn IsRustStruct(line: &str) -> bool {
+pub fn IsRustStruct(line:&str) -> bool {
 	let trimmed = line.trim();
 	let after_keywords = trimmed
 		.strip_prefix("pub ")
@@ -256,7 +255,7 @@ pub fn IsRustStruct(line: &str) -> bool {
 }
 
 /// Check if a line contains a Rust function definition
-pub fn IsRustFunction(line: &str) -> bool {
+pub fn IsRustFunction(line:&str) -> bool {
 	let trimmed = line.trim();
 	let after_keywords = trimmed
 		.strip_prefix("pub ")
@@ -268,7 +267,7 @@ pub fn IsRustFunction(line: &str) -> bool {
 }
 
 /// Check if a line contains a Rust impl block
-pub fn IsRustImpl(line: &str) -> bool {
+pub fn IsRustImpl(line:&str) -> bool {
 	// Handle variations: impl, pub impl, unsafe impl
 	let trimmed = line.trim();
 	let after_keywords = trimmed
@@ -279,7 +278,7 @@ pub fn IsRustImpl(line: &str) -> bool {
 }
 
 /// Extract Rust visibility modifier if present
-pub fn ExtractVisibilityModifier(line: &str) -> Option<&str> {
+pub fn ExtractVisibilityModifier(line:&str) -> Option<&str> {
 	let trimmed = line.trim();
 	if trimmed.starts_with("pub ") {
 		Some("pub")

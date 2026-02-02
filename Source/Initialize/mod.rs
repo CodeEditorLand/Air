@@ -26,10 +26,3 @@ pub mod Configure;
 pub mod Build;
 pub mod Service;
 pub mod Command;
-
-// Convenience re-exports
-pub use Configure::Log::ConfigureLog;
-pub use Configure::Port::SelectPort;
-pub use Build::BuildServer;
-pub use Command::ParseArguments;
-pub use Command::HandleCommand;

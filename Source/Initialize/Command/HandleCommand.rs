@@ -175,7 +175,7 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                     println!("  Status: ❌ Daemon not running");
                     println!("  Error: {}", e);
                     println!("");
-                    println!("  To start the daemon, run: air --daemon");
+                    println!("  To start the daemon, run: Air --daemon");
                     Err(format!("Daemon not running: {}", e).into())
                 }
             }
@@ -199,7 +199,7 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
             } else {
                 println!("Restarting all services...");
                 println!("  Note: Full daemon restart not yet implemented");
-                println!("  Workaround: Use: kill <pid> && air --daemon");
+                println!("  Workaround: Use: kill <pid> && Air --daemon");
             }
             
             if force {
@@ -319,7 +319,7 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                 }
                 _ => {
                     println!("  Log file: Not configured");
-                    println!("  Set via: AIR_LOG_FILE=/path/to/air.log");
+                    println!("  Set via: AIR_LOG_FILE=/path/to/Air.log");
                     println!("");
                     println!("  Logs are likely going to stdout/stderr");
                 }
@@ -372,7 +372,7 @@ async fn HandleConfigCommand(config_cmd: ConfigCommand) -> Result<(), Box<dyn st
             println!("  Value: {}", value);
             println!("");
             println!("  Note: Config update not yet implemented");
-            println!("  Workaround: Edit config file directly, then use 'air config reload'");
+            println!("  Workaround: Edit config file directly, then use 'Air config reload'");
             
             Err("Config 'set' command not yet implemented".into())
         }
@@ -417,7 +417,7 @@ async fn HandleConfigCommand(config_cmd: ConfigCommand) -> Result<(), Box<dyn st
             
             println!("");
             println!("  Default config file: {}", DefaultConfigFile);
-            println!("  Config directory: ~/.config/air/");
+            println!("  Config directory: ~/.config/Air/");
             
             Err("Config 'show' command not yet implemented".into())
         }
@@ -443,7 +443,7 @@ async fn HandleConfigCommand(config_cmd: ConfigCommand) -> Result<(), Box<dyn st
             if std::path::Path::new(&config_path).exists() {
                 println!("  ✅ Config file exists");
                 println!("  Note: Detailed validation not yet implemented");
-                println!("  Workaround: Use: air --validate-config");
+                println!("  Workaround: Use: Air --validate-config");
             } else {
                 println!("  ❌ Config file not found");
                 println!("  Hint: Create a config file or use defaults");

@@ -4,9 +4,10 @@
 //!
 //! ## Role in Air Architecture
 //!
-//! Initializes the shared application state that serves as the central coordination
-//! point for all Air services. The ApplicationState holds configuration, connections,
-//! and shared data structures accessed by all background services.
+//! Initializes the shared application state that serves as the central
+//! coordination point for all Air services. The ApplicationState holds
+//! configuration, connections, and shared data structures accessed by all
+//! background services.
 //!
 //! ## Primary Responsibility
 //!
@@ -30,7 +31,8 @@
 //! ## Dependents
 //!
 //! - `Initialize::Service::Auth::StartAuth` - Needs state for auth operations
-//! - `Initialize::Service::Update::StartUpdate` - Needs state for update management
+//! - `Initialize::Service::Update::StartUpdate` - Needs state for update
+//!   management
 //! - `Initialize::Service::Download::StartDownload` - Needs state for downloads
 //! - `Initialize::Service::Index::StartIndex` - Needs state for indexing
 //!
@@ -62,15 +64,11 @@
 //! - Returns Arc<ApplicationState> for thread-safe sharing
 //! - Safe for concurrent access across all services
 
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
+
 use log::{error, info};
 use tokio as _;
-
-use AirLibrary::{
-    ApplicationState,
-    Configuration::AirConfiguration,
-};
+use AirLibrary::{ApplicationState, Configuration::AirConfiguration};
 
 /// Create the shared application state
 ///
@@ -100,42 +98,38 @@ use AirLibrary::{
 /// - Add configuration validation before state creation
 /// - Implement state recovery from previous run
 /// - Add state snapshot for debugging
-pub async fn CreateState(
-    configuration: Arc<AirConfiguration>,
-) -> Result<Arc<ApplicationState>, String> {
-    info!("[State] Creating application state...");
-    
-    // Initialize state with timeout
-    let state_result = tokio::time::timeout(
-        Duration::from_secs(10),
-        ApplicationState::new(configuration.clone())
-    ).await;
-    
-    match state_result {
-        Ok(Ok(state)) => {
-            info!("[State] Application state initialized successfully");
-            Ok(Arc::new(state))
-        }
-        Ok(Err(e)) => {
-            error!("[State] Failed to initialize application state: {}", e);
-            Err(format!("Application state initialization failed: {}", e))
-        }
-        Err(_) => {
-            error!("[State] Application state initialization timed out");
-            Err("Application state initialization timed out".to_string())
-        }
-    }
+pub async fn CreateState(configuration:Arc<AirConfiguration>) -> Result<Arc<ApplicationState>, String> {
+	info!("[State] Creating application state...");
+
+	// Initialize state with timeout
+	let state_result =
+		tokio::time::timeout(Duration::from_secs(10), ApplicationState::new(configuration.clone())).await;
+
+	match state_result {
+		Ok(Ok(state)) => {
+			info!("[State] Application state initialized successfully");
+			Ok(Arc::new(state))
+		},
+		Ok(Err(e)) => {
+			error!("[State] Failed to initialize application state: {}", e);
+			Err(format!("Application state initialization failed: {}", e))
+		},
+		Err(_) => {
+			error!("[State] Application state initialization timed out");
+			Err("Application state initialization timed out".to_string())
+		},
+	}
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    
-    #[test]
-    #[ignore] // Requires actual configuration
-    async fn test_create_state() {
-        // This test requires proper configuration setup
-        // and is ignored for automated test runs.
-        // In practice, this would be an integration test.
-    }
+	use super::*;
+
+	#[test]
+	#[ignore] // Requires actual configuration
+	async fn test_create_state() {
+		// This test requires proper configuration setup
+		// and is ignored for automated test runs.
+		// In practice, this would be an integration test.
+	}
 }

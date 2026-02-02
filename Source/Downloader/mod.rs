@@ -1188,8 +1188,7 @@ impl DownloadManager {
 
 	/// Pause a download (supports resume)
 	pub async fn PauseDownload(&self, DownloadId:&str) -> Result<()> {
-		self.UpdateDownloadStatus(DownloadId, DownloadState::Paused, None, None)
-			.await?;
+		self.UpdateDownloadStatus(DownloadId, DownloadState::Paused, None, None).await?;
 		log::info!("[DownloadManager] Download paused [ID: {}]", DownloadId);
 		Ok(())
 	}

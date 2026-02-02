@@ -6,12 +6,12 @@
 //!
 //! Provides index update functionality for the File Indexer service,
 //! handling incremental updates to the index from file watching and
-/// manual trigger events.
+//! manual trigger events.
 //!
 //! ## Primary Responsibility
 //!
 //! Update the file index in response to file system changes, maintaining
-/// consistency between the in-memory index and the disk storage.
+//! consistency between the in-memory index and the disk storage.
 //!
 //! ## Secondary Responsibilities
 //!
@@ -58,14 +58,14 @@
 //! - Efficient symbol index updates
 //!
 //! ## Error Handling Strategy
-/
-/// Update operations log warnings for individual failures and continue,
-/// ensuring a single file error doesn't halt the entire update process.
+//!
+//! Update operations log warnings for individual failures and continue,
+//! ensuring a single file error doesn't halt the entire update process.
 //!
 //! ## Thread Safety
-/
-/// Update operations acquire write locks on shared state and return
-/// results for persistence.
+//!
+//! Update operations acquire write locks on shared state and return
+//! results for persistence.
 
 use std::{path::PathBuf, time::Duration};
 

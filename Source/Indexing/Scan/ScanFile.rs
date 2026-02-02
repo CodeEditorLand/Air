@@ -4,8 +4,9 @@
 //!
 //! ## Role in Air Architecture
 //!
-//! Provides individual file scanning functionality for the File Indexer service,
-//! handling reading, metadata extraction, and categorization of files for indexing.
+//! Provides individual file scanning functionality for the File Indexer
+//! service, handling reading, metadata extraction, and categorization of files
+//! for indexing.
 //!
 //! ## Primary Responsibility
 //!
@@ -68,7 +69,6 @@
 //!
 //! File scanning operations are designed for parallel execution and
 /// produce results that can be safely merged into shared state.
-
 use std::{
 	path::PathBuf,
 	time::{Duration, Instant},
@@ -76,19 +76,10 @@ use std::{
 
 use tokio::sync::RwLock;
 
-use crate::{
-	AirError,
-	Configuration::IndexingConfig,
-	Result,
-};
-
-use super::super::{FileMetadata, SymbolInfo};
-
-use super::Process::{
-	DetectEncoding,
-	DetectLanguage,
-	DetectMimeType,
-	ExtractSymbols,
+use crate::{AirError, Configuration::IndexingConfig, Result};
+use super::{
+	super::{FileMetadata, SymbolInfo},
+	Process::{DetectEncoding, DetectLanguage, DetectMimeType, ExtractSymbols},
 };
 
 /// Index a single file internally with comprehensive validation
@@ -103,10 +94,10 @@ use super::Process::{
 /// - Language detection
 /// - Symbol extraction for code files
 pub async fn IndexFileInternal(
-	file_path: &PathBuf,
-	config: &IndexingConfig,
-	_index_ref: &RwLock<super::super::FileIndex>,
-	_patterns: &[String],
+	file_path:&PathBuf,
+	config:&IndexingConfig,
+	_index_ref:&RwLock<super::super::FileIndex>,
+	_patterns:&[String],
 ) -> Result<(FileMetadata, Vec<SymbolInfo>)> {
 	let start_time = Instant::now();
 
@@ -131,13 +122,10 @@ pub async fn IndexFileInternal(
 	}
 
 	// File read with timeout protection
-	let content = tokio::time::timeout(
-		Duration::from_secs(30),
-		tokio::fs::read(file_path),
-	)
-	.await
-	.map_err(|_| AirError::FileSystem(format!("Timeout reading file: {} (30s limit)", file_path.display())))?
-	.map_err(|e| AirError::FileSystem(format!("Failed to read file: {}", e)))?;
+	let content = tokio::time::timeout(Duration::from_secs(30), tokio::fs::read(file_path))
+		.await
+		.map_err(|_| AirError::FileSystem(format!("Timeout reading file: {} (30s limit)", file_path.display())))?
+		.map_err(|e| AirError::FileSystem(format!("Failed to read file: {}", e)))?;
 
 	// Check for symbolic link
 	let is_symlink = std::fs::symlink_metadata(file_path)
@@ -183,9 +171,9 @@ pub async fn IndexFileInternal(
 
 	Ok((
 		FileMetadata {
-			path: file_path.clone(),
-			size: file_size,
-			modified: modified_time,
+			path:file_path.clone(),
+			size:file_size,
+			modified:modified_time,
 			mime_type,
 			language,
 			line_count,
@@ -193,15 +181,15 @@ pub async fn IndexFileInternal(
 			is_symlink,
 			permissions,
 			encoding,
-			indexed_at: chrono::Utc::now(),
-			symbol_count: symbols.len() as u32,
+			indexed_at:chrono::Utc::now(),
+			symbol_count:symbols.len() as u32,
 		},
 		symbols,
 	))
 }
 
 /// Validate file access and permissions before scanning
-pub async fn ValidateFileAccess(file_path: &PathBuf) -> bool {
+pub async fn ValidateFileAccess(file_path:&PathBuf) -> bool {
 	tokio::task::spawn_blocking({
 		let file_path = file_path.to_path_buf();
 		move || {
@@ -220,7 +208,7 @@ pub async fn ValidateFileAccess(file_path: &PathBuf) -> bool {
 }
 
 /// Calculate SHA-256 checksum for file content
-pub fn CalculateChecksum(content: &[u8]) -> String {
+pub fn CalculateChecksum(content:&[u8]) -> String {
 	use sha2::{Digest, Sha256};
 	let mut hasher = Sha256::new();
 	hasher.update(content);
@@ -229,7 +217,7 @@ pub fn CalculateChecksum(content: &[u8]) -> String {
 
 /// Get file permissions as string
 #[cfg(unix)]
-pub fn GetPermissionsString(metadata: &std::fs::Metadata) -> String {
+pub fn GetPermissionsString(metadata:&std::fs::Metadata) -> String {
 	use std::os::unix::fs::PermissionsExt;
 	let mode = metadata.permissions().mode();
 	let mut perms = String::new();
@@ -252,12 +240,10 @@ pub fn GetPermissionsString(metadata: &std::fs::Metadata) -> String {
 
 /// Get file permissions as string for non-Unix systems
 #[cfg(not(unix))]
-pub fn GetPermissionsString(_metadata: &std::fs::Metadata) -> String {
-	"--------".to_string()
-}
+pub fn GetPermissionsString(_metadata:&std::fs::Metadata) -> String { "--------".to_string() }
 
 /// Scan file and return just the metadata (without symbols)
-pub async fn ScanFileMetadata(file_path: &PathBuf) -> Result<FileMetadata> {
+pub async fn ScanFileMetadata(file_path:&PathBuf) -> Result<FileMetadata> {
 	let metadata = std::fs::metadata(file_path)
 		.map_err(|e| AirError::FileSystem(format!("Failed to get file metadata: {}", e)))?;
 
@@ -268,23 +254,23 @@ pub async fn ScanFileMetadata(file_path: &PathBuf) -> Result<FileMetadata> {
 	let modified_time = chrono::DateTime::<chrono::Utc>::from(modified);
 
 	Ok(FileMetadata {
-		path: file_path.clone(),
-		size: metadata.len(),
-		modified: modified_time,
-		mime_type: "application/octet-stream".to_string(),
-		language: None,
-		line_count: None,
-		checksum: String::new(),
-		is_symlink: metadata.file_type().is_symlink(),
-		permissions: GetPermissionsString(&metadata),
-		encoding: None,
-		indexed_at: chrono::Utc::now(),
-		symbol_count: 0,
+		path:file_path.clone(),
+		size:metadata.len(),
+		modified:modified_time,
+		mime_type:"application/octet-stream".to_string(),
+		language:None,
+		line_count:None,
+		checksum:String::new(),
+		is_symlink:metadata.file_type().is_symlink(),
+		permissions:GetPermissionsString(&metadata),
+		encoding:None,
+		indexed_at:chrono::Utc::now(),
+		symbol_count:0,
 	})
 }
 
 /// Check if file has been modified since last indexed
-pub fn FileModifiedSince(file_path: &PathBuf, last_indexed: chrono::DateTime<chrono::Utc>) -> Result<bool> {
+pub fn FileModifiedSince(file_path:&PathBuf, last_indexed:chrono::DateTime<chrono::Utc>) -> Result<bool> {
 	let metadata = std::fs::metadata(file_path)
 		.map_err(|e| AirError::FileSystem(format!("Failed to get file metadata: {}", e)))?;
 
@@ -298,7 +284,7 @@ pub fn FileModifiedSince(file_path: &PathBuf, last_indexed: chrono::DateTime<chr
 }
 
 /// Get file size with error handling
-pub async fn GetFileSize(file_path: &PathBuf) -> Result<u64> {
+pub async fn GetFileSize(file_path:&PathBuf) -> Result<u64> {
 	tokio::task::spawn_blocking({
 		let file_path = file_path.to_path_buf();
 		move || {
@@ -311,7 +297,7 @@ pub async fn GetFileSize(file_path: &PathBuf) -> Result<u64> {
 }
 
 /// Check if file is text-based (likely to be code or documentation)
-pub fn IsTextFile(metadata: &FileMetadata) -> bool {
+pub fn IsTextFile(metadata:&FileMetadata) -> bool {
 	metadata.mime_type.starts_with("text/")
 		|| metadata.mime_type.contains("json")
 		|| metadata.mime_type.contains("xml")
@@ -321,7 +307,7 @@ pub fn IsTextFile(metadata: &FileMetadata) -> bool {
 }
 
 /// Check if file is binary (not suitable for indexing)
-pub fn IsBinaryFile(metadata: &FileMetadata) -> bool {
+pub fn IsBinaryFile(metadata:&FileMetadata) -> bool {
 	!IsTextFile(metadata)
 		|| metadata.mime_type == "application/octet-stream"
 		|| metadata.mime_type == "application/zip"

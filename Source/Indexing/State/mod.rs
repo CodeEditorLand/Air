@@ -14,12 +14,3 @@
 
 pub mod CreateState;
 pub mod UpdateState;
-
-// Re-export commonly used types
-pub use CreateState::{
-	FileIndex,
-	FileMetadata,
-	SymbolInfo,
-	SymbolKind,
-	SymbolLocation,
-};

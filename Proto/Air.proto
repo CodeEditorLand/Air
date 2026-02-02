@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package air;
+package Air;
 
 // Air Service - The background daemon service for Land
 service AirService {
