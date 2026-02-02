@@ -1296,7 +1296,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
     // -------------------------------------------------------------------------
     Trace!("[Boot] [State] Initializing application state...");
     
-    let app_state: std::sync::Arc<ApplicationState> = match tokio::time::timeout(
+    let AppState: std::sync::Arc<ApplicationState> = match tokio::time::timeout(
         Duration::from_secs(10),
         ApplicationState::new(configuration.clone())
     ).await {
@@ -1325,7 +1325,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize each service with error handling
     let auth_service: std::sync::Arc<AuthenticationService> = match tokio::time::timeout(
         Duration::from_secs(10),
-        AuthenticationService::new(app_state.clone())
+        AuthenticationService::new(AppState.clone())
     ).await {
         Ok(Ok(svc)) => Arc::new(svc),
         Ok(Err(e)) => {
@@ -1340,7 +1340,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
     
     let update_manager: std::sync::Arc<UpdateManager> = match tokio::time::timeout(
         Duration::from_secs(10),
-        UpdateManager::new(app_state.clone())
+        UpdateManager::new(AppState.clone())
     ).await {
         Ok(Ok(svc)) => Arc::new(svc),
         Ok(Err(e)) => {
@@ -1355,7 +1355,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
     
     let download_manager: std::sync::Arc<DownloadManager> = match tokio::time::timeout(
         Duration::from_secs(10),
-        DownloadManager::new(app_state.clone())
+        DownloadManager::new(AppState.clone())
     ).await {
         Ok(Ok(svc)) => Arc::new(svc),
         Ok(Err(e)) => {
@@ -1370,7 +1370,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
     
     let file_indexer: std::sync::Arc<FileIndexer> = match tokio::time::timeout(
         Duration::from_secs(10),
-        FileIndexer::new(app_state.clone())
+        FileIndexer::new(AppState.clone())
     ).await {
         Ok(Ok(svc)) => Arc::new(svc),
         Ok(Err(e)) => {
@@ -1450,7 +1450,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create gRPC service implementation with all dependencies
     let vine_service = match AirLibrary::Vine::Server::AirVinegRPCService::AirVinegRPCService::new(
-        app_state.clone(),
+        AppState.clone(),
         auth_service.clone(),
         update_manager.clone(),
         download_manager.clone(),
@@ -1511,7 +1511,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
     
     // Start connection monitoring background task
     let connection_monitor_handle: tokio::task::JoinHandle<()> = tokio::spawn({
-        let app_state = app_state.clone();
+        let AppState = AppState.clone();
         let health_manager = health_manager.clone();
         async move {
             let mut interval = interval(Duration::from_secs(60)); // Check every minute
@@ -1519,24 +1519,24 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
                 interval.tick().await;
                 
                 // Update resource usage with error handling
-                if let Err(e) = app_state.update_resource_usage().await {
+                if let Err(e) = AppState.update_resource_usage().await {
                     warn!("[ConnectionMonitor] Failed to update resource usage: {}", e);
                 }
                 
                 // Get resource metrics
-                let resources = app_state.get_resource_usage().await;
+                let resources = AppState.get_resource_usage().await;
                 
                 // Record metrics
                 let metrics_collector = Metrics::get_metrics();
                 metrics_collector.update_resource_metrics(
                     resources.memory_usage_mb.saturating_mul(1024).saturating_mul(1024), // Convert MB to bytes
                     resources.cpu_usage_percent,
-                    app_state.get_active_connection_count().await as u64,
+                    AppState.get_active_connection_count().await as u64,
                     0, // Active threads - TODO: implement thread count
                 );
                 
                 // Clean up stale connections (5 minute timeout)
-                if let Err(e) = app_state.cleanup_stale_connections(300).await {
+                if let Err(e) = AppState.cleanup_stale_connections(300).await {
                     warn!("[ConnectionMonitor] Failed to cleanup stale connections: {}", e);
                 }
                 
@@ -1552,13 +1552,13 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
                 
-                debug!("[ConnectionMonitor] Active connections: {}", app_state.get_active_connection_count().await);
+                debug!("[ConnectionMonitor] Active connections: {}", AppState.get_active_connection_count().await);
             }
         }
     });
     
     // Register background task with error handling
-    if let Err(e) = app_state.register_background_task(connection_monitor_handle).await {
+    if let Err(e) = AppState.register_background_task(connection_monitor_handle).await {
         warn!("[Boot] Failed to register connection monitor: {}", e);
         // Non-fatal: continue monitoring may not be tracked
     }
@@ -1587,7 +1587,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
     });
     
     // Register health monitoring task with error handling
-    if let Err(e) = app_state.register_background_task(health_monitor_handle).await {
+    if let Err(e) = AppState.register_background_task(health_monitor_handle).await {
         warn!("[Boot] Failed to register health monitor: {}", e);
         // Non-fatal: continue monitoring may not be tracked
     }
@@ -1664,7 +1664,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
     info!("[Shutdown] Stopping background tasks...");
     if let Err(e) = tokio::time::timeout(
         Duration::from_secs(10),
-        app_state.stop_all_background_tasks()
+        AppState.stop_all_background_tasks()
     ).await {
         match e {
             Ok(inner) => warn!("[Shutdown] Failed to stop background tasks: {}", inner),
@@ -1694,8 +1694,8 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
     // Log final statistics
     info!("[Shutdown] Collecting final statistics...");
     
-    let metrics = app_state.get_metrics().await;
-    let resources = app_state.get_resource_usage().await;
+    let metrics = AppState.get_metrics().await;
+    let resources = AppState.get_resource_usage().await;
     let health_stats = health_manager.get_health_statistics().await;
     
     // Get final metrics data
