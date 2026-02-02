@@ -90,7 +90,7 @@ use crate::{AirError, ApplicationState::ApplicationState, Configuration::Configu
 /// Update manager implementation with full lifecycle support
 pub struct UpdateManager {
 	/// Application state
-	app_state:Arc<ApplicationState>,
+	AppState:Arc<ApplicationState>,
 
 	/// Current update status
 	update_status:Arc<RwLock<UpdateStatus>>,
@@ -413,11 +413,11 @@ pub struct UpdateTelemetry {
 
 impl UpdateManager {
 	/// Create a new update manager with comprehensive initialization
-	pub async fn new(app_state:Arc<ApplicationState>) -> Result<Self> {
-		let config = &app_state.configuration.updates;
+	pub async fn new(AppState:Arc<ApplicationState>) -> Result<Self> {
+		let config = &AppState.configuration.updates;
 
 		// Expand cache directory path
-		let cache_directory = ConfigurationManager::ExpandPath(&app_state.configuration.downloader.cache_directory)?;
+		let cache_directory = ConfigurationManager::ExpandPath(&AppState.configuration.downloader.cache_directory)?;
 
 		// Create cache directory if it doesn't exist
 		tokio::fs::create_dir_all(&cache_directory)
@@ -461,7 +461,7 @@ impl UpdateManager {
 		};
 
 		let manager = Self {
-			app_state,
+			AppState,
 			update_status:Arc::new(RwLock::new(UpdateStatus {
 				last_check:None,
 				update_available:false,
@@ -488,7 +488,7 @@ impl UpdateManager {
 
 		// Initialize service status
 		manager
-			.app_state
+			.AppState
 			.UpdateServiceStatus("updates", crate::ApplicationState::ServiceStatus::Running)
 			.await
 			.map_err(|e| AirError::Internal(e.to_string()))?;
@@ -545,7 +545,7 @@ impl UpdateManager {
 	///
 	/// Returns: Some(UpdateInfo) if an update is available, None otherwise
 	pub async fn CheckForUpdates(&self) -> Result<Option<UpdateInfo>> {
-		let config = &self.app_state.configuration.updates;
+		let config = &self.AppState.configuration.updates;
 		let start_time = std::time::Instant::now();
 
 		if !config.enabled {
@@ -1133,7 +1133,7 @@ impl UpdateManager {
 	/// Result<Option<UpdateInfo>> - Some if update available, None if
 	/// up-to-date
 	async fn FetchUpdateInfo(&self) -> Result<Option<UpdateInfo>> {
-		let config = &self.app_state.configuration.updates;
+		let config = &self.AppState.configuration.updates;
 
 		// Setup resilience patterns
 		let retry_policy = crate::Resilience::RetryPolicy {
@@ -2008,7 +2008,7 @@ impl UpdateManager {
 	/// - Logs any errors but doesn't fail the task
 	/// - Can run indefinitely until stopped
 	async fn BackgroundTask(&self) {
-		let config = &self.app_state.configuration.updates;
+		let config = &self.AppState.configuration.updates;
 
 		if !config.enabled {
 			log::info!("[UpdateManager] Background task: Updates are disabled");
@@ -2082,7 +2082,7 @@ impl UpdateManager {
 impl Clone for UpdateManager {
 	fn clone(&self) -> Self {
 		Self {
-			app_state:self.app_state.clone(),
+			AppState:self.AppState.clone(),
 			update_status:self.update_status.clone(),
 			cache_directory:self.cache_directory.clone(),
 			staging_directory:self.staging_directory.clone(),
