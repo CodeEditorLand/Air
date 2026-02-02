@@ -37,215 +37,215 @@ service AirService {
 
 // Authentication Messages
 message AuthenticationRequest {
-    string request_id = 1;
-    string username = 2;
-    string password = 3;
-    string provider = 4; // e.g., "github", "gitlab", "microsoft"
+    string RequestId = 1;
+    string Username = 2;
+    string Password = 3;
+    string Provider = 4; // e.g., "github", "gitlab", "microsoft"
 }
 
 message AuthenticationResponse {
-    string request_id = 1;
-    bool success = 2;
-    string token = 3;
-    string error = 4;
+    string RequestId = 1;
+    bool Success = 2;
+    string Token = 3;
+    string Error = 4;
 }
 
 // Update Messages
 message UpdateCheckRequest {
-    string request_id = 1;
-    string current_version = 2;
-    string channel = 3; // "stable", "beta", "nightly"
+    string RequestId = 1;
+    string CurrentVersion = 2;
+    string Channel = 3; // "stable", "beta", "nightly"
 }
 
 message UpdateCheckResponse {
-    string request_id = 1;
-    bool update_available = 2;
-    string version = 3;
-    string download_url = 4;
-    string release_notes = 5;
-    string error = 6;
+    string RequestId = 1;
+    bool UpdateAvailable = 2;
+    string Version = 3;
+    string DownloadURL = 4;
+    string ReleaseNotes = 5;
+    string Error = 6;
 }
 
 message ApplyUpdateRequest {
-    string request_id = 1;
-    string version = 2;
-    string update_path = 3;
+    string RequestId = 1;
+    string Version = 2;
+    string UpdatePath = 3;
 }
 
 message ApplyUpdateResponse {
-    string request_id = 1;
-    bool success = 2;
-    string error = 3;
+    string RequestId = 1;
+    bool Success = 2;
+    string Error = 3;
 }
 
 // Download Messages
 message DownloadRequest {
-    string request_id = 1;
-    string url = 2;
-    string destination_path = 3;
-    string checksum = 4; // Optional SHA256 checksum for verification
-    map<string, string> headers = 5;
+    string RequestId = 1;
+    string URL = 2;
+    string DestinationPath = 3;
+    string Checksum = 4; // Optional SHA256 checksum for verification
+    map<string, string> Headers = 5;
 }
 
 message DownloadResponse {
-    string request_id = 1;
-    bool success = 2;
-    string file_path = 3;
-    uint64 file_size = 4;
-    string checksum = 5;
-    string error = 6;
+    string RequestId = 1;
+    bool Success = 2;
+    string FilePath = 3;
+    uint64 FileSize = 4;
+    string Checksum = 5;
+    string Error = 6;
 }
 
 message DownloadStreamRequest {
-    string request_id = 1;
-    string url = 2;
-    map<string, string> headers = 3;
+    string RequestId = 1;
+    string URL = 2;
+    map<string, string> Headers = 3;
 }
 
 message DownloadStreamResponse {
-    string request_id = 1;
-    bytes chunk = 2;
-    uint64 total_size = 3;
-    uint64 downloaded = 4;
-    bool completed = 5;
-    string error = 6;
+    string RequestId = 1;
+    bytes Chunk = 2;
+    uint64 TotalSize = 3;
+    uint64 Downloaded = 4;
+    bool Completed = 5;
+    string Error = 6;
 }
 
 // Indexing Messages
 message IndexRequest {
-    string request_id = 1;
-    string path = 2;
-    repeated string patterns = 3; // File patterns to include
-    repeated string exclude_patterns = 4; // File patterns to exclude
-    uint32 max_depth = 5;
+    string RequestId = 1;
+    string Path = 2;
+    repeated string Patterns = 3; // File patterns to include
+    repeated string ExcludePatterns = 4; // File patterns to exclude
+    uint32 MaxDepth = 5;
 }
 
 message IndexResponse {
-    string request_id = 1;
-    bool success = 2;
-    uint32 files_indexed = 3;
-    uint64 total_size = 4;
-    string error = 5;
+    string RequestId = 1;
+    bool Success = 2;
+    uint32 FilesIndexed = 3;
+    uint64 TotalSize = 4;
+    string Error = 5;
 }
 
 message SearchRequest {
-    string request_id = 1;
-    string query = 2;
-    string path = 3;
-    uint32 max_results = 4;
+    string RequestId = 1;
+    string Query = 2;
+    string Path = 3;
+    uint32 MaxResults = 4;
 }
 
 message SearchResponse {
-    string request_id = 1;
-    repeated FileResult results = 2;
-    uint32 total_results = 3;
-    string error = 4;
+    string RequestId = 1;
+    repeated FileResult Results = 2;
+    uint32 TotalResults = 3;
+    string Error = 4;
 }
 
 message FileResult {
-    string path = 1;
-    uint64 size = 2;
-    string match_preview = 3;
-    uint32 line_number = 4;
+    string Path = 1;
+    uint64 Size = 2;
+    string MatchPreview = 3;
+    uint32 LineNumber = 4;
 }
 
 message FileInfoRequest {
-    string request_id = 1;
-    string path = 2;
+    string RequestId = 1;
+    string Path = 2;
 }
 
 message FileInfoResponse {
-    string request_id = 1;
-    bool exists = 2;
-    uint64 size = 3;
-    string mime_type = 4;
-    string checksum = 5;
-    uint64 modified_time = 6;
-    string error = 7;
+    string RequestId = 1;
+    bool Exists = 2;
+    uint64 Size = 3;
+    string MimeType = 4;
+    string Checksum = 5;
+    uint64 ModifiedTime = 6;
+    string Error = 7;
 }
 
 // Status Messages
 message StatusRequest {
-    string request_id = 1;
+    string RequestId = 1;
 }
 
 message StatusResponse {
-    string version = 1;
-    uint64 uptime_seconds = 2;
-    uint64 total_requests = 3;
-    uint64 successful_requests = 4;
-    uint64 failed_requests = 5;
-    double average_response_time = 6;
-    double memory_usage_mb = 7;
-    double cpu_usage_percent = 8;
-    uint32 active_requests = 9;
+    string Version = 1;
+    uint64 UptimeSeconds = 2;
+    uint64 TotalRequests = 3;
+    uint64 SuccessfulRequests = 4;
+    uint64 FailedRequests = 5;
+    double AverageResponseTime = 6;
+    double MemoryUsageMb = 7;
+    double CPUUsagePercent = 8;
+    uint32 ActiveRequests = 9;
 }
 
 message HealthCheckRequest {}
 
 message HealthCheckResponse {
-    bool healthy = 1;
-    uint64 timestamp = 2;
+    bool Healthy = 1;
+    uint64 Timestamp = 2;
 }
 
 message MetricsRequest {
-    string request_id = 1;
-    string metric_type = 2; // "performance", "resources", "requests"
+    string RequestId = 1;
+    string MetricType = 2; // "performance", "resources", "requests"
 }
 
 message MetricsResponse {
-    string request_id = 1;
-    map<string, string> metrics = 2;
-    string error = 3;
+    string RequestId = 1;
+    map<string, string> Metrics = 2;
+    string Error = 3;
 }
 
 // Resource Management Messages
 message ResourceUsageRequest {
-    string request_id = 1;
+    string RequestId = 1;
 }
 
 message ResourceUsageResponse {
-    string request_id = 1;
-    double memory_usage_mb = 2;
-    double cpu_usage_percent = 3;
-    double disk_usage_mb = 4;
-    double network_usage_mbps = 5;
-    string error = 6;
+    string RequestId = 1;
+    double MemoryUsageMb = 2;
+    double CPUUsagePercent = 3;
+    double DiskUsageMb = 4;
+    double NetworkUsageMbps = 5;
+    string Error = 6;
 }
 
 message ResourceLimitsRequest {
-    string request_id = 1;
-    uint32 memory_limit_mb = 2;
-    uint32 cpu_limit_percent = 3;
-    uint32 disk_limit_mb = 4;
+    string RequestId = 1;
+    uint32 MemoryLimitMb = 2;
+    uint32 CPULimitPercent = 3;
+    uint32 DiskLimitMb = 4;
 }
 
 message ResourceLimitsResponse {
-    string request_id = 1;
-    bool success = 2;
-    string error = 3;
+    string RequestId = 1;
+    bool Success = 2;
+    string Error = 3;
 }
 
 // Configuration Messages
 message ConfigurationRequest {
-    string request_id = 1;
-    string section = 2; // "grpc", "authentication", "updates", etc.
+    string RequestId = 1;
+    string Section = 2; // "grpc", "authentication", "updates", etc.
 }
 
 message ConfigurationResponse {
-    string request_id = 1;
-    map<string, string> configuration = 2;
-    string error = 3;
+    string RequestId = 1;
+    map<string, string> Configuration = 2;
+    string Error = 3;
 }
 
 message UpdateConfigurationRequest {
-    string request_id = 1;
-    string section = 2;
-    map<string, string> updates = 3;
+    string RequestId = 1;
+    string Section = 2;
+    map<string, string> Updates = 3;
 }
 
 message UpdateConfigurationResponse {
-    string request_id = 1;
-    bool success = 2;
-    string error = 3;
+    string RequestId = 1;
+    bool Success = 2;
+    string Error = 3;
 }
