@@ -1187,23 +1187,23 @@ impl DownloadManager {
 	}
 
 	/// Pause a download (supports resume)
-	pub async fn PauseDownload(&self, download_id:&str) -> Result<()> {
-		self.UpdateDownloadStatus(download_id, DownloadState::Paused, None, None)
+	pub async fn PauseDownload(&self, DownloadId:&str) -> Result<()> {
+		self.UpdateDownloadStatus(DownloadId, DownloadState::Paused, None, None)
 			.await?;
-		log::info!("[DownloadManager] Download paused [ID: {}]", download_id);
+		log::info!("[DownloadManager] Download paused [ID: {}]", DownloadId);
 		Ok(())
 	}
 
 	/// Resume a paused download
-	pub async fn ResumeDownload(&self, download_id:&str) -> Result<()> {
-		if let Some(status) = self.GetDownloadStatus(download_id).await {
+	pub async fn ResumeDownload(&self, DownloadId:&str) -> Result<()> {
+		if let Some(status) = self.GetDownloadStatus(DownloadId).await {
 			if status.status == DownloadState::Paused {
-				self.UpdateDownloadStatus(download_id, DownloadState::Resuming, None, None)
+				self.UpdateDownloadStatus(DownloadId, DownloadState::Resuming, None, None)
 					.await?;
 				// The download loop handles the actual resume
-				self.UpdateDownloadStatus(download_id, DownloadState::Downloading, None, None)
+				self.UpdateDownloadStatus(DownloadId, DownloadState::Downloading, None, None)
 					.await?;
-				log::info!("[DownloadManager] Download resumed [ID: {}]", download_id);
+				log::info!("[DownloadManager] Download resumed [ID: {}]", DownloadId);
 			} else {
 				return Err(AirError::Network("Can only resume paused downloads".to_string()));
 			}
@@ -1215,7 +1215,7 @@ impl DownloadManager {
 
 	/// Get active download count
 	pub async fn GetActiveDownloadCount(&self) -> usize {
-		let downloads = self.active_downloads.read().await;
+		let downloads = self.ActiveDownloads.read().await;
 		downloads
 			.iter()
 			.filter(|(_, s)| {
@@ -1245,23 +1245,23 @@ impl DownloadManager {
 
 		let destination = if destination.is_empty() {
 			let filename = url.split('/').last().unwrap_or("download.bin");
-			self.cache_directory.join(filename)
+			self.CacheDirectory.join(filename)
 		} else {
 			ConfigurationManager::ExpandPath(&destination)?
 		};
 
 		let queued_download = QueuedDownload {
-			download_id:DownloadId.clone(),
+			DownloadId:DownloadId.clone(),
 			url,
 			destination,
 			checksum,
 			priority,
-			added_at:chrono::Utc::now(),
-			max_file_size:None,
-			validate_disk_space:true,
+			AddedAt:chrono::Utc::now(),
+			MaxFileSize:None,
+			ValidateDiskSpace:true,
 		};
 
-		let mut queue = self.download_queue.write().await;
+		let mut queue = self.DownloadQueue.write().await;
 		queue.push_back(queued_download);
 
 		// Sort by priority (higher priority first)
@@ -1269,7 +1269,7 @@ impl DownloadManager {
 			match b.priority.cmp(&a.priority) {
 				std::cmp::Ordering::Equal => {
 					// If same priority, use added_at (earlier first)
-					a.added_at.cmp(&b.added_at)
+					a.AddedAt.cmp(&b.AddedAt)
 				},
 				order => order,
 			}
@@ -1277,7 +1277,7 @@ impl DownloadManager {
 
 		{
 			let mut stats = self.statistics.write().await;
-			stats.queued_downloads += 1;
+			stats.QueuedDownloads += 1;
 		}
 
 		log::info!(
@@ -1291,10 +1291,10 @@ impl DownloadManager {
 
 	/// Process next download from queue
 	pub async fn ProcessQueue(&self) -> Result<Option<String>> {
-		let mut queue = self.download_queue.write().await;
+		let mut queue = self.DownloadQueue.write().await;
 
 		if let Some(queued) = queue.pop_front() {
-			let download_id = queued.download_id.clone();
+			let download_id = queued.DownloadId.clone();
 			drop(queue); // Release lock before starting download
 
 			let config = DownloadConfig {
@@ -1302,14 +1302,14 @@ impl DownloadManager {
 				destination:queued.destination.to_string_lossy().to_string(),
 				checksum:queued.checksum.clone(),
 				priority:queued.priority,
-				max_file_size:queued.max_file_size,
-				validate_disk_space:queued.validate_disk_space,
+				MaxFileSize:queued.MaxFileSize,
+				ValidateDiskSpace:queued.ValidateDiskSpace,
 				..Default::default()
 			};
 
 			{
 				let mut stats = self.statistics.write().await;
-				stats.queued_downloads = stats.queued_downloads.saturating_sub(1);
+				stats.QueuedDownloads = stats.QueuedDownloads.saturating_sub(1);
 			}
 
 			// Spawn download task in background
@@ -1368,7 +1368,7 @@ impl DownloadManager {
 
 	/// Clean up completed downloads from active tracking
 	async fn CleanupCompletedDownloads(&self) {
-		let mut downloads = self.active_downloads.write().await;
+		let mut downloads = self.ActiveDownloads.write().await;
 
 		let mut cleaned_count = 0;
 		downloads.retain(|_, download| {
@@ -1392,7 +1392,7 @@ impl DownloadManager {
 		let max_age_days = 7;
 		let now = chrono::Utc::now();
 
-		let mut entries = tokio::fs::read_dir(&self.cache_directory)
+		let mut entries = tokio::fs::read_dir(&self.CacheDirectory)
 			.await
 			.map_err(|e| AirError::FileSystem(format!("Failed to read cache directory: {}", e)))?;
 
@@ -1413,7 +1413,7 @@ impl DownloadManager {
 
 				// Skip if file is being actively used (check for active downloads)
 				let IsActive = {
-					let downloads = self.active_downloads.read().await;
+					let downloads = self.ActiveDownloads.read().await;
 					downloads.values().any(|d| d.destination == path)
 				};
 
@@ -1462,7 +1462,7 @@ impl DownloadManager {
 
 		// Cancel all active downloads - collect IDs first
 		let ids_to_cancel:Vec<String> = {
-			let downloads = self.active_downloads.read().await;
+			let downloads = self.ActiveDownloads.read().await;
 			downloads
 				.iter()
 				.filter(|(_, s)| matches!(s.status, DownloadState::Downloading))
@@ -1477,7 +1477,7 @@ impl DownloadManager {
 
 		// Stop service status
 		let _ = self
-			.app_state
+			.AppState
 			.UpdateServiceStatus("downloader", crate::ApplicationState::ServiceStatus::Stopped)
 			.await;
 	}
@@ -1489,7 +1489,7 @@ impl DownloadManager {
 	pub async fn SetBandwidthLimit(&mut self, mb_per_sec:usize) {
 		// Update semaphore permits (1 permit = 1MB)
 		let permits = mb_per_sec.max(1).min(1000);
-		self.bandwidth_limiter = Arc::new(Semaphore::new(permits));
+		self.BandwidthLimiter = Arc::new(Semaphore::new(permits));
 		log::info!("[DownloadManager] Bandwidth limit set to {} MB/s", mb_per_sec);
 	}
 
@@ -1498,7 +1498,7 @@ impl DownloadManager {
 	/// TODO: Add adaptive concurrency based on network conditions
 	pub async fn SetMaxConcurrentDownloads(&mut self, max:usize) {
 		let permits = max.max(1).min(20);
-		self.concurrent_limiter = Arc::new(Semaphore::new(permits));
+		self.ConcurrentLimiter = Arc::new(Semaphore::new(permits));
 		log::info!("[DownloadManager] Max concurrent downloads set to {}", max);
 	}
 }
@@ -1506,10 +1506,10 @@ impl DownloadManager {
 impl Clone for DownloadManager {
 	fn clone(&self) -> Self {
 		Self {
-			app_state:self.app_state.clone(),
-			active_downloads:self.active_downloads.clone(),
-			download_queue:self.download_queue.clone(),
-			cache_directory:self.cache_directory.clone(),
+			AppState:self.AppState.clone(),
+			active_downloads:self.ActiveDownloads.clone(),
+			download_queue:self.DownloadQueue.clone(),
+			cache_directory:self.CacheDirectory.clone(),
 			client:self.client.clone(),
 			checksum_verifier:self.checksum_verifier.clone(),
 			bandwidth_limiter:self.bandwidth_limiter.clone(),
@@ -1645,7 +1645,7 @@ impl DownloadManager {
 		let DownloadId = Utility::GenerateRequestId();
 		let DestinationPath = if destination.is_empty() {
 			let filename = sanitized_url.split('/').last().unwrap_or("download.bin");
-			self.cache_directory.join(filename)
+			self.CacheDirectory.join(filename)
 		} else {
 			ConfigurationManager::ExpandPath(&destination)?
 		};
@@ -1741,7 +1741,7 @@ impl DownloadManager {
 			size:total_size,
 			checksum:actual_checksum,
 			duration:Duration::from_secs(0),
-			average_rate:0,
+			AverageRate:0,
 		})
 	}
 
