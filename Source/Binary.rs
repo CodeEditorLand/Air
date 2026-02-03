@@ -1554,7 +1554,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 				// Record metrics
 				let metrics_collector = Metrics::get_metrics();
 				metrics_collector.update_resource_metrics(
-					resources.memory_usage_mb.saturating_mul(1024).saturating_mul(1024), // Convert MB to bytes
+					resources.MemoryUsageMb.saturating_mul(1024).saturating_mul(1024), // Convert MB to bytes
 					resources.cpu_usage_percent,
 					AppState.get_active_connection_count().await as u64,
 					0, // Active threads - TODO: implement thread count
@@ -1722,13 +1722,13 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 	info!("[Shutdown] Final Statistics");
 	info!("===========================================");
 	info!("[Shutdown] Requests:");
-	info!("  - Successful: {}", metrics.successful_requests);
-	info!("  - Failed: {}", metrics.failed_requests);
+	info!("  - Successful: {}", metrics.SuccessfulRequests);
+	info!("  - Failed: {}", metrics.FailedRequests);
 	info!("[Shutdown] Metrics:");
 	info!("  - Success rate: {:.2}%", metrics_data.success_rate());
 	info!("  - Error rate: {:.2}%", metrics_data.error_rate());
 	info!("[Shutdown] Resources:");
-	info!("  - Memory: {:.2} MB", resources.memory_usage_mb);
+	info!("  - Memory: {:.2} MB", resources.MemoryUsageMb);
 	info!("  - CPU: {:.2}%", resources.cpu_usage_percent);
 	info!("[Shutdown] Health:");
 	info!("  - Overall: {:.2}%", health_stats.overall_health_percentage());

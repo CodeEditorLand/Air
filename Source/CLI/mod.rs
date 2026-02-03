@@ -1151,8 +1151,8 @@ impl CliHandler {
 			output.push_str(&format!(
 				"[{}] {} - {}\n",
 				entry.timestamp.format("%Y-%m-%d %H:%M:%S"),
-				entry.level,
-				entry.message
+				entry.Level,
+				entry.Message
 			));
 		}
 

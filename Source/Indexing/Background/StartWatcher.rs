@@ -81,7 +81,7 @@ use crate::{
 	Result,
 };
 
-use super::super::FileIndex;
+use crate::Indexing::State::CreateState::{FileIndex, SymbolLocation};
 
 /// Maximum number of parallel watch event processors
 const MAX_WATCH_PROCESSORS: usize = 5;
@@ -99,7 +99,7 @@ pub struct BackgroundIndexerContext {
 	/// Semaphore for limiting parallel operations
 	pub indexing_semaphore: Arc<Semaphore>,
 	/// Debounced event handler
-	pub debounced_handler: Arc<super::WatchFile::DebouncedEventHandler>,
+	pub debounced_handler: Arc<crate::Indexing::Watch::WatchFile::DebouncedEventHandler>,
 }
 
 impl BackgroundIndexerContext {
@@ -113,7 +113,7 @@ impl BackgroundIndexerContext {
 			corruption_detected: Arc::new(Mutex::new(false)),
 			file_watcher: Arc::new(Mutex::new(None)),
 			indexing_semaphore: Arc::new(Semaphore::new(MAX_WATCH_PROCESSORS)),
-			debounced_handler: Arc::new(super::WatchFile::DebouncedEventHandler::new()),
+			debounced_handler: Arc::new(crate::Indexing::Watch::WatchFile::DebouncedEventHandler::new()),
 		}
 	}
 }
@@ -152,9 +152,9 @@ pub async fn StartFileWatcher(
 
 				tokio::spawn(async move {
 					// Convert event to change type and add to debounced handler
-					if let Some(change_type) = super::WatchFile::EventKindToChangeType(event.kind) {
-						for path in &event.paths {
-							if super::WatchFile::ShouldWatchPath(path, &super::WatchFile::GetDefaultIgnoredPatterns()) {
+					if let Some(change_type) = crate::Indexing::Watch::WatchFile::EventKindToChangeType(event.kind) {
+							for path in &event.paths {
+								if crate::Indexing::Watch::WatchFile::ShouldWatchPath(path, &crate::Indexing::Watch::WatchFile::GetDefaultIgnoredPatterns()) {
 								debounced_handler.AddChange(path.clone(), change_type).await;
 							}
 						}
@@ -169,7 +169,7 @@ pub async fn StartFileWatcher(
 	// Watch all specified paths
 	for path in &paths {
 		if path.exists() {
-			match super::WatchFile::ValidateWatchPath(path) {
+			match crate::Indexing::Watch::WatchFile::ValidateWatchPath(path) {
 				Ok(()) => {
 					watcher
 						.watch(path, notify::RecursiveMode::Recursive)
@@ -200,7 +200,8 @@ pub fn StartDebounceProcessor(context: Arc<BackgroundIndexerContext>) -> JoinHan
 		let debounce_cutoff = Duration::from_millis(500);
 
 		loop {
-			tokio::time::sleep(interval).await {
+			tokio::time::sleep(interval).await;
+			{
 				// Check corruption flag
 				if *context.corruption_detected.lock().await {
 					log::warn!("[StartWatcher] Index corrupted, pausing debounce processing");
@@ -232,7 +233,7 @@ pub fn StartDebounceProcessor(context: Arc<BackgroundIndexerContext>) -> JoinHan
 
 /// Start background tasks for periodic indexing
 pub async fn StartBackgroundTasks(
-	context: &BackgroundIndexerContext,
+	context: Arc<BackgroundIndexerContext>,
 ) -> Result<tokio::task::JoinHandle<()>> {
 	let config = &context.app_state.Configuration.Indexing;
 
@@ -241,7 +242,7 @@ pub async fn StartBackgroundTasks(
 		return Err(AirError::Configuration("Background indexing is disabled".to_string()));
 	}
 
-	let handle = tokio::spawn(BackgroundTask(context.clone()));
+	let handle = tokio::spawn(BackgroundTask(context));
 
 	log::info!("[StartWatcher] Background tasks started");
 
@@ -275,7 +276,8 @@ async fn BackgroundTask(context: Arc<BackgroundIndexerContext>) {
 	);
 
 	loop {
-		interval.tick().await {
+		interval.tick().await;
+		{
 			// Check corruption flag
 			if *context.corruption_detected.lock().await {
 				log::warn!("[StartWatcher] Index corrupted, skipping background update");
@@ -285,8 +287,8 @@ async fn BackgroundTask(context: Arc<BackgroundIndexerContext>) {
 			log::info!("[StartWatcher] Running periodic background index...");
 
 			// Re-index configured directories
-			let directories = config.index_directory.clone();
-			if let Err(e) = super::Scan::ScanDirectory::ScanDirectory(
+			let directories = config.IndexDirectory.clone();
+			if let Err(e) = crate::Indexing::Scan::ScanDirectory::ScanDirectory(
 				&directories,
 				vec![],
 				&config,
@@ -319,14 +321,14 @@ pub struct WatcherStatus {
 
 /// Start all background components (watcher and tasks)
 pub async fn StartAll(
-	context: &BackgroundIndexerContext,
+	context: Arc<BackgroundIndexerContext>,
 	watch_paths: Vec<PathBuf>,
 ) -> Result<(Option<JoinHandle<()>>, Option<JoinHandle<()>>)> {
 	let watcher_handle = if config_watch_enabled(&context) {
-		match StartFileWatcher(context, watch_paths).await {
+		match StartFileWatcher(&context, watch_paths).await {
 			Ok(()) => {
 				// Start debounce processor
-				Some(StartDebounceProcessor(Arc::clone(&(*context))))
+				Some(StartDebounceProcessor(context.clone()))
 			},
 			Err(e) => {
 				log::error!("[StartWatcher] Failed to start file watcher: {}", e);
@@ -337,7 +339,7 @@ pub async fn StartAll(
 		None
 	};
 
-	let background_handle = match StartBackgroundTasks(context).await {
+	let background_handle = match StartBackgroundTasks(context.clone()).await {
 		Ok(handle) => Some(handle),
 		Err(e) => {
 			log::warn!("[StartWatcher] Failed to start background tasks: {}", e);
@@ -356,5 +358,5 @@ pub async fn StopAll(context: &BackgroundIndexerContext) {
 
 /// Check if watching is enabled in configuration
 fn config_watch_enabled(context: &BackgroundIndexerContext) -> bool {
-	context.app_state.Configuration.Indexing.FileWatcherEnabled
+	context.app_state.Configuration.Indexing.Enabled
 }

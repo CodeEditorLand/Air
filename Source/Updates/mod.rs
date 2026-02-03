@@ -414,10 +414,10 @@ pub struct UpdateTelemetry {
 impl UpdateManager {
 	/// Create a new update manager with comprehensive initialization
 	pub async fn new(AppState:Arc<ApplicationState>) -> Result<Self> {
-		let config = &AppState.configuration.updates;
+		let config = &AppState.Configuration.Updates;
 
 		// Expand cache directory path
-		let cache_directory = ConfigurationManager::ExpandPath(&AppState.configuration.downloader.cache_directory)?;
+		let cache_directory = ConfigurationManager::ExpandPath(&AppState.Configuration.Downloader.cache_directory)?;
 
 		// Create cache directory if it doesn't exist
 		tokio::fs::create_dir_all(&cache_directory)
@@ -441,9 +441,9 @@ impl UpdateManager {
 		let PlatformConfigClone = PlatformConfig.clone();
 
 		// Determine update channel from configuration
-		let update_channel = if config.channel == "insiders" {
+		let update_channel = if config.Channel == "insiders" {
 			UpdateChannel::Insiders
-		} else if config.channel == "preview" {
+		} else if config.Channel == "preview" {
 			UpdateChannel::Preview
 		} else {
 			UpdateChannel::Stable
@@ -545,10 +545,10 @@ impl UpdateManager {
 	///
 	/// Returns: Some(UpdateInfo) if an update is available, None otherwise
 	pub async fn CheckForUpdates(&self) -> Result<Option<UpdateInfo>> {
-		let config = &self.AppState.configuration.updates;
+		let config = &self.AppState.Configuration.Updates;
 		let start_time = std::time::Instant::now();
 
-		if !config.enabled {
+		if !config.Enabled {
 			log::debug!("[UpdateManager] Updates are disabled");
 			return Ok(None);
 		}
@@ -625,7 +625,7 @@ impl UpdateManager {
 				.await;
 
 			// Auto-download if configured
-			if config.auto_download {
+			if config.AutoDownload {
 				if let Err(e) = self.DownloadUpdate(info).await {
 					log::error!("[UpdateManager] Auto-download failed: {}", e);
 					// Don't fail the check, just log the error
@@ -1133,17 +1133,17 @@ impl UpdateManager {
 	/// Result<Option<UpdateInfo>> - Some if update available, None if
 	/// up-to-date
 	async fn FetchUpdateInfo(&self) -> Result<Option<UpdateInfo>> {
-		let config = &self.AppState.configuration.updates;
+		let config = &self.AppState.Configuration.Updates;
 
 		// Setup resilience patterns
 		let retry_policy = crate::Resilience::RetryPolicy {
-			max_retries:3,
-			initial_interval_ms:1000,
-			max_interval_ms:16000,
-			backoff_multiplier:2.0,
-			jitter_factor:0.1,
-			budget_per_minute:50,
-			error_classification:std::collections::HashMap::new(),
+			MaxRetries:3,
+			InitialIntervalMs:1000,
+			MaxIntervalMs:16000,
+			BackoffMultiplier:2.0,
+			JitterFactor:0.1,
+			BudgetPerMinute:50,
+			ErrorClassification:std::collections::HashMap::new(),
 		};
 
 		let _retry_manager = crate::Resilience::RetryManager::new(retry_policy.clone());
@@ -1167,7 +1167,7 @@ impl UpdateManager {
 			// Build request URL with all necessary parameters
 			let update_url = format!(
 				"{}/check?version={}&platform={}&arch={}&channel={}",
-				config.update_server_url,
+				config.UpdateServerUrl,
 				current_version,
 				self.platform_config.platform,
 				self.platform_config.arch,
@@ -1214,10 +1214,10 @@ impl UpdateManager {
 									circuit_breaker.RecordFailure().await;
 									log::error!("[UpdateManager] Failed to parse update info: {}", e);
 
-									if attempt < retry_policy.max_retries {
+									if attempt < retry_policy.MaxRetries {
 										attempt += 1;
 										let delay = Duration::from_millis(
-											retry_policy.initial_interval_ms * 2_u32.pow(attempt as u32) as u64,
+											retry_policy.InitialIntervalMs * 2_u32.pow(attempt as u32) as u64,
 										);
 										sleep(delay).await;
 										continue;
@@ -1234,10 +1234,10 @@ impl UpdateManager {
 							circuit_breaker.RecordFailure().await;
 							log::warn!("[UpdateManager] Update server returned status: {}", status);
 
-							if attempt < retry_policy.max_retries {
+							if attempt < retry_policy.MaxRetries {
 								attempt += 1;
 								let delay = Duration::from_millis(
-									retry_policy.initial_interval_ms * 2_u32.pow(attempt as u32) as u64,
+									retry_policy.InitialIntervalMs * 2_u32.pow(attempt as u32) as u64,
 								);
 								sleep(delay).await;
 								continue;
@@ -1251,10 +1251,10 @@ impl UpdateManager {
 					circuit_breaker.RecordFailure().await;
 					log::warn!("[UpdateManager] Failed to check for updates: {}", e);
 
-					if attempt < retry_policy.max_retries {
+					if attempt < retry_policy.MaxRetries {
 						attempt += 1;
 						let delay =
-							Duration::from_millis(retry_policy.initial_interval_ms * 2_u32.pow(attempt as u32) as u64);
+							Duration::from_millis(retry_policy.InitialIntervalMs * 2_u32.pow(attempt as u32) as u64);
 						sleep(delay).await;
 						continue;
 					} else {
@@ -2008,19 +2008,19 @@ impl UpdateManager {
 	/// - Logs any errors but doesn't fail the task
 	/// - Can run indefinitely until stopped
 	async fn BackgroundTask(&self) {
-		let config = &self.AppState.configuration.updates;
+		let config = &self.AppState.Configuration.Updates;
 
-		if !config.enabled {
+		if !config.Enabled {
 			log::info!("[UpdateManager] Background task: Updates are disabled");
 			return;
 		}
 
-		let check_interval = Duration::from_secs(config.check_interval_hours as u64 * 3600);
+		let check_interval = Duration::from_secs(config.CheckIntervalHours as u64 * 3600);
 		let mut interval = interval(check_interval);
 
 		log::info!(
 			"[UpdateManager] Background task: Checking for updates every {} hours",
-			config.check_interval_hours
+			config.CheckIntervalHours
 		);
 
 		loop {

@@ -67,7 +67,7 @@ use tokio::sync::RwLock;
 
 use crate::{AirError, Result};
 
-use super::super::{FileIndex};
+use crate::Indexing::State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolKind, SymbolLocation};
 
 /// Save index to disk with atomic write
 pub async fn SaveIndex(
@@ -124,7 +124,7 @@ pub async fn LoadIndex(index_directory: &Path) -> Result<FileIndex> {
 	}
 
 	// Verify index checksum
-	use super::super::State::CreateState::CalculateIndexChecksum;
+	use crate::Indexing::State::CreateState::{CalculateIndexChecksum, CreateNewIndex};
 	let expected_checksum = CalculateIndexChecksum(&index)?;
 	if index.index_checksum != expected_checksum {
 		return Err(AirError::Serialization(format!(
@@ -165,7 +165,7 @@ pub async fn LoadOrCreateIndex(index_directory: &Path) -> Result<FileIndex> {
 
 /// Create a new empty index
 fn CreateNewIndex() -> FileIndex {
-	use super::super::State::CreateState::{CreateNewIndex as StateCreateNewIndex};
+	use crate::Indexing::State::CreateState::CreateNewIndex as StateCreateNewIndex;
 	StateCreateNewIndex()
 }
 
@@ -178,7 +178,7 @@ pub async fn EnsureIndexDirectory(index_directory: &Path) -> Result<()> {
 }
 
 /// Backup corrupted index before creating new one
-async fn BackupCorruptedIndex(index_directory: &Path) -> Result<()> {
+pub async fn BackupCorruptedIndex(index_directory: &Path) -> Result<()> {
 	let index_file = index_directory.join("file_index.json");
 	let backup_file = index_directory.join(format!(
 		"file_index.corrupted.{}.json",

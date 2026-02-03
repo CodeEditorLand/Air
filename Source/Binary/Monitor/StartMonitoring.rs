@@ -142,13 +142,13 @@ pub async fn StartMonitoring(
                 }
                 
                 // Get resource metrics
-                let resources = app_state.get_resource_usage().await;
+                let resources = app_state.GetResourceUsage().await;
                 
                 // Record metrics
                 let metrics_collector = Metrics::get_metrics();
                 metrics_collector.update_resource_metrics(
-                    resources.memory_usage_mb.saturating_mul(1024).saturating_mul(1024), // Convert MB to bytes
-                    resources.cpu_usage_percent,
+                    resources.MemoryUsageMb.saturating_mul(1024).saturating_mul(1024), // Convert MB to bytes
+                    resources.CPUUsagePercent,
                     app_state.get_active_connection_count().await as u64,
                     0, // Active threads - TODO: implement thread count
                 );

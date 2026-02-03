@@ -67,13 +67,13 @@
 //! Update operations acquire write locks on shared state and return
 //! results for persistence.
 
-use std::{path::PathBuf, time::Duration};
+use std::{path::PathBuf, sync::Arc, time::Duration};
 
-use tokio::{sync::RwLock, time::Instant};
+use tokio::{sync::RwLock, sync::Semaphore, time::Instant};
 
 use crate::{AirError, Configuration::IndexingConfig, Result};
 
-use super::super::{FileIndex, FileMetadata, SymbolInfo};
+use crate::Indexing::State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolLocation};
 
 /// Update index for a single file
 pub async fn UpdateSingleFile(
@@ -86,7 +86,7 @@ pub async fn UpdateSingleFile(
 	// Check if file still exists
 	if !file_path.exists() {
 		// File was deleted, remove from index
-		super::super::State::UpdateState::RemoveFileFromIndex(index, file_path)?;
+		crate::Indexing::State::UpdateState::RemoveFileFromIndex(index, file_path)?;
 		log::debug!("[UpdateIndex] Removed deleted file: {}", file_path.display());
 		return Ok(None);
 	}
@@ -105,7 +105,7 @@ pub async fn UpdateSingleFile(
 	let needs_update = match index.files.get(file_path) {
 		Some(old_metadata) => {
 			// Update if checksums don't match (content changed)
-			let checksum = super::ScanFile::CalculateChecksum(&tokio::fs::read(file_path).await.unwrap_or_default());
+			let checksum = crate::Indexing::Scan::ScanFile::CalculateChecksum(&tokio::fs::read(file_path).await.unwrap_or_default());
 			old_metadata.checksum != checksum
 		},
 		None => {
@@ -120,14 +120,15 @@ pub async fn UpdateSingleFile(
 	}
 
 	// Scan the file
-	use super::{ScanFile::IndexFileInternal, Process::{DetectEncoding, DetectLanguage, DetectMimeType}};
-	use super::super::State::UpdateState::UpdateIndexMetadata;
+	use crate::Indexing::Scan::ScanFile::IndexFileInternal;
+	use crate::Indexing::Process::ProcessContent::{DetectEncoding, DetectLanguage, DetectMimeType};
+	use crate::Indexing::State::UpdateState::UpdateIndexMetadata;
 
 	let (metadata, symbols) = IndexFileInternal(file_path, config, &RwLock::new(index.clone()), &[]).await?;
 
 	// Update the index
-	super::super::State::UpdateState::RemoveFileFromIndex(index, file_path)?;
-	super::super::State::UpdateState::AddFileToIndex(index, file_path.clone(), metadata.clone(), symbols)?;
+	crate::Indexing::State::UpdateState::RemoveFileFromIndex(index, file_path)?;
+	crate::Indexing::State::UpdateState::AddFileToIndex(index, file_path.clone(), metadata.clone(), symbols)?;
 
 	// Update index metadata
 	UpdateIndexMetadata(index)?;
@@ -164,7 +165,7 @@ pub async fn UpdateFileContent(
 	}
 
 	// Token-based indexing
-	let tokens = super::Process::TokenizeContent(&content);
+	let tokens = crate::Indexing::Process::ProcessContent::TokenizeContent(&content);
 
 	for token in tokens {
 		if token.len() > 2 {
@@ -209,7 +210,7 @@ pub async fn UpdateFilesBatch(
 	}
 
 	// Update index metadata
-	super::super::State::UpdateState::UpdateIndexMetadata(index)?;
+	crate::Indexing::State::UpdateState::UpdateIndexMetadata(index)?;
 
 	Ok(UpdateBatchResult {
 		updated_count,
@@ -379,7 +380,7 @@ pub async fn RebuildIndex(
 	index.file_symbols.clear();
 
 	// Scan directories
-	let (files_to_index, scan_result) = super::Scan::ScanDirectory::ScanDirectoriesParallel(
+	let (files_to_index, scan_result) = crate::Indexing::Scan::ScanDirectory::ScanDirectoriesParallel(
 		directories,
 		patterns,
 		config,
@@ -388,8 +389,8 @@ pub async fn RebuildIndex(
 	.await?;
 
 	// Index all files
-	let semaphore = tokio::sync::Semaphore::new(config.MaxParallelIndexing);
-	let index_arc = tokio::sync::RwLock::new(index.clone());
+	let semaphore = Arc::new(Semaphore::new(config.MaxParallelIndexing as usize));
+	let index_arc = Arc::new(RwLock::new(index.clone()));
 	let mut tasks = Vec::new();
 
 	for file_path in files_to_index {
@@ -400,7 +401,7 @@ pub async fn RebuildIndex(
 		let task = tokio::spawn(async move {
 			let _permit = permit;
 
-			super::ScanFile::IndexFileInternal(&file_path, &config_clone, &index_ref, &[])
+			crate::Indexing::Scan::ScanFile::IndexFileInternal(&file_path, &config_clone, &index_ref, &[])
 				.await
 		});
 
@@ -417,8 +418,11 @@ pub async fn RebuildIndex(
 				updated_count += 1;
 				total_size += metadata.size;
 			},
-			Err(e) | Ok(Err(e)) => {
+			Ok(Err(e)) => {
 				log::warn!("[UpdateIndex] Rebuild task failed: {}", e);
+			},
+			Err(e) => {
+				log::warn!("[UpdateIndex] Rebuild task join failed: {}", e);
 			},
 		}
 	}

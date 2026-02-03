@@ -65,7 +65,7 @@
 
 use std::path::PathBuf;
 
-use super::super::{SymbolInfo, SymbolKind};
+use crate::Indexing::State::CreateState::{SymbolInfo, SymbolKind};
 
 /// Extract TypeScript/JavaScript symbols (class, interface, function, etc.)
 pub fn ExtractTypeScriptSymbols(content:&str, file_path:&PathBuf) -> Vec<SymbolInfo> {

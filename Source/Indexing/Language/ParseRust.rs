@@ -65,7 +65,7 @@
 
 use std::path::PathBuf;
 
-use super::super::{SymbolInfo, SymbolKind};
+use crate::Indexing::State::CreateState::{SymbolInfo, SymbolKind};
 
 /// Extract Rust symbols (struct, impl, fn, mod, enum, trait)
 pub fn ExtractRustSymbols(content:&str, file_path:&PathBuf) -> Vec<SymbolInfo> {

@@ -326,6 +326,12 @@ pub struct IndexingConfig {
 	/// Default: "~/.Air/index"
 	#[serde(default = "default_indexing_directory")]
 	pub IndexDirectory:String,
+
+	/// Maximum parallel indexing operations
+	/// Validation: Range [1, 100] (1 to 100 concurrent operations)
+	/// Default: 10
+	#[serde(default = "default_max_parallel_indexing")]
+	pub MaxParallelIndexing:u32,
 }
 
 fn default_indexing_enabled() -> bool { true }
@@ -346,6 +352,8 @@ fn default_indexing_file_types() -> Vec<String> {
 fn default_indexing_update_interval() -> u32 { 30 }
 
 fn default_indexing_directory() -> String { "~/.Air/index".to_string() }
+
+fn default_max_parallel_indexing() -> u32 { 10 }
 
 /// Logging configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -838,28 +846,28 @@ impl ConfigurationManager {
 		self.ValidateSchemaVersion(&config.SchemaVersion)?;
 
 		// Profile validation
-		self.ValidateProfile(&config.profile)?;
+		self.ValidateProfile(&config.Profile)?;
 
 		// gRPC configuration validation
-		self.ValidateGrpcConfig(&config.grpc)?;
+		self.ValidateGrpcConfig(&config.Grpc)?;
 
 		// Authentication configuration validation
-		self.ValidateAuthConfig(&config.authentication)?;
+		self.ValidateAuthConfig(&config.Authentication)?;
 
 		// Update configuration validation
-		self.ValidateUpdateConfig(&config.updates)?;
+		self.ValidateUpdateConfig(&config.Updates)?;
 
 		// Download configuration validation
-		self.ValidateDownloadConfig(&config.downloader)?;
+		self.ValidateDownloadConfig(&config.Downloader)?;
 
 		// Indexing configuration validation
-		self.ValidateIndexingConfig(&config.indexing)?;
+		self.ValidateIndexingConfig(&config.Indexing)?;
 
 		// Logging configuration validation
-		self.ValidateLoggingConfig(&config.logging)?;
+		self.ValidateLoggingConfig(&config.Logging)?;
 
 		// Performance configuration validation
-		self.ValidatePerformanceConfig(&config.performance)?;
+		self.ValidatePerformanceConfig(&config.Performance)?;
 
 		log::debug!("All configuration validation checks passed");
 		Ok(())
@@ -1548,26 +1556,26 @@ impl ConfigurationManager {
 	/// Configuration with profile-appropriate defaults
 	pub fn GetProfileDefaults(profile:&str) -> AirConfiguration {
 		let mut config = AirConfiguration::default();
-		config.profile = profile.to_string();
+		config.Profile = profile.to_string();
 
 		match profile {
 			"prod" => {
-				config.logging.level = "warn".to_string();
-				config.logging.console_enabled = false;
-				config.performance.memory_limit_mb = 1024;
-				config.performance.cpu_limit_percent = 80;
+				config.Logging.Level = "warn".to_string();
+				config.Logging.ConsoleEnabled = false;
+				config.Performance.MemoryLimitMb = 1024;
+				config.Performance.CPULimitPercent = 80;
 			},
 			"staging" => {
 				config.Logging.Level = "info".to_string();
-				config.performance.memory_limit_mb = 768;
-				config.performance.cpu_limit_percent = 70;
+				config.Performance.MemoryLimitMb = 768;
+				config.Performance.CPULimitPercent = 70;
 			},
 			"dev" | _ => {
 				// Dev defaults are already set
 				config.Logging.Level = "debug".to_string();
 				config.Logging.ConsoleEnabled = true;
-				config.performance.memory_limit_mb = 512;
-				config.performance.cpu_limit_percent = 50;
+				config.Performance.MemoryLimitMb = 512;
+				config.Performance.CPULimitPercent = 50;
 			},
 		}
 

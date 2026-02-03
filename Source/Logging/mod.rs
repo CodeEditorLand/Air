@@ -257,8 +257,8 @@ pub fn SetLogContext(Context:LogContext) {
 		error!("[Logging] Invalid log context provided: {:?}", e);
 		return;
 	}
-	LOG_CONTEXT.with(|Context| {
-		*Context.borrow_mut() = Some(Context);
+	LOG_CONTEXT.with(|ctx| {
+		*ctx.borrow_mut() = Some(Context);
 	});
 }
 
@@ -446,13 +446,13 @@ impl StructuredLogEntry {
 		if self.Level.is_empty() {
 			return Err("log level cannot be empty".into());
 		}
-		if self.message.is_empty() {
+		if self.Message.is_empty() {
 			return Err("log message cannot be empty".into());
 		}
-		if !["TRACE", "DEBUG", "INFO", "WARN", "ERROR"].contains(&self.level.as_str()) {
-			return Err(format!("invalid log level: {}", self.level).into());
+		if !["TRACE", "DEBUG", "INFO", "WARN", "ERROR"].contains(&self.Level.as_str()) {
+			return Err(format!("invalid log level: {}", self.Level).into());
 		}
-		if self.message.len() > 10000 {
+		if self.Message.len() > 10000 {
 			// Max 10KB message
 			return Err("log message too large".into());
 		}

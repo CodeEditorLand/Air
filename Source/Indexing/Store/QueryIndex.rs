@@ -54,14 +54,14 @@
 //! - Fuzzy search with configurable distance
 //!
 //! ## Error Handling Strategy
-///
-/// Query operations return detailed error messages for invalid queries
-/// or search failures, treating individual file read errors as warnings.
+//!
+//! Query operations return detailed error messages for invalid queries
+//! or search failures, treating individual file read errors as warnings.
 //!
 //! ## Thread Safety
-///
-/// Query operations read from shared Arc<RwLock<>> state and
-/// return safe-ownership results for the caller.
+//!
+//! Query operations read from shared Arc<RwLock<>> state and
+//! return safe-ownership results for the caller.
 
 use std::{
 	collections::HashMap,
@@ -73,9 +73,12 @@ use tokio::sync::RwLock;
 
 use crate::{AirError, Result};
 
-use super::super::{
+// Use the full paths to types in State::CreateState
+use crate::Indexing::State::CreateState::{
 	FileIndex,
 	FileMetadata,
+	SymbolInfo,
+	SymbolKind,
 };
 
 /// Maximum search results per query (pagination default)

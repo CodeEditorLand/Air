@@ -1,15 +1,9 @@
 //! # Process Module
 //!
-//! ## File: Indexing/Process/mod.rs
-//!
-//! ## Role in Air Architecture
-//!
-//! Provides content processing and symbol extraction functionality for the File
-//! Indexer service.
+//! Provides content processing and symbol extraction functionality.
 //!
 //! ## Modules
-//!
-//! - `ProcessContent` - Content processing pipeline
+//! - `ProcessContent` - Content processing (encoding, mime, tokenization)
 //! - `ExtractSymbols` - Symbol extraction from parsed AST
 
 pub mod ProcessContent;

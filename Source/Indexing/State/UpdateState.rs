@@ -67,7 +67,7 @@
 use std::path::PathBuf;
 
 use crate::{AirError, ApplicationState::ApplicationState, Configuration::IndexingConfig, Result};
-use super::super::{FileIndex, FileMetadata, SymbolInfo, SymbolLocation};
+use crate::Indexing::State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolLocation};
 
 /// Add a file to the index with its metadata and symbols
 pub fn AddFileToIndex(
@@ -134,7 +134,7 @@ pub fn RemoveFilesFromIndex(index:&mut FileIndex, file_paths:&[PathBuf]) -> Resu
 
 /// Update index metadata (version, timestamp, checksum)
 pub fn UpdateIndexMetadata(index:&mut FileIndex) -> Result<()> {
-	use super::CreateState::{CalculateIndexChecksum, GenerateIndexVersion};
+	use crate::Indexing::State::CreateState::{CalculateIndexChecksum, GenerateIndexVersion};
 
 	index.last_updated = chrono::Utc::now();
 	index.index_version = GenerateIndexVersion();

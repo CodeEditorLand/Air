@@ -370,10 +370,10 @@ impl PluginManager {
 		self.CheckApiVersionCompatibility(metadata)?;
 
 		// Check dependencies
-		self.CheckDependencies(metadata).await?;
+		self.check_dependencies(metadata).await?;
 
 		// Validate plugin capabilities and permissions
-		self.ValidateCapabilitiesAndPermissions(plugin.as_ref().as_ref())?;
+		self.validate_capabilities_and_permissions(plugin.as_ref().as_ref())?;
 
 		// Setup sandbox configuration
 		let sandbox = if self.EnableSandbox {
@@ -460,7 +460,7 @@ impl PluginManager {
 
 	/// Check Air version compatibility
 	pub fn CheckAirVersionCompatibility(&self, metadata:&PluginMetadata) -> Result<()> {
-		if !self.VersionSatisfies(&self.AirVersion, &metadata.MinAirVersion) {
+		if !self.version_satisfies(&self.AirVersion, &metadata.MinAirVersion) {
 			return Err(AirError::Plugin(format!(
 				"Plugin requires Air version {} or higher, current: {}",
 				metadata.MinAirVersion, self.AirVersion
@@ -468,7 +468,7 @@ impl PluginManager {
 		}
 
 		if let Some(max_version) = &metadata.MaxAirVersion {
-			if !self.VersionSatisfies(max_version, &self.AirVersion) {
+			if !self.version_satisfies(max_version, &self.AirVersion) {
 				return Err(AirError::Plugin(format!(
 					"Plugin is incompatible with Air version {}, max supported: {}",
 					self.AirVersion, max_version
@@ -497,7 +497,7 @@ impl PluginManager {
 					.ok_or_else(|| AirError::Plugin(format!("Required dependency not found: {}", dep.PluginId)))?;
 
 				let DepVersion = &DepPlugin.plugin.metadata().version;
-				if !self.VersionSatisfies(DepVersion, &dep.MinVersion) {
+				if !self.version_satisfies(DepVersion, &dep.MinVersion) {
 					return Err(AirError::Plugin(format!(
 						"Dependency {} version {} does not satisfy requirement {}",
 						dep.PluginId, DepVersion, dep.MinVersion
@@ -757,7 +757,7 @@ impl PluginManager {
 			.get(&message.from)
 			.ok_or_else(|| AirError::Plugin(format!("Sender plugin not found: {}", message.from)))?;
 
-		if !self.CheckInterPluginPermission(SenderMetadata, target, &message) {
+		if !self.check_inter_plugin_permission(SenderMetadata, target, &message) {
 			return Err(AirError::Plugin(format!(
 				"Permission denied: {} cannot send to {}",
 				message.from, message.to
@@ -831,7 +831,7 @@ impl PluginManager {
 		let mut results = vec![];
 
 		for (id, registry) in plugins.iter() {
-			let result = self.ValidatePlugin(registry.plugin.as_ref().as_ref());
+			let result = self.validate_plugin(registry.plugin.as_ref().as_ref());
 			results.push((id.clone(), result));
 		}
 
@@ -862,7 +862,7 @@ impl PluginManager {
 
 		for (id, registry) in plugins.iter() {
 			let metadata = registry.plugin.metadata();
-			let dependencies:Vec<String> = metadata.dependencies.iter().map(|d| d.plugin_id.clone()).collect();
+			let dependencies:Vec<String> = metadata.dependencies.iter().map(|d| d.PluginId.clone()).collect();
 			graph.insert(id.clone(), serde_json::json!(dependencies));
 		}
 
@@ -902,7 +902,7 @@ impl PluginManager {
 			let metadata = registry.plugin.metadata();
 			for dep in &metadata.dependencies {
 				if !dep.optional {
-					self.VisitPluginForLoadOrder(&dep.plugin_id, visited, order, plugins)?;
+					self.VisitPluginForLoadOrder(&dep.PluginId, visited, order, plugins)?;
 				}
 			}
 		}
@@ -1045,7 +1045,7 @@ impl PluginLoader {
 		let mut results = vec![];
 
 		for path in &self.PluginPaths {
-			match self.DiscoverInPath(path).await {
+			match self.discover_in_path(path).await {
 				Ok(mut discovered) => {
 					results.append(&mut discovered);
 				},

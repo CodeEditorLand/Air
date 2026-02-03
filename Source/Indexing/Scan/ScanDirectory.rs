@@ -69,10 +69,8 @@ use std::{collections::HashSet, path::Path, sync::Arc};
 use tokio::sync::{RwLock, Semaphore};
 
 use crate::{AirError, Configuration::IndexingConfig, Result};
-use super::{
-	super::{FileIndex, FileMetadata, SymbolInfo},
-	ScanFile::{IndexFileInternal, ValidateFileAccess},
-};
+use crate::Indexing::State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolLocation};
+use crate::Indexing::Scan::ScanFile::{IndexFileInternal, ValidateFileAccess};
 
 /// Scan directory result with statistics
 #[derive(Debug, Clone)]
@@ -101,7 +99,7 @@ pub async fn ScanDirectory(
 	patterns:Vec<String>,
 	config:&IndexingConfig,
 	max_parallel:usize,
-) -> Result<(Vec<crate::std::path::PathBuf>, ScanDirectoryResult)> {
+) -> Result<(Vec<std::path::PathBuf>, ScanDirectoryResult)> {
 	let directory_path = crate::Configuration::ConfigurationManager::ExpandPath(path)?;
 
 	// Validate directory exists and is accessible
@@ -126,7 +124,7 @@ pub async fn ScanDirectory(
 		.follow_links(false) // Don't follow symlinks by default
 		.build();
 
-	let mut files_to_scan:Vec<crate::std::path::PathBuf> = Vec::new();
+	let mut files_to_scan:Vec<std::path::PathBuf> = Vec::new();
 	let mut files_found = 0u32;
 	let mut files_skipped = 0u32;
 	let mut errors = 0u32;
@@ -247,7 +245,7 @@ async fn CheckDirectoryPermissions(path:&Path) -> Result<()> {
 }
 
 /// Check if file path matches any of the provided patterns
-pub fn MatchesPatterns(file_path:&crate::std::path::Path, patterns:&[String]) -> bool {
+pub fn MatchesPatterns(file_path:&std::path::Path, patterns:&[String]) -> bool {
 	if patterns.is_empty() {
 		return true;
 	}
@@ -305,7 +303,7 @@ pub async fn ScanDirectoriesParallel(
 	patterns:Vec<String>,
 	config:&IndexingConfig,
 	max_parallel:usize,
-) -> Result<(Vec<crate::std::path::PathBuf>, ScanDirectoryResult)> {
+) -> Result<(Vec<std::path::PathBuf>, ScanDirectoryResult)> {
 	let semaphore = Arc::new(Semaphore::new(max_parallel));
 	let mut all_files = Vec::new();
 	let mut total_result = ScanDirectoryResult { files_found:0, files_skipped:0, errors:0, total_size:0 };
@@ -369,7 +367,7 @@ pub async fn GetDirectoryStatistics(path:&str, max_depth:Option<usize>) -> Resul
 		.build();
 
 	for entry in walker.flatten() {
-		let file_type = entry.file_type();
+		let file_type = entry.file_type().expect("Failed to get file type");
 
 		if file_type.is_file() {
 			file_count += 1;

@@ -77,10 +77,9 @@ use std::{
 use tokio::sync::RwLock;
 
 use crate::{AirError, Configuration::IndexingConfig, Result};
-use super::{
-	super::{FileMetadata, SymbolInfo},
-	Process::{DetectEncoding, DetectLanguage, DetectMimeType, ExtractSymbols},
-};
+use crate::Indexing::State::CreateState::{FileMetadata, SymbolInfo, SymbolLocation};
+use crate::Indexing::Process::ProcessContent::{DetectEncoding, DetectLanguage, DetectMimeType};
+use crate::Indexing::Process::ExtractSymbols::ExtractSymbols;
 
 /// Index a single file internally with comprehensive validation
 ///
@@ -96,7 +95,7 @@ use super::{
 pub async fn IndexFileInternal(
 	file_path:&PathBuf,
 	config:&IndexingConfig,
-	_index_ref:&RwLock<super::super::FileIndex>,
+	_index_ref:&RwLock<crate::Indexing::State::CreateState::FileIndex>,
 	_patterns:&[String],
 ) -> Result<(FileMetadata, Vec<SymbolInfo>)> {
 	let start_time = Instant::now();

@@ -1510,9 +1510,9 @@ impl Clone for DownloadManager {
 			download_queue:self.DownloadQueue.clone(),
 			cache_directory:self.CacheDirectory.clone(),
 			client:self.client.clone(),
-			checksum_verifier:self.checksum_verifier.clone(),
-			bandwidth_limiter:self.bandwidth_limiter.clone(),
-			concurrent_limiter:self.concurrent_limiter.clone(),
+			checksum_verifier:self.ChecksumVerifier.clone(),
+			bandwidth_limiter:self.BandwidthLimiter.clone(),
+			concurrent_limiter:self.ConcurrentLimiter.clone(),
 			statistics:self.statistics.clone(),
 		}
 	}

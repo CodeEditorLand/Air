@@ -62,54 +62,32 @@
 //! - [ ] Add search result preview with context
 //! - [ ] Implement parallel indexing for large directories
 
-// Re-export public state types
-pub mod State {
-	pub mod CreateState;
-	pub mod UpdateState;
-}
+// Modules - file-based (no inline definitions)
+pub mod State;
+pub mod Scan;
+pub mod Process;
+pub mod Language;
+pub mod Store;
+pub mod Watch;
+pub mod Background;
 
-// Re-export scanning modules
-pub mod Scan {
-	pub mod ScanDirectory;
-	pub mod ScanFile;
-}
-
-// Re-export processing modules
-pub mod Process {
-	pub mod ProcessContent;
-	pub mod ExtractSymbols;
-}
-
-// Re-export language modules
-pub mod Language {
-	pub mod ParseRust;
-	pub mod ParseTypeScript;
-}
-
-// Re-export store modules
-pub mod Store {
-	pub mod StoreEntry;
-	pub mod QueryIndex;
-	pub mod UpdateIndex;
-}
-
-// Re-export watch module
-pub mod Watch {
-	pub mod WatchFile;
-}
-
-// Re-export background module
-pub mod Background {
-	pub mod StartWatcher;
-}
-
-// Re-export commonly used types at the root level
 // Import types and functions needed for the FileIndexer implementation
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
 use tokio::sync::{Mutex, RwLock};
 
 use crate::{AirError, ApplicationState::ApplicationState, Configuration::ConfigurationManager, Result};
+
+// Import types from submodules with explicit full paths
+use crate::Indexing::State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolLocation, CreateNewIndex};
+use crate::Indexing::State::UpdateState::{ValidateIndexConsistency, UpdateIndexMetadata};
+use crate::Indexing::Scan::ScanDirectory::{ScanDirectoriesParallel, ScanAndRemoveDeleted};
+use crate::Indexing::Scan::ScanFile::IndexFileInternal;
+use crate::Indexing::Store::StoreEntry::{EnsureIndexDirectory, LoadOrCreateIndex, SaveIndex, BackupCorruptedIndex};
+use crate::Indexing::Store::UpdateIndex::UpdateFileContent;
+use crate::Indexing::Store::QueryIndex::{QueryIndexSearch, SearchQuery, PaginatedSearchResults};
+use crate::Indexing::Process::ExtractSymbols::ExtractSymbols;
+use crate::Indexing::Process::ExtractSymbols::{GroupSymbolsByKind, SymbolStatistics};
 
 /// Maximum number of parallel indexing operations
 const MAX_PARALLEL_INDEXING:usize = 10;
@@ -184,10 +162,10 @@ impl FileIndexer {
 		let index_directory = Self::ValidateAndExpandPath(&config.IndexDirectory)?;
 
 		// Create index directory if it doesn't exist with error handling
-		Store::EnsureIndexDirectory(&index_directory).await?;
+		EnsureIndexDirectory(&index_directory).await?;
 
 		// Load or create index with corruption detection
-		let file_index = Store::LoadOrCreateIndex(&index_directory).await?;
+		let file_index = LoadOrCreateIndex(&index_directory).await?;
 
 		let indexer = Self {
 			AppState:AppState.clone(),
@@ -231,7 +209,7 @@ impl FileIndexer {
 		let index = self.file_index.read().await;
 
 		// Check consistency
-		State::ValidateIndexConsistency(&index)?;
+		ValidateIndexConsistency(&index)?;
 
 		// Verify all indexed files exist
 		let mut missing_files = 0;
@@ -260,7 +238,7 @@ impl FileIndexer {
 
 		// Scan directory
 		let (files_to_index, scan_result) =
-			Scan::ScanDirectoriesParallel(vec![path], patterns.clone(), config, MAX_PARALLEL_INDEXING).await?;
+			ScanDirectoriesParallel(vec![path], patterns.clone(), config, MAX_PARALLEL_INDEXING).await?;
 
 		// Index files in parallel
 		let index_arc = self.file_index.clone();
@@ -275,7 +253,7 @@ impl FileIndexer {
 
 			let task = tokio::spawn(async move {
 				let _permit = permit;
-				Scan::IndexFileInternal(&file_path, &config_for_task, &index_ref, &[]).await
+				IndexFileInternal(&file_path, &config_for_task, &index_ref, &[]).await
 			});
 
 			index_tasks.push(task);
@@ -298,7 +276,7 @@ impl FileIndexer {
 					indexed_paths.insert(file_path.clone());
 
 					// Index content for search
-					if let Err(e) = Store::UpdateFileContent(&mut index, &file_path, &metadata).await {
+					if let Err(e) = UpdateFileContent(&mut index, &file_path, &metadata).await {
 						log::warn!("[FileIndexer] Failed to index content for {}: {}", file_path.display(), e);
 					}
 
@@ -312,7 +290,7 @@ impl FileIndexer {
 							.symbol_index
 							.entry(symbol.name.clone())
 							.or_insert_with(Vec::new)
-							.push(State::SymbolLocation { file_path:file_path.clone(), line:symbol.line, symbol });
+							.push(SymbolLocation { file_path:file_path.clone(), line:symbol.line, symbol });
 					}
 
 					files_indexed += 1;
@@ -329,13 +307,13 @@ impl FileIndexer {
 		}
 
 		// Remove files that were indexed before but no longer exist
-		Scan::ScanAndRemoveDeleted(&mut index, &ScanDirectory::ValidateAndExpandPath(&path)?).await?;
+		ScanAndRemoveDeleted(&mut index, &Self::ValidateAndExpandPath(&path)?).await?;
 
 		// Update index metadata
-		State::UpdateIndexMetadata(&mut index)?;
+		UpdateIndexMetadata(&mut index)?;
 
 		// Save index to disk
-		Store::SaveIndex(&self.index_directory, &index).await?;
+		SaveIndex(&self.index_directory, &index).await?;
 
 		let duration = start_time.elapsed().as_secs_f64();
 
@@ -365,7 +343,7 @@ impl FileIndexer {
 		language:Option<String>,
 	) -> Result<PaginatedSearchResults> {
 		let index = self.file_index.read().await;
-		Store::QueryIndexSearch(&index, query, path, language).await
+		QueryIndexSearch(&index, query, path, language).await
 	}
 
 	/// Search symbols across all files (for VSCode Go to Symbol)
@@ -431,10 +409,10 @@ impl FileIndexer {
 		log::info!("[FileIndexer] Recovering from corrupted index...");
 
 		// Backup corrupted index
-		Store::BackupCorruptedIndex(&self.index_directory).await?;
+		BackupCorruptedIndex(&self.index_directory).await?;
 
 		// Create new index
-		let new_index = State::CreateNewIndex();
+		let new_index = CreateNewIndex();
 		*self.file_index.write().await = new_index;
 
 		// Clear corruption flag

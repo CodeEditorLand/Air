@@ -64,10 +64,9 @@
 use std::path::PathBuf;
 
 use crate::Result;
-use super::{
-	super::SymbolInfo,
-	Language::{ExtractGoSymbols, ExtractPythonSymbols, ExtractRustSymbols, ExtractTypeScriptSymbols},
-};
+use crate::Indexing::State::CreateState::{SymbolInfo, SymbolLocation, SymbolKind};
+use crate::Indexing::Language::ParseRust::ExtractRustSymbols;
+use crate::Indexing::Language::ParseTypeScript::ExtractTypeScriptSymbols;
 
 /// Extract symbols from code for VSCode Outline View and Go to Symbol
 ///
@@ -83,8 +82,6 @@ pub async fn ExtractSymbols(file_path:&PathBuf, content:&[u8], language:&str) ->
 	match language.to_lowercase().as_str() {
 		"rust" => symbols.extend(ExtractRustSymbols(&content_str, file_path)),
 		"typescript" | "javascript" => symbols.extend(ExtractTypeScriptSymbols(&content_str, file_path)),
-		"python" => symbols.extend(ExtractPythonSymbols(&content_str, file_path)),
-		"go" => symbols.extend(ExtractGoSymbols(&content_str, file_path)),
 		_ => {},
 	}
 
@@ -94,7 +91,7 @@ pub async fn ExtractSymbols(file_path:&PathBuf, content:&[u8], language:&str) ->
 /// Group symbols by kind for organization
 pub fn GroupSymbolsByKind(
 	symbols:&[SymbolInfo],
-) -> std::collections::HashMap<super::super::SymbolKind, Vec<&SymbolInfo>> {
+) -> std::collections::HashMap<SymbolKind, Vec<&SymbolInfo>> {
 	let mut grouped = std::collections::HashMap::new();
 
 	for symbol in symbols {
@@ -117,7 +114,7 @@ pub fn FilterSymbolsByName<'a>(symbols:&'a [SymbolInfo], pattern:&str) -> Vec<&'
 }
 
 /// Get symbols of a specific kind
-pub fn GetSymbolsByKind(symbols:&[SymbolInfo], kind:super::super::SymbolKind) -> Vec<&SymbolInfo> {
+pub fn GetSymbolsByKind(symbols:&[SymbolInfo], kind:SymbolKind) -> Vec<&SymbolInfo> {
 	symbols.iter().filter(|s| s.kind == kind).collect()
 }
 
@@ -146,7 +143,7 @@ pub fn GetSymbolStatistics(symbols:&[SymbolInfo]) -> SymbolStatistics {
 #[derive(Debug, Clone)]
 pub struct SymbolStatistics {
 	pub total:usize,
-	pub by_kind:std::collections::HashMap<super::super::SymbolKind, usize>,
+	pub by_kind:std::collections::HashMap<SymbolKind, usize>,
 }
 
 impl std::fmt::Display for SymbolStatistics {
@@ -194,12 +191,12 @@ pub fn CreateSymbolIndex(symbols:&[SymbolInfo]) -> std::collections::HashMap<Str
 }
 
 /// Find symbols matching multiple criteria
-pub fn FindSymbolsMatching(
-	symbols:&[SymbolInfo],
-	name_pattern:Option<&str>,
-	kind:Option<super::super::SymbolKind>,
+pub fn FindSymbolsMatching<'a>(
+	symbols:&'a [SymbolInfo],
+	name_pattern:Option<&'a str>,
+	kind:Option<SymbolKind>,
 	line_range:Option<(u32, u32)>,
-) -> Vec<&SymbolInfo> {
+) -> Vec<&'a SymbolInfo> {
 	symbols
 		.iter()
 		.filter(|s| {

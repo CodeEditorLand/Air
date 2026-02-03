@@ -69,7 +69,7 @@ use std::path::PathBuf;
 use tokio::sync::{Mutex, RwLock};
 
 use crate::{AirError, Configuration::IndexingConfig, Result};
-use super::super::FileIndex;
+use crate::Indexing::State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolLocation};
 
 /// Handle file watcher event for incremental indexing
 ///
@@ -83,11 +83,9 @@ pub async fn HandleFileEvent(event:notify::Event, index_arc:&RwLock<FileIndex>, 
 		notify::EventKind::Create(notify::event::CreateKind::File) => {
 			for path in event.paths {
 				log::debug!("[WatchFile] File created: {}", path.display());
-				if let Ok(mut index) = index_arc.write().await {
-					if let Err(e) = super::super::Store::UpdateIndex::UpdateSingleFile(&mut index, &path, config).await
-					{
-						log::warn!("[WatchFile] Failed to index new file {}: {}", path.display(), e);
-					}
+				let mut index = index_arc.write().await;
+				if let Err(e) = crate::Indexing::Store::UpdateIndex::UpdateSingleFile(&mut index, &path, config).await {
+					log::warn!("[WatchFile] Failed to index new file {}: {}", path.display(), e);
 				}
 			}
 		},
@@ -95,21 +93,18 @@ pub async fn HandleFileEvent(event:notify::Event, index_arc:&RwLock<FileIndex>, 
 		| notify::EventKind::Modify(notify::event::ModifyKind::Name(notify::event::RenameMode::Both)) => {
 			for path in event.paths {
 				log::debug!("[WatchFile] File modified: {}", path.display());
-				if let Ok(mut index) = index_arc.write().await {
-					if let Err(e) = super::super::Store::UpdateIndex::UpdateSingleFile(&mut index, &path, config).await
-					{
-						log::warn!("[WatchFile] Failed to re-index modified file {}: {}", path.display(), e);
-					}
+				let mut index = index_arc.write().await;
+				if let Err(e) = crate::Indexing::Store::UpdateIndex::UpdateSingleFile(&mut index, &path, config).await {
+					log::warn!("[WatchFile] Failed to re-index modified file {}: {}", path.display(), e);
 				}
 			}
 		},
 		notify::EventKind::Remove(notify::event::RemoveKind::File) => {
 			for path in event.paths {
 				log::debug!("[WatchFile] File removed: {}", path.display());
-				if let Ok(mut index) = index_arc.write().await {
-					if let Err(e) = super::super::State::UpdateState::RemoveFileFromIndex(&mut index, &path) {
-						log::warn!("[WatchFile] Failed to remove file from index {}: {}", path.display(), e);
-					}
+				let mut index = index_arc.write().await;
+				if let Err(e) = crate::Indexing::State::UpdateState::RemoveFileFromIndex(&mut index, &path) {
+					log::warn!("[WatchFile] Failed to remove file from index {}: {}", path.display(), e);
 				}
 			}
 		},
@@ -124,18 +119,16 @@ pub async fn HandleFileEvent(event:notify::Event, index_arc:&RwLock<FileIndex>, 
 			for path in event.paths {
 				log::debug!("[WatchFile] Directory removed: {}", path.display());
 				// Remove all files from this directory
-				if let Ok(mut index) = index_arc.write().await {
-					let mut paths_to_remove = Vec::new();
-					for indexed_path in index.files.keys() {
-						if indexed_path.starts_with(&path) {
-							paths_to_remove.push(indexed_path.clone());
-						}
+				let mut index = index_arc.write().await;
+				let mut paths_to_remove = Vec::new();
+				for indexed_path in index.files.keys() {
+					if indexed_path.starts_with(&path) {
+						paths_to_remove.push(indexed_path.clone());
 					}
-					for indexed_path in paths_to_remove {
-						if let Err(e) = super::super::State::UpdateState::RemoveFileFromIndex(&mut index, &indexed_path)
-						{
-							log::warn!("[WatchFile] Failed to remove file {}: {}", indexed_path.display(), e);
-						}
+				}
+				for indexed_path in paths_to_remove {
+					if let Err(e) = crate::Indexing::State::UpdateState::RemoveFileFromIndex(&mut index, &indexed_path) {
+						log::warn!("[WatchFile] Failed to remove file {}: {}", indexed_path.display(), e);
 					}
 				}
 			}
@@ -215,33 +208,24 @@ impl DebouncedEventHandler {
 
 			let result = match change_info.change_type {
 				FileChangeType::Created => {
-					if let Ok(mut index) = index_arc.write().await {
-						super::super::Store::UpdateIndex::UpdateSingleFile(&mut index, &path, config)
-							.await
-							.map(|_| ProcessedChangeResult::Success)
-							.unwrap_or(ProcessedChangeResult::Failed)
-					} else {
-						ProcessedChangeResult::Failed
-					}
+					let mut index = index_arc.write().await;
+					crate::Indexing::Store::UpdateIndex::UpdateSingleFile(&mut index, &path, config)
+						.await
+						.map(|_| ProcessedChangeResult::Success)
+						.unwrap_or(ProcessedChangeResult::Failed)
 				},
 				FileChangeType::Modified => {
-					if let Ok(mut index) = index_arc.write().await {
-						super::super::Store::UpdateIndex::UpdateSingleFile(&mut index, &path, config)
-							.await
-							.map(|_| ProcessedChangeResult::Success)
-							.unwrap_or(ProcessedChangeResult::Failed)
-					} else {
-						ProcessedChangeResult::Failed
-					}
+					let mut index = index_arc.write().await;
+					super::super::Store::UpdateIndex::UpdateSingleFile(&mut index, &path, config)
+						.await
+						.map(|_| ProcessedChangeResult::Success)
+						.unwrap_or(ProcessedChangeResult::Failed)
 				},
 				FileChangeType::Removed => {
-					if let Ok(mut index) = index_arc.write().await {
-						super::super::State::UpdateState::RemoveFileFromIndex(&mut index, &path)
-							.map(|_| ProcessedChangeResult::Success)
-							.unwrap_or(ProcessedChangeResult::Failed)
-					} else {
-						ProcessedChangeResult::Failed
-					}
+					let mut index = index_arc.write().await;
+					crate::Indexing::State::UpdateState::RemoveFileFromIndex(&mut index, &path)
+						.map(|_| ProcessedChangeResult::Success)
+						.unwrap_or(ProcessedChangeResult::Failed)
 				},
 			};
 
