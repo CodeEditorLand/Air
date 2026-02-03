@@ -76,10 +76,18 @@ use std::{
 
 use tokio::sync::RwLock;
 
-use crate::{AirError, Configuration::IndexingConfig, Result};
-use crate::Indexing::State::CreateState::{FileMetadata, SymbolInfo, SymbolLocation};
-use crate::Indexing::Process::ProcessContent::{DetectEncoding, DetectLanguage, DetectMimeType};
-use crate::Indexing::Process::ExtractSymbols::ExtractSymbols;
+use crate::{
+	AirError,
+	Configuration::IndexingConfig,
+	Indexing::{
+		Process::{
+			ExtractSymbols::ExtractSymbols,
+			ProcessContent::{DetectEncoding, DetectLanguage, DetectMimeType},
+		},
+		State::CreateState::{FileMetadata, SymbolInfo, SymbolLocation},
+	},
+	Result,
+};
 
 /// Index a single file internally with comprehensive validation
 ///

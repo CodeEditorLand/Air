@@ -18,25 +18,54 @@ use crate::{
 	ApplicationState::ApplicationState,
 	Authentication::AuthenticationService,
 	Downloader::DownloadManager,
-	Indexing::FileIndexer,
+	Indexing::{
+		FileIndexer,
+		Store::QueryIndex::{SearchMode, SearchQuery},
+	},
 	Result,
 	Updates::UpdateManager,
 	Utility::CurrentTimestamp,
-	Vine::Generated::air::air_service_server::AirService,
+	Vine::Generated::{
+		air as air_generated,
+		air::{
+			ApplyUpdateRequest,
+			ApplyUpdateResponse,
+			AuthenticationRequest,
+			AuthenticationResponse,
+			ConfigurationRequest,
+			ConfigurationResponse,
+			DownloadRequest,
+			DownloadResponse,
+			DownloadStreamRequest,
+			DownloadStreamResponse,
+			FileInfoRequest,
+			FileInfoResponse,
+			FileResult,
+			HealthCheckRequest,
+			HealthCheckResponse,
+			IndexRequest,
+			IndexResponse,
+			MetricsRequest,
+			MetricsResponse,
+			ResourceLimitsRequest,
+			ResourceLimitsResponse,
+			ResourceUsageRequest,
+			ResourceUsageResponse,
+			SearchRequest,
+			SearchResponse,
+			StatusRequest,
+			StatusResponse,
+			UpdateCheckRequest,
+			UpdateCheckResponse,
+			UpdateConfigurationRequest,
+			UpdateConfigurationResponse,
+			air_service_server::AirService,
+		},
+	},
 };
-use crate::Vine::Generated::air::{
-	ApplyUpdateRequest, ApplyUpdateResponse, AuthenticationRequest, AuthenticationResponse,
-	ConfigurationRequest, ConfigurationResponse, DownloadRequest, DownloadResponse,
-	DownloadStreamRequest, DownloadStreamResponse, FileInfoRequest, FileInfoResponse,
-	FileResult, HealthCheckRequest, HealthCheckResponse, IndexRequest, IndexResponse,
-	MetricsRequest, MetricsResponse, ResourceLimitsRequest, ResourceLimitsResponse,
-	ResourceUsageRequest, ResourceUsageResponse, SearchRequest, SearchResponse,
-	StatusRequest, StatusResponse, UpdateCheckRequest, UpdateCheckResponse,
-	UpdateConfigurationRequest, UpdateConfigurationResponse,
-};
-use crate::Vine::Generated::air as air_generated;
 
 /// The concrete implementation of the Air gRPC service
+#[derive(Clone)]
 pub struct AirVinegRPCService {
 	/// Application state
 	AppState:Arc<ApplicationState>,
@@ -176,11 +205,11 @@ impl AirService for AirVinegRPCService {
 		&self,
 		Request:Request<AuthenticationRequest>,
 	) -> std::result::Result<Response<AuthenticationResponse>, Status> {
+		// Track connection and validate protocol (before consuming Request)
+		let ConnectionId = self.TrackConnection(&Request, "authentication").await?;
+
 		let RequestData = Request.into_inner();
 		let request_id = RequestData.request_id.clone();
-
-		// Track connection and validate protocol
-		let ConnectionId = self.TrackConnection(&Request, "authentication").await?;
 
 		info!(
 			"[AirVinegRPCService] Authentication request received [ID: {}] [Connection: {}]",
@@ -212,9 +241,14 @@ impl AirService for AirVinegRPCService {
 			}));
 		}
 
+		// Clone needed data before moving RequestData
+		let username_for_log = RequestData.username.clone();
+		let password = RequestData.password;
+		let provider = RequestData.provider;
+
 		let result = self
 			.AuthService
-			.AuthenticateUser(RequestData.username, RequestData.password, RequestData.provider)
+			.AuthenticateUser(RequestData.username, password, provider)
 			.await;
 
 		match result {
@@ -227,7 +261,7 @@ impl AirService for AirVinegRPCService {
 				// Log successful authentication
 				info!(
 					"[AirVinegRPCService] Authentication successful for user: {} [Connection: {}]",
-					RequestData.username, ConnectionId
+					username_for_log, ConnectionId
 				);
 
 				Ok(Response::new(air_generated::AuthenticationResponse {
@@ -250,7 +284,7 @@ impl AirService for AirVinegRPCService {
 				// Log failed authentication attempt
 				warn!(
 					"[AirVinegRPCService] Authentication failed for user: {} [Connection: {}] - {}",
-					RequestData.username, ConnectionId, e
+					username_for_log, ConnectionId, e
 				);
 
 				Ok(Response::new(air_generated::AuthenticationResponse {
@@ -316,7 +350,7 @@ impl AirService for AirVinegRPCService {
 		}
 
 		// Check for updates using UpdateManager
-		let result = self.UpdateManager.check_for_updates().await;
+		let result = self.UpdateManager.CheckForUpdates().await;
 
 		match result {
 			Ok(UpdateInfo) => {
@@ -334,8 +368,8 @@ impl AirService for AirVinegRPCService {
 					request_id,
 					update_available:UpdateInfo.is_some(),
 					version:UpdateInfo.as_ref().map(|info| info.version.clone()).unwrap_or_default(),
-					download_url:UpdateInfo.as_ref().map(|info| info.DownloadUrl.clone()).unwrap_or_default(),
-					release_notes:UpdateInfo.as_ref().map(|info| info.ReleaseNotes.clone()).unwrap_or_default(),
+					download_url:UpdateInfo.as_ref().map(|info| info.download_url.clone()).unwrap_or_default(),
+					release_notes:UpdateInfo.as_ref().map(|info| info.release_notes.clone()).unwrap_or_default(),
 					error:String::new(),
 				}))
 			},
@@ -383,7 +417,7 @@ impl AirService for AirVinegRPCService {
 		);
 
 		// Request ID for tracking (use provided or generate)
-		let download_request_id = if RequestId.is_empty() {
+		let download_request_id = if request_id.is_empty() {
 			crate::Utility::GenerateRequestId()
 		} else {
 			request_id.clone()
@@ -440,7 +474,7 @@ impl AirService for AirVinegRPCService {
 		let DestinationPath = if RequestData.destination_path.is_empty() {
 			// Use cache directory from configuration
 			let config = &self.AppState.Configuration.Downloader;
-			config.cache_directory.clone()
+			config.CacheDirectory.clone()
 		} else {
 			RequestData.destination_path.clone()
 		};
@@ -497,7 +531,7 @@ impl AirService for AirVinegRPCService {
 				RequestData.url.clone(),
 				DestinationPath,
 				RequestData.checksum,
-				Some(progress_callback),
+				Some(Box::new(progress_callback)),
 			)
 			.await;
 
@@ -568,7 +602,7 @@ impl AirService for AirVinegRPCService {
 			.await
 			.map_err(|e| Status::internal(e.to_string()))?;
 
-		let result = self.FileIndexer.index_directory(RequestData.path, RequestData.patterns).await;
+		let result = self.FileIndexer.IndexDirectory(RequestData.path, RequestData.patterns).await;
 
 		match result {
 			Ok(index_info) => {
@@ -582,7 +616,7 @@ impl AirService for AirVinegRPCService {
 					success:true,
 					files_indexed:index_info.files_indexed,
 					total_size:index_info.total_size,
-					error: String::new(),
+					error:String::new(),
 				}))
 			},
 			Err(e) => {
@@ -627,7 +661,7 @@ impl AirService for AirVinegRPCService {
 			average_response_time:metrics.AverageResponseTime,
 			memory_usage_mb:resources.MemoryUsageMb,
 			cpu_usage_percent:resources.CPUUsagePercent,
-			ActiveRequests:self.AppState.GetActiveRequestCount().await as u32,
+			active_requests:self.AppState.GetActiveRequestCount().await as u32,
 		}))
 	}
 
@@ -751,7 +785,7 @@ impl AirService for AirVinegRPCService {
 		// tracking, and retry logic
 		let download_result = self
 			.DownloadManager
-			.download_file(RequestData.url, destination.clone(), RequestData.checksum)
+			.DownloadFile(RequestData.url, destination.clone(), RequestData.checksum)
 			.await;
 
 		match download_result {
@@ -772,7 +806,7 @@ impl AirService for AirVinegRPCService {
 					file_path:result.path,
 					file_size:result.size,
 					checksum:result.checksum,
-					error: String::new(),
+					error:String::new(),
 				}))
 			},
 			Err(crate::AirError::Network(e)) => {
@@ -927,6 +961,7 @@ impl AirService for AirVinegRPCService {
 				// Trigger graceful shutdown after returning response
 				let AppState = self.AppState.clone();
 				let version = RequestData.version.clone();
+				let self_clone = self.clone();
 
 				tokio::spawn(async move {
 					tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
@@ -936,12 +971,12 @@ impl AirService for AirVinegRPCService {
 					);
 
 					// Graceful shutdown implementation
-					if let Err(e) = AppState.stop_all_background_tasks().await {
+					if let Err(e) = AppState.StopAllBackgroundTasks().await {
 						log::error!("[AirVinegRPCService] Failed to initiate graceful shutdown: {}", e);
 
 						// Implement rollback if update fails
 						log::warn!("[AirVinegRPCService] Rollback initiated due to graceful shutdown failure");
-						if let Err(rollback_error) = self.perform_rollback(&version).await {
+						if let Err(rollback_error) = self_clone.perform_rollback(&version).await {
 							log::error!("[AirVinegRPCService] Rollback failed: {}", rollback_error);
 						} else {
 							log::info!("[AirVinegRPCService] Rollback completed successfully");
@@ -949,7 +984,11 @@ impl AirService for AirVinegRPCService {
 					}
 				});
 
-				Ok(Response::new(ApplyUpdateResponse { request_id, success:true, error: String::new() }))
+				Ok(Response::new(ApplyUpdateResponse {
+					request_id,
+					success:true,
+					error:String::new(),
+				}))
 			},
 			Ok(false) => {
 				let error_msg = "Update verification failed: checksum mismatch".to_string();
@@ -1007,9 +1046,8 @@ impl AirService for AirVinegRPCService {
 
 	/// Handle streaming download requests with bidirectional streaming and
 	/// chunk delivery
-	type DownloadStreamStream = tokio_stream::wrappers::ReceiverStream<
-		std::result::Result<air_generated::DownloadStreamResponse, Status>,
-	>;
+	type DownloadStreamStream =
+		tokio_stream::wrappers::ReceiverStream<std::result::Result<air_generated::DownloadStreamResponse, Status>>;
 
 	async fn download_stream(
 		&self,
@@ -1101,7 +1139,7 @@ impl AirService for AirVinegRPCService {
 					total_size:0,
 					downloaded:0,
 					completed:false,
-					error: String::new(),
+					error:String::new(),
 				}))
 				.await
 				.is_err()
@@ -1215,7 +1253,7 @@ impl AirService for AirVinegRPCService {
 					let mut last_progress:f32 = 0.0;
 
 					while let Some(chunk_result) = TokioStreamExt::next(&mut stream).await {
-						if AppState.is_request_cancelled(&download_request_id).await {
+						if AppState.IsRequestCancelled(&download_request_id).await {
 							log::info!(
 								"[AirVinegRPCService] Download cancelled by client [ID: {}]",
 								download_request_id
@@ -1268,7 +1306,7 @@ impl AirService for AirVinegRPCService {
 											total_size,
 											downloaded:total_downloaded,
 											completed:false,
-											error: String::new(),
+											error:String::new(),
 										}))
 										.await
 										.is_err()
@@ -1343,7 +1381,7 @@ impl AirService for AirVinegRPCService {
 								total_size,
 								downloaded:total_downloaded,
 								completed:false,
-								error: String::new(),
+								error:String::new(),
 							}))
 							.await
 							.is_err()
@@ -1373,7 +1411,7 @@ impl AirService for AirVinegRPCService {
 							total_size,
 							downloaded:total_downloaded,
 							completed:true,
-							error: String::new(),
+							error:String::new(),
 						}))
 						.await;
 
@@ -1447,7 +1485,19 @@ impl AirService for AirVinegRPCService {
 
 		match self
 			.FileIndexer
-			.search_files(RequestData.query.clone(), path, RequestData.max_results)
+			.SearchFiles(
+				SearchQuery {
+					query:RequestData.query.clone(),
+					mode:SearchMode::Literal,
+					case_sensitive:false,
+					whole_word:false,
+					regex:None,
+					max_results:RequestData.max_results,
+					page:1,
+				},
+				path,
+				None,
+			)
 			.await
 		{
 			Ok(search_results) => {
@@ -1462,7 +1512,7 @@ impl AirService for AirVinegRPCService {
 					};
 
 					// Get file size from metadata or filesystem
-					let size = if let Ok(Some(metadata)) = self.FileIndexer.get_file_info(r.path.clone()).await {
+					let size = if let Ok(Some(metadata)) = self.FileIndexer.GetFileInfo(r.path.clone()).await {
 						metadata.size
 					} else if let Ok(file_metadata) = std::fs::metadata(&r.path) {
 						file_metadata.len()
@@ -1475,11 +1525,12 @@ impl AirService for AirVinegRPCService {
 
 				info!("[AirVinegRPCService] Search completed: {} results found", file_results.len());
 
+				let result_count = file_results.len();
 				Ok(Response::new(SearchResponse {
 					request_id,
 					results:file_results,
-					total_results:file_results.len() as u32,
-					error: String::new(),
+					total_results:result_count as u32,
+					error:String::new(),
 				}))
 			},
 			Err(e) => {
@@ -1488,7 +1539,7 @@ impl AirService for AirVinegRPCService {
 					request_id,
 					results:vec![],
 					total_results:0,
-					error:Some(e.to_string()),
+					error:e.to_string(),
 				}))
 			},
 		}
@@ -1529,7 +1580,7 @@ impl AirService for AirVinegRPCService {
 				mime_type:String::new(),
 				checksum:String::new(),
 				modified_time:0,
-				error: String::new(), // File not found is not an error
+				error:String::new(), // File not found is not an error
 			}));
 		}
 
@@ -1547,7 +1598,7 @@ impl AirService for AirVinegRPCService {
 				let mime_type = self.detect_mime_type(path);
 
 				// Calculate checksum lazily or on-demand
-				let checksum = self.calculate_file_checksum(path).await.unwrap_or_else(|e| {
+				let checksum = calculate_file_checksum(path).await.unwrap_or_else(|e| {
 					log::warn!("[AirVinegRPCService] Failed to calculate checksum: {}", e);
 					String::new()
 				});
@@ -1598,10 +1649,7 @@ impl AirService for AirVinegRPCService {
 			metrics_map.insert("total_requests".to_string(), metrics.TotalRequests.to_string());
 			metrics_map.insert("successful_requests".to_string(), metrics.SuccessfulRequests.to_string());
 			metrics_map.insert("failed_requests".to_string(), metrics.FailedRequests.to_string());
-			metrics_map.insert(
-				"average_response_time_ms".to_string(),
-				metrics.AverageResponseTime.to_string(),
-			);
+			metrics_map.insert("average_response_time_ms".to_string(), metrics.AverageResponseTime.to_string());
 		}
 
 		// Request metrics
@@ -1612,7 +1660,11 @@ impl AirService for AirVinegRPCService {
 			);
 		}
 
-		Ok(Response::new(MetricsResponse { request_id, metrics:metrics_map, error: String::new() }))
+		Ok(Response::new(MetricsResponse {
+			request_id,
+			metrics:metrics_map,
+			error:String::new(),
+		}))
 	}
 
 	/// Handle get resource usage requests
@@ -1631,9 +1683,9 @@ impl AirService for AirVinegRPCService {
 			request_id,
 			memory_usage_mb:resources.MemoryUsageMb,
 			cpu_usage_percent:resources.CPUUsagePercent,
-			disk_usage_mb:resources.disk_usage_mb,
-			network_usage_mbps:resources.network_usage_mbps,
-			error: String::new(),
+			disk_usage_mb:resources.DiskUsageMb,
+			network_usage_mbps:resources.NetworkUsageMbps,
+			error:String::new(),
 		}))
 	}
 
@@ -1670,15 +1722,21 @@ impl AirService for AirVinegRPCService {
 		// Apply new limits via ApplicationState
 		let result = self
 			.AppState
-			.set_resource_limits(
+			.SetResourceLimits(
 				Some(RequestData.memory_limit_mb as u64),
-				Some(RequestData.cpu_limit_percent),
+				Some(RequestData.cpu_limit_percent as f64),
 				Some(RequestData.disk_limit_mb as u64),
 			)
 			.await;
 
 		match result {
-			Ok(_) => Ok(Response::new(ResourceLimitsResponse { request_id, success:true, error: String::new() })),
+			Ok(_) => {
+				Ok(Response::new(ResourceLimitsResponse {
+					request_id,
+					success:true,
+					error:String::new(),
+				}))
+			},
 			Err(e) => {
 				Ok(Response::new(ResourceLimitsResponse {
 					request_id,
@@ -1705,13 +1763,13 @@ impl AirService for AirVinegRPCService {
 		);
 
 		// Get configuration from ApplicationState
-		let config = self.AppState.get_configuration().await;
+		let config = self.AppState.GetConfiguration().await;
 		let mut config_map = std::collections::HashMap::new();
 
 		// Serialize config to map, filter by section if specified
 		match RequestData.section.as_str() {
 			"grpc" => {
-				config_map.insert("bind_address".to_string(), config.Grpc.BindAddress);
+				config_map.insert("bind_address".to_string(), config.Grpc.BindAddress.clone());
 				config_map.insert("max_connections".to_string(), config.Grpc.MaxConnections.to_string());
 				config_map.insert("request_timeout_secs".to_string(), config.Grpc.RequestTimeoutSecs.to_string());
 			},
@@ -1729,22 +1787,22 @@ impl AirService for AirVinegRPCService {
 					"check_interval_hours".to_string(),
 					config.Updates.CheckIntervalHours.to_string(),
 				);
-				config_map.insert("update_server_url".to_string(), config.Updates.UpdateServerUrl);
+				config_map.insert("update_server_url".to_string(), config.Updates.UpdateServerUrl.clone());
 				config_map.insert("auto_download".to_string(), config.Updates.AutoDownload.to_string());
 				config_map.insert("auto_install".to_string(), config.Updates.AutoInstall.to_string());
 			},
 			"downloader" => {
-				config_map.insert("enabled".to_string(), config.downloader.enabled.to_string());
+				config_map.insert("enabled".to_string(), config.Downloader.Enabled.to_string());
 				config_map.insert(
 					"max_concurrent_downloads".to_string(),
-					config.downloader.max_concurrent_downloads.to_string(),
+					config.Downloader.MaxConcurrentDownloads.to_string(),
 				);
 				config_map.insert(
 					"download_timeout_secs".to_string(),
-					config.downloader.download_timeout_secs.to_string(),
+					config.Downloader.DownloadTimeoutSecs.to_string(),
 				);
 				config_map.insert("max_retries".to_string(), config.Downloader.MaxRetries.to_string());
-				config_map.insert("cache_directory".to_string(), config.Downloader.CacheDirectory);
+				config_map.insert("cache_directory".to_string(), config.Downloader.CacheDirectory.clone());
 			},
 			"indexing" => {
 				config_map.insert("enabled".to_string(), config.Indexing.Enabled.to_string());
@@ -1754,7 +1812,7 @@ impl AirService for AirVinegRPCService {
 					"update_interval_minutes".to_string(),
 					config.Indexing.UpdateIntervalMinutes.to_string(),
 				);
-				config_map.insert("index_directory".to_string(), config.Indexing.IndexDirectory);
+				config_map.insert("index_directory".to_string(), config.Indexing.IndexDirectory.clone());
 			},
 			_ => {
 				// Return all sections (redacted for sensitive values)
@@ -1765,7 +1823,7 @@ impl AirService for AirVinegRPCService {
 		Ok(Response::new(ConfigurationResponse {
 			request_id,
 			configuration:config_map,
-			error: String::new(),
+			error:String::new(),
 		}))
 	}
 
@@ -1803,7 +1861,7 @@ impl AirService for AirVinegRPCService {
 				Ok(Response::new(UpdateConfigurationResponse {
 					request_id,
 					success:true,
-					error: String::new(),
+					error:String::new(),
 				}))
 			},
 			Err(e) => {
@@ -1862,7 +1920,7 @@ impl AirVinegRPCService {
 		loop {
 			match self
 				.DownloadManager
-				.download_file(url.clone(), DestinationPath.clone(), checksum.clone())
+				.DownloadFile(url.clone(), DestinationPath.clone(), checksum.clone())
 				.await
 			{
 				Ok(file_info) => {
@@ -2040,7 +2098,7 @@ fn calculate_chunk_checksum(chunk:&[u8]) -> String {
 }
 
 /// Calculate file checksum for integrity verification
-async fn calculate_file_checksum(path:&std::path::PathBuf) -> Result<String> {
+async fn calculate_file_checksum(path:&std::path::Path) -> Result<String> {
 	use sha2::{Digest, Sha256};
 	use tokio::io::AsyncReadExt;
 

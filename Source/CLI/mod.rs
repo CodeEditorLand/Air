@@ -181,13 +181,13 @@ impl CliParser {
 		let command = &args[0];
 
 		match command.as_str() {
-			"status" => self.ParseStatus(&args[1..]),
-			"restart" => self.ParseRestart(&args[1..]),
-			"config" => self.ParseConfig(&args[1..]),
-			"metrics" => self.ParseMetrics(&args[1..]),
-			"logs" => self.ParseLogs(&args[1..]),
-			"debug" => self.ParseDebug(&args[1..]),
-			"help" | "-h" | "--help" => self.ParseHelp(&args[1..]),
+			"status" => self.parse_status(&args[1..]),
+			"restart" => self.parse_restart(&args[1..]),
+			"config" => self.parse_config(&args[1..]),
+			"metrics" => self.parse_metrics(&args[1..]),
+			"logs" => self.parse_logs(&args[1..]),
+			"debug" => self.parse_debug(&args[1..]),
+			"help" | "-h" | "--help" => self.parse_help(&args[1..]),
 			"version" | "-v" | "--version" => Ok(Command::Version),
 			_ => {
 				Err(format!(
@@ -1151,8 +1151,8 @@ impl CliHandler {
 			output.push_str(&format!(
 				"[{}] {} - {}\n",
 				entry.timestamp.format("%Y-%m-%d %H:%M:%S"),
-				entry.Level,
-				entry.Message
+				entry.level,
+				entry.message
 			));
 		}
 

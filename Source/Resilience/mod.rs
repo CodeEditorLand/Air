@@ -755,10 +755,6 @@ impl<'de> Deserialize<'de> for CircuitStatistics {
 					StateTransitions:StateTransitions.ok_or_else(|| de::Error::missing_field("state_transitions"))?,
 
 					LastFailureTime:None,
-
-					StateTransitions:0,
-
-					LastFailureTime:None,
 				})
 			}
 		}

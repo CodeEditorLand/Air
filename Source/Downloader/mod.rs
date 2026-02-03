@@ -1506,13 +1506,13 @@ impl Clone for DownloadManager {
 	fn clone(&self) -> Self {
 		Self {
 			AppState:self.AppState.clone(),
-			active_downloads:self.ActiveDownloads.clone(),
-			download_queue:self.DownloadQueue.clone(),
-			cache_directory:self.CacheDirectory.clone(),
+			ActiveDownloads:self.ActiveDownloads.clone(),
+			DownloadQueue:self.DownloadQueue.clone(),
+			CacheDirectory:self.CacheDirectory.clone(),
 			client:self.client.clone(),
-			checksum_verifier:self.ChecksumVerifier.clone(),
-			bandwidth_limiter:self.BandwidthLimiter.clone(),
-			concurrent_limiter:self.ConcurrentLimiter.clone(),
+			ChecksumVerifier:self.ChecksumVerifier.clone(),
+			BandwidthLimiter:self.BandwidthLimiter.clone(),
+			ConcurrentLimiter:self.ConcurrentLimiter.clone(),
 			statistics:self.statistics.clone(),
 		}
 	}
@@ -1521,16 +1521,16 @@ impl Clone for DownloadManager {
 impl Default for DownloadStatistics {
 	fn default() -> Self {
 		Self {
-			total_downloads:0,
-			successful_downloads:0,
-			failed_downloads:0,
-			cancelled_downloads:0,
-			total_bytes_downloaded:0,
-			total_download_time_secs:0.0,
-			average_download_rate:0.0,
-			peak_download_rate:0,
-			active_downloads:0,
-			queued_downloads:0,
+			TotalDownloads:0,
+			SuccessfulDownloads:0,
+			FailedDownloads:0,
+			CancelledDownloads:0,
+			TotalBytesDownloaded:0,
+			TotalDownloadTimeSecs:0.0,
+			AverageDownloadRate:0.0,
+			PeakDownloadRate:0,
+			ActiveDownloads:0,
+			QueuedDownloads:0,
 		}
 	}
 }

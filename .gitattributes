@@ -1,0 +1,8 @@
+Target/debug/libAirLibrary.rlib filter=lfs diff=lfs merge=lfs -text
+Target/release/libAirLibrary.rlib filter=lfs diff=lfs merge=lfs -text
+
+Target/debug/*.exe filter=lfs diff=lfs merge=lfs -text
+Target/release/*.exe filter=lfs diff=lfs merge=lfs -text
+
+Target/debug/Air filter=lfs diff=lfs merge=lfs -text
+Target/release/Air filter=lfs diff=lfs merge=lfs -text

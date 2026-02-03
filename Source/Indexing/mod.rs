@@ -76,18 +76,27 @@ use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
 use tokio::sync::{Mutex, RwLock};
 
-use crate::{AirError, ApplicationState::ApplicationState, Configuration::ConfigurationManager, Result};
-
+use crate::{
+	AirError,
+	ApplicationState::ApplicationState,
+	Configuration::ConfigurationManager,
+	Indexing::{
+		Process::ExtractSymbols::{ExtractSymbols, GroupSymbolsByKind, SymbolStatistics},
+		Scan::{
+			ScanDirectory::{ScanAndRemoveDeleted, ScanDirectoriesParallel},
+			ScanFile::IndexFileInternal,
+		},
+		State::UpdateState::{UpdateIndexMetadata, ValidateIndexConsistency},
+		Store::{
+			QueryIndex::{PaginatedSearchResults, QueryIndexSearch, SearchQuery},
+			StoreEntry::{BackupCorruptedIndex, EnsureIndexDirectory, LoadOrCreateIndex, SaveIndex},
+			UpdateIndex::UpdateFileContent,
+		},
+	},
+	Result,
+};
 // Import types from submodules with explicit full paths
-use crate::Indexing::State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolLocation, CreateNewIndex};
-use crate::Indexing::State::UpdateState::{ValidateIndexConsistency, UpdateIndexMetadata};
-use crate::Indexing::Scan::ScanDirectory::{ScanDirectoriesParallel, ScanAndRemoveDeleted};
-use crate::Indexing::Scan::ScanFile::IndexFileInternal;
-use crate::Indexing::Store::StoreEntry::{EnsureIndexDirectory, LoadOrCreateIndex, SaveIndex, BackupCorruptedIndex};
-use crate::Indexing::Store::UpdateIndex::UpdateFileContent;
-use crate::Indexing::Store::QueryIndex::{QueryIndexSearch, SearchQuery, PaginatedSearchResults};
-use crate::Indexing::Process::ExtractSymbols::ExtractSymbols;
-use crate::Indexing::Process::ExtractSymbols::{GroupSymbolsByKind, SymbolStatistics};
+use crate::Indexing::State::CreateState::{CreateNewIndex, FileIndex, FileMetadata, SymbolInfo, SymbolLocation};
 
 /// Maximum number of parallel indexing operations
 const MAX_PARALLEL_INDEXING:usize = 10;
@@ -238,7 +247,7 @@ impl FileIndexer {
 
 		// Scan directory
 		let (files_to_index, scan_result) =
-			ScanDirectoriesParallel(vec![path], patterns.clone(), config, MAX_PARALLEL_INDEXING).await?;
+			ScanDirectoriesParallel(vec![path.clone()], patterns.clone(), config, MAX_PARALLEL_INDEXING).await?;
 
 		// Index files in parallel
 		let index_arc = self.file_index.clone();

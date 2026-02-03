@@ -417,7 +417,7 @@ impl UpdateManager {
 		let config = &AppState.Configuration.Updates;
 
 		// Expand cache directory path
-		let cache_directory = ConfigurationManager::ExpandPath(&AppState.Configuration.Downloader.cache_directory)?;
+		let cache_directory = ConfigurationManager::ExpandPath(&AppState.Configuration.Downloader.CacheDirectory)?;
 
 		// Create cache directory if it doesn't exist
 		tokio::fs::create_dir_all(&cache_directory)

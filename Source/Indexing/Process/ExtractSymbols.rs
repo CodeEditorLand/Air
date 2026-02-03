@@ -63,10 +63,13 @@
 
 use std::path::PathBuf;
 
-use crate::Result;
-use crate::Indexing::State::CreateState::{SymbolInfo, SymbolLocation, SymbolKind};
-use crate::Indexing::Language::ParseRust::ExtractRustSymbols;
-use crate::Indexing::Language::ParseTypeScript::ExtractTypeScriptSymbols;
+use crate::{
+	Indexing::{
+		Language::{ParseRust::ExtractRustSymbols, ParseTypeScript::ExtractTypeScriptSymbols},
+		State::CreateState::{SymbolInfo, SymbolKind, SymbolLocation},
+	},
+	Result,
+};
 
 /// Extract symbols from code for VSCode Outline View and Go to Symbol
 ///
@@ -89,9 +92,7 @@ pub async fn ExtractSymbols(file_path:&PathBuf, content:&[u8], language:&str) ->
 }
 
 /// Group symbols by kind for organization
-pub fn GroupSymbolsByKind(
-	symbols:&[SymbolInfo],
-) -> std::collections::HashMap<SymbolKind, Vec<&SymbolInfo>> {
+pub fn GroupSymbolsByKind(symbols:&[SymbolInfo]) -> std::collections::HashMap<SymbolKind, Vec<&SymbolInfo>> {
 	let mut grouped = std::collections::HashMap::new();
 
 	for symbol in symbols {
@@ -194,7 +195,7 @@ pub fn CreateSymbolIndex(symbols:&[SymbolInfo]) -> std::collections::HashMap<Str
 pub fn FindSymbolsMatching<'a>(
 	symbols:&'a [SymbolInfo],
 	name_pattern:Option<&'a str>,
-	kind:Option<SymbolKind>,
+	kind:&Option<SymbolKind>,
 	line_range:Option<(u32, u32)>,
 ) -> Vec<&'a SymbolInfo> {
 	symbols
@@ -206,7 +207,7 @@ pub fn FindSymbolsMatching<'a>(
 				}
 			}
 			if let Some(k) = kind {
-				if s.kind != k {
+				if s.kind != *k {
 					return false;
 				}
 			}

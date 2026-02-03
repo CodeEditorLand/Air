@@ -66,8 +66,13 @@
 
 use std::path::PathBuf;
 
-use crate::{AirError, ApplicationState::ApplicationState, Configuration::IndexingConfig, Result};
-use crate::Indexing::State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolLocation};
+use crate::{
+	AirError,
+	ApplicationState::ApplicationState,
+	Configuration::IndexingConfig,
+	Indexing::State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolLocation},
+	Result,
+};
 
 /// Add a file to the index with its metadata and symbols
 pub fn AddFileToIndex(

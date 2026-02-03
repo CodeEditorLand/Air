@@ -4,248 +4,255 @@ package Air;
 
 // Air Service - The background daemon service for Land
 service AirService {
-    // Authentication operations
-    rpc Authenticate(AuthenticationRequest) returns (AuthenticationResponse);
-    
-    // Update operations
-    rpc CheckForUpdates(UpdateCheckRequest) returns (UpdateCheckResponse);
-    rpc DownloadUpdate(DownloadRequest) returns (DownloadResponse);
-    rpc ApplyUpdate(ApplyUpdateRequest) returns (ApplyUpdateResponse);
-    
-    // Download operations
-    rpc DownloadFile(DownloadRequest) returns (DownloadResponse);
-    rpc DownloadStream(DownloadStreamRequest) returns (stream DownloadStreamResponse);
-    
-    // File indexing operations
-    rpc IndexFiles(IndexRequest) returns (IndexResponse);
-    rpc SearchFiles(SearchRequest) returns (SearchResponse);
-    rpc GetFileInfo(FileInfoRequest) returns (FileInfoResponse);
-    
-    // Status and monitoring
-    rpc GetStatus(StatusRequest) returns (StatusResponse);
-    rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
-    rpc GetMetrics(MetricsRequest) returns (MetricsResponse);
-    
-    // Resource management
-    rpc GetResourceUsage(ResourceUsageRequest) returns (ResourceUsageResponse);
-    rpc SetResourceLimits(ResourceLimitsRequest) returns (ResourceLimitsResponse);
-    
-    // Configuration management
-    rpc GetConfiguration(ConfigurationRequest) returns (ConfigurationResponse);
-    rpc UpdateConfiguration(UpdateConfigurationRequest) returns (UpdateConfigurationResponse);
+  // Authentication operations
+  rpc Authenticate(AuthenticationRequest) returns (AuthenticationResponse);
+
+  // Update operations
+  rpc CheckForUpdates(UpdateCheckRequest) returns (UpdateCheckResponse);
+  rpc DownloadUpdate(DownloadRequest) returns (DownloadResponse);
+  rpc ApplyUpdate(ApplyUpdateRequest) returns (ApplyUpdateResponse);
+
+  // Download operations
+  rpc DownloadFile(DownloadRequest) returns (DownloadResponse);
+  rpc DownloadStream(DownloadStreamRequest) returns (stream DownloadStreamResponse);
+
+  // File indexing operations
+  rpc IndexFiles(IndexRequest) returns (IndexResponse);
+  rpc SearchFiles(SearchRequest) returns (SearchResponse);
+  rpc GetFileInfo(FileInfoRequest) returns (FileInfoResponse);
+
+  // Status and monitoring
+  rpc GetStatus(StatusRequest) returns (StatusResponse);
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+  rpc GetMetrics(MetricsRequest) returns (MetricsResponse);
+
+  // Resource management
+  rpc GetResourceUsage(ResourceUsageRequest) returns (ResourceUsageResponse);
+  rpc SetResourceLimits(ResourceLimitsRequest) returns (ResourceLimitsResponse);
+
+  // Configuration management
+  rpc GetConfiguration(ConfigurationRequest) returns (ConfigurationResponse);
+  rpc UpdateConfiguration(UpdateConfigurationRequest) returns (UpdateConfigurationResponse);
 }
 
 // Authentication Messages
 message AuthenticationRequest {
-    string RequestId = 1;
-    string Username = 2;
-    string Password = 3;
-    string Provider = 4; // e.g., "github", "gitlab", "microsoft"
+  string RequestId = 1;
+  string Username = 2;
+  string Password = 3;
+  // e.g., "github", "gitlab", "microsoft"
+  string Provider = 4;
 }
 
 message AuthenticationResponse {
-    string RequestId = 1;
-    bool Success = 2;
-    string Token = 3;
-    string Error = 4;
+  string RequestId = 1;
+  bool Success = 2;
+  string Token = 3;
+  string Error = 4;
 }
 
 // Update Messages
 message UpdateCheckRequest {
-    string RequestId = 1;
-    string CurrentVersion = 2;
-    string Channel = 3; // "stable", "beta", "nightly"
+  string RequestId = 1;
+  string CurrentVersion = 2;
+  // "stable", "beta", "nightly"
+  string Channel = 3;
 }
 
 message UpdateCheckResponse {
-    string RequestId = 1;
-    bool UpdateAvailable = 2;
-    string Version = 3;
-    string DownloadURL = 4;
-    string ReleaseNotes = 5;
-    string Error = 6;
+  string RequestId = 1;
+  bool UpdateAvailable = 2;
+  string Version = 3;
+  string DownloadURL = 4;
+  string ReleaseNotes = 5;
+  string Error = 6;
 }
 
 message ApplyUpdateRequest {
-    string RequestId = 1;
-    string Version = 2;
-    string UpdatePath = 3;
+  string RequestId = 1;
+  string Version = 2;
+  string UpdatePath = 3;
 }
 
 message ApplyUpdateResponse {
-    string RequestId = 1;
-    bool Success = 2;
-    string Error = 3;
+  string RequestId = 1;
+  bool Success = 2;
+  string Error = 3;
 }
 
 // Download Messages
 message DownloadRequest {
-    string RequestId = 1;
-    string URL = 2;
-    string DestinationPath = 3;
-    string Checksum = 4; // Optional SHA256 checksum for verification
-    map<string, string> Headers = 5;
+  string RequestId = 1;
+  string URL = 2;
+  string DestinationPath = 3;
+  // Optional SHA256 checksum for verification
+  string Checksum = 4;
+  map<string, string> Headers = 5;
 }
 
 message DownloadResponse {
-    string RequestId = 1;
-    bool Success = 2;
-    string FilePath = 3;
-    uint64 FileSize = 4;
-    string Checksum = 5;
-    string Error = 6;
+  string RequestId = 1;
+  bool Success = 2;
+  string FilePath = 3;
+  uint64 FileSize = 4;
+  string Checksum = 5;
+  string Error = 6;
 }
 
 message DownloadStreamRequest {
-    string RequestId = 1;
-    string URL = 2;
-    map<string, string> Headers = 3;
+  string RequestId = 1;
+  string URL = 2;
+  map<string, string> Headers = 3;
 }
 
 message DownloadStreamResponse {
-    string RequestId = 1;
-    bytes Chunk = 2;
-    uint64 TotalSize = 3;
-    uint64 Downloaded = 4;
-    bool Completed = 5;
-    string Error = 6;
+  string RequestId = 1;
+  bytes Chunk = 2;
+  uint64 TotalSize = 3;
+  uint64 Downloaded = 4;
+  bool Completed = 5;
+  string Error = 6;
 }
 
 // Indexing Messages
 message IndexRequest {
-    string RequestId = 1;
-    string Path = 2;
-    repeated string Patterns = 3; // File patterns to include
-    repeated string ExcludePatterns = 4; // File patterns to exclude
-    uint32 MaxDepth = 5;
+  string RequestId = 1;
+  string Path = 2;
+  // File patterns to include
+  repeated string Patterns = 3;
+  // File patterns to exclude
+  repeated string ExcludePatterns = 4;
+  uint32 MaxDepth = 5;
 }
 
 message IndexResponse {
-    string RequestId = 1;
-    bool Success = 2;
-    uint32 FilesIndexed = 3;
-    uint64 TotalSize = 4;
-    string Error = 5;
+  string RequestId = 1;
+  bool Success = 2;
+  uint32 FilesIndexed = 3;
+  uint64 TotalSize = 4;
+  string Error = 5;
 }
 
 message SearchRequest {
-    string RequestId = 1;
-    string Query = 2;
-    string Path = 3;
-    uint32 MaxResults = 4;
+  string RequestId = 1;
+  string Query = 2;
+  string Path = 3;
+  uint32 MaxResults = 4;
 }
 
 message SearchResponse {
-    string RequestId = 1;
-    repeated FileResult Results = 2;
-    uint32 TotalResults = 3;
-    string Error = 4;
+  string RequestId = 1;
+  repeated FileResult Results = 2;
+  uint32 TotalResults = 3;
+  string Error = 4;
 }
 
 message FileResult {
-    string Path = 1;
-    uint64 Size = 2;
-    string MatchPreview = 3;
-    uint32 LineNumber = 4;
+  string Path = 1;
+  uint64 Size = 2;
+  string MatchPreview = 3;
+  uint32 LineNumber = 4;
 }
 
 message FileInfoRequest {
-    string RequestId = 1;
-    string Path = 2;
+  string RequestId = 1;
+  string Path = 2;
 }
 
 message FileInfoResponse {
-    string RequestId = 1;
-    bool Exists = 2;
-    uint64 Size = 3;
-    string MimeType = 4;
-    string Checksum = 5;
-    uint64 ModifiedTime = 6;
-    string Error = 7;
+  string RequestId = 1;
+  bool Exists = 2;
+  uint64 Size = 3;
+  string MimeType = 4;
+  string Checksum = 5;
+  uint64 ModifiedTime = 6;
+  string Error = 7;
 }
 
 // Status Messages
 message StatusRequest {
-    string RequestId = 1;
+  string RequestId = 1;
 }
 
 message StatusResponse {
-    string Version = 1;
-    uint64 UptimeSeconds = 2;
-    uint64 TotalRequests = 3;
-    uint64 SuccessfulRequests = 4;
-    uint64 FailedRequests = 5;
-    double AverageResponseTime = 6;
-    double MemoryUsageMb = 7;
-    double CPUUsagePercent = 8;
-    uint32 ActiveRequests = 9;
+  string Version = 1;
+  uint64 UptimeSeconds = 2;
+  uint64 TotalRequests = 3;
+  uint64 SuccessfulRequests = 4;
+  uint64 FailedRequests = 5;
+  double AverageResponseTime = 6;
+  double MemoryUsageMb = 7;
+  double CPUUsagePercent = 8;
+  uint32 ActiveRequests = 9;
 }
 
 message HealthCheckRequest {}
 
 message HealthCheckResponse {
-    bool Healthy = 1;
-    uint64 Timestamp = 2;
+  bool Healthy = 1;
+  uint64 Timestamp = 2;
 }
 
 message MetricsRequest {
-    string RequestId = 1;
-    string MetricType = 2; // "performance", "resources", "requests"
+  string RequestId = 1;
+  // "performance", "resources", "requests"
+  string MetricType = 2;
 }
 
 message MetricsResponse {
-    string RequestId = 1;
-    map<string, string> Metrics = 2;
-    string Error = 3;
+  string RequestId = 1;
+  map<string, string> Metrics = 2;
+  string Error = 3;
 }
 
 // Resource Management Messages
 message ResourceUsageRequest {
-    string RequestId = 1;
+  string RequestId = 1;
 }
 
 message ResourceUsageResponse {
-    string RequestId = 1;
-    double MemoryUsageMb = 2;
-    double CPUUsagePercent = 3;
-    double DiskUsageMb = 4;
-    double NetworkUsageMbps = 5;
-    string Error = 6;
+  string RequestId = 1;
+  double MemoryUsageMb = 2;
+  double CPUUsagePercent = 3;
+  double DiskUsageMb = 4;
+  double NetworkUsageMbps = 5;
+  string Error = 6;
 }
 
 message ResourceLimitsRequest {
-    string RequestId = 1;
-    uint32 MemoryLimitMb = 2;
-    uint32 CPULimitPercent = 3;
-    uint32 DiskLimitMb = 4;
+  string RequestId = 1;
+  uint32 MemoryLimitMb = 2;
+  uint32 CPULimitPercent = 3;
+  uint32 DiskLimitMb = 4;
 }
 
 message ResourceLimitsResponse {
-    string RequestId = 1;
-    bool Success = 2;
-    string Error = 3;
+  string RequestId = 1;
+  bool Success = 2;
+  string Error = 3;
 }
 
 // Configuration Messages
 message ConfigurationRequest {
-    string RequestId = 1;
-    string Section = 2; // "grpc", "authentication", "updates", etc.
+  string RequestId = 1;
+  // "grpc", "authentication", "updates", etc.
+  string Section = 2;
 }
 
 message ConfigurationResponse {
-    string RequestId = 1;
-    map<string, string> Configuration = 2;
-    string Error = 3;
+  string RequestId = 1;
+  map<string, string> Configuration = 2;
+  string Error = 3;
 }
 
 message UpdateConfigurationRequest {
-    string RequestId = 1;
-    string Section = 2;
-    map<string, string> Updates = 3;
+  string RequestId = 1;
+  string Section = 2;
+  map<string, string> Updates = 3;
 }
 
 message UpdateConfigurationResponse {
-    string RequestId = 1;
-    bool Success = 2;
-    string Error = 3;
+  string RequestId = 1;
+  bool Success = 2;
+  string Error = 3;
 }

@@ -163,27 +163,30 @@
 //! - **50054**: Reserved for future use (e.g., SideCar service)
 //! - **50055**: Reserved for future metrics endpoints
 
-use std::{net::SocketAddr, sync::Arc, time::Duration};
+use std::{env, net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
 
 use log::{debug, error, info, warn};
 use tokio::{signal, time::interval};
+// Import types from AirLibrary (the crate root)
 use AirLibrary::{
+	AirError,
 	ApplicationState::ApplicationState,
 	Authentication::AuthenticationService,
 	CLI::{CliParser, Command, ConfigCommand, DebugCommand, OutputFormatter},
-	Configuration::ConfigurationManager,
+	Configuration::{AirConfiguration, ConfigurationManager},
 	Daemon::DaemonManager,
 	DefaultBindAddress,
 	DefaultConfigFile,
 	Downloader::DownloadManager,
-	HealthCheck::{HealthCheckLevel, HealthCheckManager},
+	HealthCheck::{HealthCheckLevel, HealthCheckManager, HealthStatistics},
 	Indexing::FileIndexer,
 	Logging,
-	Metrics,
+	Metrics::{self, MetricsCollector, MetricsData},
 	ProtocolVersion,
 	Tracing,
 	Updates::UpdateManager,
 	VERSION,
+	Vine::Generated::air::air_service_server::AirServiceServer,
 	Vine::Server::AirVinegRPCService::AirVinegRPCService,
 };
 
@@ -302,7 +305,7 @@ fn InitializeLogging() {
 	});
 
 	// Initialize structured logging with defensive error handling
-	let log_result = Logging::initialize_logger(json_output, log_file_path.clone());
+	let log_result = Logging::InitializeLogger(json_output, log_file_path.clone());
 
 	match log_result {
 		Ok(_) => {
@@ -1044,7 +1047,7 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 fn validate_command(cmd:&Command) -> Result<(), String> {
 	match cmd {
 		Command::Help { command } => {
-			if let Some(ref cmd) = command {
+			if let Some(cmd) = command {
 				if cmd.len() > 128 {
 					return Err("Command name too long (max: 128)".to_string());
 				}
@@ -1106,10 +1109,10 @@ fn HandleMetricsRequest() -> String {
 	// Defensive: Use a timeout to prevent metrics export from blocking
 	let timeout_duration = std::time::Duration::from_millis(100);
 
-	let metrics_collector = Metrics::get_metrics();
+	let metrics_collector = Metrics::GetMetrics();
 
 	// Export metrics with error handling and timeout
-	let export_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| metrics_collector.export_metrics()));
+	let export_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| metrics_collector.ExportMetrics()));
 
 	match export_result {
 		Ok(Ok(metrics_text)) => {
@@ -1175,8 +1178,7 @@ fn HandleMetricsRequest() -> String {
 /// - Implement crash recovery and restart
 /// - Add pre-flight environment checks
 /// - Implement feature flag system
-#[tokio::main]
-async fn Main() -> Result<(), Box<dyn std::error::Error>> {
+async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	// -------------------------------------------------------------------------
 	// [Boot] [Logging] Initialize logging system
 	// -------------------------------------------------------------------------
@@ -1186,7 +1188,8 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 	info!("[Boot] Starting Air Daemon 🪁");
 	info!("[Boot] ===========================================");
 	info!("[Boot] Version: {} ({})", env!("CARGO_PKG_VERSION"), env!("CARGO_PKG_NAME"));
-	info!("[Boot] Build: {}", env!("BUILD_TIMESTAMP").unwrap_or("unknown".to_string()));
+	let build_timestamp = env::var("BUILD_TIMESTAMP").unwrap_or_else(|_| "unknown".to_string());
+	info!("[Boot] Build: {}", build_timestamp);
 	info!("[Boot] Target: {}-{}", std::env::consts::OS, std::env::consts::ARCH);
 
 	// -------------------------------------------------------------------------
@@ -1207,7 +1210,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 	Trace!("[Boot] [Observability] Initializing observability systems...");
 
 	// Initialize metrics with error handling
-	if let Err(e) = Metrics::initialize_metrics() {
+	if let Err(e) = Metrics::InitializeMetrics() {
 		error!("[Boot] Failed to initialize metrics: {}", e);
 		// Non-fatal: continue without metrics
 	} else {
@@ -1215,7 +1218,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 	}
 
 	// Initialize tracing with error handling
-	if let Err(e) = Tracing::initialize_tracing() {
+	if let Err(e) = Tracing::initialize_tracing(None) {
 		error!("[Boot] Failed to initialize tracing: {}", e);
 		// Non-fatal: continue without tracing
 	} else {
@@ -1253,7 +1256,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 	// -------------------------------------------------------------------------
 	Trace!("[Boot] [Configuration] Loading configuration...");
 
-	let config_manager = match ConfigurationManager::new(config_path) {
+	let config_manager = match ConfigurationManager::New(config_path) {
 		Ok(cm) => cm,
 		Err(e) => {
 			error!("[Boot] Failed to create configuration manager: {}", e);
@@ -1263,7 +1266,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 
 	// Load configuration with timeout
 	let configuration:std::sync::Arc<AirLibrary::Configuration::AirConfiguration> =
-		match tokio::time::timeout(Duration::from_secs(10), config_manager.load_configuration()).await {
+		match tokio::time::timeout(Duration::from_secs(10), config_manager.LoadConfiguration()).await {
 			Ok(Ok(config)) => {
 				info!("[Boot] [Configuration] Configuration loaded successfully");
 				std::sync::Arc::new(config)
@@ -1286,7 +1289,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 	// -------------------------------------------------------------------------
 	Trace!("[Boot] [Daemon] Initializing daemon lifecycle management...");
 
-	let daemon_manager = match DaemonManager::new(None) {
+	let daemon_manager = match DaemonManager::New(None) {
 		Ok(dm) => dm,
 		Err(e) => {
 			error!("[Boot] Failed to create daemon manager: {}", e);
@@ -1295,7 +1298,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 	};
 
 	// Acquire daemon lock to ensure single instance with timeout
-	match tokio::time::timeout(Duration::from_secs(5), daemon_manager.acquire_lock()).await {
+	match tokio::time::timeout(Duration::from_secs(5), daemon_manager.AcquireLock()).await {
 		Ok(Ok(_)) => {
 			info!("[Boot] [Daemon] Daemon lock acquired successfully");
 		},
@@ -1325,7 +1328,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 	Trace!("[Boot] [State] Initializing application state...");
 
 	let AppState:std::sync::Arc<ApplicationState> =
-		match tokio::time::timeout(Duration::from_secs(10), ApplicationState::new(configuration.clone())).await {
+		match tokio::time::timeout(Duration::from_secs(10), ApplicationState::New(configuration.clone())).await {
 			Ok(Ok(state)) => {
 				info!("[Boot] [State] Application state initialized");
 				Arc::new(state)
@@ -1333,12 +1336,12 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 			Ok(Err(e)) => {
 				error!("[Boot] Failed to initialize application state: {}", e);
 				// Attempt to release lock before returning
-				let _ = daemon_manager.release_lock().await;
+				let _ = daemon_manager.ReleaseLock().await;
 				return Err(format!("Application state initialization failed: {}", e).into());
 			},
 			Err(_) => {
 				error!("[Boot] Application state initialization timed out");
-				let _ = daemon_manager.release_lock().await;
+				let _ = daemon_manager.ReleaseLock().await;
 				return Err("Application state initialization timed out".into());
 			},
 		};
@@ -1420,17 +1423,22 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 
 	for (service_name, level) in service_registrations {
 		match tokio::time::timeout(
-			(Duration::from_secs(5)),
-			health_manager.register_service(service_name.to_string(), level),
+			Duration::from_secs(5),
+			health_manager.RegisterService(service_name.to_string(), level),
 		)
 		.await
 		{
-			Ok(Ok(_)) => {
-				debug!("[Boot] [Health] Registered service: {}", service_name);
-			},
-			Ok(Err(e)) => {
-				warn!("[Boot] Failed to register service {}: {}", service_name, e);
-				// Non-fatal: continue without this service's health checks
+			Ok(result) => {
+				match result {
+					Ok(_) => {
+						debug!("[Boot] [Health] Registered service: {}", service_name);
+					},
+					Err(e) => {
+						warn!("[Boot] Failed to register service {}: {}", service_name, e);
+						// Non-fatal: continue without this service's health
+						// checks
+					},
+				}
 			},
 			Err(_) => {
 				warn!("[Boot] Service registration timed out: {}", service_name);
@@ -1473,19 +1481,13 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 	info!("[Boot] [Vine] Configuring gRPC server on {}", bind_addr);
 
 	// Create gRPC service implementation with all dependencies
-	let vine_service = match AirLibrary::Vine::Server::AirVinegRPCService::AirVinegRPCService::new(
+	let vine_service = AirVinegRPCService::new(
 		AppState.clone(),
 		auth_service.clone(),
 		update_manager.clone(),
 		download_manager.clone(),
 		file_indexer.clone(),
-	) {
-		Ok(svc) => svc,
-		Err(e) => {
-			error!("[Boot] Failed to create Vine gRPC service: {}", e);
-			return Err(format!("Vine service creation failed: {}", e).into());
-		},
-	};
+	);
 
 	// Create a oneshot channel to signal server shutdown
 	let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
@@ -1495,7 +1497,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 		tokio::spawn(async move {
 			info!("[Vine] Starting gRPC server on {}", bind_addr);
 
-			let svc = AirLibrary::Vine::Generated::Air_service_server::AirServiceServer::new(vine_service);
+			let svc = AirServiceServer::new(vine_service);
 
 			let server = tonic::transport::Server::builder()
 				.add_service(svc)
@@ -1525,7 +1527,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 	// Check if server task panicked or failed early
 	if server_handle.is_finished() {
 		error!("[Boot] gRPC server failed to start");
-		let _ = daemon_manager.release_lock().await;
+		let _ = daemon_manager.ReleaseLock().await;
 		return Err("gRPC server failed to start".into());
 	}
 
@@ -1544,49 +1546,49 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 				interval.tick().await;
 
 				// Update resource usage with error handling
-				if let Err(e) = AppState.update_resource_usage().await {
+				if let Err(e) = AppState.UpdateResourceUsage().await {
 					warn!("[ConnectionMonitor] Failed to update resource usage: {}", e);
 				}
 
 				// Get resource metrics
-				let resources = AppState.get_resource_usage().await;
+				let resources = AppState.GetResourceUsage().await;
 
 				// Record metrics
-				let metrics_collector = Metrics::get_metrics();
-				metrics_collector.update_resource_metrics(
-					resources.MemoryUsageMb.saturating_mul(1024).saturating_mul(1024), // Convert MB to bytes
-					resources.cpu_usage_percent,
-					AppState.get_active_connection_count().await as u64,
+				let metrics_collector = Metrics::GetMetrics();
+				metrics_collector.UpdateResourceMetrics(
+					(resources.MemoryUsageMb * 1024.0 * 1024.0) as u64, // Convert MB to bytes
+					resources.CPUUsagePercent,
+					AppState.GetActiveConnectionCount().await as u64,
 					0, // Active threads - TODO: implement thread count
 				);
 
 				// Clean up stale connections (5 minute timeout)
-				if let Err(e) = AppState.cleanup_stale_connections(300).await {
+				if let Err(e) = AppState.CleanupStaleConnections(300).await {
 					warn!("[ConnectionMonitor] Failed to cleanup stale connections: {}", e);
 				}
 
 				// Perform health checks
-				match health_manager.check_service("connections").await {
+				match health_manager.CheckService("connections").await {
 					Ok(_) => {},
 					Err(e) => {
 						warn!("[ConnectionMonitor] Health check failed: {}", e);
 
 						// Record metrics for failed health check
-						let metrics_collector = Metrics::get_metrics();
+						let metrics_collector = Metrics::GetMetrics();
 						metrics_collector.RecordRequestFailure("health_check_failed", 0.0);
 					},
 				}
 
 				debug!(
 					"[ConnectionMonitor] Active connections: {}",
-					AppState.get_active_connection_count().await
+					AppState.GetActiveConnectionCount().await
 				);
 			}
 		}
 	});
 
 	// Register background task with error handling
-	if let Err(e) = AppState.register_background_task(connection_monitor_handle).await {
+	if let Err(e) = AppState.RegisterBackgroundTask(connection_monitor_handle).await {
 		warn!("[Boot] Failed to register connection monitor: {}", e);
 		// Non-fatal: continue monitoring may not be tracked
 	}
@@ -1602,20 +1604,20 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 				// Perform comprehensive health checks
 				let services = ["authentication", "updates", "downloader", "indexing", "grpc"];
 				for service in services.iter() {
-					if let Err(e) = health_manager.check_service(service).await {
+					if let Err(e) = health_manager.CheckService(service).await {
 						warn!("[HealthMonitor] Health check failed for {}: {}", service, e);
 					}
 				}
 
 				// Log overall health status
-				let overall_health = health_manager.get_overall_health().await;
+				let overall_health = health_manager.GetOverallHealth().await;
 				debug!("[HealthMonitor] Overall health: {:?}", overall_health);
 			}
 		}
 	});
 
 	// Register health monitoring task with error handling
-	if let Err(e) = AppState.register_background_task(health_monitor_handle).await {
+	if let Err(e) = AppState.RegisterBackgroundTask(health_monitor_handle).await {
 		warn!("[Boot] Failed to register health monitor: {}", e);
 		// Non-fatal: continue monitoring may not be tracked
 	}
@@ -1625,19 +1627,12 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 	// -------------------------------------------------------------------------
 	Trace!("[Boot] [Startup] Starting background services...");
 
-	// Start each service with timeout and error handling
-	let service_hands = vec![
-		auth_service.start_background_tasks().await,
-		update_manager.start_background_tasks().await,
-		download_manager.start_background_tasks().await,
-		file_indexer.start_background_tasks().await,
-	];
-
-	// Collect handles
-	let handles:Vec<_> = service_hands.into_iter().collect::<Result<_, _>>()?;
-
-	let (auth_handle, update_handle, download_handle, indexing_handle) =
-		(handles[0].clone(), handles[1].clone(), handles[2].clone(), handles[3].clone());
+	// Start background tasks for services that support it
+	let auth_handle = auth_service.StartBackgroundTasks().await?;
+	let update_handle = update_manager.StartBackgroundTasks().await?;
+	let download_handle = download_manager.StartBackgroundTasks().await?;
+	// FileIndexer does not have background tasks, it's used directly
+	let _indexing_handle = None::<tokio::task::JoinHandle<()>>;
 
 	info!("[Boot] [Startup] All services started successfully");
 
@@ -1686,37 +1681,36 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 
 	// Stop all background tasks with timeout
 	info!("[Shutdown] Stopping background tasks...");
-	if let Err(e) = tokio::time::timeout(Duration::from_secs(10), AppState.stop_all_background_tasks()).await {
-		match e {
-			Ok(inner) => warn!("[Shutdown] Failed to stop background tasks: {}", inner),
-			Err(_) => warn!("[Shutdown] Background tasks stop timed out"),
-		}
+	if let Err(_) =
+		tokio::time::timeout(Duration::from_secs(10), async { AppState.StopAllBackgroundTasks().await }).await
+	{
+		warn!("[Shutdown] Background tasks stop timed out or failed");
 	}
 
 	// Stop background services
 	info!("[Shutdown] Stopping background services...");
-	auth_service.stop_background_tasks().await;
-	update_manager.stop_background_tasks().await;
-	download_manager.stop_background_tasks().await;
-	file_indexer.stop_background_tasks().await;
+	auth_service.StopBackgroundTasks().await;
+	update_manager.StopBackgroundTasks().await;
+	download_manager.StopBackgroundTasks().await;
 
 	// Wait for services to stop with timeout
 	info!("[Shutdown] Waiting for services to complete...");
-	let _ = tokio::time::timeout(
-		Duration::from_secs(10),
-		tokio::join!(auth_handle, update_handle, download_handle, indexing_handle),
-	)
+	let _ = tokio::time::timeout(Duration::from_secs(10), async {
+		let _ = auth_handle.await;
+		let _ = update_handle.await;
+		let _ = download_handle.await;
+	})
 	.await;
 
 	// Log final statistics
 	info!("[Shutdown] Collecting final statistics...");
 
-	let metrics = AppState.get_metrics().await;
-	let resources = AppState.get_resource_usage().await;
-	let health_stats = health_manager.get_health_statistics().await;
+	let metrics = AppState.GetMetrics().await;
+	let resources = AppState.GetResourceUsage().await;
+	let health_stats:HealthStatistics = health_manager.GetHealthStatistics().await;
 
 	// Get final metrics data
-	let metrics_data = Metrics::get_metrics().get_metrics_data();
+	let metrics_data = Metrics::GetMetrics().GetMetricsData();
 
 	info!("===========================================");
 	info!("[Shutdown] Final Statistics");
@@ -1725,22 +1719,22 @@ async fn Main() -> Result<(), Box<dyn std::error::Error>> {
 	info!("  - Successful: {}", metrics.SuccessfulRequests);
 	info!("  - Failed: {}", metrics.FailedRequests);
 	info!("[Shutdown] Metrics:");
-	info!("  - Success rate: {:.2}%", metrics_data.success_rate());
-	info!("  - Error rate: {:.2}%", metrics_data.error_rate());
+	info!("  - Success rate: {:.2}%", metrics_data.SuccessRate());
+	info!("  - Error rate: {:.2}%", metrics_data.ErrorRate());
 	info!("[Shutdown] Resources:");
 	info!("  - Memory: {:.2} MB", resources.MemoryUsageMb);
-	info!("  - CPU: {:.2}%", resources.cpu_usage_percent);
+	info!("  - CPU: {:.2}%", resources.CPUUsagePercent);
 	info!("[Shutdown] Health:");
-	info!("  - Overall: {:.2}%", health_stats.overall_health_percentage());
+	info!("  - Overall: {:.2}%", health_stats.OverallHealthPercentage());
 	info!(
 		"  - Healthy services: {}/{}",
-		health_stats.healthy_services, health_stats.total_services
+		health_stats.HealthyServices, health_stats.TotalServices
 	);
 	info!("===========================================");
 
 	// Release daemon lock
 	info!("[Shutdown] Releasing daemon lock...");
-	if let Err(e) = daemon_manager.release_lock().await {
+	if let Err(e) = daemon_manager.ReleaseLock().await {
 		warn!("[Shutdown] Failed to release daemon lock: {}", e);
 	}
 
@@ -1788,8 +1782,11 @@ async fn validate_environment() -> Result<(), String> {
 /// - Validate timeout values
 /// - Validate file paths exist or are creatable
 /// - Validate URLs are properly formatted
-fn validate_configuration(config:&AirLibrary::Configuration::AirConfiguration) -> Result<(), String> {
+fn validate_configuration(config:&AirConfiguration) -> Result<(), String> {
 	// Add configuration validation logic here
 	debug!("[Config] Configuration passed basic validation");
 	Ok(())
 }
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> { Main().await }

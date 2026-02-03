@@ -68,8 +68,12 @@ use std::path::PathBuf;
 
 use tokio::sync::{Mutex, RwLock};
 
-use crate::{AirError, Configuration::IndexingConfig, Result};
-use crate::Indexing::State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolLocation};
+use crate::{
+	AirError,
+	Configuration::IndexingConfig,
+	Indexing::State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolLocation},
+	Result,
+};
 
 /// Handle file watcher event for incremental indexing
 ///
@@ -127,7 +131,8 @@ pub async fn HandleFileEvent(event:notify::Event, index_arc:&RwLock<FileIndex>, 
 					}
 				}
 				for indexed_path in paths_to_remove {
-					if let Err(e) = crate::Indexing::State::UpdateState::RemoveFileFromIndex(&mut index, &indexed_path) {
+					if let Err(e) = crate::Indexing::State::UpdateState::RemoveFileFromIndex(&mut index, &indexed_path)
+					{
 						log::warn!("[WatchFile] Failed to remove file {}: {}", indexed_path.display(), e);
 					}
 				}

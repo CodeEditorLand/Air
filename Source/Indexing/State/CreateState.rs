@@ -68,6 +68,8 @@ use std::{
 	collections::{HashMap, HashSet},
 	path::PathBuf,
 };
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -93,7 +95,7 @@ pub struct SymbolInfo {
 }
 
 /// Symbol kind for VSCode compatibility
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Hash, Eq, PartialEq)]
 pub enum SymbolKind {
 	File = 0,
 	Module = 1,

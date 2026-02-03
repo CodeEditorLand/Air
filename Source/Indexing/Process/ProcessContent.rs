@@ -60,6 +60,7 @@
 //! parallel indexing tasks.
 
 use std::path::PathBuf;
+
 use crate::Result;
 
 /// Detect file encoding (simplified detection)

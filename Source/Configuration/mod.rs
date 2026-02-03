@@ -470,6 +470,7 @@ impl Default for AirConfiguration {
 				FileTypes:default_indexing_file_types(),
 				UpdateIntervalMinutes:default_indexing_update_interval(),
 				IndexDirectory:default_indexing_directory(),
+				MaxParallelIndexing:default_max_parallel_indexing(),
 			},
 			Logging:LoggingConfig {
 				Level:default_logging_level(),
@@ -1186,7 +1187,7 @@ impl ConfigurationManager {
 		if !ValidLevels.contains(&logging.Level.as_str()) {
 			return Err(AirError::Configuration(format!(
 				"Invalid log level '{}': must be one of: {}",
-				logging.level,
+				logging.Level,
 				ValidLevels.join(", ")
 			)));
 		}

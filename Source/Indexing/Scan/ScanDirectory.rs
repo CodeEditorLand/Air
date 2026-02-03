@@ -68,9 +68,15 @@ use std::{collections::HashSet, path::Path, sync::Arc};
 
 use tokio::sync::{RwLock, Semaphore};
 
-use crate::{AirError, Configuration::IndexingConfig, Result};
-use crate::Indexing::State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolLocation};
-use crate::Indexing::Scan::ScanFile::{IndexFileInternal, ValidateFileAccess};
+use crate::{
+	AirError,
+	Configuration::IndexingConfig,
+	Indexing::{
+		Scan::ScanFile::{IndexFileInternal, ValidateFileAccess},
+		State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolLocation},
+	},
+	Result,
+};
 
 /// Scan directory result with statistics
 #[derive(Debug, Clone)]
@@ -213,6 +219,7 @@ pub async fn ScanAndRemoveDeleted(index:&mut FileIndex, directory_path:&Path) ->
 		}
 	}
 
+	let removed_count = paths_to_remove.len();
 	for path in paths_to_remove {
 		index.files.remove(&path);
 		index.file_symbols.remove(&path);
@@ -228,7 +235,7 @@ pub async fn ScanAndRemoveDeleted(index:&mut FileIndex, directory_path:&Path) ->
 		}
 	}
 
-	Ok(paths_to_remove.len() as u32)
+	Ok(removed_count as u32)
 }
 
 /// Check directory read permissions

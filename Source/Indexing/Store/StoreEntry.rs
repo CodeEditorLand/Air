@@ -63,17 +63,17 @@
 //! safely merged into shared Ar c<RwLock<>> state.
 
 use std::path::{Path, PathBuf};
+
 use tokio::sync::RwLock;
 
-use crate::{AirError, Result};
-
-use crate::Indexing::State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolKind, SymbolLocation};
+use crate::{
+	AirError,
+	Indexing::State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolKind, SymbolLocation},
+	Result,
+};
 
 /// Save index to disk with atomic write
-pub async fn SaveIndex(
-	index_directory: &Path,
-	index: &FileIndex,
-) -> Result<()> {
+pub async fn SaveIndex(index_directory:&Path, index:&FileIndex) -> Result<()> {
 	let index_file = index_directory.join("file_index.json");
 	let temp_file = index_directory.join("file_index.json.tmp");
 
@@ -101,7 +101,7 @@ pub async fn SaveIndex(
 }
 
 /// Load index from disk with corruption detection
-pub async fn LoadIndex(index_directory: &Path) -> Result<FileIndex> {
+pub async fn LoadIndex(index_directory:&Path) -> Result<FileIndex> {
 	let index_file = index_directory.join("file_index.json");
 
 	if !index_file.exists() {
@@ -115,7 +115,7 @@ pub async fn LoadIndex(index_directory: &Path) -> Result<FileIndex> {
 		.await
 		.map_err(|e| AirError::FileSystem(format!("Failed to read index file: {}", e)))?;
 
-	let index: FileIndex = serde_json::from_str(&content)
+	let index:FileIndex = serde_json::from_str(&content)
 		.map_err(|e| AirError::Serialization(format!("Failed to parse index file: {}", e)))?;
 
 	// Verify index structure
@@ -137,7 +137,7 @@ pub async fn LoadIndex(index_directory: &Path) -> Result<FileIndex> {
 }
 
 /// Load or create index with corruption detection
-pub async fn LoadOrCreateIndex(index_directory: &Path) -> Result<FileIndex> {
+pub async fn LoadOrCreateIndex(index_directory:&Path) -> Result<FileIndex> {
 	let index_file = index_directory.join("file_index.json");
 
 	if index_file.exists() {
@@ -170,7 +170,7 @@ fn CreateNewIndex() -> FileIndex {
 }
 
 /// Ensure index directory exists with proper error handling
-pub async fn EnsureIndexDirectory(index_directory: &Path) -> Result<()> {
+pub async fn EnsureIndexDirectory(index_directory:&Path) -> Result<()> {
 	tokio::fs::create_dir_all(index_directory).await.map_err(|e| {
 		AirError::Configuration(format!("Failed to create index directory {}: {}", index_directory.display(), e))
 	})?;
@@ -178,12 +178,9 @@ pub async fn EnsureIndexDirectory(index_directory: &Path) -> Result<()> {
 }
 
 /// Backup corrupted index before creating new one
-pub async fn BackupCorruptedIndex(index_directory: &Path) -> Result<()> {
+pub async fn BackupCorruptedIndex(index_directory:&Path) -> Result<()> {
 	let index_file = index_directory.join("file_index.json");
-	let backup_file = index_directory.join(format!(
-		"file_index.corrupted.{}.json",
-		chrono::Utc::now().timestamp()
-	));
+	let backup_file = index_directory.join(format!("file_index.corrupted.{}.json", chrono::Utc::now().timestamp()));
 
 	if !index_file.exists() {
 		return Ok(());
@@ -200,20 +197,14 @@ pub async fn BackupCorruptedIndex(index_directory: &Path) -> Result<()> {
 }
 
 /// Load index with automatic recovery on corruption
-pub async fn LoadIndexWithRecovery(
-	index_directory: &Path,
-	max_retries: usize,
-) -> Result<FileIndex> {
+pub async fn LoadIndexWithRecovery(index_directory:&Path, max_retries:usize) -> Result<FileIndex> {
 	let mut last_error = None;
 
 	for attempt in 0..max_retries {
 		match LoadOrCreateIndex(index_directory).await {
 			Ok(index) => {
 				if attempt > 0 {
-					log::info!(
-						"[StoreEntry] Successfully loaded index after {} attempts",
-						attempt + 1
-					);
+					log::info!("[StoreEntry] Successfully loaded index after {} attempts", attempt + 1);
 				}
 				return Ok(index);
 			},
@@ -229,18 +220,14 @@ pub async fn LoadIndexWithRecovery(
 		}
 	}
 
-	Err(last_error.unwrap_or_else(|| {
-		AirError::Internal("Failed to load index after retries".to_string())
-	}))
+	Err(last_error.unwrap_or_else(|| AirError::Internal("Failed to load index after retries".to_string())))
 }
 
 /// Get index file path
-pub fn GetIndexFilePath(index_directory: &Path) -> PathBuf {
-	index_directory.join("file_index.json")
-}
+pub fn GetIndexFilePath(index_directory:&Path) -> PathBuf { index_directory.join("file_index.json") }
 
 /// Check if index file exists and is readable
-pub async fn IndexFileExists(index_directory: &Path) -> Result<bool> {
+pub async fn IndexFileExists(index_directory:&Path) -> Result<bool> {
 	let index_file = index_directory.join("file_index.json");
 
 	if !index_file.exists() {
@@ -255,27 +242,29 @@ pub async fn IndexFileExists(index_directory: &Path) -> Result<bool> {
 }
 
 /// Get index file size in bytes
-pub async fn GetIndexFileSize(index_directory: &Path) -> Result<u64> {
+pub async fn GetIndexFileSize(index_directory:&Path) -> Result<u64> {
 	let index_file = index_directory.join("file_index.json");
 
-	let metadata = tokio::fs::metadata(&index_file).await.map_err(|e| {
-		AirError::FileSystem(format!("Failed to get index file metadata: {}", e))
-	})?;
+	let metadata = tokio::fs::metadata(&index_file)
+		.await
+		.map_err(|e| AirError::FileSystem(format!("Failed to get index file metadata: {}", e)))?;
 
 	Ok(metadata.len())
 }
 
 /// Clean up old backup files
-pub async fn CleanupOldBackups(index_directory: &Path, keep_count: usize) -> Result<usize> {
-	let mut entries = tokio::fs::read_dir(index_directory).await.map_err(|e| {
-		AirError::FileSystem(format!("Failed to read index directory: {}", e))
-	})?;
+pub async fn CleanupOldBackups(index_directory:&Path, keep_count:usize) -> Result<usize> {
+	let mut entries = tokio::fs::read_dir(index_directory)
+		.await
+		.map_err(|e| AirError::FileSystem(format!("Failed to read index directory: {}", e)))?;
 
 	let mut backups = Vec::new();
 
-	while let Some(entry) = entries.next_entry().await.map_err(|e| {
-		AirError::FileSystem(format!("Failed to read directory entry: {}", e))
-	})? {
+	while let Some(entry) = entries
+		.next_entry()
+		.await
+		.map_err(|e| AirError::FileSystem(format!("Failed to read directory entry: {}", e)))?
+	{
 		let file_name = entry.file_name().to_string_lossy().to_string();
 
 		if file_name.starts_with("file_index.corrupted.") && file_name.ends_with(".json") {
@@ -309,7 +298,7 @@ pub async fn CleanupOldBackups(index_directory: &Path, keep_count: usize) -> Res
 }
 
 /// Validate index file format before loading
-pub async fn ValidateIndexFormat(index_directory: &Path) -> Result<()> {
+pub async fn ValidateIndexFormat(index_directory:&Path) -> Result<()> {
 	let index_file = index_directory.join("file_index.json");
 
 	let content = tokio::fs::read_to_string(&index_file)
@@ -317,7 +306,7 @@ pub async fn ValidateIndexFormat(index_directory: &Path) -> Result<()> {
 		.map_err(|e| AirError::FileSystem(format!("Failed to read index file: {}", e)))?;
 
 	// Try to parse as JSON
-	let _: serde_json::Value = serde_json::from_str(&content)
+	let _:serde_json::Value = serde_json::from_str(&content)
 		.map_err(|e| AirError::Serialization(format!("Index file is not valid JSON: {}", e)))?;
 
 	Ok(())
