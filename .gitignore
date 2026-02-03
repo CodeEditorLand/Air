@@ -19,7 +19,7 @@
 
 !/Target/debug/*.exe
 
-# !/Target/debug/Air
+!/Target/debug/Air
 
 !/Target/release/bundle
 !/Target/release/bundle/nsis
@@ -32,7 +32,7 @@
 
 !/Target/release/*.exe
 
-# !/Target/release/Air
+!/Target/release/Air
 
 !/Target/x86_64-pc-windows-msvc/bundle
 !/Target/x86_64-pc-windows-msvc/bundle/nsis
@@ -45,11 +45,11 @@
 
 !/Target/x86_64-pc-windows-msvc/*.exe
 
-# !/Target/debug/libAirLibrary.rlib
+!/Target/debug/libAirLibrary.rlib
 
-# !/Target/release/libAirLibrary.rlib
+!/Target/release/libAirLibrary.rlib
 
-# !/Target/x86_64-pc-windows-msvc/libAirLibrary.rlib
+!/Target/x86_64-pc-windows-msvc/libAirLibrary.rlib
 
 Documentation/Rust/debug
 Documentation/Rust/release
