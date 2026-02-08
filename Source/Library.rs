@@ -116,7 +116,8 @@
 //!   - 50053: Air (background services) - DefaultBindAddress
 //!   - 50052: Cocoon (NodeJS/web services)
 //!
-//! TODO: Add TLS/mTLS support for production security
+//! TLS/mTLS support for production security is now available via the `mtls` feature.
+//! See the Mountain module for client TLS configuration.
 //! ## TODO: Missing Functionality
 //!
 //! ### High Priority
@@ -175,6 +176,7 @@ pub mod HealthCheck;
 pub mod Indexing;
 pub mod Logging;
 pub mod Metrics;
+pub mod Mountain;
 pub mod Plugins;
 pub mod Resilience;
 pub mod Security;

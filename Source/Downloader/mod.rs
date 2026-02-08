@@ -135,6 +135,9 @@ pub struct DownloadManager {
 	/// Bandwidth limiter for global control
 	BandwidthLimiter:Arc<Semaphore>,
 
+	/// Token bucket for rate limiting
+	TokenBucket:Arc<RwLock<TokenBucket>>,
+
 	/// Concurrent download limiter
 	ConcurrentLimiter:Arc<Semaphore>,
 
@@ -226,6 +229,98 @@ pub struct DownloadStatistics {
 /// Progress callback type
 pub type ProgressCallback = Arc<dyn Fn(DownloadStatus) + Send + Sync>;
 
+/// Token bucket for rate limiting
+///
+/// Implements the token bucket algorithm for bandwidth throttling:
+/// - Tokens represent bytes that can be downloaded
+/// - Tokens are replenished at a constant rate (bytes per second)
+/// - Downloads consume tokens from the bucket
+/// - If bucket is empty, download is throttled until tokens available
+#[derive(Debug)]
+struct TokenBucket {
+	/// Current number of tokens available (bytes)
+	tokens:f64,
+
+	/// Maximum capacity of the bucket (burst allowance)
+	capacity:f64,
+
+	/// Token refill rate (bytes per second)
+ refill_rate:f64,
+
+	/// Last time tokens were refilled
+	last_refill:Instant,
+}
+
+impl TokenBucket {
+	/// Create a new token bucket with specified capacity and refill rate
+	fn new(bytes_per_sec:u64, capacity_factor:f64) -> Self {
+		let refill_rate = bytes_per_sec as f64;
+		let capacity = refill_rate * capacity_factor; // Allow burst of up to capacity_factor seconds worth of tokens
+
+		Self {
+			tokens:capacity,
+			capacity,
+			refill_rate,
+			last_refill:Instant::now(),
+		}
+	}
+
+	/// Refill tokens based on elapsed time
+	fn refill(&mut self) {
+		let elapsed = self.last_refill.elapsed().as_secs_f64();
+		if elapsed > 0.0 {
+			let new_tokens = elapsed * self.refill_rate;
+			self.tokens = (self.tokens + new_tokens).min(self.capacity);
+			self.last_refill = Instant::now();
+		}
+	}
+
+	/// Try to consume the specified number of tokens (bytes)
+	/// Returns number of tokens actually consumed
+	fn try_consume(&mut self, bytes:u64) -> u64 {
+		self.refill();
+		
+		let bytes = bytes as f64;
+		if self.tokens >= bytes {
+			self.tokens -= bytes;
+			return bytes as u64;
+		}
+
+		// Not enough tokens, consume what's available
+		let available = self.tokens;
+		self.tokens = 0.0;
+		available as u64
+	}
+
+	/// Wait until enough tokens are available, then consume them
+	async fn consume(&mut self, bytes:u64) -> Result<()> {
+		let bytes_needed = bytes as f64;
+		
+		loop {
+			self.refill();
+			
+			if self.tokens >= bytes_needed {
+				self.tokens -= bytes_needed;
+				return Ok(());
+			}
+
+			// Calculate time needed to accumulate enough tokens
+			let tokens_needed = bytes_needed - self.tokens;
+			let wait_duration = tokens_needed / self.refill_rate;
+			
+			// Wait a bit and try again (check at least every 100ms)
+			let sleep_duration = Duration::from_secs_f64(wait_duration.min(0.1));
+			tokio::time::sleep(sleep_duration).await;
+		}
+	}
+
+	/// Update the refill rate (bandwidth limit)
+	fn set_rate(&mut self, bytes_per_sec:u64) {
+		self.refill_rate = bytes_per_sec as f64;
+		self.capacity = self.refill_rate * 5.0; // Allow 5 seconds burst
+	}
+}
+
 /// Download configuration with validation constraints
 #[derive(Debug, Clone)]
 pub struct DownloadConfig {
@@ -286,8 +381,11 @@ impl DownloadManager {
 			.build()
 			.map_err(|e| AirError::Network(format!("Failed to create HTTP client: {}", e)))?;
 
-		// Bandwidth limiter (permit = 1MB of transfer)
+		// Bandwidth limiter (permit = 1MB of transfer) - kept for global limit
 		let BandwidthLimiter = Arc::new(Semaphore::new(100));
+
+		// Token bucket for precise bandwidth throttling (default: 100 MB/s)
+		let TokenBucket = Arc::new(RwLock::new(TokenBucket::new(100 * 1024 * 1024, 5.0)));
 
 		// Concurrent download limiter (max 5 parallel downloads)
 		let ConcurrentLimiter = Arc::new(Semaphore::new(5));
@@ -300,6 +398,7 @@ impl DownloadManager {
 			client,
 			ChecksumVerifier:Arc::new(crate::Security::ChecksumVerifier::New()),
 			BandwidthLimiter,
+			TokenBucket,
 			ConcurrentLimiter,
 			statistics:Arc::new(RwLock::new(DownloadStatistics::default())),
 		};
@@ -580,35 +679,80 @@ impl DownloadManager {
 	/// Get disk statistics using statvfs (Unix)
 	#[cfg(unix)]
 	fn GetDiskStatvfs(&self, path:&Path) -> Result<(u64, u64)> {
-		// TODO: Implement actual statvfs call using libc statvfs()
-		// Example implementation:
-		// use std::mem::size_of;
-		// let mut stat: libc::statvfs = unsafe { std::mem::zeroed() };
-		// let PathCstr = path.to_path_buf().as_os_str().to_c_string();
-		// let result = unsafe { libc::statvfs(path_cstr.as_ptr(), &mut stat) };
-		// if result != 0 { return Err(...); }
-		// let available = stat.FBsize as u64 * stat.FBavail as u64;
-		// let total = stat.FBsize as u64 * stat.FBlocks as u64;
-		// For now, assume sufficient space and log the request
+		use std::ffi::CString;
+		use std::os::unix::ffi::OsStrExt;
+
 		log::debug!("[DownloadManager] Checking disk space at: {}", path.display());
-		Ok((u64::MAX, u64::MAX))
+
+		// Convert path to C string
+		let path_cstr = CString::new(path.as_os_str().as_bytes())
+			.map_err(|e| AirError::FileSystem(format!("Failed to convert path to C string: {}", e)))?;
+
+		// Call statvfs
+		let mut stat: libc::statvfs = unsafe { std::mem::zeroed() };
+		let result = unsafe { libc::statvfs(path_cstr.as_ptr(), &mut stat) };
+
+		if result != 0 {
+			let err = std::io::Error::last_os_error();
+			return Err(AirError::FileSystem(format!("Failed to get disk stats: {}", err)));
+		}
+
+		// Calculate available and total space
+		let fragment_size = stat.f_frsize as u64;
+		let available_bytes = fragment_size * stat.f_bavail as u64;
+		let total_bytes = fragment_size * stat.f_blocks as u64;
+
+		log::debug!(
+			"[DownloadManager] Disk space at {}: {} bytes available, {} bytes total",
+			path.display(),
+			available_bytes,
+			total_bytes
+		);
+
+		Ok((available_bytes, total_bytes))
 	}
 
 	/// Get disk space on Windows
 	#[cfg(windows)]
 	fn GetDiskSpaceWindows(&self, path:&Path) -> Result<u64> {
-		// TODO: Implement Windows disk space checking using winapi
-		// GetDiskFreeSpaceExW() Example implementation:
-		// use windows::Win32::Storage::FileSystem::GetDiskFreeSpaceExW;
-		// let mut available: u64 = 0;
-		// let mut total: u64 = 0;
-		// let mut free: u64 = 0;
-		// let result = unsafe { GetDiskFreeSpaceExW(path.as_os_str(), &mut available as
-		// *mut _ as _, &mut total as *mut _ as _, &mut free as *mut _ as _) };
-		// if !result.as_bool() { return Err(...); }
-		// For now, assume sufficient space and log the request
+		use std::os::windows::ffi::OsStrExt;
+		use windows::Win32::Storage::FileSystem::GetDiskFreeSpaceExW;
+
 		log::debug!("[DownloadManager] Checking disk space at: {}", path.display());
-		Ok(u64::MAX)
+
+		// Convert path to UTF-16 string
+		let path_str: Vec<u16> = path
+			.as_os_str()
+			.encode_wide()
+			.chain(std::iter::once(0))
+			.collect();
+
+		let mut free_bytes_available: u64 = 0;
+		let mut total_bytes: u64 = 0;
+		let mut total_free_bytes: u64 = 0;
+
+		let result = unsafe {
+			GetDiskFreeSpaceExW(
+				windows::core::PCWSTR(path_str.as_ptr()),
+				&mut free_bytes_available as *mut _ as _,
+				&mut total_bytes as *mut _ as _,
+				&mut total_free_bytes as *mut _ as _,
+			)
+		};
+
+		if !result.as_bool() {
+			let err = std::io::Error::last_os_error();
+			return Err(AirError::FileSystem(format!("Failed to get disk space: {}", err)));
+		}
+
+		log::debug!(
+			"[DownloadManager] Disk space at {}: {} bytes available, {} bytes total",
+			path.display(),
+			free_bytes_available,
+			total_bytes
+		);
+
+		Ok(free_bytes_available)
 	}
 
 	/// Find mount point for a given path
@@ -910,13 +1054,13 @@ impl DownloadManager {
 
 			match result {
 				Ok(chunk) => {
-					// Bandwidth limiting check
+					// Apply bandwidth throttling using token bucket
 					let ChunkSize = chunk.len();
-					if let Ok(permit) = self.BandwidthLimiter.try_acquire_many((ChunkSize / (1024 * 1024) + 1) as u32) {
-						drop(permit);
-					} else {
-						// Wait if bandwidth limit reached
-						tokio::time::sleep(Duration::from_millis(10)).await;
+					{
+						let mut bucket = self.TokenBucket.write().await;
+						if let Err(e) = bucket.consume(ChunkSize as u64).await {
+							log::warn!("[DownloadManager] Bandwidth throttling error: {}, continuing anyway", e);
+						}
 					}
 
 					file.write_all(&chunk)
@@ -1482,14 +1626,31 @@ impl DownloadManager {
 	}
 
 	/// Set global bandwidth limit (in MB/s)
-	/// TODO: Implement per-download bandwidth limiting instead of global only
-	/// TODO: Add time-based bandwidth schedules (off-peak acceleration)
-	/// TODO: Implement actual bandwidth throttling with token bucket algorithm
+	///
+	/// Updates the token bucket refill rate to enforce the bandwidth limit.
+	/// The token bucket allows short bursts up to 5x the configured rate.
+	///
+	/// # Arguments
+	/// * `mb_per_sec` - Maximum download speed in megabytes per second (1-1000)
+	///
+	/// # Example
+	/// ```rust
+	/// downloader.SetBandwidthLimit(10).await; // Limit to 10 MB/s
+	/// ```
 	pub async fn SetBandwidthLimit(&mut self, mb_per_sec:usize) {
-		// Update semaphore permits (1 permit = 1MB)
+		let bytes_per_sec = (mb_per_sec.max(1).min(1000) * 1024 * 1024) as u64;
+		
+		// Update token bucket refill rate
+		{
+			let mut bucket = self.TokenBucket.write().await;
+			bucket.set_rate(bytes_per_sec);
+		}
+		
+		// Also update semaphore for global limit (1 permit = 1MB)
 		let permits = mb_per_sec.max(1).min(1000);
 		self.BandwidthLimiter = Arc::new(Semaphore::new(permits));
-		log::info!("[DownloadManager] Bandwidth limit set to {} MB/s", mb_per_sec);
+		
+		log::info!("[DownloadManager] Bandwidth limit set to {} MB/s ({} bytes/s)", mb_per_sec, bytes_per_sec);
 	}
 
 	/// Set maximum concurrent downloads
@@ -1512,6 +1673,7 @@ impl Clone for DownloadManager {
 			client:self.client.clone(),
 			ChecksumVerifier:self.ChecksumVerifier.clone(),
 			BandwidthLimiter:self.BandwidthLimiter.clone(),
+			TokenBucket:self.TokenBucket.clone(),
 			ConcurrentLimiter:self.ConcurrentLimiter.clone(),
 			statistics:self.statistics.clone(),
 		}

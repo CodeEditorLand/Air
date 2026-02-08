@@ -22,6 +22,7 @@ path = "Source/Binary.rs"
 
 [dependencies]
 tokio = { workspace = true }
+tonic = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 log = { workspace = true }
@@ -60,7 +61,6 @@ tracing-subscriber = { workspace = true, features = [
 	"ansi",
 ] }
 tracing-appender = { workspace = true }
-tonic = { workspace = true }
 tonic-prost = { workspace = true }
 prost = { workspace = true }
 flate2 = { workspace = true }
@@ -74,6 +74,16 @@ tempfile = { workspace = true }
 tokio-tungstenite = { workspace = true }
 url = { workspace = true }
 zip = { workspace = true }
+rustls = { workspace = true }
+rustls-pemfile = { workspace = true }
+tokio-rustls = { workspace = true }
+rustls-native-certs = "0.7"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = ["Win32_Storage_FileSystem"] }
 
 [build-dependencies]
 tonic-build = { workspace = true }
@@ -82,12 +92,13 @@ serde = { workspace = true, features = ["derive"] }
 toml = { workspace = true }
 
 [features]
-default = ["full-services"]
+default = ["full-services", "mtls"]
 full-services = ["authentication", "updates", "downloader", "indexing"]
 authentication = []
 updates = []
 downloader = []
 indexing = []
+mtls = []
 
 [package.metadata.docs.rs]
 all-features = true
