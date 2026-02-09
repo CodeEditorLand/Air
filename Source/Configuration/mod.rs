@@ -116,7 +116,7 @@ pub struct AirConfiguration {
 	pub Profile:String,
 
 	/// gRPC server configuration
-	pub Grpc:GrpcConfig,
+	pub gRPC:gRPCConfig,
 
 	/// Authentication configuration
 	pub Authentication:AuthConfig,
@@ -143,7 +143,7 @@ fn default_profile() -> String { "dev".to_string() }
 
 /// gRPC server configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GrpcConfig {
+pub struct gRPCConfig {
 	/// Bind address for gRPC server
 	/// Validation: Must be a valid IP:port or hostname:port combination
 	/// Format: [IPv6]:port or IPv4:port or hostname:port
@@ -438,7 +438,7 @@ impl Default for AirConfiguration {
 		Self {
 			SchemaVersion:default_schema_version(),
 			Profile:default_profile(),
-			Grpc:GrpcConfig {
+			gRPC:gRPCConfig {
 				BindAddress:default_grpc_bind_address(),
 				MaxConnections:default_grpc_max_connections(),
 				RequestTimeoutSecs:default_grpc_request_timeout(),
@@ -850,7 +850,7 @@ impl ConfigurationManager {
 		self.ValidateProfile(&config.Profile)?;
 
 		// gRPC configuration validation
-		self.ValidateGrpcConfig(&config.Grpc)?;
+		self.ValidategRPCConfig(&config.gRPC)?;
 
 		// Authentication configuration validation
 		self.ValidateAuthConfig(&config.Authentication)?;
@@ -920,7 +920,7 @@ impl ConfigurationManager {
 	}
 
 	/// Validate gRPC configuration with range checking
-	fn ValidateGrpcConfig(&self, grpc:&GrpcConfig) -> Result<()> {
+	fn ValidategRPCConfig(&self, grpc:&gRPCConfig) -> Result<()> {
 		// Validate bind address
 		if grpc.BindAddress.is_empty() {
 			return Err(AirError::Configuration("gRPC bind address cannot be empty".to_string()));
@@ -1388,12 +1388,12 @@ impl ConfigurationManager {
 
 		// gRPC overrides
 		if let Ok(val) = env::var(&format!("{}GRPC_BIND_ADDRESS", self.EnvPrefix)) {
-			config.Grpc.BindAddress = val;
+			config.gRPC.BindAddress = val;
 			override_count += 1;
 		}
 
 		if let Ok(val) = env::var(&format!("{}GRPC_MAX_CONNECTIONS", self.EnvPrefix)) {
-			config.Grpc.MaxConnections = val
+			config.gRPC.MaxConnections = val
 				.parse()
 				.map_err(|e| AirError::Configuration(format!("Invalid GRPC_MAX_CONNECTIONS value: {}", e)))?;
 			override_count += 1;
@@ -1768,7 +1768,7 @@ mod tests {
 		let imported = ConfigurationManager::ImportFromJson(&json_str).unwrap();
 		assert_eq!(imported.SchemaVersion, config.SchemaVersion);
 		assert_eq!(imported.Profile, config.Profile);
-		assert_eq!(imported.Grpc.BindAddress, config.Grpc.BindAddress);
+		assert_eq!(imported.gRPC.BindAddress, config.gRPC.BindAddress);
 	}
 
 	#[test]
@@ -1779,7 +1779,7 @@ mod tests {
 		assert_eq!(hash1, hash2);
 
 		let mut modified = config;
-		modified.Grpc.BindAddress = "[::1]:50054".to_string();
+		modified.gRPC.BindAddress = "[::1]:50054".to_string();
 		let hash3 = ConfigurationManager::ComputeHash(&modified).unwrap();
 		assert_ne!(hash1, hash3);
 	}

@@ -1769,9 +1769,9 @@ impl AirService for AirVinegRPCService {
 		// Serialize config to map, filter by section if specified
 		match RequestData.section.as_str() {
 			"grpc" => {
-				config_map.insert("bind_address".to_string(), config.Grpc.BindAddress.clone());
-				config_map.insert("max_connections".to_string(), config.Grpc.MaxConnections.to_string());
-				config_map.insert("request_timeout_secs".to_string(), config.Grpc.RequestTimeoutSecs.to_string());
+				config_map.insert("bind_address".to_string(), config.gRPC.BindAddress.clone());
+				config_map.insert("max_connections".to_string(), config.gRPC.MaxConnections.to_string());
+				config_map.insert("request_timeout_secs".to_string(), config.gRPC.RequestTimeoutSecs.to_string());
 			},
 			"authentication" => {
 				config_map.insert("enabled".to_string(), config.Authentication.Enabled.to_string());

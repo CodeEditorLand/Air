@@ -224,42 +224,42 @@ pub trait ConfigValidator: Send + Sync {
 // =============================================================================
 
 /// Validator for GRPC configuration
-pub struct GrpcConfigValidator;
+pub struct gRPCConfigValidator;
 
-impl ConfigValidator for GrpcConfigValidator {
+impl ConfigValidator for gRPCConfigValidator {
 	fn validate(&self, config:&AirConfiguration) -> Result<()> {
-		if config.Grpc.BindAddress.is_empty() {
+		if config.gRPC.BindAddress.is_empty() {
 			return Err(AirError::Configuration("gRPC bind address cannot be empty".to_string()));
 		}
 
 		// Validate address format
-		if !crate::Configuration::ConfigurationManager::IsValidAddress(&config.Grpc.BindAddress) {
+		if !crate::Configuration::ConfigurationManager::IsValidAddress(&config.gRPC.BindAddress) {
 			return Err(AirError::Configuration(format!(
 				"Invalid gRPC bind address '{}': must be host:port or [IPv6]:port",
-				config.Grpc.BindAddress
+				config.gRPC.BindAddress
 			)));
 		}
 
 		// Validate range [10, 10000]
-		if config.Grpc.MaxConnections < 10 || config.Grpc.MaxConnections > 10000 {
+		if config.gRPC.MaxConnections < 10 || config.gRPC.MaxConnections > 10000 {
 			return Err(AirError::Configuration(format!(
 				"gRPC MaxConnections {} is out of range [10, 10000]",
-				config.Grpc.MaxConnections
+				config.gRPC.MaxConnections
 			)));
 		}
 
 		// Validate range [1, 3600]
-		if config.Grpc.RequestTimeoutSecs < 1 || config.Grpc.RequestTimeoutSecs > 3600 {
+		if config.gRPC.RequestTimeoutSecs < 1 || config.gRPC.RequestTimeoutSecs > 3600 {
 			return Err(AirError::Configuration(format!(
 				"gRPC RequestTimeoutSecs {} is out of range [1, 3600]",
-				config.Grpc.RequestTimeoutSecs
+				config.gRPC.RequestTimeoutSecs
 			)));
 		}
 
 		Ok(())
 	}
 
-	fn name(&self) -> &str { "GrpcConfigValidator" }
+	fn name(&self) -> &str { "gRPCConfigValidator" }
 
 	fn priority(&self) -> u32 {
 		100 // High priority - network configuration is critical
@@ -607,7 +607,7 @@ impl ConfigHotReload {
 	/// Get the default set of validators
 	fn DefaultValidators() -> Vec<Box<dyn ConfigValidator>> {
 		vec![
-			Box::new(GrpcConfigValidator),
+			Box::new(gRPCConfigValidator),
 			Box::new(AuthConfigValidator),
 			Box::new(UpdateConfigValidator),
 			Box::new(DownloadConfigValidator),
@@ -1028,14 +1028,14 @@ impl ConfigHotReload {
 		let parts:Vec<&str> = path.split('.').collect();
 
 		match parts.as_slice() {
-			["grpc", "bind_address"] => config.Grpc.BindAddress = value.to_string(),
+			["grpc", "bind_address"] => config.gRPC.BindAddress = value.to_string(),
 			["grpc", "max_connections"] => {
-				config.Grpc.MaxConnections = value
+				config.gRPC.MaxConnections = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},
 			["grpc", "request_timeout_secs"] => {
-				config.Grpc.RequestTimeoutSecs = value
+				config.gRPC.RequestTimeoutSecs = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},
@@ -1214,7 +1214,7 @@ mod tests {
 
 	#[tokio::test]
 	async fn test_validator_priority() {
-		let grpc = GrpcConfigValidator;
+		let grpc = gRPCConfigValidator;
 		let auth = AuthConfigValidator;
 		let perf = PerformanceConfigValidator;
 

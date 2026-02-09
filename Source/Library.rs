@@ -249,7 +249,7 @@ pub enum AirError {
 	FileSystem(String),
 
 	#[error("gRPC error: {0}")]
-	Grpc(String),
+	gRPC(String),
 
 	#[error("Serialization error: {0}")]
 	Serialization(String),
@@ -298,7 +298,7 @@ impl From<std::io::Error> for AirError {
 }
 
 impl From<tonic::transport::Error> for AirError {
-	fn from(err:tonic::transport::Error) -> Self { AirError::Grpc(err.to_string()) }
+	fn from(err:tonic::transport::Error) -> Self { AirError::gRPC(err.to_string()) }
 }
 
 impl From<serde_json::Error> for AirError {

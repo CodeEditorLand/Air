@@ -291,7 +291,7 @@ impl HealthCheckManager {
 				"updates" => self.CheckUpdatesService().await,
 				"downloader" => self.CheckDownloaderService().await,
 				"indexing" => self.CheckIndexingService().await,
-				"grpc" => self.CheckGrpcService().await,
+				"grpc" => self.CheckgRPCService().await,
 				"connections" => self.CheckConnectionsService().await,
 				_ => {
 					warn!("[HealthCheck] Unknown service: {}", ServiceName);
@@ -463,7 +463,7 @@ impl HealthCheckManager {
 	}
 
 	/// Check gRPC service health
-	async fn CheckGrpcService(&self) -> (HealthStatus, Option<String>) {
+	async fn CheckgRPCService(&self) -> (HealthStatus, Option<String>) {
 		debug!("[HealthCheck] Checking gRPC service health");
 
 		let start = std::time::Instant::now();
@@ -683,7 +683,7 @@ impl HealthCheckManager {
 				"updates" => self.RestartUpdatesService().await,
 				"downloader" => self.RestartDownloaderService().await,
 				"indexing" => self.RestartIndexingService().await,
-				"grpc" => self.RestartGrpcService().await,
+				"grpc" => self.RestartgRPCService().await,
 				"connections" => self.ResetConnectionsService().await,
 				_ => {
 					warn!("[HealthCheck] No specific recovery action for {}", ServiceName);
@@ -735,7 +735,7 @@ impl HealthCheckManager {
 	}
 
 	/// Restart gRPC service
-	async fn RestartGrpcService(&self) -> Result<()> {
+	async fn RestartgRPCService(&self) -> Result<()> {
 		warn!("[HealthCheck] Recovery: Restarting gRPC server");
 		// In production, this would gracefully restart the gRPC server
 		Ok(())
