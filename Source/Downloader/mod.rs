@@ -245,7 +245,7 @@ struct TokenBucket {
 	capacity:f64,
 
 	/// Token refill rate (bytes per second)
- refill_rate:f64,
+	refill_rate:f64,
 
 	/// Last time tokens were refilled
 	last_refill:Instant,
@@ -257,12 +257,7 @@ impl TokenBucket {
 		let refill_rate = bytes_per_sec as f64;
 		let capacity = refill_rate * capacity_factor; // Allow burst of up to capacity_factor seconds worth of tokens
 
-		Self {
-			tokens:capacity,
-			capacity,
-			refill_rate,
-			last_refill:Instant::now(),
-		}
+		Self { tokens:capacity, capacity, refill_rate, last_refill:Instant::now() }
 	}
 
 	/// Refill tokens based on elapsed time
@@ -279,7 +274,7 @@ impl TokenBucket {
 	/// Returns number of tokens actually consumed
 	fn try_consume(&mut self, bytes:u64) -> u64 {
 		self.refill();
-		
+
 		let bytes = bytes as f64;
 		if self.tokens >= bytes {
 			self.tokens -= bytes;
@@ -295,10 +290,10 @@ impl TokenBucket {
 	/// Wait until enough tokens are available, then consume them
 	async fn consume(&mut self, bytes:u64) -> Result<()> {
 		let bytes_needed = bytes as f64;
-		
+
 		loop {
 			self.refill();
-			
+
 			if self.tokens >= bytes_needed {
 				self.tokens -= bytes_needed;
 				return Ok(());
@@ -307,7 +302,7 @@ impl TokenBucket {
 			// Calculate time needed to accumulate enough tokens
 			let tokens_needed = bytes_needed - self.tokens;
 			let wait_duration = tokens_needed / self.refill_rate;
-			
+
 			// Wait a bit and try again (check at least every 100ms)
 			let sleep_duration = Duration::from_secs_f64(wait_duration.min(0.1));
 			tokio::time::sleep(sleep_duration).await;
@@ -679,8 +674,7 @@ impl DownloadManager {
 	/// Get disk statistics using statvfs (Unix)
 	#[cfg(unix)]
 	fn GetDiskStatvfs(&self, path:&Path) -> Result<(u64, u64)> {
-		use std::ffi::CString;
-		use std::os::unix::ffi::OsStrExt;
+		use std::{ffi::CString, os::unix::ffi::OsStrExt};
 
 		log::debug!("[DownloadManager] Checking disk space at: {}", path.display());
 
@@ -689,7 +683,7 @@ impl DownloadManager {
 			.map_err(|e| AirError::FileSystem(format!("Failed to convert path to C string: {}", e)))?;
 
 		// Call statvfs
-		let mut stat: libc::statvfs = unsafe { std::mem::zeroed() };
+		let mut stat:libc::statvfs = unsafe { std::mem::zeroed() };
 		let result = unsafe { libc::statvfs(path_cstr.as_ptr(), &mut stat) };
 
 		if result != 0 {
@@ -716,20 +710,17 @@ impl DownloadManager {
 	#[cfg(windows)]
 	fn GetDiskSpaceWindows(&self, path:&Path) -> Result<u64> {
 		use std::os::windows::ffi::OsStrExt;
+
 		use windows::Win32::Storage::FileSystem::GetDiskFreeSpaceExW;
 
 		log::debug!("[DownloadManager] Checking disk space at: {}", path.display());
 
 		// Convert path to UTF-16 string
-		let path_str: Vec<u16> = path
-			.as_os_str()
-			.encode_wide()
-			.chain(std::iter::once(0))
-			.collect();
+		let path_str:Vec<u16> = path.as_os_str().encode_wide().chain(std::iter::once(0)).collect();
 
-		let mut free_bytes_available: u64 = 0;
-		let mut total_bytes: u64 = 0;
-		let mut total_free_bytes: u64 = 0;
+		let mut free_bytes_available:u64 = 0;
+		let mut total_bytes:u64 = 0;
+		let mut total_free_bytes:u64 = 0;
 
 		let result = unsafe {
 			GetDiskFreeSpaceExW(
@@ -1639,18 +1630,22 @@ impl DownloadManager {
 	/// ```
 	pub async fn SetBandwidthLimit(&mut self, mb_per_sec:usize) {
 		let bytes_per_sec = (mb_per_sec.max(1).min(1000) * 1024 * 1024) as u64;
-		
+
 		// Update token bucket refill rate
 		{
 			let mut bucket = self.TokenBucket.write().await;
 			bucket.set_rate(bytes_per_sec);
 		}
-		
+
 		// Also update semaphore for global limit (1 permit = 1MB)
 		let permits = mb_per_sec.max(1).min(1000);
 		self.BandwidthLimiter = Arc::new(Semaphore::new(permits));
-		
-		log::info!("[DownloadManager] Bandwidth limit set to {} MB/s ({} bytes/s)", mb_per_sec, bytes_per_sec);
+
+		log::info!(
+			"[DownloadManager] Bandwidth limit set to {} MB/s ({} bytes/s)",
+			mb_per_sec,
+			bytes_per_sec
+		);
 	}
 
 	/// Set maximum concurrent downloads
