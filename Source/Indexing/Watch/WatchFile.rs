@@ -71,7 +71,7 @@ use tokio::sync::{Mutex, RwLock};
 use crate::{
 	AirError,
 	Configuration::IndexingConfig,
-	Indexing::State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolLocation},
+	Indexing::State::CreateState::FileIndex,
 	Result,
 };
 

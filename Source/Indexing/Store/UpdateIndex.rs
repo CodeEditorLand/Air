@@ -77,7 +77,7 @@ use tokio::{
 use crate::{
 	AirError,
 	Configuration::IndexingConfig,
-	Indexing::State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolLocation},
+	Indexing::State::CreateState::{FileIndex, FileMetadata},
 	Result,
 };
 
@@ -105,7 +105,7 @@ pub async fn UpdateSingleFile(
 		.modified()
 		.map_err(|e| AirError::FileSystem(format!("Failed to get modification time: {}", e)))?;
 
-	let current_modified_time = chrono::DateTime::<chrono::Utc>::from(current_modified);
+	let _current_modified_time = chrono::DateTime::<chrono::Utc>::from(current_modified);
 
 	// Check if we need to update this file
 	let needs_update = match index.files.get(file_path) {
@@ -129,12 +129,11 @@ pub async fn UpdateSingleFile(
 
 	// Scan the file
 	use crate::Indexing::{
-		Process::ProcessContent::{DetectEncoding, DetectLanguage, DetectMimeType},
 		Scan::ScanFile::IndexFileInternal,
 		State::UpdateState::UpdateIndexMetadata,
 	};
 
-	let (metadata, symbols) = IndexFileInternal(file_path, config, &RwLock::new(index.clone()), &[]).await?;
+	let (metadata, symbols) = IndexFileInternal(file_path, config, &[]).await?;
 
 	// Update the index
 	crate::Indexing::State::UpdateState::RemoveFileFromIndex(index, file_path)?;
@@ -392,13 +391,14 @@ pub async fn RebuildIndex(
 
 	for file_path in files_to_index {
 		let permit = semaphore.clone().acquire_owned().await.unwrap();
-		let index_ref = index_arc.clone();
+		// Variables cloned for use in async task
+		let _index_ref = index_arc.clone();
 		let config_clone = config.clone();
 
 		let task = tokio::spawn(async move {
 			let _permit = permit;
 
-			crate::Indexing::Scan::ScanFile::IndexFileInternal(&file_path, &config_clone, &index_ref, &[]).await
+			crate::Indexing::Scan::ScanFile::IndexFileInternal(&file_path, &config_clone, &[]).await
 		});
 
 		tasks.push(task);

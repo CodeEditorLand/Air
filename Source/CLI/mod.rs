@@ -155,7 +155,9 @@ pub enum PermissionLevel {
 // =============================================================================
 
 /// CLI arguments parser with validation
+#[allow(dead_code)]
 pub struct CliParser {
+	#[allow(dead_code)]
 	TimeoutSecs:u64,
 }
 
@@ -803,8 +805,11 @@ pub struct DaemonState {
 // =============================================================================
 
 /// Daemon client for communicating with running Air daemon
+#[allow(dead_code)]
 pub struct DaemonClient {
+	#[allow(dead_code)]
 	address:String,
+	#[allow(dead_code)]
 	timeout:Duration,
 }
 

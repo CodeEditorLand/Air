@@ -66,7 +66,7 @@ use std::path::PathBuf;
 use crate::{
 	Indexing::{
 		Language::{ParseRust::ExtractRustSymbols, ParseTypeScript::ExtractTypeScriptSymbols},
-		State::CreateState::{SymbolInfo, SymbolKind, SymbolLocation},
+		State::CreateState::{SymbolInfo, SymbolKind},
 	},
 	Result,
 };

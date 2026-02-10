@@ -209,7 +209,7 @@ fn ExtractTypeScriptSymbolsFromLine(line_content:&str, line_num:u32, line:&str, 
 		if let Some(rest) = line_content.strip_prefix(kw) {
 			let name = rest.split(|c| c == '=' || c == ':' || c == ';').next().unwrap_or("").trim();
 			// Check if it's a function assignment: const myFunc = () => {}
-			let is_function_assignment = !line_content.contains("=>")
+			let _is_function_assignment = !line_content.contains("=>")
 				&& !line_content.contains("function")
 				&& (line_content.contains("=>") || rest.to_lowercase().contains("function"));
 

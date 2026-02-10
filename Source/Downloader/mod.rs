@@ -272,6 +272,7 @@ impl TokenBucket {
 
 	/// Try to consume the specified number of tokens (bytes)
 	/// Returns number of tokens actually consumed
+	#[allow(dead_code)]
 	fn try_consume(&mut self, bytes:u64) -> u64 {
 		self.refill();
 

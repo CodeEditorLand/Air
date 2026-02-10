@@ -74,17 +74,15 @@ use std::{
 	time::{Duration, Instant},
 };
 
-use tokio::sync::RwLock;
-
 use crate::{
 	AirError,
 	Configuration::IndexingConfig,
 	Indexing::{
 		Process::{
-			ExtractSymbols::ExtractSymbols,
 			ProcessContent::{DetectEncoding, DetectLanguage, DetectMimeType},
+			ExtractSymbols::ExtractSymbols,
 		},
-		State::CreateState::{FileMetadata, SymbolInfo, SymbolLocation},
+		State::CreateState::{FileMetadata, SymbolInfo},
 	},
 	Result,
 };
@@ -103,7 +101,6 @@ use crate::{
 pub async fn IndexFileInternal(
 	file_path:&PathBuf,
 	config:&IndexingConfig,
-	_index_ref:&RwLock<crate::Indexing::State::CreateState::FileIndex>,
 	_patterns:&[String],
 ) -> Result<(FileMetadata, Vec<SymbolInfo>)> {
 	let start_time = Instant::now();

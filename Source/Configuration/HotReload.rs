@@ -179,7 +179,7 @@ pub enum ReloadRequest {
 
 /// Reload statistics for monitoring
 #[derive(Debug, Clone, Default)]
-struct ReloadStats {
+pub struct ReloadStats {
 	total_attempts:u64,
 	successful_reloads:u64,
 	failed_reloads:u64,
@@ -1230,7 +1230,7 @@ mod tests {
 			.expect("Failed to create manager");
 
 		let mut new_config = AirConfiguration::default();
-		new_config.grpc.bind_address = "[::1]:50054".to_string();
+		new_config.gRPC.BindAddress = "[::1]:50054".to_string();
 
 		let changes = manager.ComputeChanges(&AirConfiguration::default(), &new_config);
 

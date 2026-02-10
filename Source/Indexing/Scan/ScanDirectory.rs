@@ -64,16 +64,16 @@
 //! Scan operations are designed to be called from async tasks and
 //! return collectable results for parallel processing.
 
-use std::{collections::HashSet, path::Path, sync::Arc};
+use std::{path::Path, sync::Arc};
 
-use tokio::sync::{RwLock, Semaphore};
+use tokio::sync::Semaphore;
 
 use crate::{
 	AirError,
 	Configuration::IndexingConfig,
 	Indexing::{
-		Scan::ScanFile::{IndexFileInternal, ValidateFileAccess},
-		State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolLocation},
+		Scan::ScanFile::ValidateFileAccess,
+		State::CreateState::FileIndex,
 	},
 	Result,
 };

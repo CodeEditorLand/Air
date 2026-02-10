@@ -64,11 +64,9 @@
 
 use std::path::{Path, PathBuf};
 
-use tokio::sync::RwLock;
-
 use crate::{
 	AirError,
-	Indexing::State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolKind, SymbolLocation},
+	Indexing::State::CreateState::FileIndex,
 	Result,
 };
 

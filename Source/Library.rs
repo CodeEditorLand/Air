@@ -657,13 +657,70 @@ pub mod Utility {
 	///
 	/// Returns an error if the duration string is invalid.
 	///
-	/// TODO: Support complex durations like "1h30m"
-	pub fn ParseDurationToMillis(_DurationStr:&str) -> Result<u64> {
-		// TODO: Implement duration parsing with support for:
-		// - ms, s, m, h suffixes
-		// - Combined durations like "1m30s"
-		// - Decimal values like "1.5s"
+	/// # Support
+	///
+	/// Supports:
+	/// - ms, s, m, h suffixes
+	/// - Combined durations like "1h30m" or "1m30s"
+	/// - Decimal values like "1.5s"
+	pub fn ParseDurationToMillis(DurationStr:&str) -> Result<u64> {
+		let input = DurationStr.trim().to_lowercase();
+		let mut total_millis: u64 = 0;
+		let mut pos = 0;
 
-		Err(AirError::Internal("Duration parsing not yet implemented".to_string()))
+		while pos < input.len() {
+			// Extract the numeric part
+			let start = pos;
+			while pos < input.len() && (input.chars().nth(pos).unwrap().is_ascii_digit()
+				|| input.chars().nth(pos).unwrap() == '.') {
+				pos += 1;
+			}
+
+			if start == pos {
+				return Err(AirError::Internal(format!(
+					"Invalid duration format: expected number at position {} in '{}'",
+					pos, DurationStr
+				)));
+			}
+
+			let num_str = &input[start..pos];
+			let num_value: f64 = num_str.parse().map_err(|_| {
+				AirError::Internal(format!("Invalid number '{}' in duration '{}'", num_str, DurationStr))
+			})?;
+
+			// Extract the unit part
+			let unit_start = pos;
+			while pos < input.len() &&
+				(match input.chars().nth(pos) {
+					Some(c) => c.is_ascii_alphabetic(),
+					None => false,
+				}) {
+				pos += 1;
+			}
+
+			if unit_start == pos || unit_start >= input.len() {
+					return Err(AirError::Internal(format!(
+						"Invalid duration format: missing unit in '{}'",
+						DurationStr
+					)));
+				}
+	
+				let unit = &input[unit_start..pos];
+				let multiplier = match unit {
+				"ms" => 1.0,
+				"s" => 1000.0,
+				"m" => 60_000.0,
+				"h" => 3_600_000.0,
+				_ => return Err(AirError::Internal(format!(
+					"Invalid duration unit '{}', expected one of: ms, s, m, h",
+					unit
+				))),
+			};
+
+			let component_millis = (num_value * multiplier) as u64;
+			total_millis = total_millis.saturating_add(component_millis);
+		}
+
+		Ok(total_millis)
 	}
 }

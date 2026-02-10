@@ -65,7 +65,7 @@
 //! thread-safe shared access across indexing and search operations.
 
 use std::{
-	collections::{HashMap, HashSet},
+	collections::HashMap,
 	path::PathBuf,
 };
 #[cfg(unix)]

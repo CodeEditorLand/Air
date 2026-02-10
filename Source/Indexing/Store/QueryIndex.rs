@@ -63,14 +63,13 @@
 //! Query operations read from shared Arc<RwLock<>> state and
 //! return safe-ownership results for the caller.
 
-use std::{collections::HashMap, path::PathBuf};
+use std::path::PathBuf;
 
 use regex::Regex;
-use tokio::sync::RwLock;
 
 use crate::{AirError, Result};
 // Use the full paths to types in State::CreateState
-use crate::Indexing::State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolKind};
+use crate::Indexing::State::CreateState::{FileIndex, FileMetadata};
 
 /// Maximum search results per query (pagination default)
 pub const MAX_SEARCH_RESULTS_DEFAULT:u32 = 100;

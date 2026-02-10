@@ -102,23 +102,23 @@ pub struct MonitoringHandles {
 //! - **Connection monitor**: 60 seconds
 //! - **Health monitor**: 30 seconds
 ///
-/// # TODO
+/// # Monitoring Configuration
+//!
+//! - **Connection monitor**: 60 seconds
+//! - **Health monitor**: 30 seconds
+//!
+/// # Future Enhancements
+//!
 //! - Make monitoring intervals configurable
 //! - Add restart logic for failed services
 //! - Implement alert thresholds
 //!
-/// # Examples
+/// # Thread Count Monitoring
 //!
-/// ```no_run
-//! # async fn example() {
-//! # use std::sync::Arc;
-//! # let app_state = Arc::new(unimplemented!());
-//! # let health_manager = Arc::new(unimplemented!());
-//! let handles = StartMonitoring(app_state, health_manager).await;
-//!
-//! // Tasks run in background...
-//! # }
-//! ```
+/// The monitoring system reports active thread count. This is calculated using
+/// a heuristic that counts the number of active tokio tasks, which approximates
+/// the number of concurrent operations. Note that this is not an exact thread
+/// count as tokio uses work-stealing scheduling with a limited worker pool.
 pub async fn StartMonitoring(
     app_state: Arc<ApplicationState>,
     health_manager: Arc<HealthCheckManager>,
@@ -144,14 +144,20 @@ pub async fn StartMonitoring(
                 // Get resource metrics
                 let resources = app_state.GetResourceUsage().await;
                 
+                // Calculate active thread count approximation
+                // This estimates concurrent operations by querying internal task count
+                let active_threads = app_state.get_active_task_count().await.unwrap_or(0);
+                
                 // Record metrics
                 let metrics_collector = Metrics::get_metrics();
                 metrics_collector.update_resource_metrics(
                     resources.MemoryUsageMb.saturating_mul(1024).saturating_mul(1024), // Convert MB to bytes
                     resources.CPUUsagePercent,
                     app_state.get_active_connection_count().await as u64,
-                    0, // Active threads - TODO: implement thread count
+                    active_threads,
                 );
+                
+                debug!("[ConnectionMonitor] Active threads (tasks): {}", active_threads);
                 
                 // Clean up stale connections (5 minute timeout)
                 if let Err(e) = app_state.cleanup_stale_connections(300).await {

@@ -150,7 +150,7 @@ struct RollbackHistory {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct RollbackState {
+pub struct RollbackState {
 	version:String,
 	backup_path:PathBuf,
 	timestamp:chrono::DateTime<chrono::Utc>,
@@ -1353,7 +1353,7 @@ impl UpdateManager {
 	///
 	/// # Returns
 	/// Result<()> indicating success or failure
-	async fn VerifySignature(&self, file_path:&Path, signature:&str) -> Result<()> {
+	async fn VerifySignature(&self, _file_path:&Path, _signature:&str) -> Result<()> {
 		// TODO: Implement actual signature verification
 		// This would require:
 		// 1. A public key embedded in the application

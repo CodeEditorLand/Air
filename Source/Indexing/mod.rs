@@ -81,7 +81,6 @@ use crate::{
 	ApplicationState::ApplicationState,
 	Configuration::ConfigurationManager,
 	Indexing::{
-		Process::ExtractSymbols::{ExtractSymbols, GroupSymbolsByKind, SymbolStatistics},
 		Scan::{
 			ScanDirectory::{ScanAndRemoveDeleted, ScanDirectoriesParallel},
 			ScanFile::IndexFileInternal,
@@ -250,6 +249,7 @@ impl FileIndexer {
 			ScanDirectoriesParallel(vec![path.clone()], patterns.clone(), config, MAX_PARALLEL_INDEXING).await?;
 
 		// Index files in parallel
+		// Variables cloned for use in async task
 		let index_arc = self.file_index.clone();
 		let semaphore = self.indexing_semaphore.clone();
 		let config_clone = config.clone();
@@ -257,12 +257,11 @@ impl FileIndexer {
 
 		for file_path in files_to_index {
 			let permit = semaphore.clone().acquire_owned().await.unwrap();
-			let index_ref = index_arc.clone();
 			let config_for_task = config_clone.clone();
 
 			let task = tokio::spawn(async move {
 				let _permit = permit;
-				IndexFileInternal(&file_path, &config_for_task, &index_ref, &[]).await
+				IndexFileInternal(&file_path, &config_for_task, &[]).await
 			});
 
 			index_tasks.push(task);

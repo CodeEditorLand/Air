@@ -68,8 +68,6 @@ use std::path::PathBuf;
 
 use crate::{
 	AirError,
-	ApplicationState::ApplicationState,
-	Configuration::IndexingConfig,
 	Indexing::State::CreateState::{FileIndex, FileMetadata, SymbolInfo, SymbolLocation},
 	Result,
 };
@@ -218,8 +216,6 @@ pub fn UpdateContentIndex(index:&mut FileIndex, file_path:&PathBuf, tokens:Vec<S
 /// Clean up orphaned entries (files with no matching content/symbols)
 pub fn CleanupOrphanedEntries(index:&mut FileIndex) -> Result<u32> {
 	let mut removed_count = 0;
-
-	let files_to_keep:Vec<_> = index.files.keys().cloned().collect();
 
 	// Clean up content index entries with no files
 	let orphaned_tokens:Vec<_> = index

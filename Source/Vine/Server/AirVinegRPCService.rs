@@ -9,7 +9,6 @@ use std::{collections::HashMap, sync::Arc};
 
 use log::{debug, error, info, warn};
 use tonic::{Request, Response, Status};
-use futures::StreamExt;
 use tokio_stream::StreamExt as TokioStreamExt;
 use async_trait::async_trait;
 
@@ -122,7 +121,7 @@ impl AirVinegRPCService {
 	async fn TrackConnection<RequestType>(
 		&self,
 		Request:&tonic::Request<RequestType>,
-		ServiceName:&str,
+		_ServiceName:&str,
 	) -> std::result::Result<String, Status> {
 		let Metadata = Request.metadata();
 		let ConnectionId = Metadata
@@ -511,7 +510,7 @@ impl AirService for AirVinegRPCService {
 		}
 
 		// Set up granular progress callback mechanism
-		let download_manager = self.DownloadManager.clone();
+		let _download_manager = self.DownloadManager.clone();
 		let AppState = self.AppState.clone();
 		let callback_request_id = download_request_id.clone();
 		let progress_callback = move |progress:f32| {
@@ -645,7 +644,7 @@ impl AirService for AirVinegRPCService {
 		&self,
 		request:Request<StatusRequest>,
 	) -> std::result::Result<Response<StatusResponse>, Status> {
-		let RequestData = request.into_inner();
+		let _RequestData = request.into_inner();
 
 		debug!("[AirVinegRPCService] Status request received");
 
@@ -1126,7 +1125,7 @@ impl AirService for AirVinegRPCService {
 		let url = RequestData.url.clone();
 		let headers = RequestData.headers;
 		let download_request_id = request_id.clone();
-		let download_manager = self.DownloadManager.clone();
+		let _download_manager = self.DownloadManager.clone();
 		let AppState = self.AppState.clone();
 
 		// Spawn streaming task
@@ -1277,7 +1276,7 @@ impl AirService for AirVinegRPCService {
 								// Send chunk when buffer reaches target size
 								if buffer.len() >= chunk_size {
 									// Calculate checksum for verification
-									let chunk_checksum = calculate_chunk_checksum(&buffer);
+									let _chunk_checksum = calculate_chunk_checksum(&buffer);
 
 									// Calculate progress
 									let progress = if total_size > 0 {
@@ -1372,7 +1371,7 @@ impl AirService for AirVinegRPCService {
 
 					// Send remaining buffered data
 					if !buffer.is_empty() {
-						let chunk_checksum = calculate_chunk_checksum(&buffer);
+						let _chunk_checksum = calculate_chunk_checksum(&buffer);
 
 						if tx
 							.send(Ok(DownloadStreamResponse {
@@ -1481,7 +1480,7 @@ impl AirService for AirVinegRPCService {
 
 		// Use file indexer to search - convert to match the existing signature
 		let path = if RequestData.path.is_empty() { None } else { Some(RequestData.path.clone()) };
-		let search_path = path.as_deref();
+		let _search_path = path.as_deref();
 
 		match self
 			.FileIndexer

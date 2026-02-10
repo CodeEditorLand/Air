@@ -35,7 +35,7 @@
 //! implementation focuses on establishing unencrypted connections for
 //! development and testing purposes.
 
-use std::{env, fs::File, io::BufReader, path::PathBuf, sync::Arc, time::Duration};
+use std::{env, fs::File, io::BufReader, path::PathBuf, time::Duration};
 
 use log::{debug, error, info, warn};
 use tonic::transport::{Channel, Endpoint};
@@ -430,7 +430,7 @@ impl MountainClient {
 	pub async fn connect(config:MountainClientConfig) -> Result<Self, Box<dyn std::error::Error>> {
 		info!("Connecting to Mountain at {}", config.address);
 
-		let mut endpoint = Endpoint::from_shared(config.address.clone())?
+		let endpoint = Endpoint::from_shared(config.address.clone())?
 			.connect_timeout(Duration::from_secs(config.connection_timeout_secs));
 
 		// Configure TLS if enabled
@@ -438,7 +438,7 @@ impl MountainClient {
 		if let Some(tls_config) = &config.tls_config {
 			info!("TLS configuration provided, configuring secure connection");
 
-			let client_config = create_tls_client_config(tls_config).map_err(|e| {
+			let _client_config = create_tls_client_config(tls_config).map_err(|e| {
 				error!("Failed to create TLS client configuration: {}", e);
 				format!("TLS configuration error: {}", e)
 			})?;
@@ -647,10 +647,10 @@ mod tests {
 	#[test]
 	fn test_from_env_default() {
 		// Clear any existing environment variables
-		env::remove_var("MOUNTAIN_ADDRESS");
-		env::remove_var("MOUNTAIN_CONNECTION_TIMEOUT_SECS");
-		env::remove_var("MOUNTAIN_REQUEST_TIMEOUT_SECS");
-		env::remove_var("MOUNTAIN_TLS_ENABLED");
+		unsafe { env::remove_var("MOUNTAIN_ADDRESS"); }
+		unsafe { env::remove_var("MOUNTAIN_CONNECTION_TIMEOUT_SECS"); }
+		unsafe { env::remove_var("MOUNTAIN_REQUEST_TIMEOUT_SECS"); }
+		unsafe { env::remove_var("MOUNTAIN_TLS_ENABLED"); }
 
 		let config = MountainClientConfig::from_env();
 		assert_eq!(config.address, DEFAULT_MOUNTAIN_ADDRESS);
@@ -660,9 +660,9 @@ mod tests {
 
 	#[test]
 	fn test_from_env_custom() {
-		env::set_var("MOUNTAIN_ADDRESS", "[::1]:50060");
-		env::set_var("MOUNTAIN_CONNECTION_TIMEOUT_SECS", "10");
-		env::set_var("MOUNTAIN_REQUEST_TIMEOUT_SECS", "60");
+		unsafe { env::set_var("MOUNTAIN_ADDRESS", "[::1]:50060"); }
+		unsafe { env::set_var("MOUNTAIN_CONNECTION_TIMEOUT_SECS", "10"); }
+		unsafe { env::set_var("MOUNTAIN_REQUEST_TIMEOUT_SECS", "60"); }
 
 		let config = MountainClientConfig::from_env();
 		assert_eq!(config.address, "[::1]:50060");
@@ -670,17 +670,17 @@ mod tests {
 		assert_eq!(config.request_timeout_secs, 60);
 
 		// Clean up
-		env::remove_var("MOUNTAIN_ADDRESS");
-		env::remove_var("MOUNTAIN_CONNECTION_TIMEOUT_SECS");
-		env::remove_var("MOUNTAIN_REQUEST_TIMEOUT_SECS");
+		unsafe { env::remove_var("MOUNTAIN_ADDRESS"); }
+		unsafe { env::remove_var("MOUNTAIN_CONNECTION_TIMEOUT_SECS"); }
+		unsafe { env::remove_var("MOUNTAIN_REQUEST_TIMEOUT_SECS"); }
 	}
 
 	#[cfg(feature = "mtls")]
 	#[test]
 	fn test_from_env_tls() {
-		env::set_var("MOUNTAIN_TLS_ENABLED", "1");
-		env::set_var("MOUNTAIN_CA_CERT", "/path/to/ca.pem");
-		env::set_var("MOUNTAIN_SERVER_NAME", "mymountain.com");
+		unsafe { env::set_var("MOUNTAIN_TLS_ENABLED", "1"); }
+		unsafe { env::set_var("MOUNTAIN_CA_CERT", "/path/to/ca.pem"); }
+		unsafe { env::set_var("MOUNTAIN_SERVER_NAME", "mymountain.com"); }
 
 		let config = MountainClientConfig::from_env();
 		assert!(config.tls_config.is_some());
@@ -690,18 +690,18 @@ mod tests {
 		assert!(tls.verify_certs);
 
 		// Clean up
-		env::remove_var("MOUNTAIN_TLS_ENABLED");
-		env::remove_var("MOUNTAIN_CA_CERT");
-		env::remove_var("MOUNTAIN_SERVER_NAME");
+		unsafe { env::remove_var("MOUNTAIN_TLS_ENABLED"); }
+		unsafe { env::remove_var("MOUNTAIN_CA_CERT"); }
+		unsafe { env::remove_var("MOUNTAIN_SERVER_NAME"); }
 	}
 
 	#[cfg(feature = "mtls")]
 	#[test]
 	fn test_from_env_mtls() {
-		env::set_var("MOUNTAIN_TLS_ENABLED", "true");
-		env::set_var("MOUNTAIN_CA_CERT", "/path/to/ca.pem");
-		env::set_var("MOUNTAIN_CLIENT_CERT", "/path/to/cert.pem");
-		env::set_var("MOUNTAIN_CLIENT_KEY", "/path/to/key.pem");
+		unsafe { env::set_var("MOUNTAIN_TLS_ENABLED", "true"); }
+		unsafe { env::set_var("MOUNTAIN_CA_CERT", "/path/to/ca.pem"); }
+		unsafe { env::set_var("MOUNTAIN_CLIENT_CERT", "/path/to/cert.pem"); }
+		unsafe { env::set_var("MOUNTAIN_CLIENT_KEY", "/path/to/key.pem"); }
 
 		let config = MountainClientConfig::from_env();
 		assert!(config.tls_config.is_some());
@@ -712,9 +712,9 @@ mod tests {
 		assert!(tls.verify_certs);
 
 		// Clean up
-		env::remove_var("MOUNTAIN_TLS_ENABLED");
-		env::remove_var("MOUNTAIN_CA_CERT");
-		env::remove_var("MOUNTAIN_CLIENT_CERT");
-		env::remove_var("MOUNTAIN_CLIENT_KEY");
+		unsafe { env::remove_var("MOUNTAIN_TLS_ENABLED"); }
+		unsafe { env::remove_var("MOUNTAIN_CA_CERT"); }
+		unsafe { env::remove_var("MOUNTAIN_CLIENT_CERT"); }
+		unsafe { env::remove_var("MOUNTAIN_CLIENT_KEY"); }
 	}
 }

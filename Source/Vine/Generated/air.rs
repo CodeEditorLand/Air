@@ -366,7 +366,7 @@ pub mod air_service_client {
     /// Air Service - The background daemon service for Land
     #[derive(Debug, Clone)]
     pub struct AirServiceClient<T> {
-        inner: tonic::client::gRPC<T>,
+        inner: tonic::client::Grpc<T>,
     }
     impl AirServiceClient<tonic::transport::Channel> {
         /// Attempt to create a new client by connecting to a given endpoint.
@@ -381,17 +381,17 @@ pub mod air_service_client {
     }
     impl<T> AirServiceClient<T>
     where
-        T: tonic::client::gRPCService<tonic::body::Body>,
+        T: tonic::client::GrpcService<tonic::body::Body>,
         T::Error: Into<StdError>,
         T::ResponseBody: Body<Data = Bytes> + std::marker::Send + 'static,
         <T::ResponseBody as Body>::Error: Into<StdError> + std::marker::Send,
     {
         pub fn new(inner: T) -> Self {
-            let inner = tonic::client::gRPC::new(inner);
+            let inner = tonic::client::Grpc::new(inner);
             Self { inner }
         }
         pub fn with_origin(inner: T, origin: Uri) -> Self {
-            let inner = tonic::client::gRPC::with_origin(inner, origin);
+            let inner = tonic::client::Grpc::with_origin(inner, origin);
             Self { inner }
         }
         pub fn with_interceptor<F>(
@@ -404,7 +404,7 @@ pub mod air_service_client {
             T: tonic::codegen::Service<
                 http::Request<tonic::body::Body>,
                 Response = http::Response<
-                    <T as tonic::client::gRPCService<tonic::body::Body>>::ResponseBody,
+                    <T as tonic::client::GrpcService<tonic::body::Body>>::ResponseBody,
                 >,
             >,
             <T as tonic::codegen::Service<
@@ -466,7 +466,7 @@ pub mod air_service_client {
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(gRPCMethod::new("Air.AirService", "Authenticate"));
+                .insert(GrpcMethod::new("Air.AirService", "Authenticate"));
             self.inner.unary(req, path, codec).await
         }
         /// Update operations
@@ -491,7 +491,7 @@ pub mod air_service_client {
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(gRPCMethod::new("Air.AirService", "CheckForUpdates"));
+                .insert(GrpcMethod::new("Air.AirService", "CheckForUpdates"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn download_update(
@@ -515,7 +515,7 @@ pub mod air_service_client {
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(gRPCMethod::new("Air.AirService", "DownloadUpdate"));
+                .insert(GrpcMethod::new("Air.AirService", "DownloadUpdate"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn apply_update(
@@ -539,7 +539,7 @@ pub mod air_service_client {
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(gRPCMethod::new("Air.AirService", "ApplyUpdate"));
+                .insert(GrpcMethod::new("Air.AirService", "ApplyUpdate"));
             self.inner.unary(req, path, codec).await
         }
         /// Download operations
@@ -564,7 +564,7 @@ pub mod air_service_client {
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(gRPCMethod::new("Air.AirService", "DownloadFile"));
+                .insert(GrpcMethod::new("Air.AirService", "DownloadFile"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn download_stream(
@@ -588,7 +588,7 @@ pub mod air_service_client {
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(gRPCMethod::new("Air.AirService", "DownloadStream"));
+                .insert(GrpcMethod::new("Air.AirService", "DownloadStream"));
             self.inner.server_streaming(req, path, codec).await
         }
         /// File indexing operations
@@ -609,7 +609,7 @@ pub mod air_service_client {
                 "/Air.AirService/IndexFiles",
             );
             let mut req = request.into_request();
-            req.extensions_mut().insert(gRPCMethod::new("Air.AirService", "IndexFiles"));
+            req.extensions_mut().insert(GrpcMethod::new("Air.AirService", "IndexFiles"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn search_files(
@@ -630,7 +630,7 @@ pub mod air_service_client {
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(gRPCMethod::new("Air.AirService", "SearchFiles"));
+                .insert(GrpcMethod::new("Air.AirService", "SearchFiles"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn get_file_info(
@@ -654,7 +654,7 @@ pub mod air_service_client {
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(gRPCMethod::new("Air.AirService", "GetFileInfo"));
+                .insert(GrpcMethod::new("Air.AirService", "GetFileInfo"));
             self.inner.unary(req, path, codec).await
         }
         /// Status and monitoring
@@ -673,7 +673,7 @@ pub mod air_service_client {
             let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/Air.AirService/GetStatus");
             let mut req = request.into_request();
-            req.extensions_mut().insert(gRPCMethod::new("Air.AirService", "GetStatus"));
+            req.extensions_mut().insert(GrpcMethod::new("Air.AirService", "GetStatus"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn health_check(
@@ -697,7 +697,7 @@ pub mod air_service_client {
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(gRPCMethod::new("Air.AirService", "HealthCheck"));
+                .insert(GrpcMethod::new("Air.AirService", "HealthCheck"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn get_metrics(
@@ -720,7 +720,7 @@ pub mod air_service_client {
                 "/Air.AirService/GetMetrics",
             );
             let mut req = request.into_request();
-            req.extensions_mut().insert(gRPCMethod::new("Air.AirService", "GetMetrics"));
+            req.extensions_mut().insert(GrpcMethod::new("Air.AirService", "GetMetrics"));
             self.inner.unary(req, path, codec).await
         }
         /// Resource management
@@ -745,7 +745,7 @@ pub mod air_service_client {
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(gRPCMethod::new("Air.AirService", "GetResourceUsage"));
+                .insert(GrpcMethod::new("Air.AirService", "GetResourceUsage"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn set_resource_limits(
@@ -769,7 +769,7 @@ pub mod air_service_client {
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(gRPCMethod::new("Air.AirService", "SetResourceLimits"));
+                .insert(GrpcMethod::new("Air.AirService", "SetResourceLimits"));
             self.inner.unary(req, path, codec).await
         }
         /// Configuration management
@@ -794,7 +794,7 @@ pub mod air_service_client {
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(gRPCMethod::new("Air.AirService", "GetConfiguration"));
+                .insert(GrpcMethod::new("Air.AirService", "GetConfiguration"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn update_configuration(
@@ -818,7 +818,7 @@ pub mod air_service_client {
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(gRPCMethod::new("Air.AirService", "UpdateConfiguration"));
+                .insert(GrpcMethod::new("Air.AirService", "UpdateConfiguration"));
             self.inner.unary(req, path, codec).await
         }
     }
@@ -1058,7 +1058,7 @@ pub mod air_service_server {
                     let fut = async move {
                         let method = AuthenticateSvc(inner);
                         let codec = tonic_prost::ProstCodec::default();
-                        let mut grpc = tonic::server::gRPC::new(codec)
+                        let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,
@@ -1103,7 +1103,7 @@ pub mod air_service_server {
                     let fut = async move {
                         let method = CheckForUpdatesSvc(inner);
                         let codec = tonic_prost::ProstCodec::default();
-                        let mut grpc = tonic::server::gRPC::new(codec)
+                        let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,
@@ -1148,7 +1148,7 @@ pub mod air_service_server {
                     let fut = async move {
                         let method = DownloadUpdateSvc(inner);
                         let codec = tonic_prost::ProstCodec::default();
-                        let mut grpc = tonic::server::gRPC::new(codec)
+                        let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,
@@ -1193,7 +1193,7 @@ pub mod air_service_server {
                     let fut = async move {
                         let method = ApplyUpdateSvc(inner);
                         let codec = tonic_prost::ProstCodec::default();
-                        let mut grpc = tonic::server::gRPC::new(codec)
+                        let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,
@@ -1238,7 +1238,7 @@ pub mod air_service_server {
                     let fut = async move {
                         let method = DownloadFileSvc(inner);
                         let codec = tonic_prost::ProstCodec::default();
-                        let mut grpc = tonic::server::gRPC::new(codec)
+                        let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,
@@ -1284,7 +1284,7 @@ pub mod air_service_server {
                     let fut = async move {
                         let method = DownloadStreamSvc(inner);
                         let codec = tonic_prost::ProstCodec::default();
-                        let mut grpc = tonic::server::gRPC::new(codec)
+                        let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,
@@ -1327,7 +1327,7 @@ pub mod air_service_server {
                     let fut = async move {
                         let method = IndexFilesSvc(inner);
                         let codec = tonic_prost::ProstCodec::default();
-                        let mut grpc = tonic::server::gRPC::new(codec)
+                        let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,
@@ -1370,7 +1370,7 @@ pub mod air_service_server {
                     let fut = async move {
                         let method = SearchFilesSvc(inner);
                         let codec = tonic_prost::ProstCodec::default();
-                        let mut grpc = tonic::server::gRPC::new(codec)
+                        let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,
@@ -1415,7 +1415,7 @@ pub mod air_service_server {
                     let fut = async move {
                         let method = GetFileInfoSvc(inner);
                         let codec = tonic_prost::ProstCodec::default();
-                        let mut grpc = tonic::server::gRPC::new(codec)
+                        let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,
@@ -1458,7 +1458,7 @@ pub mod air_service_server {
                     let fut = async move {
                         let method = GetStatusSvc(inner);
                         let codec = tonic_prost::ProstCodec::default();
-                        let mut grpc = tonic::server::gRPC::new(codec)
+                        let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,
@@ -1503,7 +1503,7 @@ pub mod air_service_server {
                     let fut = async move {
                         let method = HealthCheckSvc(inner);
                         let codec = tonic_prost::ProstCodec::default();
-                        let mut grpc = tonic::server::gRPC::new(codec)
+                        let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,
@@ -1548,7 +1548,7 @@ pub mod air_service_server {
                     let fut = async move {
                         let method = GetMetricsSvc(inner);
                         let codec = tonic_prost::ProstCodec::default();
-                        let mut grpc = tonic::server::gRPC::new(codec)
+                        let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,
@@ -1593,7 +1593,7 @@ pub mod air_service_server {
                     let fut = async move {
                         let method = GetResourceUsageSvc(inner);
                         let codec = tonic_prost::ProstCodec::default();
-                        let mut grpc = tonic::server::gRPC::new(codec)
+                        let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,
@@ -1639,7 +1639,7 @@ pub mod air_service_server {
                     let fut = async move {
                         let method = SetResourceLimitsSvc(inner);
                         let codec = tonic_prost::ProstCodec::default();
-                        let mut grpc = tonic::server::gRPC::new(codec)
+                        let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,
@@ -1684,7 +1684,7 @@ pub mod air_service_server {
                     let fut = async move {
                         let method = GetConfigurationSvc(inner);
                         let codec = tonic_prost::ProstCodec::default();
-                        let mut grpc = tonic::server::gRPC::new(codec)
+                        let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,
@@ -1730,7 +1730,7 @@ pub mod air_service_server {
                     let fut = async move {
                         let method = UpdateConfigurationSvc(inner);
                         let codec = tonic_prost::ProstCodec::default();
-                        let mut grpc = tonic::server::gRPC::new(codec)
+                        let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,

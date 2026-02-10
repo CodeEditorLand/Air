@@ -112,7 +112,7 @@ use rand::{RngCore, rng};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use zeroize::Zeroize;
 use subtle::ConstantTimeEq;
-use log::info;
+use log::{info, debug};
 
 use crate::{AirError, Result};
 
@@ -893,10 +893,19 @@ fn standard_decode(input:&str) -> Result<Vec<u8>> {
 
 /// Helper function for zeroizing secure bytes
 ///
-/// TODO: Implement actual zeroization before drop if needed
-fn zeroize(_bytes:&mut SecureBytes) {
-	// The Drop implementation will zeroize the data
-	// This just ensures it happens immediately
+/// Immediately zeros out secure bytes in memory. This function forces
+/// zeroization to happen now rather than waiting for the Drop implementation.
+/// Note: Rust compiler optimizations may optimize away the zeroization
+/// without proper precautions like volatile operations or zeroize crate.
+fn zeroize(bytes:&mut SecureBytes) {
+	// Force write zeros to the underlying bytes
+	// This is a best-effort implementation. For production use,
+	// consider using the `zeroize` crate which provides guarantees
+	// against compiler optimization removing the zeroization.
+	bytes.Data.zeroize();
+	// If bytes are shared (Arc count > 1), we can't zeroize here
+	// The Drop implementation will handle it when the last reference is dropped
+	debug!("[Security] Zeroized secure bytes (immediate cleanup requested)");
 }
 
 #[cfg(test)]
@@ -965,20 +974,20 @@ mod tests {
 		let auditor = SecurityAuditor::new(10);
 
 		let event = SecurityEvent {
-			timestamp:crate::Utility::CurrentTimestamp(),
-			event_type:SecurityEventType::AuthSuccess,
-			severity:SecuritySeverity::Informational,
-			source_ip:Some("127.0.0.1".to_string()),
-			client_id:Some("test_client".to_string()),
-			details:"Test event".to_string(),
-			metadata:HashMap::new(),
+			Timestamp:crate::Utility::CurrentTimestamp(),
+			EventType:SecurityEventType::AuthSuccess,
+			Severity:SecuritySeverity::Informational,
+			SourceIp:Some("127.0.0.1".to_string()),
+			ClientId:Some("test_client".to_string()),
+			Details:"Test event".to_string(),
+			Metadata:HashMap::new(),
 		};
 
 		auditor.LogEvent(event).await;
 
 		let events = auditor.GetEvents(Some(SecurityEventType::AuthSuccess), None).await;
 		assert_eq!(events.len(), 1);
-		assert_eq!(events[0].event_type, SecurityEventType::AuthSuccess);
+		assert_eq!(events[0].EventType, SecurityEventType::AuthSuccess);
 	}
 
 	#[tokio::test]

@@ -74,7 +74,7 @@ use crate::{
 	AirError,
 	ApplicationState::ApplicationState,
 	Configuration::IndexingConfig,
-	Indexing::State::CreateState::{FileIndex, SymbolLocation},
+	Indexing::State::CreateState::FileIndex,
 	Result,
 };
 
@@ -118,7 +118,7 @@ impl BackgroundIndexerContext {
 /// - Automatic reindexing of changed files
 /// - Removal of deleted files from index
 pub async fn StartFileWatcher(context:&BackgroundIndexerContext, paths:Vec<PathBuf>) -> Result<()> {
-	use notify::{RecursiveMode, Watcher};
+	use notify::Watcher;
 
 	let index = context.file_index.clone();
 	let corruption_flag = context.corruption_detected.clone();
@@ -136,6 +136,8 @@ pub async fn StartFileWatcher(context:&BackgroundIndexerContext, paths:Vec<PathB
 				}
 
 				let index = index.clone();
+				// Variables cloned for use in async task
+				let _index = index.clone();
 				let debounced_handler = debounced_handler.clone();
 				let config_clone = config.clone();
 
@@ -240,7 +242,7 @@ pub async fn StartBackgroundTasks(context:Arc<BackgroundIndexerContext>) -> Resu
 }
 
 /// Stop background tasks
-pub async fn StopBackgroundTasks(context:&BackgroundIndexerContext) {
+pub async fn StopBackgroundTasks(_context:&BackgroundIndexerContext) {
 	log::info!("[StartWatcher] Stopping background tasks");
 	// Tasks are cancelled when the task handle is dropped
 }
