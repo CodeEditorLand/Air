@@ -1130,7 +1130,7 @@ impl UpdateManager {
 	/// - Returns update information if a newer version is available
 	///
 	/// # Returns
-	/// Result<Option<UpdateInfo>> - Some if update available, None if
+	/// Result<Option<`UpdateInfo`>> - Some if update available, None if
 	/// up-to-date
 	async fn FetchUpdateInfo(&self) -> Result<Option<UpdateInfo>> {
 		let config = &self.AppState.Configuration.Updates;
@@ -1381,7 +1381,7 @@ impl UpdateManager {
 	/// * `version` - Current version being backed up
 	///
 	/// # Returns
-	/// Result<RollbackState> containing backup information
+	/// Result<`RollbackState`> containing backup information
 	async fn CreateBackup(&self, version:&str) -> Result<RollbackState> {
 		let timestamp = chrono::Utc::now();
 		let backup_dir_name = format!("backup-{}-{}", version, timestamp.format("%Y%m%d_%H%M%S"));
@@ -1566,7 +1566,7 @@ impl UpdateManager {
 	/// * `update_info` - Optional update info with checksums
 	///
 	/// # Returns
-	/// Result<bool> - true if valid, false if invalid
+	/// Result<`bool`> - true if valid, false if invalid
 	pub async fn verify_update(&self, file_path:&str, update_info:Option<&UpdateInfo>) -> Result<bool> {
 		let path = PathBuf::from(file_path);
 

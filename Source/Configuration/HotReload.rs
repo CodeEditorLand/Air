@@ -46,14 +46,14 @@
 //!
 //! ## Notification Flow
 //!
-//! ```
+//! ```text
 //! Config file changed → File watcher detected → Load & Validate
-//!        ↓                                               ↓
-//!   Atomic swap ←- Validation passed ←-- Migration applied
-//!        ↓
-//!   Notify subscribers → Wind services update → Mountain sync
-//!        ↓
-//!   Change history logged → Rollback state updated
+//! ↓ ↓
+//! Atomic swap ←- Validation passed ←-- Migration applied
+//! ↓
+//! Notify subscribers → Wind services update → Mountain sync
+//! ↓
+//! Change history logged → Rollback state updated
 //! ```
 //!
 //! ## Error Recovery

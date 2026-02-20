@@ -104,7 +104,7 @@ pub async fn ScanDirectory(
 	path:&str,
 	patterns:Vec<String>,
 	config:&IndexingConfig,
-	max_parallel:usize,
+	_max_parallel:usize,
 ) -> Result<(Vec<std::path::PathBuf>, ScanDirectoryResult)> {
 	let directory_path = crate::Configuration::ConfigurationManager::ExpandPath(path)?;
 

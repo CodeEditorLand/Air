@@ -122,7 +122,7 @@ pub async fn LoadIndex(index_directory:&Path) -> Result<FileIndex> {
 	}
 
 	// Verify index checksum
-	use crate::Indexing::State::CreateState::{CalculateIndexChecksum, CreateNewIndex};
+	use crate::Indexing::State::CreateState::CalculateIndexChecksum;
 	let expected_checksum = CalculateIndexChecksum(&index)?;
 	if index.index_checksum != expected_checksum {
 		return Err(AirError::Serialization(format!(

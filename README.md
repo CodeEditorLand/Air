@@ -79,7 +79,22 @@ seamless background updates and persistent state management.
 
 ---
 
-## System Architecture Diagram 🏗️
+## Deep Dive & Component Breakdown 🔬
+
+To understand how `Air`'s internal components interact to provide the background
+daemon functionality, see the following source files:
+
+- **[`Source/`](Source/)** - Main daemon implementation
+- **[`Source/Update/`](Source/Update/)** - Update lifecycle management
+- **[`Source/Download/`](Source/Download/)** - Resilient download manager
+- **[`Source/Auth/`](Source/Auth/)** - Authentication and cryptographic signing
+
+The source files explain the gRPC server implementation, task delegation from
+Mountain, and the progress event emission patterns.
+
+---
+
+## System Architecture Diagram 🏗️
 
 This diagram illustrates how **Air** sits alongside `Mountain` to handle
 background operations.
@@ -178,8 +193,9 @@ see the [`LICENSE`](https://github.com/CodeEditorLand/Air/tree/Current/) file.
 
 ## Changelog 📜
 
-Stay updated with our progress! See [`CHANGELOG.md`](https://github.com/CodeEditorLand/Air/tree/Current/) for a history
-of changes specific to **Air**.
+Stay updated with our progress! See
+[`CHANGELOG.md`](https://github.com/CodeEditorLand/Air/tree/Current/) for a
+history of changes specific to **Air**.
 
 ---
 

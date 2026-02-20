@@ -163,7 +163,7 @@
 //!
 //! - **VERSION**: Air daemon version from Cargo.toml
 //! - **DefaultConfigFile**: Default config filename (Air.toml)
-//! - **DefaultBindAddress**: gRPC bind address ([::1]:50053)
+//! - **DefaultBindAddress**: gRPC bind address (`[::1]`:50053)
 //! - **ProtocolVersion**: Vine protocol version (1)
 
 pub mod ApplicationState;
@@ -204,11 +204,11 @@ pub const DefaultConfigFile:&str = "Air.toml";
 ///
 /// Addresses in order of preference:
 /// - `--bind` flag value (if provided)
-/// - DefaultBindAddress constant: [::1]:50053
+/// - DefaultBindAddress constant: `[::1]`:50053
 ///
 /// TODO: Add support for:
 /// - IPv4-only binding (0.0.0.0:50053)
-/// - IPv6-only binding ([::]:50053)
+/// - IPv6-only binding (`[::]`:50053)
 /// - Wildcard binding for all interfaces
 pub const DefaultBindAddress:&str = "[::1]:50053";
 

@@ -45,12 +45,12 @@
 //!
 //! ## Configuration Flow
 //!
-//! ```
+//! ```text
 //! Mountain (User Settings) → Air config file → Wind services
-//!        ↓                         ↓                    ↓
-//!  settings.json           ~/.Air/config.toml    Service-specific overrides
-//!        ↓                         ↓                    ↓
-//!  Workspace settings    Environment variables    Hot-reload notifications
+//! ↓ ↓ ↓
+//! settings.json ~/.Air/config.toml Service-specific overrides
+//! ↓ ↓ ↓
+//! Workspace settings Environment variables Hot-reload notifications
 //! ```
 //!
 //! ## TODO: Schema Validation
@@ -146,8 +146,8 @@ fn default_profile() -> String { "dev".to_string() }
 pub struct gRPCConfig {
 	/// Bind address for gRPC server
 	/// Validation: Must be a valid IP:port or hostname:port combination
-	/// Format: [IPv6]:port or IPv4:port or hostname:port
-	/// Example: "[::1]:50053", "127.0.0.1:50053", "localhost:50053"
+	/// Format: `[IPv6]`:port or IPv4:port or hostname:port
+	/// Example: `"[::1]:50053"`, `"127.0.0.1:50053"`, `"localhost:50053"`
 	#[serde(default = "default_grpc_bind_address")]
 	pub BindAddress:String,
 
@@ -221,7 +221,7 @@ pub struct UpdateConfig {
 	/// Update server URL
 	/// Validation: Must be a valid HTTPS URL
 	/// Security: HTTPS required for security
-	/// Default: "https://updates.editor.land"
+	/// Default: <https://updates.editor.land>
 	#[serde(default = "default_update_server_url")]
 	pub UpdateServerUrl:String,
 

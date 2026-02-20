@@ -108,7 +108,7 @@ use tokio::sync::RwLock;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use ring::pbkdf2;
-use rand::{RngCore, rng};
+use rand::{Rng, rng};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use zeroize::Zeroize;
 use subtle::ConstantTimeEq;

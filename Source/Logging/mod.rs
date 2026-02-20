@@ -58,9 +58,9 @@
 //! # TODOs
 //!
 //! - [DISTRIBUTED TRACING] Tighter integration with Tracing module
-//! - [ELASTICSEARCH] Direct log export to Elasticsearch/Logstash
+//! - `ELASTICSEARCH`: Direct log export to Elasticsearch/Logstash
 //! - [LOG ANALYSIS] Automatic anomaly detection in logs
-//! - [KIBANA] Pre-built Kibana dashboards
+//! - `KIBANA`: Pre-built Kibana dashboards
 //! - [LOG PARSING] Support for custom log formats
 //!
 //! ## Sensitive Data Handling

@@ -329,7 +329,7 @@ pub fn GetIndexSizeEstimate(index:&FileIndex) -> usize {
 	let mut size = 0;
 
 	// File metadata
-	for (path, metadata) in &index.files {
+	for (path, _metadata) in &index.files {
 		size += path.as_os_str().len();
 		size += std::mem::size_of::<FileMetadata>();
 	}

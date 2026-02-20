@@ -73,7 +73,6 @@ use tokio::{
 use crate::{
 	AirError,
 	ApplicationState::ApplicationState,
-	Configuration::IndexingConfig,
 	Indexing::State::CreateState::FileIndex,
 	Result,
 };
@@ -139,7 +138,7 @@ pub async fn StartFileWatcher(context:&BackgroundIndexerContext, paths:Vec<PathB
 				// Variables cloned for use in async task
 				let _index = index.clone();
 				let debounced_handler = debounced_handler.clone();
-				let config_clone = config.clone();
+				let _config_clone = config.clone();
 
 				tokio::spawn(async move {
 					// Convert event to change type and add to debounced handler

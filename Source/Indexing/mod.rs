@@ -245,12 +245,12 @@ impl FileIndexer {
 		let config = &self.AppState.Configuration.Indexing;
 
 		// Scan directory
-		let (files_to_index, scan_result) =
+		let (files_to_index, _scan_result) =
 			ScanDirectoriesParallel(vec![path.clone()], patterns.clone(), config, MAX_PARALLEL_INDEXING).await?;
 
 		// Index files in parallel
 		// Variables cloned for use in async task
-		let index_arc = self.file_index.clone();
+		let _index_arc = self.file_index.clone();
 		let semaphore = self.indexing_semaphore.clone();
 		let config_clone = config.clone();
 		let mut index_tasks = Vec::new();

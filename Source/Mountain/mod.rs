@@ -6,7 +6,7 @@
 //!
 //! ## Architecture
 //!
-//! ```
+//! ```text
 //! Air (Background Daemon) ──► MountainClient ──► gRPC ──► Mountain (Main App)
 //! ```
 //!
@@ -40,7 +40,6 @@ use std::{env, fs::File, io::BufReader, path::PathBuf, time::Duration};
 use log::{debug, error, info, warn};
 use tonic::transport::{Channel, Endpoint};
 #[cfg(feature = "mtls")]
-use rustls::pki_types::{CertificateDer, ServerName};
 #[cfg(feature = "mtls")]
 use rustls::ClientConfig;
 #[cfg(feature = "mtls")]
@@ -266,7 +265,7 @@ pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, B
 /// Configuration for connecting to Mountain.
 #[derive(Debug, Clone)]
 pub struct MountainClientConfig {
-	/// The gRPC server address of Mountain (e.g., "[::1]:50051")
+	/// The gRPC server address of Mountain (e.g., `"[::1]:50051"`)
 	pub address:String,
 
 	/// Connection timeout in seconds
@@ -306,7 +305,7 @@ impl MountainClientConfig {
 	///
 	/// This method reads configuration from the following environment
 	/// variables:
-	/// - `MOUNTAIN_ADDRESS`: gRPC server address (default: "[::1]:50051")
+	/// - `MOUNTAIN_ADDRESS`: gRPC server address (default: `"[::1]:50051"`)
 	/// - `MOUNTAIN_CONNECTION_TIMEOUT_SECS`: Connection timeout in seconds
 	///   (default: 5)
 	/// - `MOUNTAIN_REQUEST_TIMEOUT_SECS`: Request timeout in seconds (default:

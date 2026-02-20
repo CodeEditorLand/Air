@@ -440,7 +440,7 @@ pub async fn RebuildIndex(
 pub async fn ValidateAndRepairIndex(index:&mut FileIndex) -> Result<RepairResult> {
 	let start_time = Instant::now();
 	let mut repaired_files = 0u32;
-	let mut removed_orphans = 0u32;
+	let removed_orphans;
 
 	// Validate index consistency
 	match super::super::State::UpdateState::ValidateIndexConsistency(index) {

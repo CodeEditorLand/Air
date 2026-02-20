@@ -64,9 +64,9 @@
 //! - [DISTRIBUTED TRACING] Integrate with OpenTelemetry for distributed tracing
 //!   metrics
 //! - [CUSTOM METRICS] Add custom metric types for business KPIs
-//! - [ALERTING] Implement metric-based alerting thresholds
-//! - [AGGREGATION] Add time-windowed aggregations (1m, 5m, 15m)
-//! - [EXPORT] Add support for external monitoring systems (Datadog, New Relic)
+//! - `ALERTING`: Implement metric-based alerting thresholds
+//! - `AGGREGATION`: Add time-windowed aggregations (1m, 5m, 15m)
+//! - `EXPORT`: Add support for external monitoring systems (Datadog, New Relic)
 //!
 //! ## Sensitive Data Handling
 //!

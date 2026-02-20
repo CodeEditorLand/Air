@@ -1198,7 +1198,7 @@ impl AirService for AirVinegRPCService {
 			};
 
 			// Start streaming download
-			let mut total_size:u64 = 0;
+			let mut total_size:Option<u64> = None;
 			let mut total_downloaded:u64 = 0;
 
 			match client
@@ -1242,7 +1242,7 @@ impl AirService for AirVinegRPCService {
 						return;
 					}
 
-					total_size = response.content_length().unwrap_or(0);
+					total_size = Some(response.content_length().unwrap_or(0));
 					let response_tx = tx.clone();
 					let response_id = download_request_id.clone();
 
@@ -1279,10 +1279,14 @@ impl AirService for AirVinegRPCService {
 									let _chunk_checksum = calculate_chunk_checksum(&buffer);
 
 									// Calculate progress
-									let progress = if total_size > 0 {
-										(total_downloaded as f32 / total_size as f32) * 100.0
+									let progress = if let Some(ts) = total_size {
+									if ts > 0 {
+									(total_downloaded as f32 / ts as f32) * 100.0
 									} else {
-										0.0
+									0.0
+									}
+									} else {
+									0.0
 									};
 
 									// Update request status periodically
@@ -1299,14 +1303,14 @@ impl AirService for AirVinegRPCService {
 									}
 
 									if response_tx
-										.send(Ok(DownloadStreamResponse {
-											request_id:response_id.clone(),
-											chunk:buffer.clone().into(),
-											total_size,
-											downloaded:total_downloaded,
-											completed:false,
-											error:String::new(),
-										}))
+									.send(Ok(DownloadStreamResponse {
+									request_id:response_id.clone(),
+									chunk:buffer.clone().into(),
+									total_size: total_size.unwrap_or(0),
+									downloaded:total_downloaded,
+									completed:false,
+									error:String::new(),
+									}))
 										.await
 										.is_err()
 									{
@@ -1346,14 +1350,14 @@ impl AirService for AirVinegRPCService {
 								);
 
 								let _ = response_tx
-									.send(Ok(DownloadStreamResponse {
-										request_id:response_id.clone(),
-										chunk:vec![].into(),
-										total_size,
-										downloaded:total_downloaded,
-										completed:false,
-										error:error.clone(),
-									}))
+								.send(Ok(DownloadStreamResponse {
+								request_id:response_id.clone(),
+								chunk:vec![].into(),
+								total_size: total_size.unwrap_or(0),
+								downloaded:total_downloaded,
+								completed:false,
+								error:error.clone(),
+								}))
 									.await;
 
 								AppState
@@ -1374,14 +1378,14 @@ impl AirService for AirVinegRPCService {
 						let _chunk_checksum = calculate_chunk_checksum(&buffer);
 
 						if tx
-							.send(Ok(DownloadStreamResponse {
-								request_id:download_request_id.clone(),
-								chunk:buffer.into(),
-								total_size,
-								downloaded:total_downloaded,
-								completed:false,
-								error:String::new(),
-							}))
+						.send(Ok(DownloadStreamResponse {
+						request_id:download_request_id.clone(),
+						chunk:buffer.into(),
+						total_size: total_size.unwrap_or(0),
+						downloaded:total_downloaded,
+						completed:false,
+						error:String::new(),
+						}))
 							.await
 							.is_err()
 						{
@@ -1404,14 +1408,14 @@ impl AirService for AirVinegRPCService {
 						.ok();
 
 					let _ = tx
-						.send(Ok(DownloadStreamResponse {
-							request_id,
-							chunk:vec![].into(),
-							total_size,
-							downloaded:total_downloaded,
-							completed:true,
-							error:String::new(),
-						}))
+					.send(Ok(DownloadStreamResponse {
+					request_id,
+					chunk:vec![].into(),
+					total_size: total_size.unwrap_or(0),
+					downloaded:total_downloaded,
+					completed:true,
+					error:String::new(),
+					}))
 						.await;
 
 					info!(
