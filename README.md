@@ -79,7 +79,7 @@ seamless background updates and persistent state management.
 
 ---
 
-## Deep Dive & Component Breakdown 🔬
+## Deep Dive & Component Breakdown 🔬
 
 To understand how `Air`'s internal components interact to provide the background
 daemon functionality, see the following source files:
@@ -94,7 +94,7 @@ Mountain, and the progress event emission patterns.
 
 ---
 
-## System Architecture Diagram 🏗️
+## System Architecture Diagram 🏗️
 
 This diagram illustrates how **Air** sits alongside `Mountain` to handle
 background operations.
