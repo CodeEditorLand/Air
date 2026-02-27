@@ -273,6 +273,7 @@ pub fn ClearLogContext() {
 }
 
 /// Log file manager for rotation and cleanup
+#[allow(dead_code)]
 pub struct LogManager {
 	Config:LogRotationConfig,
 	CurrentFile:Arc<Mutex<Option<PathBuf>>>,
@@ -280,6 +281,7 @@ pub struct LogManager {
 }
 
 impl LogManager {
+	#[allow(dead_code)]
 	fn new(Config:LogRotationConfig) -> Result<Self> {
 		Config.Validate()?;
 
@@ -294,12 +296,14 @@ impl LogManager {
 	}
 
 	/// Check if log rotation is needed
+	#[allow(dead_code)]
 	fn ShouldRotate(&self) -> bool {
 		let size = *self.CurrentSize.lock().unwrap();
 		size >= self.Config.MaxFileSizeBytes
 	}
 
 	/// Perform log rotation
+	#[allow(dead_code)]
 	fn Rotate(&self) -> Result<()> {
 		let CurrentFile = self.CurrentFile.lock().unwrap();
 
@@ -326,6 +330,7 @@ impl LogManager {
 	}
 
 	/// Compress a log file
+	#[allow(dead_code)]
 	fn CompressFile(&self, path:&str) -> crate::Result<()> {
 		// Basic compression - in production would use actual compression
 		let _ = path;
@@ -333,6 +338,7 @@ impl LogManager {
 	}
 
 	/// Cleanup old log files
+	#[allow(dead_code)]
 	fn CleanupOldLogs(&self) -> Result<()> {
 		let log_dir = Path::new(&self.Config.LogDirectory);
 
@@ -465,6 +471,7 @@ impl StructuredLogEntry {
 pub struct ContextLogger {
 	json_output:bool,
 	log_file_path:Option<String>,
+	#[allow(dead_code)]
 	rotation_config:Option<LogRotationConfig>,
 	sensitive_filter:Arc<SensitiveDataFilter>,
 	initialized:Arc<Mutex<bool>>,

@@ -70,12 +70,7 @@ use tokio::{
 	task::JoinHandle,
 };
 
-use crate::{
-	AirError,
-	ApplicationState::ApplicationState,
-	Indexing::State::CreateState::FileIndex,
-	Result,
-};
+use crate::{AirError, ApplicationState::ApplicationState, Indexing::State::CreateState::FileIndex, Result};
 
 /// Maximum number of parallel watch event processors
 const MAX_WATCH_PROCESSORS:usize = 5;

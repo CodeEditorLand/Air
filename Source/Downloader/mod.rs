@@ -367,7 +367,9 @@ impl DownloadManager {
 			.map_err(|e| AirError::Configuration(format!("Failed to create cache directory: {}", e)))?;
 
 		// Create HTTP client with connection pooling and timeouts
-		let client = reqwest::Client::builder()
+		let dns_port = mist::dns_port();
+		let client = crate::HTTP::secured_client_builder(dns_port)
+			.map_err(|e| AirError::Network(format!("Failed to create HTTP client: {}", e)))?
 			.timeout(Duration::from_secs(config.DownloadTimeoutSecs))
 			.connect_timeout(Duration::from_secs(30))
 			.pool_idle_timeout(Duration::from_secs(90))
@@ -375,7 +377,7 @@ impl DownloadManager {
 			.tcp_keepalive(Duration::from_secs(60))
 			.user_agent("Land-AirDownloader/0.1.0")
 			.build()
-			.map_err(|e| AirError::Network(format!("Failed to create HTTP client: {}", e)))?;
+			.map_err(|e| AirError::Network(format!("Failed to build HTTP client: {}", e)))?;
 
 		// Bandwidth limiter (permit = 1MB of transfer) - kept for global limit
 		let BandwidthLimiter = Arc::new(Semaphore::new(100));
@@ -1703,12 +1705,14 @@ fn ExpectedChecksumFromConfig(config:&DownloadConfig) -> Option<&str> {
 struct ChunkInfo {
 	start:u64,
 	end:u64,
+	#[allow(dead_code)]
 	downloaded:u64,
 	temp_path:PathBuf,
 }
 
 /// Parallel download result
 #[derive(Debug)]
+#[allow(dead_code)]
 struct ParallelDownloadResult {
 	chunks:Vec<ChunkInfo>,
 	total_size:u64,

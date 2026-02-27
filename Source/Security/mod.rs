@@ -112,7 +112,7 @@ use rand::{Rng, rng};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use zeroize::Zeroize;
 use subtle::ConstantTimeEq;
-use log::{info, debug};
+use log::{debug, info};
 
 use crate::{AirError, Result};
 

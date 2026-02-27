@@ -79,8 +79,8 @@ use crate::{
 	Configuration::IndexingConfig,
 	Indexing::{
 		Process::{
-			ProcessContent::{DetectEncoding, DetectLanguage, DetectMimeType},
 			ExtractSymbols::ExtractSymbols,
+			ProcessContent::{DetectEncoding, DetectLanguage, DetectMimeType},
 		},
 		State::CreateState::{FileMetadata, SymbolInfo},
 	},

@@ -27,9 +27,11 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 log = { workspace = true }
 env_logger = { workspace = true }
+anyhow = { workspace = true }
 thiserror = { workspace = true }
 reqwest = { workspace = true }
 futures = { workspace = true }
+Mist = { workspace = true }
 futures-util = { workspace = true }
 async-trait = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
@@ -77,13 +79,13 @@ zip = { workspace = true }
 rustls = { workspace = true }
 rustls-pemfile = { workspace = true }
 tokio-rustls = { workspace = true }
-rustls-native-certs = "0.7"
+rustls-native-certs = "0.8"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.58", features = ["Win32_Storage_FileSystem"] }
+windows = { version = "0.62", features = ["Win32_Storage_FileSystem"] }
 
 [build-dependencies]
 tonic-build = { workspace = true }
@@ -109,3 +111,9 @@ targets = [
 	"x86_64-apple-darwin",
 	"aarch64-apple-darwin",
 ]
+
+[dev-dependencies]
+# Async testing utilities
+tokio-test = "0.4"
+# Test utilities
+futures = { workspace = true }

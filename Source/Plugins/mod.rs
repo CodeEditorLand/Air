@@ -294,6 +294,7 @@ pub struct PluginRegistry {
 /// Main plugin manager
 pub struct PluginManager {
 	plugins:Arc<RwLock<HashMap<String, PluginRegistry>>>,
+	#[allow(dead_code)]
 	MessageQueue:Arc<RwLock<Vec<PluginMessage>>>,
 	AirVersion:String,
 	EnableSandbox:bool,
@@ -1238,9 +1239,7 @@ mod tests {
 
 	#[async_trait]
 	impl Plugin for TestPlugin {
-		fn metadata(&self) -> &PluginMetadata {
-			test_metadata()
-		}
+		fn metadata(&self) -> &PluginMetadata { test_metadata() }
 	}
 
 	#[tokio::test]

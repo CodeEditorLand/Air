@@ -173,6 +173,7 @@ pub mod Configuration;
 pub mod Daemon;
 pub mod Downloader;
 pub mod HealthCheck;
+pub mod HTTP;
 pub mod Indexing;
 pub mod Logging;
 pub mod Metrics;
@@ -665,14 +666,15 @@ pub mod Utility {
 	/// - Decimal values like "1.5s"
 	pub fn ParseDurationToMillis(DurationStr:&str) -> Result<u64> {
 		let input = DurationStr.trim().to_lowercase();
-		let mut total_millis: u64 = 0;
+		let mut total_millis:u64 = 0;
 		let mut pos = 0;
 
 		while pos < input.len() {
 			// Extract the numeric part
 			let start = pos;
-			while pos < input.len() && (input.chars().nth(pos).unwrap().is_ascii_digit()
-				|| input.chars().nth(pos).unwrap() == '.') {
+			while pos < input.len()
+				&& (input.chars().nth(pos).unwrap().is_ascii_digit() || input.chars().nth(pos).unwrap() == '.')
+			{
 				pos += 1;
 			}
 
@@ -684,14 +686,14 @@ pub mod Utility {
 			}
 
 			let num_str = &input[start..pos];
-			let num_value: f64 = num_str.parse().map_err(|_| {
+			let num_value:f64 = num_str.parse().map_err(|_| {
 				AirError::Internal(format!("Invalid number '{}' in duration '{}'", num_str, DurationStr))
 			})?;
 
 			// Extract the unit part
 			let unit_start = pos;
-			while pos < input.len() &&
-				(match input.chars().nth(pos) {
+			while pos < input.len()
+				&& (match input.chars().nth(pos) {
 					Some(c) => c.is_ascii_alphabetic(),
 					None => false,
 				}) {
@@ -699,22 +701,24 @@ pub mod Utility {
 			}
 
 			if unit_start == pos || unit_start >= input.len() {
-					return Err(AirError::Internal(format!(
-						"Invalid duration format: missing unit in '{}'",
-						DurationStr
-					)));
-				}
-	
-				let unit = &input[unit_start..pos];
-				let multiplier = match unit {
+				return Err(AirError::Internal(format!(
+					"Invalid duration format: missing unit in '{}'",
+					DurationStr
+				)));
+			}
+
+			let unit = &input[unit_start..pos];
+			let multiplier = match unit {
 				"ms" => 1.0,
 				"s" => 1000.0,
 				"m" => 60_000.0,
 				"h" => 3_600_000.0,
-				_ => return Err(AirError::Internal(format!(
-					"Invalid duration unit '{}', expected one of: ms, s, m, h",
-					unit
-				))),
+				_ => {
+					return Err(AirError::Internal(format!(
+						"Invalid duration unit '{}', expected one of: ms, s, m, h",
+						unit
+					)));
+				},
 			};
 
 			let component_millis = (num_value * multiplier) as u64;

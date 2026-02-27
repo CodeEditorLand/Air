@@ -71,10 +71,7 @@ use tokio::sync::Semaphore;
 use crate::{
 	AirError,
 	Configuration::IndexingConfig,
-	Indexing::{
-		Scan::ScanFile::ValidateFileAccess,
-		State::CreateState::FileIndex,
-	},
+	Indexing::{Scan::ScanFile::ValidateFileAccess, State::CreateState::FileIndex},
 	Result,
 };
 

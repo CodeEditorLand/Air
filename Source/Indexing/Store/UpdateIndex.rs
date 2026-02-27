@@ -128,10 +128,7 @@ pub async fn UpdateSingleFile(
 	}
 
 	// Scan the file
-	use crate::Indexing::{
-		Scan::ScanFile::IndexFileInternal,
-		State::UpdateState::UpdateIndexMetadata,
-	};
+	use crate::Indexing::{Scan::ScanFile::IndexFileInternal, State::UpdateState::UpdateIndexMetadata};
 
 	let (metadata, symbols) = IndexFileInternal(file_path, config, &[]).await?;
 

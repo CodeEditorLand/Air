@@ -68,12 +68,7 @@ use std::path::PathBuf;
 
 use tokio::sync::{Mutex, RwLock};
 
-use crate::{
-	AirError,
-	Configuration::IndexingConfig,
-	Indexing::State::CreateState::FileIndex,
-	Result,
-};
+use crate::{AirError, Configuration::IndexingConfig, Indexing::State::CreateState::FileIndex, Result};
 
 /// Handle file watcher event for incremental indexing
 ///
@@ -286,6 +281,7 @@ impl FileChangeType {
 /// File change information for debouncing
 #[derive(Debug, Clone)]
 struct FileChangeInfo {
+	#[allow(dead_code)]
 	path:PathBuf,
 	change_type:FileChangeType,
 	last_seen:std::time::Instant,

@@ -12,6 +12,8 @@ use tonic::{Request, Response, Status};
 use tokio_stream::StreamExt as TokioStreamExt;
 use async_trait::async_trait;
 
+// Note: Mist is available as a workspace dependency, no extern crate needed
+
 use crate::{
 	AirError,
 	ApplicationState::ApplicationState,
@@ -1151,14 +1153,43 @@ impl AirService for AirVinegRPCService {
 			}
 
 			// Create HTTP client with connection pooling hints
-			let client = reqwest::Client::builder()
+			let dns_port = mist::dns_port();
+			let client_builder_result = crate::HTTP::secured_client_builder(dns_port);
+			
+			let client_builder = match client_builder_result {
+				Ok(builder) => builder,
+				Err(e) => {
+					let error = format!("Failed to create HTTP client builder: {}", e);
+					let _ = tx
+						.send(Ok(DownloadStreamResponse {
+							request_id:download_request_id.clone(),
+							chunk:vec![].into(),
+							total_size:0,
+							downloaded:0,
+							completed:false,
+							error:error.clone(),
+						}))
+						.await;
+					AppState
+						.UpdateRequestStatus(
+							&download_request_id,
+							crate::ApplicationState::RequestState::Failed(error),
+							None,
+						)
+						.await
+						.ok();
+					return;
+				}
+			};
+			
+			let client_result = client_builder
 				.pool_idle_timeout(std::time::Duration::from_secs(60))
 				.pool_max_idle_per_host(5)
 				.timeout(std::time::Duration::from_secs(300))
 				.build();
 
-			if client.is_err() {
-				let error = client.unwrap_err().to_string();
+			if client_result.is_err() {
+				let error = client_result.unwrap_err().to_string();
 				let _ = tx
 					.send(Ok(DownloadStreamResponse {
 						request_id:download_request_id.clone(),
@@ -1180,7 +1211,7 @@ impl AirService for AirVinegRPCService {
 				return;
 			}
 
-			let client = match client {
+			let client: reqwest::Client = match client_result {
 				Ok(client) => client,
 				Err(e) => {
 					let error = format!("Failed to create HTTP client: {}", e);
@@ -1219,6 +1250,7 @@ impl AirService for AirVinegRPCService {
 				.await
 			{
 				Ok(response) => {
+					// TODO: Type annotation removed from if statement - is_success() returns bool
 					if !response.status().is_success() {
 						let error = format!("Download failed with status: {}", response.status());
 						let _ = tx
@@ -1269,6 +1301,7 @@ impl AirService for AirVinegRPCService {
 						}
 
 						match chunk_result {
+							// TODO: Type annotation removed from match pattern - chunk is inferred as bytes::Bytes from the Result
 							Ok(chunk) => {
 								buffer.extend_from_slice(&chunk);
 								total_downloaded += chunk.len() as u64;
@@ -1280,13 +1313,9 @@ impl AirService for AirVinegRPCService {
 
 									// Calculate progress
 									let progress = if let Some(ts) = total_size {
-									if ts > 0 {
-									(total_downloaded as f32 / ts as f32) * 100.0
+										if ts > 0 { (total_downloaded as f32 / ts as f32) * 100.0 } else { 0.0 }
 									} else {
-									0.0
-									}
-									} else {
-									0.0
+										0.0
 									};
 
 									// Update request status periodically
@@ -1303,14 +1332,14 @@ impl AirService for AirVinegRPCService {
 									}
 
 									if response_tx
-									.send(Ok(DownloadStreamResponse {
-									request_id:response_id.clone(),
-									chunk:buffer.clone().into(),
-									total_size: total_size.unwrap_or(0),
-									downloaded:total_downloaded,
-									completed:false,
-									error:String::new(),
-									}))
+										.send(Ok(DownloadStreamResponse {
+											request_id:response_id.clone(),
+											chunk:buffer.clone().into(),
+											total_size:total_size.unwrap_or(0),
+											downloaded:total_downloaded,
+											completed:false,
+											error:String::new(),
+										}))
 										.await
 										.is_err()
 									{
@@ -1350,14 +1379,14 @@ impl AirService for AirVinegRPCService {
 								);
 
 								let _ = response_tx
-								.send(Ok(DownloadStreamResponse {
-								request_id:response_id.clone(),
-								chunk:vec![].into(),
-								total_size: total_size.unwrap_or(0),
-								downloaded:total_downloaded,
-								completed:false,
-								error:error.clone(),
-								}))
+									.send(Ok(DownloadStreamResponse {
+										request_id:response_id.clone(),
+										chunk:vec![].into(),
+										total_size:total_size.unwrap_or(0),
+										downloaded:total_downloaded,
+										completed:false,
+										error:error.clone(),
+									}))
 									.await;
 
 								AppState
@@ -1378,14 +1407,14 @@ impl AirService for AirVinegRPCService {
 						let _chunk_checksum = calculate_chunk_checksum(&buffer);
 
 						if tx
-						.send(Ok(DownloadStreamResponse {
-						request_id:download_request_id.clone(),
-						chunk:buffer.into(),
-						total_size: total_size.unwrap_or(0),
-						downloaded:total_downloaded,
-						completed:false,
-						error:String::new(),
-						}))
+							.send(Ok(DownloadStreamResponse {
+								request_id:download_request_id.clone(),
+								chunk:buffer.into(),
+								total_size:total_size.unwrap_or(0),
+								downloaded:total_downloaded,
+								completed:false,
+								error:String::new(),
+							}))
 							.await
 							.is_err()
 						{
@@ -1408,14 +1437,14 @@ impl AirService for AirVinegRPCService {
 						.ok();
 
 					let _ = tx
-					.send(Ok(DownloadStreamResponse {
-					request_id,
-					chunk:vec![].into(),
-					total_size: total_size.unwrap_or(0),
-					downloaded:total_downloaded,
-					completed:true,
-					error:String::new(),
-					}))
+						.send(Ok(DownloadStreamResponse {
+							request_id,
+							chunk:vec![].into(),
+							total_size:total_size.unwrap_or(0),
+							downloaded:total_downloaded,
+							completed:true,
+							error:String::new(),
+						}))
 						.await;
 
 					info!(
@@ -1963,12 +1992,14 @@ impl AirVinegRPCService {
 
 	/// Validate URL supports range headers for streaming
 	async fn validate_range_support(&self, url:&str) -> Result<bool> {
-		let client = reqwest::Client::builder()
+		let dns_port = mist::dns_port();
+		let client = crate::HTTP::secured_client_builder(dns_port)
+			.map_err(|e| crate::AirError::Network(format!("Failed to create HTTP client builder: {}", e)))?
 			.timeout(std::time::Duration::from_secs(10))
 			.build()
 			.map_err(|e| crate::AirError::Network(format!("Failed to create HTTP client for validation: {}", e)))?;
 
-		let response = client
+		let response: reqwest::Response = client
 			.head(url)
 			.send()
 			.await
@@ -1978,7 +2009,7 @@ impl AirVinegRPCService {
 		let accepts_ranges = response
 			.headers()
 			.get("accept-ranges")
-			.map(|v| v.to_str().unwrap_or("none"))
+			.map(|v: &reqwest::header::HeaderValue| v.to_str().unwrap_or("none"))
 			.unwrap_or("none");
 
 		Ok(accepts_ranges == "bytes")

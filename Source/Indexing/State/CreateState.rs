@@ -64,10 +64,7 @@
 //! State structures are designed to be moved into Arc<RwLock<>> for
 //! thread-safe shared access across indexing and search operations.
 
-use std::{
-	collections::HashMap,
-	path::PathBuf,
-};
+use std::{collections::HashMap, path::PathBuf};
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 

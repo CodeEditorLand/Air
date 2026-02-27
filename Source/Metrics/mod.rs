@@ -90,15 +90,18 @@ use log::{debug, info, warn};
 use crate::{AirError, Result};
 
 /// Overflow-protected metric update helper
+#[allow(dead_code)]
 struct MetricGuard {
 	current:u64,
 	max:u64,
 }
 
 impl MetricGuard {
+	#[allow(dead_code)]
 	fn new(current:u64, max:u64) -> Self { Self { current, max } }
 
 	/// Increment with overflow protection
+	#[allow(dead_code)]
 	fn increment(&mut self) -> bool {
 		if self.current < self.max.saturating_sub(1) {
 			self.current += 1;
@@ -224,7 +227,7 @@ impl MetricsCollector {
 
 	/// Record a successful request with thread-safe atomic updates
 	pub fn RecordRequestSuccess(&self, LatencySeconds:f64) {
-		self.ValidateAggregation();
+		let _ = self.ValidateAggregation();
 
 		let LatencyMs = (LatencySeconds * 1000.0) as u64;
 
@@ -244,7 +247,7 @@ impl MetricsCollector {
 
 	/// Record a failed request with thread-safe atomic updates
 	pub fn RecordRequestFailure(&self, ErrorType:&str, LatencySeconds:f64) {
-		self.ValidateAggregation();
+		let _ = self.ValidateAggregation();
 
 		let LatencyMs = (LatencySeconds * 1000.0) as u64;
 

@@ -56,8 +56,9 @@
 /// Start the Echo scheduler service
 ///
 /// Initializes the Echo scheduler which provides simple echo functionality
-/// for testing and connectivity verification. The Echo service is now implemented
-/// as a lightweight background task that logs its presence for monitoring purposes.
+/// for testing and connectivity verification. The Echo service is now
+/// implemented as a lightweight background task that logs its presence for
+/// monitoring purposes.
 ///
 /// # Returns
 ///

@@ -64,11 +64,7 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::{
-	AirError,
-	Indexing::State::CreateState::FileIndex,
-	Result,
-};
+use crate::{AirError, Indexing::State::CreateState::FileIndex, Result};
 
 /// Save index to disk with atomic write
 pub async fn SaveIndex(index_directory:&Path, index:&FileIndex) -> Result<()> {

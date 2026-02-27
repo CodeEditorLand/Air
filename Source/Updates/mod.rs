@@ -121,18 +121,22 @@ pub struct UpdateManager {
 #[derive(Debug, Clone)]
 struct DownloadSession {
 	/// Session unique identifier
+	#[allow(dead_code)]
 	session_id:String,
 
 	/// Original update URL
+	#[allow(dead_code)]
 	download_url:String,
 
 	/// Current file path
+	#[allow(dead_code)]
 	temp_path:PathBuf,
 
 	/// Bytes downloaded so far
 	downloaded_bytes:u64,
 
 	/// Total file size
+	#[allow(dead_code)]
 	total_bytes:u64,
 
 	/// Whether download is complete
@@ -185,6 +189,7 @@ struct PlatformConfig {
 
 /// Supported package formats by platform
 #[derive(Debug, Clone, Copy)]
+#[allow(dead_code)]
 enum PackageFormat {
 	WindowsExe,
 	MacOsDmg,
@@ -719,10 +724,12 @@ impl UpdateManager {
 		}
 
 		// Begin download
-		let client = reqwest::Client::builder()
-			.timeout(Duration::from_secs(300))
-			.build()
-			.map_err(|e| AirError::Network(format!("Failed to create HTTP client: {}", e)))?;
+		let dns_port = mist::dns_port();
+		let client = crate::HTTP::secured_client_with_timeout(
+			dns_port,
+			Duration::from_secs(300),
+		)
+		.map_err(|e| AirError::Network(format!("Failed to create HTTP client: {}", e)))?;
 
 		let mut request_builder = client.get(&update_info.download_url);
 
@@ -731,7 +738,7 @@ impl UpdateManager {
 			request_builder = request_builder.header("Range", format!("bytes={}-", downloaded_bytes));
 		}
 
-		let response = request_builder
+		let response: reqwest::Response = request_builder
 			.send()
 			.await
 			.map_err(|e| AirError::Network(format!("Failed to start download: {}", e)))?;
@@ -790,7 +797,10 @@ impl UpdateManager {
 		while let Some(chunk_result) = byte_stream.next().await {
 			match chunk_result {
 				Ok(chunk) => {
-					file.write_all(&chunk)
+					// TODO: Ensure chunk type is properly handled - Bytes can be converted to slice for write_all
+					// Type annotation removed from match pattern - chunk is inferred as bytes::Bytes from the Result
+					let chunk_bytes: &[u8] = &chunk;
+					file.write_all(chunk_bytes)
 						.await
 						.map_err(|e| AirError::FileSystem(format!("Failed to write update file: {}", e)))?;
 
@@ -1174,14 +1184,15 @@ impl UpdateManager {
 				self.update_channel.as_str()
 			);
 
-			let client = reqwest::Client::builder()
-				.timeout(Duration::from_secs(30))
-				.build()
+			let dns_port = mist::dns_port();
+			let client = crate::HTTP::secured_client_with_timeout(dns_port, Duration::from_secs(30))
 				.map_err(|e| AirError::Network(format!("Failed to create HTTP client: {}", e)))?;
 
 			match client.get(&update_url).send().await {
 				Ok(response) => {
-					match response.status() {
+					// TODO: Type annotation removed from match scrutinee - status is inferred as reqwest::StatusCode
+					let status = response.status();
+					match status {
 						reqwest::StatusCode::NO_CONTENT => {
 							// No update available (up to date)
 							circuit_breaker.RecordSuccess().await;
