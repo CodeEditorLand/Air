@@ -89,6 +89,7 @@ pub struct AirVinegRPCService {
 
 /// Connection metadata for tracking client state
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct ConnectionMetadata {
 	pub ClientId:String,
 	pub ClientVersion:String,
@@ -178,6 +179,7 @@ impl AirVinegRPCService {
 	}
 
 	/// Validate protocol version compatibility
+	#[allow(dead_code)]
 	fn validate_protocol_version(&self, ClientVersion:u32) -> std::result::Result<(), Status> {
 		if ClientVersion > crate::ProtocolVersion {
 			return Err(Status::failed_precondition(format!(
@@ -1229,6 +1231,7 @@ impl AirService for AirVinegRPCService {
 			};
 
 			// Start streaming download
+			#[allow(unused_assignments)]
 			let mut total_size:Option<u64> = None;
 			let mut total_downloaded:u64 = 0;
 

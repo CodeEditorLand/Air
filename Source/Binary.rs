@@ -163,13 +163,14 @@
 //! - **50054**: Reserved for future use (e.g., SideCar service)
 //! - **50055**: Reserved for future metrics endpoints
 
-use std::{env, net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
+#![allow(non_snake_case)]
+
+use std::{env, net::SocketAddr, sync::Arc, time::Duration};
 
 use log::{debug, error, info, warn};
 use tokio::{signal, time::interval};
 // Import types from AirLibrary (the crate root)
 use AirLibrary::{
-	AirError,
 	ApplicationState::ApplicationState,
 	Authentication::AuthenticationService,
 	CLI::{CliParser, Command, ConfigCommand, DebugCommand, OutputFormatter},
@@ -181,7 +182,7 @@ use AirLibrary::{
 	HealthCheck::{HealthCheckLevel, HealthCheckManager, HealthStatistics},
 	Indexing::FileIndexer,
 	Logging,
-	Metrics::{self, MetricsCollector, MetricsData},
+	Metrics,
 	ProtocolVersion,
 	Tracing,
 	Updates::UpdateManager,
@@ -1105,9 +1106,10 @@ async fn attempt_daemon_connection() -> Result<(), String> {
 /// - Implement metric filtering via query parameters
 /// - Add histogram quantiles (p50, p95, p99)
 /// - Support both Prometheus and OpenMetrics formats
+#[allow(dead_code)]
 fn HandleMetricsRequest() -> String {
 	// Defensive: Use a timeout to prevent metrics export from blocking
-	let timeout_duration = std::time::Duration::from_millis(100);
+	let _timeout_duration = std::time::Duration::from_millis(100);
 
 	let metrics_collector = Metrics::GetMetrics();
 
@@ -1782,7 +1784,7 @@ async fn validate_environment() -> Result<(), String> {
 /// - Validate timeout values
 /// - Validate file paths exist or are creatable
 /// - Validate URLs are properly formatted
-fn validate_configuration(config:&AirConfiguration) -> Result<(), String> {
+fn validate_configuration(_config:&AirConfiguration) -> Result<(), String> {
 	// Add configuration validation logic here
 	debug!("[Config] Configuration passed basic validation");
 	Ok(())

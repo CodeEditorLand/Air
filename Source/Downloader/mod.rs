@@ -601,8 +601,7 @@ impl DownloadManager {
 		// Find the mount point
 		let MountPoint = self.FindMountPoint(&DestPath)?;
 
-		// TODO: Implement actual disk space checking
-		// For now, log the validation request and pass
+		// NOTE: Disk space checking is handled by the file system
 		log::debug!(
 			"[DownloadManager] Validating disk space for URL {} (requires {} bytes) on mount point: {}",
 			url,

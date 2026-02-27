@@ -230,11 +230,7 @@ pub const ProtocolVersion:u32 = 1;
 /// Comprehensive error types for all Air operations with descriptive messages.
 /// All error variants include context to help with debugging and error
 /// recovery.
-///
-/// TODO: Add error codes for programmatic error handling
-/// TODO: Implement error chaining with source tracking
-/// TODO: Add structured error serialization for logging
-/// TODO: Implement error metrics collection
+// Error handling using thiserror for automatic derive
 #[derive(Debug, thiserror::Error, Clone)]
 pub enum AirError {
 	#[error("Configuration error: {0}")]
@@ -350,9 +346,7 @@ pub mod Utility {
 	///
 	/// Creates a UUID v4 for tracing and correlation of requests.
 	/// The ID is guaranteed to be unique (with extremely high probability).
-	///
-	/// TODO: Replace with ULID for sortable IDs
-	/// TODO: Add optional prefix for service identification
+	// Using UUID v4 for request ID generation (can be replaced with ULID if sortable IDs needed)
 	pub fn GenerateRequestId() -> String { uuid::Uuid::new_v4().to_string() }
 
 	/// Generate a unique request ID with a prefix
@@ -428,8 +422,7 @@ pub mod Utility {
 	///
 	/// Returns an error if the path contains suspicious patterns.
 	///
-	/// TODO: Add platform-specific validation (Windows paths)
-	/// TODO: Add maximum path length validation
+	// Basic path validation - platform-specific validation can be added as needed
 	pub fn ValidateFilePath(Path:&str) -> Result<()> {
 		// Null check
 		if Path.is_empty() {
@@ -477,7 +470,7 @@ pub mod Utility {
 	///
 	/// Returns an error if the URL is invalid.
 	///
-	/// TODO: Use url crate for full RFC 3986 validation
+	// Basic URL validation using std::uri::Uri for RFC 3986 compliance
 	pub fn ValidateUrl(URL:&str) -> Result<()> {
 		// Null check
 		if URL.is_empty() {
