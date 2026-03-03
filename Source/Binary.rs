@@ -1718,8 +1718,8 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	info!("[Shutdown] Final Statistics");
 	info!("===========================================");
 	info!("[Shutdown] Requests:");
-	info!("  - Successful: {}", metrics.SuccessfulRequests);
-	info!("  - Failed: {}", metrics.FailedRequests);
+	info!(" - Successful: {}", metrics.SuccessfulRequest);
+	info!(" - Failed: {}", metrics.FailedRequest);
 	info!("[Shutdown] Metrics:");
 	info!("  - Success rate: {:.2}%", metrics_data.SuccessRate());
 	info!("  - Error rate: {:.2}%", metrics_data.ErrorRate());

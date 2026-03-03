@@ -658,9 +658,9 @@ impl AirService for AirVinegRPCService {
 		Ok(Response::new(air_generated::StatusResponse {
 			version:crate::VERSION.to_string(),
 			uptime_seconds:metrics.UptimeSeconds,
-			total_requests:metrics.TotalRequests,
-			successful_requests:metrics.SuccessfulRequests,
-			failed_requests:metrics.FailedRequests,
+			total_requests:metrics.TotalRequest,
+			successful_requests:metrics.SuccessfulRequest,
+			failed_requests:metrics.FailedRequest,
 			average_response_time:metrics.AverageResponseTime,
 			memory_usage_mb:resources.MemoryUsageMb,
 			cpu_usage_percent:resources.CPUUsagePercent,
@@ -1681,9 +1681,9 @@ impl AirService for AirVinegRPCService {
 		// Performance metrics
 		if RequestData.metric_type.is_empty() || RequestData.metric_type == "performance" {
 			metrics_map.insert("uptime_seconds".to_string(), metrics.UptimeSeconds.to_string());
-			metrics_map.insert("total_requests".to_string(), metrics.TotalRequests.to_string());
-			metrics_map.insert("successful_requests".to_string(), metrics.SuccessfulRequests.to_string());
-			metrics_map.insert("failed_requests".to_string(), metrics.FailedRequests.to_string());
+			metrics_map.insert("total_requests".to_string(), metrics.TotalRequest.to_string());
+			metrics_map.insert("successful_requests".to_string(), metrics.SuccessfulRequest.to_string());
+			metrics_map.insert("failed_requests".to_string(), metrics.FailedRequest.to_string());
 			metrics_map.insert("average_response_time_ms".to_string(), metrics.AverageResponseTime.to_string());
 		}
 
