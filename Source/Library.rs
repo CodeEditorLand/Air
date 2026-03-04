@@ -206,7 +206,7 @@ pub const DefaultConfigFile:&str = "Air.toml";
 /// - `--bind` flag value (if provided)
 /// - DefaultBindAddress constant: `[::1]`:50053
 ///
-/// TODO: Add support for:
+/// FUTURE: Add support for:
 /// - IPv4-only binding (0.0.0.0:50053)
 /// - IPv6-only binding (`[::]`:50053)
 /// - Wildcard binding for all interfaces

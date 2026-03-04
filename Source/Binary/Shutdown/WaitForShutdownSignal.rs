@@ -37,7 +37,7 @@
 //! ## Security Considerations
 //!
 //! - Only signals from authorized sources should trigger shutdown
-//! - TODO: Implement signal source verification
+//! - FUTURE: Implement signal source verification
 //!
 //! ## Performance Considerations
 //!
@@ -74,11 +74,10 @@ use log::{error, info};
 /// - **Unix/Linux/macOS**: Handles both SIGINT and SIGTERM
 //! - **Windows**: Only handles SIGINT (Ctrl+C)
 //!
-/// # TODO
+/// # FUTURE Enhancements
 //! - Add configurable shutdown timeout (currently infinite)
 //! - Implement signal handling for SIGHUP (reload config)
 //! - Add graceful timeout with pending operation completion
-//!
 /// # Examples
 ///
 /// ```no_run

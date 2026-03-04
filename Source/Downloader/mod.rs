@@ -1651,8 +1651,8 @@ impl DownloadManager {
 	}
 
 	/// Set maximum concurrent downloads
-	/// TODO: Implement per-host concurrent download limits
-	/// TODO: Add adaptive concurrency based on network conditions
+	/// FUTURE: Implement per-host concurrent download limits
+	/// FUTURE: Add adaptive concurrency based on network conditions
 	pub async fn SetMaxConcurrentDownloads(&mut self, max:usize) {
 		let permits = max.max(1).min(20);
 		self.ConcurrentLimiter = Arc::new(Semaphore::new(permits));
@@ -1760,9 +1760,9 @@ impl DownloadManager {
 	/// - Dynamic chunk size optimization based on bandwidth
 	/// - Adaptive chunk count based on file size
 	/// - Reassembly with integrity verification
-	/// TODO: Add adaptive chunk size based on network conditions
-	/// TODO: Implement parallel download queue management with priority
-	/// TODO: Add chunk verification and re-download of failed chunks
+	/// FUTURE: Add adaptive chunk size based on network conditions
+	/// FUTURE: Implement parallel download queue management with priority
+	/// FUTURE: Add chunk verification and re-download of failed chunks
 	pub async fn DownloadFileWithChunks(
 		&self,
 		url:String,
