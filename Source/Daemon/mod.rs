@@ -527,16 +527,23 @@ impl DaemonManager {
 
 	/// Generate system service file for installation
 	pub fn GenerateServiceFile(&self) -> Result<String> {
-		match self.PlatformInfo.Platform {
-			Platform::Linux => self.GenerateSystemdService(),
-			Platform::MacOS => self.GenerateLaunchdService(),
-			Platform::Windows => self.GenerateWindowsService(),
-			Platform::Unknown => {
-				Err(AirError::ServiceUnavailable(
-					"Unknown platform, cannot generate service file".to_string(),
-				))
-			},
-		}
+	    match self.PlatformInfo.Platform {
+	        Platform::Linux => self.GenerateSystemdService(),
+	        Platform::MacOS => self.GenerateLaunchdService(),
+	        #[cfg(target_os = "windows")]
+	        Platform::Windows => self.GenerateWindowsService(),
+	        #[cfg(not(target_os = "windows"))]
+	        Platform::Windows => {
+	            Err(AirError::ServiceUnavailable(
+	                "Windows service generation not available on this platform".to_string(),
+	            ))
+	        },
+	        Platform::Unknown => {
+	            Err(AirError::ServiceUnavailable(
+	                "Unknown platform, cannot generate service file".to_string(),
+	            ))
+	        },
+	    }
 	}
 
 	/// Generate systemd service file with comprehensive configuration
@@ -738,18 +745,25 @@ WantedBy=multi-user.target
 
 	/// Install daemon as system service with validation
 	pub async fn InstallService(&self) -> Result<()> {
-		info!("[Daemon] Installing system service...");
-
-		match self.PlatformInfo.Platform {
-			Platform::Linux => self.InstallSystemdService().await,
-			Platform::MacOS => self.InstallLaunchdService().await,
-			Platform::Windows => self.InstallWindowsService().await,
-			Platform::Unknown => {
-				Err(AirError::ServiceUnavailable(
-					"Unknown platform, cannot install service".to_string(),
-				))
-			},
-		}
+	    info!("[Daemon] Installing system service...");
+	
+	    match self.PlatformInfo.Platform {
+	        Platform::Linux => self.InstallSystemdService().await,
+	        Platform::MacOS => self.InstallLaunchdService().await,
+	        #[cfg(target_os = "windows")]
+	        Platform::Windows => self.InstallWindowsService().await,
+	        #[cfg(not(target_os = "windows"))]
+	        Platform::Windows => {
+	            Err(AirError::ServiceUnavailable(
+	                "Windows service installation not available on this platform".to_string(),
+	            ))
+	        },
+	        Platform::Unknown => {
+	            Err(AirError::ServiceUnavailable(
+	                "Unknown platform, cannot install service".to_string(),
+	            ))
+	        },
+	    }
 	}
 
 	/// Install systemd service with validation
@@ -897,18 +911,25 @@ WantedBy=multi-user.target
 
 	/// Uninstall system service with proper coordination
 	pub async fn UninstallService(&self) -> Result<()> {
-		info!("[Daemon] Uninstalling system service...");
-
-		match self.PlatformInfo.Platform {
-			Platform::Linux => self.UninstallSystemdService().await,
-			Platform::MacOS => self.UninstallLaunchdService().await,
-			Platform::Windows => self.UninstallWindowsService().await,
-			Platform::Unknown => {
-				Err(AirError::ServiceUnavailable(
-					"Unknown platform, cannot uninstall service".to_string(),
-				))
-			},
-		}
+	    info!("[Daemon] Uninstalling system service...");
+	
+	    match self.PlatformInfo.Platform {
+	        Platform::Linux => self.UninstallSystemdService().await,
+	        Platform::MacOS => self.UninstallLaunchdService().await,
+	        #[cfg(target_os = "windows")]
+	        Platform::Windows => self.UninstallWindowsService().await,
+	        #[cfg(not(target_os = "windows"))]
+	        Platform::Windows => {
+	            Err(AirError::ServiceUnavailable(
+	                "Windows service uninstallation not available on this platform".to_string(),
+	            ))
+	        },
+	        Platform::Unknown => {
+	            Err(AirError::ServiceUnavailable(
+	                "Unknown platform, cannot uninstall service".to_string(),
+	            ))
+	        },
+	    }
 	}
 
 	/// Uninstall systemd service with proper coordination

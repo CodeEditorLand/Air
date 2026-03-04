@@ -1026,11 +1026,31 @@ impl UpdateManager {
 
 		// Apply the update based on platform
 		let result = match self.platform_config.package_format {
-			PackageFormat::WindowsExe => self.ApplyWindowsUpdate(&file_path).await,
-			PackageFormat::MacOsDmg => self.ApplyMacOsUpdate(&file_path).await,
-			PackageFormat::LinuxAppImage => self.ApplyLinuxAppImageUpdate(&file_path).await,
-			PackageFormat::LinuxDeb => self.ApplyLinuxDebUpdate(&file_path).await,
-			PackageFormat::LinuxRpm => self.ApplyLinuxRpmUpdate(&file_path).await,
+		    #[cfg(target_os = "windows")]
+		    PackageFormat::WindowsExe => self.ApplyWindowsUpdate(&file_path).await,
+		    #[cfg(not(target_os = "windows"))]
+		    PackageFormat::WindowsExe => {
+		        Err(AirError::Internal("Windows update not available on this platform".to_string()))
+		    },
+		    PackageFormat::MacOsDmg => self.ApplyMacOsUpdate(&file_path).await,
+		    #[cfg(all(target_os = "linux", feature = "appimage"))]
+		    PackageFormat::LinuxAppImage => self.ApplyLinuxAppImageUpdate(&file_path).await,
+		    #[cfg(not(all(target_os = "linux", feature = "appimage")))]
+		    PackageFormat::LinuxAppImage => {
+		        Err(AirError::Internal("Linux AppImage update not available on this platform".to_string()))
+		    },
+		    #[cfg(all(target_os = "linux", feature = "deb"))]
+		    PackageFormat::LinuxDeb => self.ApplyLinuxDebUpdate(&file_path).await,
+		    #[cfg(not(all(target_os = "linux", feature = "deb")))]
+		    PackageFormat::LinuxDeb => {
+		        Err(AirError::Internal("Linux DEB update not available on this platform".to_string()))
+		    },
+		    #[cfg(all(target_os = "linux", feature = "rpm"))]
+		    PackageFormat::LinuxRpm => self.ApplyLinuxRpmUpdate(&file_path).await,
+		    #[cfg(not(all(target_os = "linux", feature = "rpm")))]
+		    PackageFormat::LinuxRpm => {
+		        Err(AirError::Internal("Linux RPM update not available on this platform".to_string()))
+		    },
 		};
 
 		if let Err(e) = result {
@@ -1623,13 +1643,14 @@ impl UpdateManager {
 				let _device_id = metadata.dev();
 
 				// Get free space on Unix-like systems using statvfs
+				let cache_path = self.cache_directory.to_string_lossy();
 				let free_space = unsafe {
-					let mut stat: libc::statvfs64 = std::mem::zeroed();
-					if libc::statvfs64(dir_str.as_ptr() as *const i8, &mut stat) == 0 {
-						stat.f_bavail as u64 * stat.f_bsize as u64
-					} else {
-						u64::MAX // Default to unlimited if statvfs fails
-					}
+				let mut stat: libc::statvfs = std::mem::zeroed();
+				if libc::statvfs(cache_path.as_ptr() as *const i8, &mut stat) == 0 {
+				stat.f_bavail as u64 * stat.f_bsize as u64
+				} else {
+				u64::MAX // Default to unlimited if statvfs fails
+				}
 				};
 
 				if free_space < required_bytes {
@@ -1960,7 +1981,7 @@ impl UpdateManager {
 	/// - Cleans up temporary files
 	/// - Updates status to paused
 	pub async fn CancelDownload(&self) -> Result<()> {
-		let mut status = self.update_status.write().await;
+	    let status = self.update_status.write().await;
 
 		if status.installation_status != InstallationStatus::Downloading {
 			return Err(AirError::Internal("No download in progress".to_string()));
@@ -2042,46 +2063,35 @@ impl UpdateManager {
 	/// # Returns
 	/// Result<()> indicating success or failure
 	async fn copy_directory_recursive(src:&Path, dst:&Path) -> Result<()> {
-		let mut entries = tokio::fs::read_dir(src)
-			.await
-			.map_err(|e| AirError::FileSystem(format!("Failed to read directory {:?}: {}", src, e)))?;
-
-		tokio::fs::create_dir_all(dst)
-			.await
-			.map_err(|e| AirError::FileSystem(format!("Failed to create directory {:?}: {}", dst, e)))?;
-
-		while let Some(entry) = entries.next_entry().await
-			.map_err(|e| AirError::FileSystem(format!("Failed to read entry: {}", e)))?
-		{
-			let file_type = entry.file_type()
-				.await
-				.map_err(|e| AirError::FileSystem(format!("Failed to get file type: {}", e)))?;
-			let src_path = entry.path();
-			let dst_path = dst.join(entry.file_name());
-
-			if file_type.is_file() {
-				tokio::fs::copy(&src_path, &dst_path)
-					.await
-					.map_err(|e| AirError::FileSystem(format!("Failed to copy file {:?}: {}", src_path, e)))?;
-			} else if file_type.is_dir() {
-				Self::copy_directory_recursive(&src_path, &dst_path).await?;
-			}
+	let mut entries = tokio::fs::read_dir(src)
+	.await
+	.map_err(|e| AirError::FileSystem(format!("Failed to read directory {:?}: {}", src, e)))?;
+	
+	tokio::fs::create_dir_all(dst)
+	.await
+	.map_err(|e| AirError::FileSystem(format!("Failed to create directory {:?}: {}", dst, e)))?;
+	
+	while let Some(entry) = entries.next_entry().await
+	.map_err(|e| AirError::FileSystem(format!("Failed to read entry: {}", e)))?
+	{
+	let file_type = entry.file_type()
+	.await
+	.map_err(|e| AirError::FileSystem(format!("Failed to get file type: {}", e)))?;
+	let src_path = entry.path();
+	let dst_path = dst.join(entry.file_name());
+	
+	if file_type.is_file() {
+	tokio::fs::copy(&src_path, &dst_path)
+	.await
+	.map_err(|e| AirError::FileSystem(format!("Failed to copy file {:?}: {}", src_path, e)))?;
+	} else if file_type.is_dir() {
+	Box::pin(Self::copy_directory_recursive(&src_path, &dst_path)).await?;
+	}
 		}
 
 		Ok(())
 	}
-
-		let mut status = self.update_status.write().await;
-		status.update_channel = channel;
-
-		log::info!("[UpdateManager] Update channel changed to: {}", channel.as_str());
-
-		// Trigger a check for updates on new channel
-		if let Err(e) = self.CheckForUpdates().await {
-			log::error!("[UpdateManager] Failed to check for updates after channel change: {}", e);
-		}
-	}
-
+	
 	/// Stage update for pre-installation verification
 	///
 	/// This method:
@@ -2276,7 +2286,8 @@ impl UpdateManager {
 		} else {
 			format!("{:.0} B/s", bytes)
 		}
-	}
+}
+
 }
 
 impl Clone for UpdateManager {

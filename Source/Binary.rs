@@ -1726,9 +1726,9 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	Trace!("[Boot] [Startup] Starting background services...");
 
 	// Start background tasks for services that support it
-	let auth_handle = auth_service.StartBackgroundTasks().await?;
-	let update_handle = update_manager.StartBackgroundTasks().await?;
-	let download_handle = download_manager.StartBackgroundTasks().await?;
+	let _ = auth_service.StartBackgroundTasks().await?;
+	let _ = update_manager.StartBackgroundTasks().await?;
+	let _ = download_manager.StartBackgroundTasks().await?;
 	// FileIndexer does not have background tasks, it's used directly
 	let _indexing_handle = None::<tokio::task::JoinHandle<()>>;
 
@@ -1790,16 +1790,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	auth_service.StopBackgroundTasks().await;
 	update_manager.StopBackgroundTasks().await;
 	download_manager.StopBackgroundTasks().await;
-
-	// Wait for services to stop with timeout
-	info!("[Shutdown] Waiting for services to complete...");
-	let _ = tokio::time::timeout(Duration::from_secs(10), async {
-		let _ = auth_handle.await;
-		let _ = update_handle.await;
-		let _ = download_handle.await;
-	})
-	.await;
-
+	
 	// Log final statistics
 	info!("[Shutdown] Collecting final statistics...");
 
