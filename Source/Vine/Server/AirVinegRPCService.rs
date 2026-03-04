@@ -1253,8 +1253,7 @@ impl AirService for AirVinegRPCService {
 				.await
 			{
 				Ok(response) => {
-					// TODO: Type annotation removed from if statement - is_success() returns bool
-					if !response.status().is_success() {
+				    if !response.status().is_success() {
 						let error = format!("Download failed with status: {}", response.status());
 						let _ = tx
 							.send(Ok(DownloadStreamResponse {
@@ -1304,8 +1303,7 @@ impl AirService for AirVinegRPCService {
 						}
 
 						match chunk_result {
-							// TODO: Type annotation removed from match pattern - chunk is inferred as bytes::Bytes from the Result
-							Ok(chunk) => {
+						    Ok(chunk) => {
 								buffer.extend_from_slice(&chunk);
 								total_downloaded += chunk.len() as u64;
 

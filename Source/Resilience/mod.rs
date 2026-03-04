@@ -50,17 +50,16 @@
 //! Reference:
 //! vs/base/common/errors
 //!
-//! # TODOs
+//! # FUTURE Enhancements
 //!
 //! - [DISTRIBUTED TRACING] Integrate with Tracing module for retry/circuit span
-//!   correlation
+//! correlation
 //! - [CUSTOM METRICS] Add detailed bulkhead load metrics to Metrics module
 //! - [EVENT PUBLISHING] Extend circuit breaker events with OpenTelemetry
-//!   support
+//! support
 //! - [ADAPTIVE POLICIES] Enhance retry policies with machine learning-based
-//!   error prediction
+//! error prediction
 //! - [METRICS INTEGRATION] Export resilience metrics to Mountain's telemetry UI
-//!
 //! ## Sensitive Data Handling
 //!
 //! This module does not process sensitive data directly but should:

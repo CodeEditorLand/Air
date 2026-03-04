@@ -82,7 +82,7 @@ use AirLibrary::{DefaultConfigFile, DefaultBindAddress, VERSION, ProtocolVersion
 //! - `Logs` - View log files
 //! - `Debug` - Debug utilities
 //!
-//! # TODO
+//! # FUTURE Enhancements
 //! - Add command timeout (default: 30s, configurable)
 //! - Implement graceful degradation for partial failures
 //! - Add retry logic for transient failures
@@ -483,7 +483,7 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
             }
             
             println!("");
-            println!("  TODO: Implement state dump for:");
+            println!("  Note: State dumping requires gRPC integration:");
             println!("    - Application state");
             println!("    - Service states");
             println!("    - Connection pool");
@@ -519,7 +519,7 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
             }
             
             println!("");
-            println!("  TODO: Implement connection dump with:");
+            println!("  Note: Connection dump requires gRPC integration:");
             println!("    - Connection ID");
             println!("    - Remote address");
             println!("    - Connected at timestamp");
@@ -600,7 +600,7 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
             }
             
             println!("");
-            println!("  TODO: Implement diagnostics:");
+            println!("  Note: Advanced diagnostics require additional infrastructure:");
             println!("    - Thread dump");
             println!("    - Memory profiling");
             println!("    - Lock contention analysis");

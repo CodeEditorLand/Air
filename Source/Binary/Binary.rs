@@ -123,7 +123,7 @@
 //! - Signal handling uses dedicated channels
 //! - No manual thread spawning (all through tokio::spawn)
 //!
-//! ## TODO Items
+//! ## FUTURE Enhancements
 //!
 //! - [ ] Implement configuration hot-reload signal handling (SIGHUP)
 //! - [ ] Add startup timeout with failure recovery
@@ -135,7 +135,6 @@
 //! - [ ] Add performance profiling mode
 //! - [ ] Implement graceful shutdown timeout configuration
 //! - [ ] Add dependency health checks before service start
-//!
 
 // Allow non_snake_case for consistency with Air codebase patterns
 #![allow(non_snake_case)]

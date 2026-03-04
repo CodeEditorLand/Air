@@ -74,21 +74,21 @@
 //! - Verifies package signature after download
 //! - Extracts and validates contents before installation
 //!
-//! ## TODOs and Future Enhancements
+//! ## FUTURE Enhancements
 //!
-//! ### P2P Distribution (Planned)
+//! ### P2P Distribution
 //! - Peer-to-peer file sharing between Land instances
 //! - BitTorrent-like protocol for large package distribution
 //! - Chunk verification from multiple sources
 //! - Swarm coordination for rapid downloads
 //!
-//! ### Chunked Downloads (In Progress)
+//! ### Chunked Downloads
 //! - Parallel HTTP Range requests for large files
 //! - Automatic chunk size optimization based on bandwidth
 //! - Reassembly with integrity verification
 //! - Dynamic chunk adjustment based on network conditions
 //!
-//! ### Bandwidth Limiting (In Progress)
+//! ### Bandwidth Limiting
 //! - Per-download rate limiting
 //! - Global bandwidth pool management
 //! - Time-based bandwidth schedules (off-peak acceleration)

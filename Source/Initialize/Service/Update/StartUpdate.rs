@@ -96,7 +96,7 @@ use AirLibrary::{
 /// - **Insider**: Preview updates with new features
 //! - **Preview**: Experimental updates (optional)
 //!
-//! # TODO
+//! # FUTURE Enhancements
 //! - Add delta update support
 //! - Implement rollback on update failure
 //! - Add update download progress streaming

@@ -109,7 +109,7 @@ pub struct ParsedArguments {
 //! Air --bind 0.0.0.0:50053
 //! ```
 //!
-//! # TODO
+//! # FUTURE Enhancements
 //! - Add `--validate-config` flag
 //! - Add `--daemon` flag for explicit daemon mode
 //! - Make flags case-insensitive

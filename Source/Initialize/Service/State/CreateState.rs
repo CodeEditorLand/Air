@@ -94,7 +94,7 @@ use AirLibrary::{ApplicationState, Configuration::AirConfiguration};
 ///
 /// A 10-second timeout is applied to prevent hanging on slow operations.
 ///
-/// # TODO
+/// # FUTURE Enhancements
 /// - Add configuration validation before state creation
 /// - Implement state recovery from previous run
 /// - Add state snapshot for debugging

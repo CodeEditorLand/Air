@@ -55,14 +55,13 @@
 //! Reference:
 //! vs/base/common/errors
 //!
-//! # TODOs
+//! # FUTURE Enhancements
 //!
 //! - [DISTRIBUTED TRACING] Tighter integration with Tracing module
 //! - `ELASTICSEARCH`: Direct log export to Elasticsearch/Logstash
 //! - [LOG ANALYSIS] Automatic anomaly detection in logs
 //! - `KIBANA`: Pre-built Kibana dashboards
 //! - [LOG PARSING] Support for custom log formats
-//!
 //! ## Sensitive Data Handling
 //!
 //! All logs are automatically sanitized:

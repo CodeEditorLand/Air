@@ -41,23 +41,23 @@
 //! - Connection management to running daemon processes
 //! - Extension/plugin compatibility with the daemon
 //!
-//! ## TODO: Future Enhancements
+//! ## FUTURE Enhancements
 //!
 //! - **Plugin Marketplace Integration**: Add commands for discovering,
-//!   installing, and managing plugins from a central marketplace (similar to
-//!   `code --install-extension`)
+//! installing, and managing plugins from a central marketplace (similar to
+//! `code --install-extension`)
 //! - **Hot Reload Support**: Implement hot reload of configuration and plugins
-//!   without daemon restart
+//! without daemon restart
 //! - **Sandboxing Mode**: Add a sandboxed mode for running commands with
-//!   restricted permissions
+//! restricted permissions
 //! - **Interactive Shell**: Implement an interactive shell mode for continuous
-//!   daemon interaction
+//! daemon interaction
 //! - **Completion Scripts**: Generate shell completion scripts (bash, zsh,
-//!   fish) for better UX
+//! fish) for better UX
 //! - **Profile Management**: Support multiple configuration profiles for
-//!   different environments
+//! different environments
 //! - **Remote Management**: Add support for managing remote Air instances via
-//!   SSH/IPC
+//! SSH/IPC
 //! - **Audit Logging**: Add comprehensive audit logging for all administrative
 //!   actions
 //!

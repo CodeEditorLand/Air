@@ -40,8 +40,8 @@
 //!
 //! ## Security Considerations
 //!
-/// - TODO: Add TLS/mTLS support
-//! - TODO: Implement connection authentication
+//! - FUTURE: Add TLS/mTLS support
+//! - FUTURE: Implement connection authentication
 //! - Rate limiting prevents abuse
 //! - Input validation on all requests
 //!
@@ -106,7 +106,7 @@ pub struct StartedService {
 /// The server will stop accepting new requests and complete in-flight
 /// requests before terminating.
 ///
-//! # TODO
+//! # FUTURE Enhancements
 //! - Add TLS/mTLS support for production
 //! - Implement connection authentication
 //! - Add connection rate limiting
@@ -180,7 +180,7 @@ pub fn StartService(built: BuiltServer) -> StartedService {
 ///
 /// Returns `Ok(())` if stopped successfully, error otherwise.
 ///
-/// # TODO
+/// # FUTURE Enhancements
 /// - Use timeout from configuration
 /// - Add shutdown timeout error details
 

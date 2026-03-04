@@ -50,23 +50,23 @@
 //! - Communication via IPC channels
 //! - Hot reload capability without daemon restart
 //!
-//! ## TODO: Future Enhancements
+//! ## FUTURE Enhancements
 //!
 //! - **Plugin Marketplace**: Implement a central plugin marketplace for
-//!   discovery and installation (similar to VSCode's extension marketplace)
+//! discovery and installation (similar to VSCode's extension marketplace)
 //! - **Hot Reload Support**: Implement live reloading of plugins without daemon
-//!   restart
+//! restart
 //! - **Advanced Sandboxing**: Add more sophisticated sandboxing with resource
-//!   quotas, network isolation, and filesystem access controls
+//! quotas, network isolation, and filesystem access controls
 //! - **Plugin Distribution**: Implement plugin packaging, signing, and
-//!   distribution mechanisms
+//! distribution mechanisms
 //! - **Automatic Updates**: Add automatic plugin update checking and
-//!   installation
+//! installation
 //! - **Telemetry Integration**: Add plugin usage telemetry and reporting
 //! - **Plugin Profiles**: Support multiple plugin configurations for different
-//!   environments
+//! environments
 //! - **Security Audit**: Implement comprehensive security audit and
-//!   vulnerability scanning for plugins
+//! vulnerability scanning for plugins
 //! - **Performance Monitoring**: Add detailed performance monitoring and
 //!   profiling for plugins
 //! - **Plugin Debugging**: Provide debugging tools and interfaces for plugin

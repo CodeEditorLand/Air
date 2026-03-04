@@ -53,19 +53,19 @@
 //! Workspace settings Environment variables Hot-reload notifications
 //! ```
 //!
-//! ## TODO: Schema Validation
+//! ## FUTURE: Schema Validation
 //! - Implement JSON Schema generation for validation
 //! - Add schema versioning and migration support
 //! - Provide schema validation errors with detailed field-level information
 //! - Support schema evolution with backward compatibility
 //!
-//! ## TODO: Configuration Migration
+//! ## FUTURE: Configuration Migration
 //! - Add version field to configuration structure
 //! - Implement automatic migration between schema versions
 //! - Provide migration tools for manual upgrades
 //! - Document migration paths and breaking changes
 //!
-//! ## TODO: Configuration Inheritance
+//! ## FUTURE: Configuration Inheritance
 //! - Implement base profile templates
 //! - Support profile inheritance and overrides
 //! - Add configuration layer merging logic

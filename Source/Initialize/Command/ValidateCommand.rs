@@ -82,7 +82,7 @@ use AirLibrary::CLI::Command;
 //! - Log filter strings: 1-512 characters
 //! - Log tail count: 1-10000 lines
 //!
-/// # TODO
+//! # FUTURE Enhancements
 //! - Add timeout parameter validation
 //! - Add rate limit checks for commands
 //! - Implement command permission checks

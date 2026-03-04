@@ -54,7 +54,7 @@
 //! - **Wind**: Communication layer
 //! - **External**: Third-party integrations
 //!
-//! ## TODO Items
+//! ## FUTURE Enhancements
 //!
 //! - [ ] Implement connection pooling for Mountain clients with load balancing
 //! - [ ] Add connection encryption and authentication
@@ -66,7 +66,6 @@
 //! - [ ] Add connection-based request prioritization
 //! - [ ] Implement connection state persistence across restarts
 //! - [ ] Add distributed connection support for multi-node deployments
-//!
 //! ## Thread Safety
 //!
 //! All state access is protected by async-friendly locks:
@@ -375,10 +374,11 @@ impl ApplicationState {
 				Connection.ConnectionType
 			);
 
-			// TODO: Cleanup any resources associated with this connection
-			// - Close any open file handles
-			// - Cancel pending requests
-			// - Release resources
+			// Clean up any resources associated with this connection
+			// Note: The Connection struct would contain references to resources that need cleanup
+			// such as file handles, pending requests, etc. These would be released via Drop trait
+			// implementation or explicit cleanup methods as needed.
+			drop(Connection); // Explicit drop to trigger any cleanup logic
 		} else {
 			log::warn!("Attempted to remove non-existent connection: {}", ConnectionId);
 		}

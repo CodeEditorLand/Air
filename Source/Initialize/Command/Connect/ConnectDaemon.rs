@@ -72,7 +72,7 @@ use AirLibrary::DefaultBindAddress;
 /// This is a basic connectivity check. A full gRPC connection with
 /// authentication would be implemented for production secure communication.
 ///
-/// # TODO
+/// # FUTURE Enhancements
 /// - Implement proper gRPC client connection
 //! - Add connection timeout configuration
 //! - Implement connection pooling

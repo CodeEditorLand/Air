@@ -52,7 +52,7 @@
 //! - **Search Integration**: File content and name search with regex support
 //! - **Workspace Search**: Multi-workspace index sharing
 //!
-//! ## TODO
+//! ## FUTURE Enhancements
 //!
 //! - [ ] Implement full ripgrep integration for ultra-fast text search
 //! - [ ] Add project-level search with workspace awareness

@@ -56,14 +56,13 @@
 //! - Bounded span cache with automatic cleanup
 //! - Lock-free where possible for high-frequency operations
 //!
-//! # TODOs
+//! # FUTURE Enhancements
 //!
 //! - `OPENTELEMETRY`: Full OpenTelemetry SDK integration
 //! - `SAMPLING`: Implement dynamic/tail-based sampling
 //! - `EXPORT`: OpenTelemetry Protocol (OTLP) export to Jaeger/Zipkin
 //! - `ANALYSIS`: Automatic anomaly detection in traces
 //! - `METRICS`: Trace-derived custom metrics
-//!
 //! ## Sensitive Data Handling
 //!
 //! Tracing automatically excludes sensitive data:

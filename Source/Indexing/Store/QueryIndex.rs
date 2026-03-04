@@ -410,8 +410,8 @@ async fn QueryIndexFuzzy(
 		}
 
 		if let Ok(content) = tokio::fs::read_to_string(file_path).await {
-			let max_distance = 2; // TODO: Make this configurable
-			let matches = FindFuzzyMatches(&content, &query_lower, case_sensitive, max_distance);
+		    const MAX_FUZZY_DISTANCE: usize = 2;
+		    let matches = FindFuzzyMatches(&content, &query_lower, case_sensitive, MAX_FUZZY_DISTANCE);
 
 			if !matches.is_empty() {
 				let relevance = CalculateRelevance(&matches, metadata) * 0.8; // Fuzzy matches have lower relevance

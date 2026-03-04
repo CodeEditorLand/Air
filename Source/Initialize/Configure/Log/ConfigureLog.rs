@@ -91,7 +91,7 @@
 /// AIR_LOG_JSON=true AIR_LOG_FILE=/var/log/Air.log Air --daemon
 /// ```
 ///
-/// # TODO
+/// # FUTURE Enhancements
 /// - Add log rotation support
 /// - Implement log file size limits
 /// - Add structured log correlation IDs

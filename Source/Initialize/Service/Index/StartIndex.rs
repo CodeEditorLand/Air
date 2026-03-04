@@ -97,7 +97,7 @@ use AirLibrary::{
 //! - **Fast Search**: Inverted index for quick lookups
 //! - **Exclusion Patterns**: Respects .gitignore and custom excludes
 //!
-//! # TODO
+//! # FUTURE Enhancements
 //! - Add language-specific parsing optimizations
 //! - Implement fuzzy search capability
 //! - Add symbol relationship tracking

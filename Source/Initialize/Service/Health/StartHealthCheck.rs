@@ -53,7 +53,7 @@
 /// - Health check failures are logged but non-fatal
 /// - Service registration failures logged but don't halt boot
 ///
-/// # TODO
+/// # FUTURE Enhancements
 /// - Add custom health check interval configuration
 /// - Implement health check aggregation for dashboard
 /// - Add external health check endpoint
@@ -93,7 +93,7 @@ use AirLibrary::HealthCheck::{HealthCheckLevel, HealthCheckManager};
 /// let health = health_manager.check_service("authentication").await?;
 /// ```
 ///
-/// # TODO
+/// # FUTURE Enhancements
 /// - Add service health history tracking
 /// - Implement health-based auto-recovery
 /// - Add health notification hooks

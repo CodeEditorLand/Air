@@ -96,7 +96,7 @@ use AirLibrary::{
 /// - All cryptographic keys are stored in secure keyring
 /// - Token refresh is handled automatically
 ///
-/// # TODO
+/// # FUTURE Enhancements
 /// - Add multi-provider authentication support
 /// - Implement token revocation
 /// - Add biometric authentication support

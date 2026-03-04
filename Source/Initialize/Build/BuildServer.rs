@@ -112,7 +112,7 @@ pub struct BuiltServer {
 ///
 /// Returns an error if service construction fails.
 ///
-/// # TODO
+/// # FUTURE Enhancements
 /// - Add service health validation before building
 /// - Add dependency injection validation
 /// - Add service version compatibility checks

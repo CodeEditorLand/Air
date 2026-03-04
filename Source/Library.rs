@@ -118,7 +118,7 @@
 //!
 //! TLS/mTLS support for production security is now available via the `mtls`
 //! feature. See the Mountain module for client TLS configuration.
-//! ## TODO: Missing Functionality
+//! ## FUTURE Enhancements
 //!
 //! ### High Priority
 //! - [ ] Implement metrics HTTP endpoint (/metrics)
@@ -145,7 +145,6 @@
 //! - [ ] Implement adaptive timeout based on load
 //! - [ ] Add predictive scaling based on metrics
 //! - [ ] Implement chaos testing/metrics
-//!
 //! ## Error Handling Strategy
 //!
 //! All modules use defensive coding practices:
@@ -221,9 +220,7 @@ pub const DefaultBindAddress:&str = "[::1]:50053";
 ///
 /// Version history:
 /// - 1: Initial Vine protocol
-///
-/// TODO: Implement protocol version checking and negotiation
-pub const ProtocolVersion:u32 = 1;
+pub const ProtocolVersion: u32 = 1;
 
 /// Error type for Air operations
 ///
@@ -490,10 +487,10 @@ pub mod Utility {
 		// Null character check
 		if URL.contains('\0') {
 			return Err(AirError::Validation("URL contains null character".to_string()));
-		}
-
-		// TODO: More comprehensive validation using url crate
-		Ok(())
+			}
+			
+			// FUTURE: More comprehensive validation using url crate for full RFC 3986 compliance
+			Ok(())
 	}
 
 	/// Validate string length

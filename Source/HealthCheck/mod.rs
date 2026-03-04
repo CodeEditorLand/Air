@@ -66,7 +66,7 @@
 //! - Configuration reload (refresh service configuration)
 //! - Escalation (notify administrators for manual intervention)
 //!
-//! ## TODO: Advanced Features
+//! ## FUTURE Enhancements
 //!
 //! - Implement advanced metrics collection (latency percentiles, error rates)
 //! - Add health check scheduling automation (cron-like scheduling)
@@ -75,9 +75,8 @@
 //! - Implement distributed health checks for clustered deployments
 //! - Add health check export formats (Prometheus, Grafana, etc.)
 //! - Implement health check alerting through multiple channels (email, Slack,
-//!   etc.)
+//! etc.)
 //! - Add health check simulation for testing and validation
-//!
 //! ## Configuration
 //!
 //! Health check behavior is configurable through HealthCheckConfig:

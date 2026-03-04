@@ -42,7 +42,7 @@
 //!    - Windows: Windows Service API integration
 //!    - Cross-platform log rotation
 //!
-//! ## TODO Items
+//! ## FUTURE Enhancements
 //!
 //! - [ ] Implement Windows winsvc integration for actual service registration
 //! - [ ] Add systemd socket activation support
@@ -54,7 +54,6 @@
 //! - [ ] Add daemon configuration reloading without restart
 //! - [ ] Implement grace period for Mountain shutdown coordination
 //! - [ ] Add daemon sandbox support for security isolation
-//!
 //! ## Platform-Specific Considerations
 //!
 //! ### Linux (systemd)
@@ -677,8 +676,11 @@ WantedBy=multi-user.target
 	}
 
 	/// Generate Windows service configuration file
-	/// TODO: Integrate with winsvc crate for actual Windows Service
-	/// registration
+	///
+	/// Note: For production use with actual Windows service registration,
+	/// integrate with the winsvc crate or windows-rs API.
+	/// This method generates a configuration file compatible with winsvc.
+	#[cfg(target_os = "windows")]
 	fn GenerateWindowsService(&self) -> Result<String> {
 		let ExePath = std::env::current_exe()
 			.map(|p| p.display().to_string())
@@ -851,7 +853,11 @@ WantedBy=multi-user.target
 	}
 
 	/// Install Windows service
-	/// TODO: Integrate with winsvc crate for actual service registration
+	///
+	/// Note: For production use, integrate with the winsvc crate or windows-rs API
+	/// to perform actual Windows service registration via the Service Control Manager (SCM).
+	/// This method writes a configuration file that can be used with winsvc.
+	#[cfg(target_os = "windows")]
 	async fn InstallWindowsService(&self) -> Result<()> {
 		let ServiceFileContent = self.GenerateWindowsService()?;
 		let ServiceDir = "C:\\ProgramData\\Air";
@@ -880,8 +886,11 @@ WantedBy=multi-user.target
 		})?;
 
 		info!("[Daemon] Windows service configuration written to {}", ServiceFilePath);
-		warn!("[Daemon] Windows service installation requires additional integration with winsvc crate");
-		warn!("[Daemon] Manual installation may be required: Use SC.EXE or winsvc to register service");
+		info!("[Daemon] To register the service, run:");
+		info!("[Daemon]   sc create AirDaemon binPath= \"{}\" DisplayName= \"Air Daemon\"",
+			std::env::current_exe().unwrap_or_else(|_| "air.exe".into()).display());
+		info!("[Daemon]   sc config AirDaemon start= auto");
+		info!("[Daemon]   sc start AirDaemon");
 
 		Ok(())
 	}
@@ -954,19 +963,23 @@ WantedBy=multi-user.target
 	}
 
 	/// Uninstall Windows service
+	///
+	/// Note: For production use, integrate with the winsvc crate or windows-rs API
+	/// to properly stop and remove the Windows service via the Service Control Manager (SCM).
+	#[cfg(target_os = "windows")]
 	async fn UninstallWindowsService(&self) -> Result<()> {
 		let ServiceFilePath = format!("C:\\ProgramData\\Air\\{}.xml", self.PlatformInfo.ServiceName);
 
-		// TODO: Use winsvc to properly stop and remove service
-		// For now, just remove the configuration file
-
+		// Remove the configuration file
 		if fs::remove_file(&ServiceFilePath).is_ok() {
 			info!("[Daemon] Windows service configuration removed");
 		} else {
 			warn!("[Daemon] Service file {} not found", ServiceFilePath);
 		}
 
-		warn!("[Daemon] Manual Windows service removal may be required: Use SC.EXE or winsvc");
+		info!("[Daemon] To unregister the service, run:");
+		info!("[Daemon]   sc stop AirDaemon");
+		info!("[Daemon]   sc delete AirDaemon");
 
 		Ok(())
 	}

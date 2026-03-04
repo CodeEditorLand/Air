@@ -54,7 +54,7 @@
 //! - Alert notification channels configured via Mountain
 //! - Security metric retention configured via Mountain
 //!
-//! ## TODO: Advanced Features
+//! ## FUTURE Enhancements
 //!
 //! - Implement HSM (Hardware Security Module) integration for key storage
 //! - Add support for hardware-backed key generation and storage
@@ -66,7 +66,6 @@
 //! - Add real-time security threat detection and response
 //! - Implement secure communication channels with VSCode extensions
 //! - Add support for encrypted data at rest with multiple keys
-//!
 //! ## Timing Attack Protection
 //!
 //! The module implements constant-time operations for sensitive comparisons:

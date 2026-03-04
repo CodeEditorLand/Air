@@ -103,7 +103,7 @@ use AirLibrary::DefaultBindAddress;
 /// // addr = 0.0.0.0:50053
 /// ```
 ///
-/// # TODO
+/// # FUTURE Enhancements
 /// - Add support for IPv4-only binding (0.0.0.0:50053)
 /// - Add support for IPv6-only binding ([::]:50053)
 /// - Add port conflict detection before binding

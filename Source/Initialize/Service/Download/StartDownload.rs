@@ -97,7 +97,7 @@ use AirLibrary::{
 //! - **Throttled**: Configurable bandwidth limits
 //! - **Queued**: Priority-based download scheduling
 //!
-//! # TODO
+//! # FUTURE Enhancements
 //! - Add VSIX package validation
 //! - Implement download progress streaming
 //! - Add peer-to-peer download support

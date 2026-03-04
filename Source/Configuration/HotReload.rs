@@ -71,10 +71,21 @@
 //! - Lock-free reads: Configuration reads don't block other operations
 //! - Efficient diffing: Only process changed configuration sections
 //!
-//! TODO: Add distributed configuration synchronization across multiple Air
-//! instances TODO: Implement configuration change broadcasting to connected
-//! Wind services TODO: Add configuration version conflict resolution
-//! (multi-master scenarios)
+//! ## Future Enhancements
+//!
+//! The following features are planned for production deployments:
+//!
+//! - **Distributed synchronization**: Configuration changes propagated across multiple Air instances
+//!   via a consensus algorithm (Raft/Paxos) or centralized configuration store
+//!
+//! - **Change broadcasting**: Real-time notification to connected Wind (Mountain) services via
+//!   gRPC streaming or WebSocket push subscriptions
+//!
+//! - **Conflict resolution**: Multi-master scenarios with automatic merge strategies and
+//!   version vectors to detect and resolve concurrent modifications
+//!
+//! These features require additional infrastructure and are not required for basic hot reload
+//! functionality.
 
 use std::{
 	path::{Path, PathBuf},
