@@ -84,10 +84,14 @@ seamless background updates and persistent state management.
 To understand how `Air`'s internal components interact to provide the background
 daemon functionality, see the following source files:
 
-- **[`Source/`](Source/)** - Main daemon implementation
-- **[`Source/Update/`](Source/Update/)** - Update lifecycle management
-- **[`Source/Download/`](Source/Download/)** - Resilient download manager
-- **[`Source/Auth/`](Source/Auth/)** - Authentication and cryptographic signing
+- **[`Source/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/)** -
+Main daemon implementation
+- **[`Source/Update/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Update/)** -
+Update lifecycle management
+- **[`Source/Download/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Download/)** -
+Resilient download manager
+- **[`Source/Auth/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Auth/)** -
+Authentication and cryptographic signing
 
 The source files explain the gRPC server implementation, task delegation from
 Mountain, and the progress event emission patterns.
