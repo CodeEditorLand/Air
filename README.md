@@ -1,13 +1,13 @@
 <table>
-	<tr>
-		<td align="left" valign="middle">
-			<h3 align="left"> Air</h3>
-		</td>
-		<td align="left" valign="middle">
-			<h3 align="left">
-				🪁
-			</h3>
-		</td>
+<tr>
+<td align="left" valign="middle">
+<h3 align="left"> Air</h3>
+</td>
+<td align="left" valign="middle">
+<h3 align="left">
+ 🪁
+</h3>
+</td>
 		<td align="left" valign="middle">
 			<h3 align="left"> + </h3>
 		</td>
@@ -85,13 +85,13 @@ To understand how `Air`'s internal components interact to provide the background
 daemon functionality, see the following source files:
 
 - **[`Source/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/)** -
-Main daemon implementation
+  Main daemon implementation
 - **[`Source/Update/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Update/)** -
-Update lifecycle management
+  Update lifecycle management
 - **[`Source/Download/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Download/)** -
-Resilient download manager
+  Resilient download manager
 - **[`Source/Auth/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Auth/)** -
-Authentication and cryptographic signing
+  Authentication and cryptographic signing
 
 The source files explain the gRPC server implementation, task delegation from
 Mountain, and the progress event emission patterns.
