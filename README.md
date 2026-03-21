@@ -112,7 +112,7 @@ graph LR
     subgraph "Land Runtime Ecosystem"
         direction TB
 
-        subgraph "Mountain ⛰️ (Main App)"
+        subgraph "Mountain ⛰️ (Main App)"
             UI[User Interface]:::mountain
             CoreLogic[Core Logic]:::mountain
             CoreLogic -- Requests Task --> IPC_Client
@@ -156,7 +156,7 @@ graph LR
 
 ## Getting Started 🚀
 
-### Installation
+### Installation 📥
 
 To add `Air` to your project workspace:
 
@@ -165,7 +165,7 @@ To add `Air` to your project workspace:
 Air = { git = "https://github.com/CodeEditorLand/Air.git", branch = "Current" }
 ```
 
-### Usage Pattern
+### Usage Pattern 🚀
 
 **Air** is typically spawned automatically by `Mountain` during the startup
 phase.
