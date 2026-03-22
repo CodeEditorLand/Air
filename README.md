@@ -1,13 +1,13 @@
 <table>
-	<tr>
-		<td align="left" valign="middle">
-			<h3 align="left"> Air</h3>
-		</td>
-		<td align="left" valign="middle">
-			<h3 align="left">
-				🪁
-			</h3>
-		</td>
+<tr>
+<td align="left" valign="middle">
+<h3 align="left"> Air</h3>
+</td>
+<td align="left" valign="middle">
+<h3 align="left">
+ 🪁
+</h3>
+</td>
 		<td align="left" valign="middle">
 			<h3 align="left"> + </h3>
 		</td>
@@ -84,10 +84,14 @@ seamless background updates and persistent state management.
 To understand how `Air`'s internal components interact to provide the background
 daemon functionality, see the following source files:
 
-- **[`Source/`](Source/)** - Main daemon implementation
-- **[`Source/Update/`](Source/Update/)** - Update lifecycle management
-- **[`Source/Download/`](Source/Download/)** - Resilient download manager
-- **[`Source/Auth/`](Source/Auth/)** - Authentication and cryptographic signing
+- **[`Source/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/)** -
+  Main daemon implementation
+- **[`Source/Update/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Update/)** -
+  Update lifecycle management
+- **[`Source/Download/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Download/)** -
+  Resilient download manager
+- **[`Source/Auth/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Auth/)** -
+  Authentication and cryptographic signing
 
 The source files explain the gRPC server implementation, task delegation from
 Mountain, and the progress event emission patterns.
@@ -108,7 +112,7 @@ graph LR
     subgraph "Land Runtime Ecosystem"
         direction TB
 
-        subgraph "Mountain ⛰️ (Main App)"
+        subgraph "Mountain ⛰️ (Main App)"
             UI[User Interface]:::mountain
             CoreLogic[Core Logic]:::mountain
             CoreLogic -- Requests Task --> IPC_Client
@@ -152,7 +156,7 @@ graph LR
 
 ## Getting Started 🚀
 
-### Installation
+### Installation 📥
 
 To add `Air` to your project workspace:
 
@@ -161,7 +165,7 @@ To add `Air` to your project workspace:
 Air = { git = "https://github.com/CodeEditorLand/Air.git", branch = "Current" }
 ```
 
-### Usage Pattern
+### Usage Pattern 🚀
 
 **Air** is typically spawned automatically by `Mountain` during the startup
 phase.
