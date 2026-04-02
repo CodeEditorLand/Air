@@ -39,7 +39,9 @@
 
 ---
 
-# **Air** 🪁 The Native Background Daemon for Land 🏞️
+# **Air** 🪁
+
+The Native Background Daemon for Land 🏞️
 
 [![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](https://github.com/CodeEditorLand/Air/tree/Current/LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/Air.svg)](https://crates.io/crates/Air)
@@ -54,32 +56,32 @@ resource-intensive tasks such as updates, large downloads, and cryptographic
 signing.
 
 **Air** acts as the silent partner to `Mountain`, providing a robust server
-environment that persists even when the main editor window is closed, enabling
-seamless background updates and persistent state management.
+environment that persists even when the main editor window is closed. This
+enables seamless background updates and persistent state management.
 
 ---
 
-## Key Features 🔐
+## Key Features 🔐
 
-- **Native Sidecar Architecture:** Runs as a standalone process alongside the
-  main `Mountain` application, communicating via high-performance IPC
-  (gRPC/Vine) to handle requests without blocking the UI thread.
-- **Dedicated Update Management:** Takes full control of the update lifecycle,
-  including downloading, verifying, and applying patches for `Land`, ensuring
-  the editor is always up-to-date without user interruption.
+- **Native Sidecar Architecture:** Runs as a standalone process alongside
+  `Mountain`, communicating via high-performance IPC (gRPC/Vine) without
+  blocking the UI thread.
+- **Dedicated Update Management:** Takes full control of the update lifecycle —
+  downloading, verifying, and applying patches — so the editor stays up-to-date
+  without interrupting the user.
 - **Isolated Authentication & Signing:** Manages sensitive cryptographic
   operations, including binary signing and secure login flows, keeping security
   logic isolated from the main application view.
-- **Background Downloader:** Implements a resilient download manager for
-  extensions, language servers, and dependencies, capable of pausing, resuming,
-  and handling network interruptions gracefully.
-- **Resource Offloading:** Acts as the designated handler for any "heavy" task
-  that doesn't strictly require the main application loop, effectively
-  decoupling infrastructure maintenance from the user experience.
+- **Background Downloader:** A resilient download manager for extensions,
+  language servers, and dependencies that can pause, resume, and recover from
+  network interruptions.
+- **Resource Offloading:** Handles any task that does not strictly require the
+  main application loop, decoupling infrastructure maintenance from the user
+  experience.
 
 ---
 
-## Deep Dive & Component Breakdown 🔬
+## Deep Dive & Component Breakdown 🔬
 
 To understand how `Air`'s internal components interact to provide the background
 daemon functionality, see the following source files:
@@ -112,7 +114,7 @@ graph LR
     subgraph "Land Runtime Ecosystem"
         direction TB
 
-        subgraph "Mountain ⛰️ (Main App)"
+        subgraph "Mountain ⛰️ (Main App)"
             UI[User Interface]:::mountain
             CoreLogic[Core Logic]:::mountain
             CoreLogic -- Requests Task --> IPC_Client
@@ -142,7 +144,7 @@ graph LR
 
 ---
 
-## `Air` in the Land Ecosystem 🪁 + 🏞️
+## `Air` in the Land Ecosystem 🪁 + 🏞️
 
 | Component           | Role \& Key Responsibilities                                                         |
 | :------------------ | :----------------------------------------------------------------------------------- |
@@ -154,9 +156,9 @@ graph LR
 
 ---
 
-## Getting Started 🚀
+## Getting Started 🚀
 
-### Installation 📥
+### Installation 📥
 
 To add `Air` to your project workspace:
 
@@ -165,7 +167,7 @@ To add `Air` to your project workspace:
 Air = { git = "https://github.com/CodeEditorLand/Air.git", branch = "Current" }
 ```
 
-### Usage Pattern 🚀
+### Usage Pattern 🚀
 
 **Air** is typically spawned automatically by `Mountain` during the startup
 phase.
@@ -189,9 +191,11 @@ phase.
 ## License ⚖️
 
 This project is released into the public domain under the **Creative Commons CC0
-Universal** license. You are free to use, modify, distribute, and build upon
-this work for any purpose, without any restrictions. For the full legal text,
-see the [`LICENSE`](https://github.com/CodeEditorLand/Air/tree/Current/) file.
+Universal** license.
+
+You are free to use, modify, distribute, and build upon this work for any
+purpose, without any restrictions. For the full legal text, see the
+[`LICENSE`](https://github.com/CodeEditorLand/Air/tree/Current/) file.
 
 ---
 
@@ -210,6 +214,11 @@ through [NGI0 Commons Fund](https://NLnet.NL/commonsfund), a fund established by
 [NLnet](https://NLnet.NL) with financial support from the European Commission's
 [Next Generation Internet](https://ngi.eu) program. Learn more at the
 [NLnet project page](https://NLnet.NL/project/Land).
+
+The project is operated by PlayForm, based in Sofia, Bulgaria.
+
+PlayForm acts as the open-source steward for Code Editor Land under the NGI0
+Commons Fund grant.
 
 <table>
 	<thead>
