@@ -39,9 +39,9 @@
 
 ---
 
-# **Air** 🪁
+# **Air** 🪁
 
-The Native Background Daemon for Land 🏞️
+The Native Background Daemon for Land 🏞️
 
 [![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](https://github.com/CodeEditorLand/Air/tree/Current/LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/Air.svg)](https://crates.io/crates/Air)
@@ -61,7 +61,7 @@ enables seamless background updates and persistent state management.
 
 ---
 
-## Key Features 🔐
+## Key Features 🔐
 
 - **Native Sidecar Architecture:** Runs as a standalone process alongside
   `Mountain`, communicating via high-performance IPC (gRPC/Vine) without
@@ -81,7 +81,7 @@ enables seamless background updates and persistent state management.
 
 ---
 
-## Deep Dive & Component Breakdown 🔬
+## Deep Dive & Component Breakdown 🔬
 
 To understand how `Air`'s internal components interact to provide the background
 daemon functionality, see the following source files:
@@ -144,7 +144,7 @@ graph LR
 
 ---
 
-## `Air` in the Land Ecosystem 🪁 + 🏞️
+## `Air` in the Land Ecosystem 🪁 + 🏞️
 
 | Component           | Role \& Key Responsibilities                                                         |
 | :------------------ | :----------------------------------------------------------------------------------- |
@@ -156,9 +156,9 @@ graph LR
 
 ---
 
-## Getting Started 🚀
+## Getting Started 🚀
 
-### Installation 📥
+### Installation 📥
 
 To add `Air` to your project workspace:
 
@@ -167,7 +167,7 @@ To add `Air` to your project workspace:
 Air = { git = "https://github.com/CodeEditorLand/Air.git", branch = "Current" }
 ```
 
-### Usage Pattern 🚀
+### Usage Pattern 🚀
 
 **Air** is typically spawned automatically by `Mountain` during the startup
 phase.
