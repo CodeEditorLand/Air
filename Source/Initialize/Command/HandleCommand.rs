@@ -131,25 +131,25 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                 Ok(_) => {
                     // Basic status output
                     if let Some(svc) = service {
-                        println!("📊 Status for service: {}", svc);
-                        println!("  Status: ⚠️  Running (basic check)");
+                        println!("Status for service: {}", svc);
+                        println!("  Status: Running (basic check)");
                         println!("  Note: Detailed status not yet implemented");
                     } else {
-                        println!("📊 Air Daemon Status");
+                        println!("Air Daemon Status");
                         println!("");
-                        println!("  Overall: ⚠️  Running (basic check)");
+                        println!("  Overall: Running (basic check)");
                         println!("");
                         println!("  Services:");
-                        println!("    gRPC Server: ✅ Listening");
-                        println!("    Authentication: ⚠️  Not checked");
-                        println!("    Updates: ⚠️  Not checked");
-                        println!("    Download Manager: ⚠️  Not checked");
-                        println!("    File Indexer: ⚠️  Not checked");
+                        println!("    gRPC Server: [OK] Listening");
+                        println!("    Authentication: [?] Not checked");
+                        println!("    Updates: [?] Not checked");
+                        println!("    Download Manager: [?] Not checked");
+                        println!("    File Indexer: [?] Not checked");
                     }
-                    
+
                     if verbose {
                         println!("");
-                        println!("🔍 Verbose Information:");
+                        println!("Verbose Information:");
                         println!("  Debug mode: Disabled by default");
                         println!("  Log level: info");
                         println!("  Config file: {}", DefaultConfigFile);
@@ -157,7 +157,7 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                     
                     if json {
                         println!("");
-                        println!("📋 JSON Output:");
+                        println!("JSON Output:");
                         println!("{}",
                             serde_json::json!({
                                 "overall": "running",
@@ -172,7 +172,7 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                     Ok(())
                 }
                 Err(e) => {
-                    println!("  Status: ❌ Daemon not running");
+                    println!("  Status: [ERROR] Daemon not running");
                     println!("  Error: {}", e);
                     println!("");
                     println!("  To start the daemon, run: Air --daemon");
@@ -189,7 +189,7 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                 }
             }
             
-            println!("🔄 Restart Command");
+            println!("Restart Command");
             println!("");
             
             if let Some(svc) = service {
@@ -204,7 +204,7 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
             
             if force {
                 println!("");
-                println!("⚠️  Force mode enabled");
+                println!("Force mode enabled");
                 println!("  Warning: This will terminate in-progress operations");
             }
             
@@ -223,12 +223,12 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                 }
             }
             
-            println!("📊 Metrics");
+            println!("Metrics");
             println!("");
             
             match super::Connect::ConnectDaemon::Connect().await {
                 Ok(_) => {
-                    println!("  Status: ✅ Daemon is running");
+                    println!("  Status: [OK] Daemon is running");
                     println!("");
                     println!("  Note: Metrics collection is partially implemented");
                     println!("");
@@ -240,7 +240,7 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                     println!("    CPU: Not tracked yet");
                 }
                 Err(e) => {
-                    println!("  Status: ❌ Cannot connect to daemon");
+                    println!("  Status: [ERROR] Cannot connect to daemon");
                     println!("  Error: {}", e);
                     return Err(format!("Cannot retrieve metrics: {}", e).into());
                 }
@@ -248,7 +248,7 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
             
             if json {
                 println!("");
-                println!("📋 JSON Output:");
+                println!("JSON Output:");
                 println!("{}",
                     serde_json::json!({
                         "note": "Detailed metrics not yet implemented",
@@ -284,7 +284,7 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                 }
             }
             
-            println!("📝 Logs");
+            println!("Logs");
             println!("");
             
             let log_file = std::env::var("AIR_LOG_FILE").ok();
@@ -295,7 +295,7 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                     println!("  Log file: {}", file);
                     
                     if std::path::Path::new(&file).exists() {
-                        println!("  Status: ✅ Log file exists");
+                        println!("  Status: [OK] Log file exists");
                         println!("");
                         println!("  Note: Log viewing not yet implemented");
                         println!("  Workaround: Use standard tools:");
@@ -309,7 +309,7 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                             println!("    - tail -f {}", file);
                         }
                     } else {
-                        println!("  Status: ❌ Log file not found");
+                        println!("  Status: [ERROR] Log file not found");
                         println!("  Check logging configuration");
                     }
                 }
@@ -346,7 +346,7 @@ async fn HandleConfigCommand(config_cmd: ConfigCommand) -> Result<(), Box<dyn st
                 return Err("Configuration key contains invalid characters".into());
             }
             
-            println!("⚙️  Get Configuration");
+            println!("Get Configuration");
             println!("  Key: {}", key);
             println!("");
             println!("  Note: Config retrieval not yet implemented");
@@ -367,7 +367,7 @@ async fn HandleConfigCommand(config_cmd: ConfigCommand) -> Result<(), Box<dyn st
                 return Err("Configuration key contains invalid characters".into());
             }
             
-            println!("⚙️  Set Configuration");
+            println!("Set Configuration");
             println!("  Key: {}", key);
             println!("  Value: {}", value);
             println!("");
@@ -378,22 +378,22 @@ async fn HandleConfigCommand(config_cmd: ConfigCommand) -> Result<(), Box<dyn st
         }
         
         ConfigCommand::Reload { validate } => {
-            println!("🔄 Reload Configuration");
+            println!("Reload Configuration");
             println!("");
             
             match super::Connect::ConnectDaemon::Connect().await {
                 Ok(_) => {
-                    println!("  Status: ⚠️  Daemon is running");
+                    println!("  Status: [OK] Daemon is running");
                     println!("");
                     println!("  Note: Config reload not yet implemented");
                     println!("  Workaround: Restart daemon to apply config changes");
                     println!("");
                     if validate {
-                        println!("  ℹ️  Validation mode requested");
+                        println!("  Validation mode requested");
                     }
                 }
                 Err(e) => {
-                    println!("  Status: ❌ Cannot connect to daemon");
+                    println!("  Status: [ERROR] Cannot connect to daemon");
                     println!("  Error: {}", e);
                     return Err(format!("Cannot reload config: {}", e).into());
                 }
@@ -403,7 +403,7 @@ async fn HandleConfigCommand(config_cmd: ConfigCommand) -> Result<(), Box<dyn st
         }
         
         ConfigCommand::Show { json } => {
-            println!("⚙️  Show Configuration");
+            println!("Show Configuration");
             println!("");
             
             if json {
@@ -433,7 +433,7 @@ async fn HandleConfigCommand(config_cmd: ConfigCommand) -> Result<(), Box<dyn st
                 }
             }
             
-            println!("✅ Validate Configuration");
+            println!("Validate Configuration");
             println!("");
             
             let config_path = path.unwrap_or_else(|| DefaultConfigFile.to_string());
@@ -441,11 +441,11 @@ async fn HandleConfigCommand(config_cmd: ConfigCommand) -> Result<(), Box<dyn st
             println!("");
             
             if std::path::Path::new(&config_path).exists() {
-                println!("  ✅ Config file exists");
+                println!("  [OK] Config file exists");
                 println!("  Note: Detailed validation not yet implemented");
                 println!("  Workaround: Use: Air --validate-config");
             } else {
-                println!("  ❌ Config file not found");
+                println!("  [ERROR] Config file not found");
                 println!("  Hint: Create a config file or use defaults");
             }
             
@@ -465,7 +465,7 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
                 }
             }
             
-            println!("🔧 Debug: Dump State");
+            println!("Debug: Dump State");
             println!("");
             
             if let Some(svc) = service {
@@ -495,18 +495,18 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
         }
         
         DebugCommand::DumpConnections { format } => {
-            println!("🔧 Debug: Dump Connections");
+            println!("Debug: Dump Connections");
             println!("");
             
             match super::Connect::ConnectDaemon::Connect().await {
                 Ok(_) => {
-                    println!("  Status: ✅ Daemon is running");
+                    println!("  Status: [OK] Daemon is running");
                     println!("");
                     println!("  Active Connections: 0");
                     println!("  Note: Connection tracking not yet implemented");
                 }
                 Err(e) => {
-                    println!("  Status: ❌ Cannot connect to daemon");
+                    println!("  Status: [ERROR] Cannot connect to daemon");
                     println!("  Error: {}", e);
                     return Err(format!("Cannot dump connections: {}", e).into());
                 }
@@ -538,12 +538,12 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
                 }
             }
             
-            println!("🔧 Debug: Health Check");
+            println!("Debug: Health Check");
             println!("");
             
             match super::Connect::ConnectDaemon::Connect().await {
                 Ok(_) => {
-                    println!("  Overall: ⚠️  Basic check passed");
+                    println!("  Overall: [OK] Basic check passed");
                     println!("");
                     
                     if let Some(svc) = service {
@@ -551,16 +551,16 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
                         println!("  Status: Not checked (detailed checks not implemented)");
                     } else {
                         println!("  Services:");
-                        println!("    gRPC Server: ✅ Responding");
-                        println!("    Authentication: ⏸️  Not checked");
-                        println!("    Updates: ⏸️  Not checked");
-                        println!("    Download Manager: ⏸️  Not checked");
-                        println!("    File Indexer: ⏸️  Not checked");
+                        println!("    gRPC Server: [OK] Responding");
+                        println!("    Authentication: [?] Not checked");
+                        println!("    Updates: [?] Not checked");
+                        println!("    Download Manager: [?] Not checked");
+                        println!("    File Indexer: [?] Not checked");
                     }
                     
                     if verbose {
                         println!("");
-                        println!("  🔍 Verbose Information:");
+                        println!("   Verbose Information:");
                         println!("    Last health check: Not tracked");
                         println!("    Health check interval: 30s (default)");
                         println!("    Failure threshold: 3 (configurable)");
@@ -568,7 +568,7 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
                     }
                 }
                 Err(e) => {
-                    println!("  Overall: ❌ Daemon unreachable");
+                    println!("  Overall: [ERROR] Daemon unreachable");
                     println!("  Error: {}", e);
                     return Err(format!("Health check failed: {}", e).into());
                 }
@@ -578,7 +578,7 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
         }
         
         DebugCommand::Diagnostics { level } => {
-            println!("🔧 Debug: Diagnostics");
+            println!("Debug: Diagnostics");
             println!("");
             println!("  Level: {:?}", level);
             println!("");
@@ -591,10 +591,10 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
             
             match super::Connect::ConnectDaemon::Connect().await {
                 Ok(_) => {
-                    println!("  Daemon: ✅ Running");
+                    println!("  Daemon: [OK] Running");
                 }
                 Err(e) => {
-                    println!("  Daemon: ❌ Running");
+                    println!("  Daemon: [ERROR] Running");
                     println!("  Error: {}", e);
                 }
             }

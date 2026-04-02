@@ -2,7 +2,7 @@
 //!
 //! ## Overview
 //!
-//! Air 🪁 is the persistent background daemon that handles resource-intensive
+//! Air 🪁 is the persistent background daemon that handles resource-intensive
 //! operations for the Land code editor. It runs as a standalone process
 //! alongside Mountain, communicating via the Vine (gRPC) protocol to offload
 //! tasks like updates, downloads, authentication, and file indexing.
@@ -506,11 +506,11 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 				// Attempt connection with timeout
 				match attempt_daemon_connection().await {
 					Ok(_) => {
-						println!("  Status: ⚠️  Running (basic check)");
+						println!("  Status: ⚠️  Running (basic check)");
 						println!("  Note: Connect to gRPC endpoint for detailed status");
 					},
 					Err(e) => {
-						println!("  Status: ❌ Cannot connect to daemon");
+						println!("  Status: ❌ Cannot connect to daemon");
 						println!("  Error: {}", e);
 						println!("");
 						println!("  To start the daemon, run: Air --daemon");
@@ -524,18 +524,18 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 				// Attempt connection
 				match attempt_daemon_connection().await {
 					Ok(_) => {
-						println!("  Overall: ⚠️  Running (basic check)");
+						println!("  Overall: ⚠️  Running (basic check)");
 						println!("  Note: Connect to gRPC endpoint for detailed status");
 						println!("");
 						println!("  Services:");
-						println!("    gRPC Server: ✅ Listening");
-						println!("    Authentication: ⚠️  Status check not implemented");
-						println!("    Updates: ⚠️  Status check not implemented");
-						println!("    Download Manager: ⚠️  Status check not implemented");
-						println!("    File Indexer: ⚠️  Status check not implemented");
+						println!("    gRPC Server: ✅ Listening");
+						println!("    Authentication: ⚠️  Status check not implemented");
+						println!("    Updates: ⚠️  Status check not implemented");
+						println!("    Download Manager: ⚠️  Status check not implemented");
+						println!("    File Indexer: ⚠️  Status check not implemented");
 					},
 					Err(e) => {
-						println!("  Overall: ❌ Daemon not running");
+						println!("  Overall: ❌ Daemon not running");
 						println!("  Error: {}", e);
 						println!("");
 						println!("  To start the daemon, run: Air --daemon");
@@ -629,13 +629,13 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 
 					match attempt_daemon_connection().await {
 						Ok(_) => {
-							println!("  Status: ✅ Connected to daemon");
+							println!("  Status: ✅ Connected to daemon");
 							println!("");
 							println!("  Note: Config retrieval via gRPC not yet implemented");
 							println!("  Config value would be retrieved from daemon's configuration manager");
 						},
 						Err(e) => {
-							println!("  Status: ❌ Cannot connect to daemon");
+							println!("  Status: ❌ Cannot connect to daemon");
 							println!("  Error: {}", e);
 							println!("");
 							println!("  Workaround: Check config file directly: cat {}", DefaultConfigFile);
@@ -667,13 +667,13 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 
 					match attempt_daemon_connection().await {
 						Ok(_) => {
-							println!("  Status: ✅ Connected to daemon");
+							println!("  Status: ✅ Connected to daemon");
 							println!("");
 							println!("  Note: Config update via gRPC not yet implemented");
 							println!("  Config value would be set in daemon's configuration manager");
 						},
 						Err(e) => {
-							println!("  Status: ❌ Cannot connect to daemon");
+							println!("  Status: ❌ Cannot connect to daemon");
 							println!("  Error: {}", e);
 							println!("");
 							println!("  Workaround: Edit config file directly, then use 'Air config reload'");
@@ -682,7 +682,7 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 					}
 
 					println!("");
-					println!("  ⚠️  Warning: Config changes may require reload or restart");
+					println!("  ⚠️  Warning: Config changes may require reload or restart");
 
 					Err("Config 'set' command requires gRPC integration".into())
 				},
@@ -695,7 +695,7 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 
 					match attempt_daemon_connection().await {
 						Ok(_) => {
-							println!("  Status: ✅ Connected to daemon");
+							println!("  Status: ✅ Connected to daemon");
 							println!("");
 							if validate {
 								println!("  Validating configuration...");
@@ -705,7 +705,7 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 							println!("  Workaround: Restart daemon to apply config changes");
 						},
 						Err(e) => {
-							println!("  Status: ❌ Cannot connect to daemon");
+							println!("  Status: ❌ Cannot connect to daemon");
 							println!("  Error: {}", e);
 							return Err(format!("Cannot reload config: {}", e).into());
 						},
@@ -724,11 +724,11 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 						println!("  JSON output requested");
 						match attempt_daemon_connection().await {
 							Ok(_) => {
-								println!("  Status: ✅ Connected to daemon");
+								println!("  Status: ✅ Connected to daemon");
 								println!("  Note: JSON config export via gRPC not yet implemented");
 							},
 							Err(e) => {
-								println!("  Status: ❌ Cannot connect to daemon");
+								println!("  Status: ❌ Cannot connect to daemon");
 								println!("  Error: {}", e);
 								return Err(format!("Cannot show config: {}", e).into());
 							},
@@ -737,11 +737,11 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 						println!("  Current Configuration:");
 						match attempt_daemon_connection().await {
 							Ok(_) => {
-								println!("  Status: ✅ Connected to daemon");
+								println!("  Status: ✅ Connected to daemon");
 								println!("  Note: Config display via gRPC not yet implemented");
 							},
 							Err(e) => {
-								println!("  Status: ❌ Cannot connect to daemon");
+								println!("  Status: ❌ Cannot connect to daemon");
 								println!("  Error: {}", e);
 								println!("  Workaround: View config file: cat {}", DefaultConfigFile);
 								return Err(format!("Cannot show config: {}", e).into());
@@ -777,12 +777,12 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 					// Check if file exists
 					match std::path::Path::new(&config_path).exists() {
 						true => {
-							println!("  ✅ Config file exists");
+							println!("  ✅ Config file exists");
 							println!("  Note: Detailed validation not yet implemented");
 							println!("  Workaround: Use: Air --validate-config");
 						},
 						false => {
-							println!("  ❌ Config file not found");
+							println!("  ❌ Config file not found");
 							println!("  Hint: Create a config file or use defaults");
 						},
 					}
@@ -806,7 +806,7 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 			// Attempt to get metrics from daemon
 			match attempt_daemon_connection().await {
 				Ok(_) => {
-					println!("  Status: ✅ Daemon is running");
+					println!("  Status: ✅ Daemon is running");
 					println!("");
 					println!("  Note: Metrics collection is partially implemented");
 					println!("");
@@ -826,7 +826,7 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 					println!("    - Background queue depth");
 				},
 				Err(e) => {
-					println!("  Status: ❌ Cannot connect to daemon");
+					println!("  Status: ❌ Cannot connect to daemon");
 					println!("  Error: {}", e);
 					return Err(format!("Cannot retrieve metrics: {}", e).into());
 				},
@@ -884,7 +884,7 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 
 					// Check if file exists and is readable
 					if std::path::Path::new(&file).exists() {
-						println!("  Status: ✅ Log file exists");
+						println!("  Status: ✅ Log file exists");
 						println!("");
 
 						// Log tailing and filtering
@@ -901,7 +901,7 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 							println!("    - tail -f {}", file);
 						}
 					} else {
-						println!("  Status: ❌ Log file not found");
+						println!("  Status: ❌ Log file not found");
 						println!("  Check logging configuration");
 					}
 				},
@@ -974,13 +974,13 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 
 					match attempt_daemon_connection().await {
 						Ok(_) => {
-							println!("  Status: ✅ Daemon is running");
+							println!("  Status: ✅ Daemon is running");
 							println!("");
 							println!("  Active Connections: 0");
 							println!("  Note: Connection tracking not yet implemented");
 						},
 						Err(e) => {
-							println!("  Status: ❌ Cannot connect to daemon");
+							println!("  Status: ❌ Cannot connect to daemon");
 							println!("  Error: {}", e);
 							return Err(format!("Cannot dump connections: {}", e).into());
 						},
@@ -1017,7 +1017,7 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 
 					match attempt_daemon_connection().await {
 						Ok(_) => {
-							println!("  Overall: ⚠️  Basic check passed");
+							println!("  Overall: ⚠️  Basic check passed");
 							println!("");
 
 							if let Some(svc) = service {
@@ -1025,16 +1025,16 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 								println!("  Status: Not checked (detailed checks not implemented)");
 							} else {
 								println!("  Services:");
-								println!("    gRPC Server: ✅ Responding");
-								println!("    Authentication: ⏸️  Not checked");
-								println!("    Updates: ⏸️  Not checked");
-								println!("    Download Manager: ⏸️  Not checked");
-								println!("    File Indexer: ⏸️  Not checked");
+								println!("    gRPC Server: ✅ Responding");
+								println!("    Authentication: ⏸️  Not checked");
+								println!("    Updates: ⏸️  Not checked");
+								println!("    Download Manager: ⏸️  Not checked");
+								println!("    File Indexer: ⏸️  Not checked");
 							}
 
 							if verbose {
 								println!("");
-								println!("  🔍 Verbose Information:");
+								println!("  🔍 Verbose Information:");
 								println!("    Last health check: Not tracked");
 								println!("    Health check interval: 30s (default)");
 								println!("    Failure threshold: 3 (configurable)");
@@ -1042,7 +1042,7 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 							}
 						},
 						Err(e) => {
-							println!("  Overall: ❌ Daemon unreachable");
+							println!("  Overall: ❌ Daemon unreachable");
 							println!("  Error: {}", e);
 							return Err(format!("Health check failed: {}", e).into());
 						},
@@ -1066,10 +1066,10 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 
 					match attempt_daemon_connection().await {
 						Ok(_) => {
-							println!("  Daemon: ✅ Running");
+							println!("  Daemon: ✅ Running");
 						},
 						Err(e) => {
-							println!("  Daemon: ❌ Running");
+							println!("  Daemon: ❌ Running");
 							println!("  Error: {}", e);
 						},
 					}
@@ -1283,7 +1283,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	InitializeLogging();
 
 	info!("[Boot] ===========================================");
-	info!("[Boot] Starting Air Daemon 🪁");
+	info!("[Boot] Starting Air Daemon 🪁");
 	info!("[Boot] ===========================================");
 	info!("[Boot] Version: {} ({})", env!("CARGO_PKG_VERSION"), env!("CARGO_PKG_NAME"));
 	let build_timestamp = env::var("BUILD_TIMESTAMP").unwrap_or_else(|_| "unknown".to_string());
@@ -1738,7 +1738,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	// [Runtime] Run server and wait for shutdown
 	// -------------------------------------------------------------------------
 	info!("===========================================");
-	info!("[Runtime] Air Daemon 🪁 is now running");
+	info!("[Runtime] Air Daemon 🪁 is now running");
 	info!("[Runtime] Listening on {} for Mountain connections", bind_addr);
 	info!("[Runtime] Protocol Version: {}", ProtocolVersion);
 	info!("[Runtime] Cocoon Port: 50052");
@@ -1828,7 +1828,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	}
 
 	info!("[Shutdown] All services stopped");
-	info!("[Shutdown] Air Daemon 🪁 has shut down gracefully");
+	info!("[Shutdown] Air Daemon 🪁 has shut down gracefully");
 	info!("===========================================");
 
 	Ok(())

@@ -1085,7 +1085,7 @@ impl CliHandler {
 			Command::Logs { service, tail, filter, follow } => self.handle_logs(service, tail, filter, follow),
 			Command::Debug(debug_cmd) => self.handle_debug(debug_cmd),
 			Command::Help { command } => Ok(OutputFormatter::format_help(command.as_deref(), "0.1.0")),
-			Command::Version => Ok("Air 🪁 v0.1.0".to_string()),
+			Command::Version => Ok("Air 🪁 v0.1.0".to_string()),
 		}
 	}
 
@@ -1215,7 +1215,7 @@ pub enum OutputFormat {
 // =============================================================================
 
 pub const HELP_MAIN:&str = r#"
-Air 🪁 - Background Daemon for Land Code Editor
+Air 🪁 - Background Daemon for Land Code Editor
 Version: {version}
 
 USAGE:

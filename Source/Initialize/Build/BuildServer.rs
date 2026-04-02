@@ -139,10 +139,10 @@ pub fn BuildServer(
 	info!("[Build] Vine gRPC service built successfully");
 	info!("[Build] Service configured with:");
 	info!("  - Bind address: {}", bind_addr);
-	info!("  - Authentication service: ✅");
-	info!("  - Update manager: ✅");
-	info!("  - Download manager: ✅");
-	info!("  - File indexer: ✅");
+	info!("  - Authentication service: [OK]");
+	info!("  - Update manager: [OK]");
+	info!("  - Download manager: [OK]");
+	info!("  - File indexer: [OK]");
 
 	Ok(BuiltServer { service, shutdown_tx, bind_addr })
 }
