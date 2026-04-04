@@ -44,8 +44,8 @@
 The Native Background Daemon for Land 🏞️
 
 [![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](https://github.com/CodeEditorLand/Air/tree/Current/LICENSE)
-[![Crates.io](https://img.shields.io/crates/v/Air.svg)](https://crates.io/crates/Air)
-[![Rust Version](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
+[<img src="https://cdn.simpleicons.org/rust" width="14" alt="Rust" />](https://www.rust-lang.org/)&#x2001;[![Crates.io](https://img.shields.io/crates/v/Air.svg)](https://crates.io/crates/Air)
+[<img src="https://cdn.simpleicons.org/rust" width="14" alt="Rust" />](https://www.rust-lang.org/)&#x2001;[![Rust Version](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
 
 Air runs silently in the background so Land is always up to date and ready to
 go. Close the editor, and Air keeps working: downloading updates, verifying
