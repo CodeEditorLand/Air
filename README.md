@@ -37,64 +37,35 @@
 	</tr>
 </table>
 
+
 ---
 
-# **Air** 🪁
+# **Air**&#x2001;🪁
 
-The Native Background Daemon for Land 🏞️
+> **VS Code cold-starts slowly because everything initializes fresh each launch. Updates require a full restart that kills open terminals and in-progress work. There is no mechanism to pre-stage work between sessions.**
+
+_"The next version is already downloaded and verified before you decide to update. No restart prompt ever."_
 
 [![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](https://github.com/CodeEditorLand/Air/tree/Current/LICENSE)
-[<img src="https://cdn.simpleicons.org/rust" width="14" alt="Rust" />](https://www.rust-lang.org/)&#x2001;[![Crates.io](https://img.shields.io/crates/v/Air.svg)](https://crates.io/crates/Air)
-[<img src="https://cdn.simpleicons.org/rust" width="14" alt="Rust" />](https://www.rust-lang.org/)&#x2001;[![Rust Version](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
+[<img src="https://editor.land/Image/Rust.svg" width="14" alt="Rust" />](https://www.rust-lang.org/)&#x2001;[![Crates.io](https://img.shields.io/crates/v/Air.svg)](https://crates.io/crates/Air)
+[<img src="https://editor.land/Image/Rust.svg" width="14" alt="Rust" />](https://www.rust-lang.org/)&#x2001;[![Rust Version](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
 
-Air runs silently in the background so Land is always up to date and ready to
-go. Close the editor, and Air keeps working: downloading updates, verifying
-signatures, and indexing your workspace for instant search next time you open it.
-
-Your editor never asks you to restart for updates. Air handles that.
+Air is a persistent background daemon that keeps running after you close the editor. It pre-downloads and PGP-verifies the next version between sessions, pre-indexes workspace changes while the editor is closed, and keeps language server warm caches available. When you launch Land, the expensive work is already done. Cold start under 200 ms. Updates apply between sessions with no interruption.
 
 📖 **[Rust API Documentation](https://Rust.Documentation.Editor.Land/Air/)**
 
 ---
 
-## Key Features 🔐
+## What It Does&#x2001;🔐
 
-- **Zero UI interruption.** Runs as a standalone sidecar process. Downloads,
-  patches, and crypto operations never block the editor.
-- **Silent updates.** Air downloads, verifies checksums, and stages updates
-  while you work. The next launch is already on the latest version.
-- **Secrets stay isolated.** Cryptographic signing and authentication happen
-  in a separate process. The editor UI never touches private keys.
-- **Resilient downloads.** Pause, resume, and auto-retry on network failure.
-  Extensions and language servers download in the background.
-- **Editor stays responsive.** Heavy I/O (indexing, large file fetches) runs
-  experience.
+- **Pre-staged updates.** The next version is downloaded, PGP-verified, and ready before you decide to update.
+- **Pre-indexed workspaces.** File changes that happened while the editor was closed are already indexed.
+- **Warm language server caches.** IntelliSense is ready before you finish the first keystroke.
+- **No restart prompt.** Updates apply between sessions. You never see 'Restart to Update'.
 
 ---
 
-## Deep Dive & Component Breakdown 🔬
-
-To understand how `Air`'s internal components interact to provide the background
-daemon functionality, see the following source files:
-
-- **[`Source/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/)** -
-  Main daemon implementation
-- **[`Source/Update/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Update/)** -
-  Update lifecycle management
-- **[`Source/Download/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Download/)** -
-  Resilient download manager
-- **[`Source/Auth/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Auth/)** -
-  Authentication and cryptographic signing
-
-The source files explain the gRPC server implementation, task delegation from
-Mountain, and the progress event emission patterns.
-
----
-
-## System Architecture Diagram 🏗️
-
-This diagram illustrates how **Air** sits alongside `Mountain` to handle
-background operations.
+## In the Ecosystem&#x2001;🪁 + 🏞️
 
 ```mermaid
 graph LR
@@ -135,60 +106,29 @@ graph LR
 
 ---
 
-## `Air` in the Land Ecosystem 🪁 + 🏞️
+## Development&#x2001;🛠️
 
-| Component           | Role \& Key Responsibilities                                                         |
-| :------------------ | :----------------------------------------------------------------------------------- |
-| **Daemon Process**  | The persistent executable that runs independently of the main window.                |
-| **Server Host**     | Hosts a local server to accept commands from `Mountain` or other authorized clients. |
-| **Update Delegate** | The sole authority for modifying the installation files of the parent application.   |
-| **Signer**          | Handles cryptographic signing of artifacts and secure token storage for user login.  |
-| **Traffic Manager** | Acts as a proxy/downloader to keep network load off the main renderer process.       |
+Air is a component of the Land workspace. Follow the
+[Land Repository](https://github.com/CodeEditorLand/Land) instructions to
+build and run.
 
 ---
 
-## Getting Started 🚀
+## License&#x2001;⚖️
 
-### Installation 📥
-
-To add `Air` to your project workspace:
-
-```toml
-[dependencies]
-Air = { git = "https://github.com/CodeEditorLand/Air.git", branch = "Current" }
-```
-
-### Usage Pattern 🚀
-
-**Air** is typically spawned automatically by `Mountain` during the startup
-phase.
-
-1. **Spawn:** `Mountain` detects if `Air` is running. If not, it spawns the
-   binary.
-2. **Connect:** `Mountain` establishes a Vine (gRPC) connection to `Air`'s local
-   port `[::1]:50053` (reserved for Air, separate from Cocoon's port 50052).
-3. **Delegate:** When a user requests an update or a large download, `Mountain`
-   sends a command to `Air` and immediately returns control to the user.
-4. **Monitor:** `Air` emits progress events back to `Mountain` to update the UI
-   status bars.
-
-### Port Allocation
-
-- **Air**: Port `50053` (Vine/Air.proto protocol - Air daemon services)
-- **Cocoon**: Port `50052` (Vine.proto protocol - VS Code extension hosting)
+CC0 1.0 Universal. Public domain. No restrictions.
+[LICENSE](https://github.com/CodeEditorLand/Air/tree/Current/LICENSE)
 
 ---
 
-## License ⚖️
+## See Also
 
-This project is released into the public domain under the **Creative Commons CC0
-Universal** license.
+- [Air Documentation](https://editor.land/Doc/air)
+- [Architecture Overview](https://editor.land/Doc/architecture)
+- [Why Rust](https://editor.land/Doc/why-rust)
+- [Mountain](https://github.com/CodeEditorLand/Mountain)
+- [Echo](https://github.com/CodeEditorLand/Echo)
 
-You are free to use, modify, distribute, and build upon this work for any
-purpose, without any restrictions. For the full legal text, see the
-[`LICENSE`](https://github.com/CodeEditorLand/Air/tree/Current/) file.
-
----
 
 ## Changelog 📜
 
