@@ -22,18 +22,15 @@
 //! **External Crates:**
 //! - `tokio::signal` - Async signal handling
 //!
-/// **Internal Modules:**
-//! - None
-//!
 //! ## Dependents
 //!
 //! - `Binary::Binary::Main` - Waits for shutdown signal at runtime
 //!
 //! ## VSCode Pattern Reference
 //!
-/// Inspired by VSCode's shutdown handling in
-/// `src/vs/base/node/shutdown.ts`
-///
+//! Inspired by VSCode's shutdown handling in
+//! `src/vs/base/node/shutdown.ts`
+//!
 //! ## Security Considerations
 //!
 //! - Only signals from authorized sources should trigger shutdown
@@ -45,14 +42,16 @@
 //! - No blocking operations in signal path
 //!
 //! ## Error Handling Strategy
-///
-/// - Logs errors if signal handler fails to install
+//!
+//! - Logs errors if signal handler fails to install
 //! - Continues operation if handler installation fails
 //!
 //! ## Thread Safety
 //!
-/// - Async signal handling is safe with tokio
+//! - Async signal handling is safe with tokio
 //! - No mutable state shared across threads
+
+#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals)]
 
 use log::{error, info};
 
@@ -65,69 +64,70 @@ use log::{error, info};
 /// # Behavior
 ///
 /// - Listens for SIGINT (Ctrl+C) on all platforms
-//! - Listens for SIGTERM on Unix/Linux/macOS
-//! - Logs when signal is received
-//! - Returns immediately after first signal
+/// - Listens for SIGTERM on Unix/Linux/macOS
+/// - Logs when signal is received
+/// - Returns immediately after first signal
 ///
 /// # Platform Notes
 ///
 /// - **Unix/Linux/macOS**: Handles both SIGINT and SIGTERM
-//! - **Windows**: Only handles SIGINT (Ctrl+C)
-//!
+/// - **Windows**: Only handles SIGINT (Ctrl+C)
+///
 /// # FUTURE Enhancements
-//! - Add configurable shutdown timeout (currently infinite)
-//! - Implement signal handling for SIGHUP (reload config)
-//! - Add graceful timeout with pending operation completion
+/// - Add configurable shutdown timeout (currently infinite)
+/// - Implement signal handling for SIGHUP (reload config)
+/// - Add graceful timeout with pending operation completion
+///
 /// # Examples
 ///
 /// ```no_run
-//! # async fn example() {
-//! // In main daemon loop
-//! WaitForShutdownSignal().await;
-//! // Perform cleanup
-//! # }
-//! ```
+/// # async fn Example() {
+/// // In main daemon loop
+/// WaitForShutdownSignal().await;
+/// // Perform cleanup
+/// # }
+/// ```
 pub async fn WaitForShutdownSignal() {
-    info!("[Shutdown] Waiting for termination signal...");
-    
-    let ctrl_c = async {
-        match tokio::signal::ctrl_c().await {
-            Ok(()) => info!("[Shutdown] Received Ctrl+C signal"),
-            Err(e) => error!("[Shutdown] Failed to install Ctrl+C handler: {}", e),
-        }
-    };
+	info!("[Shutdown] Waiting for termination signal...");
 
-    #[cfg(unix)]
-    let terminate = async {
-        match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
-            Ok(mut sig) => {
-                sig.recv().await;
-                info!("[Shutdown] Received SIGTERM signal");
-            }
-            Err(e) => error!("[Shutdown] Failed to install signal handler: {}", e),
-        }
-    };
+	let CtrlC = async {
+		match tokio::signal::ctrl_c().await {
+			Ok(()) => info!("[Shutdown] Received Ctrl+C signal"),
+			Err(Error) => error!("[Shutdown] Failed to install Ctrl+C handler: {}", Error),
+		}
+	};
 
-    #[cfg(not(unix))]
-    let terminate = std::future::pending::<()>();
+	#[cfg(unix)]
+	let Terminate = async {
+		match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
+			Ok(mut Signal) => {
+				Signal.recv().await;
+				info!("[Shutdown] Received SIGTERM signal");
+			},
+			Err(Error) => error!("[Shutdown] Failed to install signal handler: {}", Error),
+		}
+	};
 
-    tokio::select! {
-        _ = ctrl_c => {},
-        _ = terminate => {},
-    }
-    
-    info!("[Shutdown] Signal received, initiating graceful shutdown");
+	#[cfg(not(unix))]
+	let Terminate = std::future::pending::<()>();
+
+	tokio::select! {
+		_ = CtrlC => {},
+		_ = Terminate => {},
+	}
+
+	info!("[Shutdown] Signal received, initiating graceful shutdown");
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    
-    #[test]
-    #[ignore] // Requires manual signal sending
-    #[tokio::test]
-    async fn test_wait_for_shutdown_signal() {
-        // This test requires manual signal sending
-        // and is ignored for automated test runs.
-    }
+	use super::*;
+
+	#[test]
+	#[ignore] // Requires manual signal sending
+	#[tokio::test]
+	async fn TestWaitForShutdownSignal() {
+		// This test requires manual signal sending
+		// and is ignored for automated test runs.
+	}
 }

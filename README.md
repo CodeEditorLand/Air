@@ -37,20 +37,27 @@
 	</tr>
 </table>
 
-
 ---
 
 # **Air**&#x2001;🪁
 
-> **VS Code cold-starts slowly because everything initializes fresh each launch. Updates require a full restart that kills open terminals and in-progress work. There is no mechanism to pre-stage work between sessions.**
+> **VS Code cold-starts slowly because everything initializes fresh each launch.
+> Updates require a full restart that kills open terminals and in-progress work.
+> There is no mechanism to pre-stage work between sessions.**
 
-_"The next version is already downloaded and verified before you decide to update. No restart prompt ever."_
+_"The next version is already downloaded and verified before you decide to
+update. No restart prompt ever."_
 
 [![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](https://github.com/CodeEditorLand/Air/tree/Current/LICENSE)
 [<img src="https://editor.land/Image/Rust.svg" width="14" alt="Rust" />](https://www.rust-lang.org/)&#x2001;[![Crates.io](https://img.shields.io/crates/v/Air.svg)](https://crates.io/crates/Air)
 [<img src="https://editor.land/Image/Rust.svg" width="14" alt="Rust" />](https://www.rust-lang.org/)&#x2001;[![Rust Version](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
 
-Air is a persistent background daemon that keeps running after you close the editor. It pre-downloads and PGP-verifies the next version between sessions, pre-indexes workspace changes while the editor is closed, and keeps language server warm caches available. When you launch Land, the expensive work is already done. Cold start under 200 ms. Updates apply between sessions with no interruption.
+Air is a persistent background daemon that keeps running after you close the
+editor. It pre-downloads and PGP-verifies the next version between sessions,
+pre-indexes workspace changes while the editor is closed, and keeps language
+server warm caches available. When you launch Land, the expensive work is
+already done. Cold start under 200 ms. Updates apply between sessions with no
+interruption.
 
 📖 **[Rust API Documentation](https://Rust.Documentation.Editor.Land/Air/)**
 
@@ -58,10 +65,14 @@ Air is a persistent background daemon that keeps running after you close the edi
 
 ## What It Does&#x2001;🔐
 
-- **Pre-staged updates.** The next version is downloaded, PGP-verified, and ready before you decide to update.
-- **Pre-indexed workspaces.** File changes that happened while the editor was closed are already indexed.
-- **Warm language server caches.** IntelliSense is ready before you finish the first keystroke.
-- **No restart prompt.** Updates apply between sessions. You never see 'Restart to Update'.
+- **Pre-staged updates.** The next version is downloaded, PGP-verified, and
+  ready before you decide to update.
+- **Pre-indexed workspaces.** File changes that happened while the editor was
+  closed are already indexed.
+- **Warm language server caches.** IntelliSense is ready before you finish the
+  first keystroke.
+- **No restart prompt.** Updates apply between sessions. You never see 'Restart
+  to Update'.
 
 ---
 
@@ -109,8 +120,8 @@ graph LR
 ## Development&#x2001;🛠️
 
 Air is a component of the Land workspace. Follow the
-[Land Repository](https://github.com/CodeEditorLand/Land) instructions to
-build and run.
+[Land Repository](https://github.com/CodeEditorLand/Land) instructions to build
+and run.
 
 ---
 
@@ -129,7 +140,6 @@ CC0 1.0 Universal. Public domain. No restrictions.
 - [Mountain](https://github.com/CodeEditorLand/Mountain)
 - [Echo](https://github.com/CodeEditorLand/Echo)
 
-
 ## Changelog 📜
 
 Stay updated with our progress! See
@@ -137,7 +147,6 @@ Stay updated with our progress! See
 history of changes specific to **Air**.
 
 ---
-
 
 ## See Also
 
