@@ -47,36 +47,27 @@ The Native Background Daemon for Land 🏞️
 [![Crates.io](https://img.shields.io/crates/v/Air.svg)](https://crates.io/crates/Air)
 [![Rust Version](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
 
-Welcome to **Air**, the lightweight, persistent daemon that powers the
-background capabilities of the **Land Code Editor**. While `Mountain` handles
-the core application logic and UI, **Air** operates as a specialized sidecar
-process dedicated to heavy lifting, network operations, and system maintenance.
-It ensures that the main editor remains responsive by offloading
-resource-intensive tasks such as updates, large downloads, and cryptographic
-signing.
+Air runs silently in the background so Land is always up to date and ready to
+go. Close the editor, and Air keeps working: downloading updates, verifying
+signatures, and indexing your workspace for instant search next time you open it.
 
-**Air** acts as the silent partner to `Mountain`, providing a robust server
-environment that persists even when the main editor window is closed. This
-enables seamless background updates and persistent state management.
+Your editor never asks you to restart for updates. Air handles that.
+
+📖 **[Rust API Documentation](https://Rust.Documentation.Editor.Land/Air/)**
 
 ---
 
 ## Key Features 🔐
 
-- **Native Sidecar Architecture:** Runs as a standalone process alongside
-  `Mountain`, communicating via high-performance IPC (gRPC/Vine) without
-  blocking the UI thread.
-- **Dedicated Update Management:** Takes full control of the update lifecycle —
-  downloading, verifying, and applying patches — so the editor stays up-to-date
-  without interrupting the user.
-- **Isolated Authentication & Signing:** Manages sensitive cryptographic
-  operations, including binary signing and secure login flows, keeping security
-  logic isolated from the main application view.
-- **Background Downloader:** A resilient download manager for extensions,
-  language servers, and dependencies that can pause, resume, and recover from
-  network interruptions.
-- **Resource Offloading:** Handles any task that does not strictly require the
-  main application loop, decoupling infrastructure maintenance from the user
+- **Zero UI interruption.** Runs as a standalone sidecar process. Downloads,
+  patches, and crypto operations never block the editor.
+- **Silent updates.** Air downloads, verifies checksums, and stages updates
+  while you work. The next launch is already on the latest version.
+- **Secrets stay isolated.** Cryptographic signing and authentication happen
+  in a separate process. The editor UI never touches private keys.
+- **Resilient downloads.** Pause, resume, and auto-retry on network failure.
+  Extensions and language servers download in the background.
+- **Editor stays responsive.** Heavy I/O (indexing, large file fetches) runs
   experience.
 
 ---
@@ -206,6 +197,14 @@ Stay updated with our progress! See
 history of changes specific to **Air**.
 
 ---
+
+
+## See Also
+
+- [Architecture Overview](https://editor.land/Doc/architecture)
+- [Mountain](https://github.com/CodeEditorLand/Mountain)
+- [Vine](https://github.com/CodeEditorLand/Vine)
+- [Mist](https://github.com/CodeEditorLand/Mist)
 
 ## Funding \& Acknowledgements 🙏🏻
 
