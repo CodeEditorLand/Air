@@ -10,12 +10,11 @@ use std::time::Duration;
 
 use anyhow::Result;
 // Re-export types from Mist workspace dependency
-// Note: Mist crate has lib name "mist", so we use lowercase for imports
-pub use mist::resolver::LandDnsResolver;
+pub use mist::Resolver::LandDnsResolver;
 #[allow(unused_imports)]
-pub use mist::resolver::TokioResolver;
+pub use mist::Resolver::TokioResolver;
 #[allow(unused_imports)]
-pub use mist::resolver::land_resolver;
+pub use mist::Resolver::LandResolver;
 
 /// Creates a secured reqwest ClientBuilder with DNS override configured.
 ///

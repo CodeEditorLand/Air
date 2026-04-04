@@ -101,6 +101,9 @@ updates = []
 downloader = []
 indexing = []
 mtls = []
+appimage = []
+deb = []
+rpm = []
 
 [package.metadata.docs.rs]
 all-features = true

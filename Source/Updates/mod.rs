@@ -1411,9 +1411,8 @@ impl UpdateManager {
 			log::warn!("[UpdateManager] WARNING: Cryptographic signature verification is not yet implemented");
 			log::warn!("[UpdateManager] Update packages should be cryptographically signed in production");
 			log::info!("[UpdateManager] Proceeding with update without signature verification");
+			return Ok(());
 		}
-
-		Ok(())
 	}
 
 	/// Create backup of current installation
