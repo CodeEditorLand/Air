@@ -41,6 +41,8 @@
 
 # **Air**&#x2001;🪁
 
+The Native Background Daemon for Land 🏞️
+
 > **VS Code cold-starts slowly because everything initializes fresh each launch.
 > Updates require a full restart that kills open terminals and in-progress work.
 > There is no mechanism to pre-stage work between sessions.**
@@ -52,31 +54,65 @@ update. No restart prompt ever."_
 [<img src="https://editor.land/Image/Rust.svg" width="14" alt="Rust" />](https://www.rust-lang.org/)&#x2001;[![Crates.io](https://img.shields.io/crates/v/Air.svg)](https://crates.io/crates/Air)
 [<img src="https://editor.land/Image/Rust.svg" width="14" alt="Rust" />](https://www.rust-lang.org/)&#x2001;[![Rust Version](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
 
-Air is a persistent background daemon that keeps running after you close the
-editor. It pre-downloads and PGP-verifies the next version between sessions,
-pre-indexes workspace changes while the editor is closed, and keeps language
-server warm caches available. When you launch Land, the expensive work is
-already done. Cold start under 200 ms. Updates apply between sessions with no
-interruption.
-
 📖 **[Rust API Documentation](https://Rust.Documentation.Editor.Land/Air/)**
 
+Welcome to **Air**, the lightweight, persistent daemon that powers the
+background capabilities of the **Land Code Editor**. While `Mountain` handles
+the core application logic and UI, **Air** operates as a specialized sidecar
+process dedicated to heavy lifting, network operations, and system maintenance.
+It ensures that the main editor remains responsive by offloading
+resource-intensive tasks such as updates, large downloads, and cryptographic
+signing.
+
+**Air** acts as the silent partner to `Mountain`, providing a robust server
+environment that persists even when the main editor window is closed, enabling
+seamless background updates and persistent state management.
+
 ---
 
-## What It Does&#x2001;🔐
+## Key Features&#x2001;🔐
 
-- **Pre-staged updates.** The next version is downloaded, PGP-verified, and
-  ready before you decide to update.
-- **Pre-indexed workspaces.** File changes that happened while the editor was
-  closed are already indexed.
-- **Warm language server caches.** IntelliSense is ready before you finish the
-  first keystroke.
-- **No restart prompt.** Updates apply between sessions. You never see 'Restart
-  to Update'.
+- **Native Sidecar Architecture:** Runs as a standalone process alongside the
+  main `Mountain` application, communicating via high-performance IPC
+  (gRPC/Vine) to handle requests without blocking the UI thread.
+- **Dedicated Update Management:** Takes full control of the update lifecycle,
+  including downloading, verifying, and applying patches for `Land`, ensuring
+  the editor is always up-to-date without user interruption.
+- **Isolated Authentication & Signing:** Manages sensitive cryptographic
+  operations, including binary signing and secure login flows, keeping security
+  logic isolated from the main application view.
+- **Background Downloader:** Implements a resilient download manager for
+  extensions, language servers, and dependencies, capable of pausing, resuming,
+  and handling network interruptions gracefully.
+- **Resource Offloading:** Acts as the designated handler for any "heavy" task
+  that doesn't strictly require the main application loop, effectively
+  decoupling infrastructure maintenance from the user experience.
 
 ---
 
-## In the Ecosystem&#x2001;🪁 + 🏞️
+## Deep Dive & Component Breakdown&#x2001;🔬
+
+To understand how `Air`'s internal components interact to provide the background
+daemon functionality, see the following source files:
+
+- **[`Source/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/)** -
+  Main daemon implementation
+- **[`Source/Update/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Update/)** -
+  Update lifecycle management
+- **[`Source/Download/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Download/)** -
+  Resilient download manager
+- **[`Source/Auth/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Auth/)** -
+  Authentication and cryptographic signing
+
+The source files explain the gRPC server implementation, task delegation from
+Mountain, and the progress event emission patterns.
+
+---
+
+## System Architecture Diagram&#x2001;🏗️
+
+This diagram illustrates how **Air** sits alongside `Mountain` to handle
+background operations.
 
 ```mermaid
 graph LR
@@ -117,18 +153,47 @@ graph LR
 
 ---
 
-## Development&#x2001;🛠️
+## `Air` in the Land Ecosystem&#x2001;🪁 + 🏞️
 
-Air is a component of the Land workspace. Follow the
-[Land Repository](https://github.com/CodeEditorLand/Land) instructions to build
-and run.
+| Component           | Role \& Key Responsibilities                                                         |
+| :------------------ | :----------------------------------------------------------------------------------- |
+| **Daemon Process**  | The persistent executable that runs independently of the main window.                |
+| **Server Host**     | Hosts a local server to accept commands from `Mountain` or other authorized clients. |
+| **Update Delegate** | The sole authority for modifying the installation files of the parent application.   |
+| **Signer**          | Handles cryptographic signing of artifacts and secure token storage for user login.  |
+| **Traffic Manager** | Acts as a proxy/downloader to keep network load off the main renderer process.       |
 
 ---
 
-## License&#x2001;⚖️
+## Getting Started&#x2001;🚀
 
-CC0 1.0 Universal. Public domain. No restrictions.
-[LICENSE](https://github.com/CodeEditorLand/Air/tree/Current/LICENSE)
+### Installation&#x2001;📥
+
+To add `Air` to your project workspace:
+
+```toml
+[dependencies]
+Air = { git = "https://github.com/CodeEditorLand/Air.git", branch = "Current" }
+```
+
+### Usage Pattern&#x2001;🚀
+
+**Air** is typically spawned automatically by `Mountain` during the startup
+phase.
+
+1. **Spawn:** `Mountain` detects if `Air` is running. If not, it spawns the
+   binary.
+2. **Connect:** `Mountain` establishes a Vine (gRPC) connection to `Air`'s local
+   port `[::1]:50053` (reserved for Air, separate from Cocoon's port 50052).
+3. **Delegate:** When a user requests an update or a large download, `Mountain`
+   sends a command to `Air` and immediately returns control to the user.
+4. **Monitor:** `Air` emits progress events back to `Mountain` to update the UI
+   status bars.
+
+### Port Allocation
+
+- **Air**: Port `50053` (Vine/Air.proto protocol - Air daemon services)
+- **Cocoon**: Port `50052` (Vine.proto protocol - VS Code extension hosting)
 
 ---
 
@@ -138,9 +203,22 @@ CC0 1.0 Universal. Public domain. No restrictions.
 - [Architecture Overview](https://editor.land/Doc/architecture)
 - [Why Rust](https://editor.land/Doc/why-rust)
 - [Mountain](https://github.com/CodeEditorLand/Mountain)
+- [Vine](https://github.com/CodeEditorLand/Vine)
 - [Echo](https://github.com/CodeEditorLand/Echo)
+- [Mist](https://github.com/CodeEditorLand/Mist)
 
-## Changelog 📜
+---
+
+## License&#x2001;⚖️
+
+This project is released into the public domain under the **Creative Commons CC0
+Universal** license. You are free to use, modify, distribute, and build upon
+this work for any purpose, without any restrictions. For the full legal text,
+see the [`LICENSE`](https://github.com/CodeEditorLand/Air/tree/Current/) file.
+
+---
+
+## Changelog&#x2001;📜
 
 Stay updated with our progress! See
 [`CHANGELOG.md`](https://github.com/CodeEditorLand/Air/tree/Current/) for a
@@ -148,14 +226,7 @@ history of changes specific to **Air**.
 
 ---
 
-## See Also
-
-- [Architecture Overview](https://editor.land/Doc/architecture)
-- [Mountain](https://github.com/CodeEditorLand/Mountain)
-- [Vine](https://github.com/CodeEditorLand/Vine)
-- [Mist](https://github.com/CodeEditorLand/Mist)
-
-## Funding \& Acknowledgements 🙏🏻
+## Funding \& Acknowledgements&#x2001;🙏🏻
 
 **Air** is a core element of the **Land** ecosystem. This project is funded
 through [NGI0 Commons Fund](https://NLnet.NL/commonsfund), a fund established by
