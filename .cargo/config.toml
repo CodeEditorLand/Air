@@ -1,9 +1,6 @@
 [build]
 target-dir = "Target"
-rustdocflags = [
-	"-Zunstable-options",
-	"--enable-index-page",
-]
+rustdocflags = ["-Zunstable-options", "--enable-index-page"]
 
 [net]
 git-fetch-with-cli = true
