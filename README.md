@@ -9,7 +9,7 @@
 </h3>
 </td>
 		<td align="left" valign="middle">
-			<h3 align="left"> + </h3>
+			<h3 align="left"> + </h3>
 		</td>
 		<td align="left" valign="middle">
 			<h3 align="left">
@@ -153,7 +153,7 @@ graph LR
 
 ---
 
-## `Air` in the Land Ecosystem&#x2001;🪁 + 🏞️
+## `Air` in the Land Ecosystem&#x2001;🪁 + 🏞️
 
 | Component           | Role \& Key Responsibilities                                                         |
 | :------------------ | :----------------------------------------------------------------------------------- |
