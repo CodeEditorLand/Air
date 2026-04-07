@@ -113,7 +113,6 @@ pub struct ParsedArguments {
 //! - Add `--validate-config` flag
 //! - Add `--daemon` flag for explicit daemon mode
 //! - Make flags case-insensitive
-//! - Add `--no-daemon` flag for foreground
 
 pub fn ParseArguments() -> ParsedArguments {
     // Defensive: Ensure args collection is not extremely large

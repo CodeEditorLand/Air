@@ -341,7 +341,6 @@ fn InitializeLogging() {
 /// - Support `--validate-config` flag to check config without starting
 /// - Add `--daemon` flag to force daemon mode with CLI commands
 /// - Make flags case-insensitive
-/// - Add --no-daemon flag for foreground operation
 fn ParseArguments() -> (Option<String>, Option<String>, Option<Command>) {
 	// Defensive: Ensure args collection is not extremely large
 	let args:Vec<String> = std::env::args().collect();
@@ -604,7 +603,9 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 			if force {
 				println!("");
 				println!("⚠️  Force mode enabled");
-				println!("  Note: Force restart requires proper coordination to gracefully terminate in-progress operations");
+				println!(
+					"  Note: Force restart requires proper coordination to gracefully terminate in-progress operations"
+				);
 			}
 
 			Err("Restart command requires gRPC integration".into())
@@ -1126,11 +1127,12 @@ fn validate_command(cmd:&Command) -> Result<(), String> {
 ///
 /// # Arguments
 /// * `max_retries` - Maximum number of retry attempts (default: 3)
-/// * `initial_delay_ms` - Initial delay in milliseconds before first retry (default: 500)
+/// * `initial_delay_ms` - Initial delay in milliseconds before first retry
+///   (default: 500)
 ///
 /// # Returns
 /// Result<(), String> - Ok if connection successful, Err with message if failed
-async fn attempt_daemon_connection_with_retry(max_retries: usize, initial_delay_ms: u64) -> Result<(), String> {
+async fn attempt_daemon_connection_with_retry(max_retries:usize, initial_delay_ms:u64) -> Result<(), String> {
 	use tokio::{
 		net::TcpStream,
 		time::{Duration, timeout},
@@ -1790,7 +1792,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	auth_service.StopBackgroundTasks().await;
 	update_manager.StopBackgroundTasks().await;
 	download_manager.StopBackgroundTasks().await;
-	
+
 	// Log final statistics
 	info!("[Shutdown] Collecting final statistics...");
 
