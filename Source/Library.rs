@@ -217,7 +217,7 @@ pub const DefaultBindAddress:&str = "[::1]:50053";
 ///
 /// Version history:
 /// - 1: Initial Vine protocol
-pub const ProtocolVersion: u32 = 1;
+pub const ProtocolVersion:u32 = 1;
 
 /// Error type for Air operations
 ///
@@ -340,7 +340,8 @@ pub mod Utility {
 	///
 	/// Creates a UUID v4 for tracing and correlation of requests.
 	/// The ID is guaranteed to be unique (with extremely high probability).
-	// Using UUID v4 for request ID generation (can be replaced with ULID if sortable IDs needed)
+	// Using UUID v4 for request ID generation (can be replaced with ULID if
+	// sortable IDs needed)
 	pub fn GenerateRequestId() -> String { uuid::Uuid::new_v4().to_string() }
 
 	/// Generate a unique request ID with a prefix
@@ -415,7 +416,6 @@ pub mod Utility {
 	/// # Errors
 	///
 	/// Returns an error if the path contains suspicious patterns.
-	///
 	// Basic path validation - platform-specific validation can be added as needed
 	pub fn ValidateFilePath(Path:&str) -> Result<()> {
 		// Null check
@@ -463,7 +463,6 @@ pub mod Utility {
 	/// # Errors
 	///
 	/// Returns an error if the URL is invalid.
-	///
 	// Basic URL validation using std::uri::Uri for RFC 3986 compliance
 	pub fn ValidateUrl(URL:&str) -> Result<()> {
 		// Null check
@@ -484,10 +483,11 @@ pub mod Utility {
 		// Null character check
 		if URL.contains('\0') {
 			return Err(AirError::Validation("URL contains null character".to_string()));
-			}
-			
-			// FUTURE: More comprehensive validation using url crate for full RFC 3986 compliance
-			Ok(())
+		}
+
+		// FUTURE: More comprehensive validation using url crate for full RFC 3986
+		// compliance
+		Ok(())
 	}
 
 	/// Validate string length

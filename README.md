@@ -64,7 +64,7 @@ seamless background updates and persistent state management.
   `Mountain`, communicating via high-performance IPC (`gRPC`/`Vine`) to handle
   requests without blocking the UI thread.
 - **Dedicated Update Management:** Takes full ownership of the update lifecycle
-  — downloading, verifying, and applying patches for `Land` — without user
+  - downloading, verifying, and applying patches for `Land` - without user
   interruption or restart prompts.
 - **Isolated Authentication & Signing:** Manages sensitive cryptographic
   operations, including binary signing and secure login flows, keeping security
@@ -73,7 +73,7 @@ seamless background updates and persistent state management.
   extensions, language servers, and dependencies, capable of pausing, resuming,
   and handling network interruptions gracefully.
 - **Resource Offloading:** The designated handler for any "heavy" task that
-  doesn't require the main application loop — effectively decoupling
+  doesn't require the main application loop - effectively decoupling
   infrastructure maintenance from the user experience.
 
 ---
@@ -83,13 +83,13 @@ seamless background updates and persistent state management.
 To understand how `Air`'s internal components interact to provide background
 daemon functionality, see the following source files:
 
-- **[`Source/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/)** —
+- **[`Source/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/)** -
   Main daemon implementation.
-- **[`Source/Update/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Update/)** —
+- **[`Source/Update/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Update/)** -
   Update lifecycle management.
-- **[`Source/Download/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Download/)** —
+- **[`Source/Download/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Download/)** -
   Resilient download manager.
-- **[`Source/Auth/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Auth/)** —
+- **[`Source/Auth/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Auth/)** -
   Authentication and cryptographic signing.
 
 The source files explain the `gRPC` server implementation, task delegation from
@@ -108,14 +108,14 @@ graph LR
     subgraph "Land Runtime Ecosystem"
         direction TB
 
-        subgraph "⛰️ Mountain — Main App"
+        subgraph "⛰️ Mountain - Main App"
             UI["🖼️ User Interface"]:::mountain
             CoreLogic["⚙️ Core Logic"]:::mountain
             IPC_Client["📡 IPC Client"]:::mountain
             CoreLogic -- delegates heavy tasks --> IPC_Client
         end
 
-        subgraph "🪁 Air — Daemon Sidecar (port 50053)"
+        subgraph "🪁 Air - Daemon Sidecar (port 50053)"
             IPC_Server["📡 gRPC Server"]:::air
             UpdateMgr["🔄 Update Manager"]:::air
             Downloader["⏬ Resilient Downloader"]:::air
@@ -153,7 +153,7 @@ graph LR
 
 | Process    | Port    | Protocol                       | Purpose                              |
 | :--------- | :------ | :----------------------------- | :----------------------------------- |
-| **Air**    | `50053` | `Vine`/`Air.proto` (`gRPC`)    | Daemon services — updates, downloads |
+| **Air**    | `50053` | `Vine`/`Air.proto` (`gRPC`)    | Daemon services - updates, downloads |
 | **Cocoon** | `50052` | `Vine.proto` (`gRPC`)          | `VS Code` extension hosting          |
 
 ---

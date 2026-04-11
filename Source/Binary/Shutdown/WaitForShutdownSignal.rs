@@ -4,8 +4,8 @@
 //!
 //! ## Role in Air Architecture
 //!
-//! Waits for termination signals (SIGINT/SIGTERM) to initiate graceful shutdown.
-//! This is the primary mechanism for cleanly stopping the Air daemon.
+//! Waits for termination signals (SIGINT/SIGTERM) to initiate graceful
+//! shutdown. This is the primary mechanism for cleanly stopping the Air daemon.
 //!
 //! ## Primary Responsibility
 //!

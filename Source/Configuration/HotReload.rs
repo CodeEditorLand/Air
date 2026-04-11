@@ -75,17 +75,19 @@
 //!
 //! The following features are planned for production deployments:
 //!
-//! - **Distributed synchronization**: Configuration changes propagated across multiple Air instances
-//!   via a consensus algorithm (Raft/Paxos) or centralized configuration store
+//! - **Distributed synchronization**: Configuration changes propagated across
+//!   multiple Air instances via a consensus algorithm (Raft/Paxos) or
+//!   centralized configuration store
 //!
-//! - **Change broadcasting**: Real-time notification to connected Wind (Mountain) services via
-//!   gRPC streaming or WebSocket push subscriptions
+//! - **Change broadcasting**: Real-time notification to connected Wind
+//!   (Mountain) services via gRPC streaming or WebSocket push subscriptions
 //!
-//! - **Conflict resolution**: Multi-master scenarios with automatic merge strategies and
-//!   version vectors to detect and resolve concurrent modifications
+//! - **Conflict resolution**: Multi-master scenarios with automatic merge
+//!   strategies and version vectors to detect and resolve concurrent
+//!   modifications
 //!
-//! These features require additional infrastructure and are not required for basic hot reload
-//! functionality.
+//! These features require additional infrastructure and are not required for
+//! basic hot reload functionality.
 
 use std::{
 	path::{Path, PathBuf},

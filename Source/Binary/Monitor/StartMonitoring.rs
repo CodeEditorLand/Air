@@ -63,16 +63,11 @@
 
 #![allow(non_snake_case, non_camel_case_types, non_upper_case_globals)]
 
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
+
 use log::{debug, info, warn};
 use tokio::time::interval;
-
-use AirLibrary::{
-	ApplicationState,
-	HealthCheck::HealthCheckManager,
-	Metrics,
-};
+use AirLibrary::{ApplicationState, HealthCheck::HealthCheckManager, Metrics};
 
 /// Spawned monitoring task handles
 ///
@@ -87,7 +82,8 @@ pub struct MonitoringHandles {
 /// Start background monitoring tasks
 ///
 /// Spawns two monitoring tasks:
-/// 1. Connection monitor (every 60 seconds) - Updates resource usage, cleans connections
+/// 1. Connection monitor (every 60 seconds) - Updates resource usage, cleans
+///    connections
 /// 2. Health monitor (every 30 seconds) - Performs health checks on services
 ///
 /// # Arguments
@@ -178,7 +174,10 @@ pub async fn StartMonitoring(
 					},
 				}
 
-				debug!("[ConnectionMonitor] Active connections: {}", AppState.GetActiveConnectionCount().await);
+				debug!(
+					"[ConnectionMonitor] Active connections: {}",
+					AppState.GetActiveConnectionCount().await
+				);
 			}
 		}
 	});
@@ -220,10 +219,7 @@ pub async fn StartMonitoring(
 
 	info!("[Monitor] Background monitoring tasks started");
 
-	MonitoringHandles {
-		ConnectionMonitor:ConnectionMonitorHandle,
-		HealthMonitor:HealthMonitorHandle,
-	}
+	MonitoringHandles { ConnectionMonitor:ConnectionMonitorHandle, HealthMonitor:HealthMonitorHandle }
 }
 
 #[cfg(test)]

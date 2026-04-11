@@ -13,7 +13,6 @@ use tokio_stream::StreamExt as TokioStreamExt;
 use async_trait::async_trait;
 
 // Note: Mist is available as a workspace dependency, no extern crate needed
-
 use crate::{
 	AirError,
 	ApplicationState::ApplicationState,
@@ -1157,7 +1156,7 @@ impl AirService for AirVinegRPCService {
 			// Create HTTP client with connection pooling hints
 			let dns_port = mist::dns_port();
 			let client_builder_result = crate::HTTP::secured_client_builder(dns_port);
-			
+
 			let client_builder = match client_builder_result {
 				Ok(builder) => builder,
 				Err(e) => {
@@ -1181,9 +1180,9 @@ impl AirService for AirVinegRPCService {
 						.await
 						.ok();
 					return;
-				}
+				},
 			};
-			
+
 			let client_result = client_builder
 				.pool_idle_timeout(std::time::Duration::from_secs(60))
 				.pool_max_idle_per_host(5)
@@ -1213,7 +1212,7 @@ impl AirService for AirVinegRPCService {
 				return;
 			}
 
-			let client: reqwest::Client = match client_result {
+			let client:reqwest::Client = match client_result {
 				Ok(client) => client,
 				Err(e) => {
 					let error = format!("Failed to create HTTP client: {}", e);
@@ -1253,7 +1252,7 @@ impl AirService for AirVinegRPCService {
 				.await
 			{
 				Ok(response) => {
-				    if !response.status().is_success() {
+					if !response.status().is_success() {
 						let error = format!("Download failed with status: {}", response.status());
 						let _ = tx
 							.send(Ok(DownloadStreamResponse {
@@ -1303,7 +1302,7 @@ impl AirService for AirVinegRPCService {
 						}
 
 						match chunk_result {
-						    Ok(chunk) => {
+							Ok(chunk) => {
 								buffer.extend_from_slice(&chunk);
 								total_downloaded += chunk.len() as u64;
 
@@ -2000,7 +1999,7 @@ impl AirVinegRPCService {
 			.build()
 			.map_err(|e| crate::AirError::Network(format!("Failed to create HTTP client for validation: {}", e)))?;
 
-		let response: reqwest::Response = client
+		let response:reqwest::Response = client
 			.head(url)
 			.send()
 			.await
@@ -2010,7 +2009,7 @@ impl AirVinegRPCService {
 		let accepts_ranges = response
 			.headers()
 			.get("accept-ranges")
-			.map(|v: &reqwest::header::HeaderValue| v.to_str().unwrap_or("none"))
+			.map(|v:&reqwest::header::HeaderValue| v.to_str().unwrap_or("none"))
 			.unwrap_or("none");
 
 		Ok(accepts_ranges == "bytes")

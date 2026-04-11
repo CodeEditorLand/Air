@@ -155,12 +155,12 @@ pub enum RequestState {
 /// Performance metrics
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PerformanceMetrics {
-    pub TotalRequest:u64,
-    pub SuccessfulRequest:u64,
-    pub FailedRequest:u64,
-    pub AverageResponseTime:f64,
-    pub UptimeSeconds:u64,
-    pub LastUpdated:u64,
+	pub TotalRequest:u64,
+	pub SuccessfulRequest:u64,
+	pub FailedRequest:u64,
+	pub AverageResponseTime:f64,
+	pub UptimeSeconds:u64,
+	pub LastUpdated:u64,
 }
 
 /// Resource usage tracking
@@ -198,37 +198,37 @@ pub enum ConnectionType {
 /// Connection health report
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConnectionHealthReport {
-    pub TotalConnection:usize,
-    pub HealthyConnection:usize,
-    pub StaleConnection:usize,
-    pub ConnectionByType:HashMap<String, usize>,
-    pub LastChecked:u64,
+	pub TotalConnection:usize,
+	pub HealthyConnection:usize,
+	pub StaleConnection:usize,
+	pub ConnectionByType:HashMap<String, usize>,
+	pub LastChecked:u64,
 }
 
 impl ApplicationState {
 	/// Create a new ApplicationState instance
 	pub async fn New(Configuration:Arc<AirConfiguration>) -> Result<Self> {
 		let State = Self {
-		    Configuration,
-		    ServiceStatus:Arc::new(RwLock::new(HashMap::new())),
-		    ActiveRequest:Arc::new(Mutex::new(HashMap::new())),
-		    Metrics:Arc::new(RwLock::new(PerformanceMetrics {
-		        TotalRequest:0,
-		        SuccessfulRequest:0,
-		        FailedRequest:0,
-		        AverageResponseTime:0.0,
-		        UptimeSeconds:0,
-		        LastUpdated:Utility::CurrentTimestamp(),
-		    })),
-		    Resources:Arc::new(RwLock::new(ResourceUsage {
-		        MemoryUsageMb:0.0,
-		        CPUUsagePercent:0.0,
-		        DiskUsageMb:0.0,
-		        NetworkUsageMbps:0.0,
-		        LastUpdated:Utility::CurrentTimestamp(),
-		    })),
-		    Connection:Arc::new(RwLock::new(HashMap::new())),
-		    BackgroundTask:Arc::new(Mutex::new(Vec::new())),
+			Configuration,
+			ServiceStatus:Arc::new(RwLock::new(HashMap::new())),
+			ActiveRequest:Arc::new(Mutex::new(HashMap::new())),
+			Metrics:Arc::new(RwLock::new(PerformanceMetrics {
+				TotalRequest:0,
+				SuccessfulRequest:0,
+				FailedRequest:0,
+				AverageResponseTime:0.0,
+				UptimeSeconds:0,
+				LastUpdated:Utility::CurrentTimestamp(),
+			})),
+			Resources:Arc::new(RwLock::new(ResourceUsage {
+				MemoryUsageMb:0.0,
+				CPUUsagePercent:0.0,
+				DiskUsageMb:0.0,
+				NetworkUsageMbps:0.0,
+				LastUpdated:Utility::CurrentTimestamp(),
+			})),
+			Connection:Arc::new(RwLock::new(HashMap::new())),
+			BackgroundTask:Arc::new(Mutex::new(Vec::new())),
 		};
 
 		// Initialize service status
@@ -375,9 +375,10 @@ impl ApplicationState {
 			);
 
 			// Clean up any resources associated with this connection
-			// Note: The Connection struct would contain references to resources that need cleanup
-			// such as file handles, pending requests, etc. These would be released via Drop trait
-			// implementation or explicit cleanup methods as needed.
+			// Note: The Connection struct would contain references to resources that need
+			// cleanup such as file handles, pending requests, etc. These would be
+			// released via Drop trait implementation or explicit cleanup methods as
+			// needed.
 			drop(Connection); // Explicit drop to trigger any cleanup logic
 		} else {
 			log::warn!("Attempted to remove non-existent connection: {}", ConnectionId);
@@ -481,23 +482,23 @@ impl ApplicationState {
 
 	/// Register background task with tracking
 	pub async fn RegisterBackgroundTask(&self, TaskItem:tokio::task::JoinHandle<()>) -> Result<()> {
-	    let mut BackgroundTask = self.BackgroundTask.lock().await;
-	    BackgroundTask.push(TaskItem);
-	    log::debug!("Background task registered. Total tasks: {}", BackgroundTask.len());
-	    Ok(())
+		let mut BackgroundTask = self.BackgroundTask.lock().await;
+		BackgroundTask.push(TaskItem);
+		log::debug!("Background task registered. Total tasks: {}", BackgroundTask.len());
+		Ok(())
 	}
 
 	/// Stop all background tasks with graceful shutdown
 	pub async fn StopAllBackgroundTasks(&self) -> Result<()> {
-	    let mut BackgroundTask = self.BackgroundTask.lock().await;
+		let mut BackgroundTask = self.BackgroundTask.lock().await;
 
-	    let TaskCount = BackgroundTask.len();
-	    log::info!("Stopping {} background tasks", TaskCount);
+		let TaskCount = BackgroundTask.len();
+		log::info!("Stopping {} background tasks", TaskCount);
 
-	    // Abort all tasks
-	    for TaskItem in BackgroundTask.drain(..) {
-	        TaskItem.abort();
-	    }
+		// Abort all tasks
+		for TaskItem in BackgroundTask.drain(..) {
+			TaskItem.abort();
+		}
 
 		log::info!("Stopped all {} background tasks", TaskCount);
 		Ok(())
@@ -605,11 +606,11 @@ impl ApplicationState {
 		let mut Metrics = self.Metrics.write().await;
 
 		Metrics.TotalRequest += 1;
-if Success {
-		Metrics.SuccessfulRequest += 1;
-} else {
-		Metrics.FailedRequest += 1;
-}
+		if Success {
+			Metrics.SuccessfulRequest += 1;
+		} else {
+			Metrics.FailedRequest += 1;
+		}
 
 		// Update average response time using exponential moving average
 		let Alpha = 0.1; // Smoothing factor
@@ -815,20 +816,20 @@ if Success {
 			let IsStale = CurrentTime - ConnectionItem.LastHeartbeat > 120000; // 2 minutes
 
 			if IsStale {
-			    Stale += 1;
+				Stale += 1;
 			} else if ConnectionItem.IsActive {
-			    Healthy += 1;
+				Healthy += 1;
 			}
 
 			*ByType.entry(format!("{:?}", ConnectionItem.ConnectionType)).or_insert(0) += 1;
 		}
 
 		ConnectionHealthReport {
-		    TotalConnection:Connection.len(),
-		    HealthyConnection:Healthy,
-		    StaleConnection:Stale,
-		    ConnectionByType:ByType,
-		    LastChecked:CurrentTime,
+			TotalConnection:Connection.len(),
+			HealthyConnection:Healthy,
+			StaleConnection:Stale,
+			ConnectionByType:ByType,
+			LastChecked:CurrentTime,
 		}
 	}
 }

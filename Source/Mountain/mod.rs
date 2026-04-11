@@ -175,7 +175,7 @@ pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, B
 		// Use system root certificates via rustls-native-certs 0.8.x API
 		debug!("Loading system root certificates");
 		let cert_result = rustls_native_certs::load_native_certs();
-		
+
 		// Log any errors encountered while loading certificates
 		if !cert_result.errors.is_empty() {
 			warn!("Encountered errors loading system certificates: {:?}", cert_result.errors);

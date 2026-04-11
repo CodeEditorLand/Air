@@ -527,23 +527,23 @@ impl DaemonManager {
 
 	/// Generate system service file for installation
 	pub fn GenerateServiceFile(&self) -> Result<String> {
-	    match self.PlatformInfo.Platform {
-	        Platform::Linux => self.GenerateSystemdService(),
-	        Platform::MacOS => self.GenerateLaunchdService(),
-	        #[cfg(target_os = "windows")]
-	        Platform::Windows => self.GenerateWindowsService(),
-	        #[cfg(not(target_os = "windows"))]
-	        Platform::Windows => {
-	            Err(AirError::ServiceUnavailable(
-	                "Windows service generation not available on this platform".to_string(),
-	            ))
-	        },
-	        Platform::Unknown => {
-	            Err(AirError::ServiceUnavailable(
-	                "Unknown platform, cannot generate service file".to_string(),
-	            ))
-	        },
-	    }
+		match self.PlatformInfo.Platform {
+			Platform::Linux => self.GenerateSystemdService(),
+			Platform::MacOS => self.GenerateLaunchdService(),
+			#[cfg(target_os = "windows")]
+			Platform::Windows => self.GenerateWindowsService(),
+			#[cfg(not(target_os = "windows"))]
+			Platform::Windows => {
+				Err(AirError::ServiceUnavailable(
+					"Windows service generation not available on this platform".to_string(),
+				))
+			},
+			Platform::Unknown => {
+				Err(AirError::ServiceUnavailable(
+					"Unknown platform, cannot generate service file".to_string(),
+				))
+			},
+		}
 	}
 
 	/// Generate systemd service file with comprehensive configuration
@@ -745,25 +745,25 @@ WantedBy=multi-user.target
 
 	/// Install daemon as system service with validation
 	pub async fn InstallService(&self) -> Result<()> {
-	    info!("[Daemon] Installing system service...");
-	
-	    match self.PlatformInfo.Platform {
-	        Platform::Linux => self.InstallSystemdService().await,
-	        Platform::MacOS => self.InstallLaunchdService().await,
-	        #[cfg(target_os = "windows")]
-	        Platform::Windows => self.InstallWindowsService().await,
-	        #[cfg(not(target_os = "windows"))]
-	        Platform::Windows => {
-	            Err(AirError::ServiceUnavailable(
-	                "Windows service installation not available on this platform".to_string(),
-	            ))
-	        },
-	        Platform::Unknown => {
-	            Err(AirError::ServiceUnavailable(
-	                "Unknown platform, cannot install service".to_string(),
-	            ))
-	        },
-	    }
+		info!("[Daemon] Installing system service...");
+
+		match self.PlatformInfo.Platform {
+			Platform::Linux => self.InstallSystemdService().await,
+			Platform::MacOS => self.InstallLaunchdService().await,
+			#[cfg(target_os = "windows")]
+			Platform::Windows => self.InstallWindowsService().await,
+			#[cfg(not(target_os = "windows"))]
+			Platform::Windows => {
+				Err(AirError::ServiceUnavailable(
+					"Windows service installation not available on this platform".to_string(),
+				))
+			},
+			Platform::Unknown => {
+				Err(AirError::ServiceUnavailable(
+					"Unknown platform, cannot install service".to_string(),
+				))
+			},
+		}
 	}
 
 	/// Install systemd service with validation
@@ -868,9 +868,10 @@ WantedBy=multi-user.target
 
 	/// Install Windows service
 	///
-	/// Note: For production use, integrate with the winsvc crate or windows-rs API
-	/// to perform actual Windows service registration via the Service Control Manager (SCM).
-	/// This method writes a configuration file that can be used with winsvc.
+	/// Note: For production use, integrate with the winsvc crate or windows-rs
+	/// API to perform actual Windows service registration via the Service
+	/// Control Manager (SCM). This method writes a configuration file that can
+	/// be used with winsvc.
 	#[cfg(target_os = "windows")]
 	async fn InstallWindowsService(&self) -> Result<()> {
 		let ServiceFileContent = self.GenerateWindowsService()?;
@@ -901,8 +902,10 @@ WantedBy=multi-user.target
 
 		info!("[Daemon] Windows service configuration written to {}", ServiceFilePath);
 		info!("[Daemon] To register the service, run:");
-		info!("[Daemon]   sc create AirDaemon binPath= \"{}\" DisplayName= \"Air Daemon\"",
-			std::env::current_exe().unwrap_or_else(|_| "air.exe".into()).display());
+		info!(
+			"[Daemon]   sc create AirDaemon binPath= \"{}\" DisplayName= \"Air Daemon\"",
+			std::env::current_exe().unwrap_or_else(|_| "air.exe".into()).display()
+		);
 		info!("[Daemon]   sc config AirDaemon start= auto");
 		info!("[Daemon]   sc start AirDaemon");
 
@@ -911,25 +914,25 @@ WantedBy=multi-user.target
 
 	/// Uninstall system service with proper coordination
 	pub async fn UninstallService(&self) -> Result<()> {
-	    info!("[Daemon] Uninstalling system service...");
-	
-	    match self.PlatformInfo.Platform {
-	        Platform::Linux => self.UninstallSystemdService().await,
-	        Platform::MacOS => self.UninstallLaunchdService().await,
-	        #[cfg(target_os = "windows")]
-	        Platform::Windows => self.UninstallWindowsService().await,
-	        #[cfg(not(target_os = "windows"))]
-	        Platform::Windows => {
-	            Err(AirError::ServiceUnavailable(
-	                "Windows service uninstallation not available on this platform".to_string(),
-	            ))
-	        },
-	        Platform::Unknown => {
-	            Err(AirError::ServiceUnavailable(
-	                "Unknown platform, cannot uninstall service".to_string(),
-	            ))
-	        },
-	    }
+		info!("[Daemon] Uninstalling system service...");
+
+		match self.PlatformInfo.Platform {
+			Platform::Linux => self.UninstallSystemdService().await,
+			Platform::MacOS => self.UninstallLaunchdService().await,
+			#[cfg(target_os = "windows")]
+			Platform::Windows => self.UninstallWindowsService().await,
+			#[cfg(not(target_os = "windows"))]
+			Platform::Windows => {
+				Err(AirError::ServiceUnavailable(
+					"Windows service uninstallation not available on this platform".to_string(),
+				))
+			},
+			Platform::Unknown => {
+				Err(AirError::ServiceUnavailable(
+					"Unknown platform, cannot uninstall service".to_string(),
+				))
+			},
+		}
 	}
 
 	/// Uninstall systemd service with proper coordination
@@ -985,8 +988,9 @@ WantedBy=multi-user.target
 
 	/// Uninstall Windows service
 	///
-	/// Note: For production use, integrate with the winsvc crate or windows-rs API
-	/// to properly stop and remove the Windows service via the Service Control Manager (SCM).
+	/// Note: For production use, integrate with the winsvc crate or windows-rs
+	/// API to properly stop and remove the Windows service via the Service
+	/// Control Manager (SCM).
 	#[cfg(target_os = "windows")]
 	async fn UninstallWindowsService(&self) -> Result<()> {
 		let ServiceFilePath = format!("C:\\ProgramData\\Air\\{}.xml", self.PlatformInfo.ServiceName);

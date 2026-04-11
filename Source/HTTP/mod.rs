@@ -7,8 +7,6 @@
 mod client;
 
 // Re-export public items from client module for external use
-pub use client::secured_client;
-pub use client::secured_client_with_timeout;
-pub use client::secured_client_builder;
+pub use client::{secured_client, secured_client_builder, secured_client_with_timeout};
 // Note: LandDnsResolver, TokioResolver, and land_resolver are re-exported from
 // within client.rs from the Mist crate, so they should be accessible via client

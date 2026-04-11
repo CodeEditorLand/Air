@@ -5,8 +5,7 @@
 //! through the local Hickory DNS server, which resolves them to `127.x.x.x`
 //! addresses as a defense-in-depth measure.
 
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use anyhow::Result;
 // Re-export types from Mist workspace dependency
@@ -106,7 +105,8 @@ pub fn secured_client(dns_port:u16) -> Result<reqwest::Client> {
 ///
 /// # Parameters
 ///
-/// * `dns_port` - The port of the local DNS server (obtained from `mist::dns_port()`)
+/// * `dns_port` - The port of the local DNS server (obtained from
+///   `mist::dns_port()`)
 /// * `timeout` - The timeout duration for requests
 ///
 /// # Returns
