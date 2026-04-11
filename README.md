@@ -1,15 +1,10 @@
 <table>
-<tr>
-<td align="left" valign="middle">
-<h3 align="left"> Air</h3>
-</td>
-<td align="left" valign="middle">
-<h3 align="left">
- 🪁
-</h3>
-</td>
+	<tr>
 		<td align="left" valign="middle">
-			<h3 align="left"> + </h3>
+			<h3 align="left">Air&#x2001;🪁</h3>
+		</td>
+		<td align="left" valign="middle">
+			<h3 align="left">&#x2001;+&#x2001;</h3>
 		</td>
 		<td align="left" valign="middle">
 			<h3 align="left">
@@ -24,14 +19,7 @@
 		</td>
 		<td align="left" valign="middle">
 			<h3 align="left">
-				<a href="https://Editor.Land" target="_blank">
-					Land
-				</a>
-			</h3>
-		</td>
-		<td align="left" valign="middle">
-			<h3 align="left">
-				🏞️
+				<a href="https://Editor.Land" target="_blank">Land&#x2001;🏞️</a>
 			</h3>
 		</td>
 	</tr>
@@ -41,26 +29,26 @@
 
 # **Air**&#x2001;🪁
 
-The Native Background Daemon for Land 🏞️
+The Native Background Daemon for `Land`&#x2001;🏞️.
 
-> **VS Code cold-starts slowly because everything initializes fresh each launch.
-> Updates require a full restart that kills open terminals and in-progress work.
-> There is no mechanism to pre-stage work between sessions.**
+> **`VS Code` cold-starts slowly because everything initializes fresh each
+> launch. Updates require a full restart that kills open terminals and
+> in-progress work. There is no mechanism to pre-stage work between sessions.**
 
 _"The next version is already downloaded and verified before you decide to
-update. No restart prompt ever."_
+update. The main window never blocks waiting for a download."_
 
 [![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](https://github.com/CodeEditorLand/Air/tree/Current/LICENSE)
 [<img src="https://editor.land/Image/Rust.svg" width="14" alt="Rust" />](https://www.rust-lang.org/)&#x2001;[![Crates.io](https://img.shields.io/crates/v/Air.svg)](https://crates.io/crates/Air)
-[<img src="https://editor.land/Image/Rust.svg" width="14" alt="Rust" />](https://www.rust-lang.org/)&#x2001;[![Rust Version](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
+[![Rust Version](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
 
 📖 **[Rust API Documentation](https://Rust.Documentation.Editor.Land/Air/)**
 
-Welcome to **Air**, the lightweight, persistent daemon that powers the
-background capabilities of the **Land Code Editor**. While `Mountain` handles
-the core application logic and UI, **Air** operates as a specialized sidecar
-process dedicated to heavy lifting, network operations, and system maintenance.
-It ensures that the main editor remains responsive by offloading
+Welcome to **Air**&#x2001;🪁, the lightweight, persistent daemon that powers the
+background capabilities of the **Land**&#x2001;🏞️ Code Editor. While `Mountain`
+handles the core application logic and UI, **Air** operates as a specialized
+sidecar process dedicated to heavy lifting, network operations, and system
+maintenance. It ensures that the main editor remains responsive by offloading
 resource-intensive tasks such as updates, large downloads, and cryptographic
 signing.
 
@@ -72,96 +60,101 @@ seamless background updates and persistent state management.
 
 ## Key Features&#x2001;🔐
 
-- **Native Sidecar Architecture:** Runs as a standalone process alongside the
-  main `Mountain` application, communicating via high-performance IPC
-  (gRPC/Vine) to handle requests without blocking the UI thread.
-- **Dedicated Update Management:** Takes full control of the update lifecycle,
-  including downloading, verifying, and applying patches for `Land`, ensuring
-  the editor is always up-to-date without user interruption.
+- **Native Sidecar Architecture:** Runs as a standalone process alongside
+  `Mountain`, communicating via high-performance IPC (`gRPC`/`Vine`) to handle
+  requests without blocking the UI thread.
+- **Dedicated Update Management:** Takes full ownership of the update lifecycle
+  — downloading, verifying, and applying patches for `Land` — without user
+  interruption or restart prompts.
 - **Isolated Authentication & Signing:** Manages sensitive cryptographic
   operations, including binary signing and secure login flows, keeping security
   logic isolated from the main application view.
 - **Background Downloader:** Implements a resilient download manager for
   extensions, language servers, and dependencies, capable of pausing, resuming,
   and handling network interruptions gracefully.
-- **Resource Offloading:** Acts as the designated handler for any "heavy" task
-  that doesn't strictly require the main application loop, effectively
-  decoupling infrastructure maintenance from the user experience.
+- **Resource Offloading:** The designated handler for any "heavy" task that
+  doesn't require the main application loop — effectively decoupling
+  infrastructure maintenance from the user experience.
 
 ---
 
 ## Deep Dive & Component Breakdown&#x2001;🔬
 
-To understand how `Air`'s internal components interact to provide the background
+To understand how `Air`'s internal components interact to provide background
 daemon functionality, see the following source files:
 
-- **[`Source/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/)** -
-  Main daemon implementation
-- **[`Source/Update/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Update/)** -
-  Update lifecycle management
-- **[`Source/Download/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Download/)** -
-  Resilient download manager
-- **[`Source/Auth/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Auth/)** -
-  Authentication and cryptographic signing
+- **[`Source/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/)** —
+  Main daemon implementation.
+- **[`Source/Update/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Update/)** —
+  Update lifecycle management.
+- **[`Source/Download/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Download/)** —
+  Resilient download manager.
+- **[`Source/Auth/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Auth/)** —
+  Authentication and cryptographic signing.
 
-The source files explain the gRPC server implementation, task delegation from
-Mountain, and the progress event emission patterns.
+The source files explain the `gRPC` server implementation, task delegation from
+`Mountain`, and progress event emission patterns.
 
 ---
 
 ## System Architecture Diagram&#x2001;🏗️
 
-This diagram illustrates how **Air** sits alongside `Mountain` to handle
-background operations.
-
 ```mermaid
 graph LR
-    classDef mountain fill:#f9f,stroke:#333,stroke-width:2px;
-    classDef Air fill:#9cf,stroke:#333,stroke-width:2px;
-    classDef external fill:#ddd,stroke:#666,stroke-dasharray: 5 5;
+    classDef mountain fill:#f0d0ff,stroke:#9b59b6,stroke-width:2px,color:#2c0050;
+    classDef air      fill:#9cf,stroke:#2471a3,stroke-width:2px,color:#001040;
+    classDef external fill:#ebebeb,stroke:#888,stroke-dasharray:5 5,color:#333;
 
     subgraph "Land Runtime Ecosystem"
         direction TB
 
-        subgraph "Mountain ⛰️ (Main App)"
-            UI[User Interface]:::mountain
-            CoreLogic[Core Logic]:::mountain
-            CoreLogic -- Requests Task --> IPC_Client
+        subgraph "⛰️ Mountain — Main App"
+            UI["🖼️ User Interface"]:::mountain
+            CoreLogic["⚙️ Core Logic"]:::mountain
+            IPC_Client["📡 IPC Client"]:::mountain
+            CoreLogic -- delegates heavy tasks --> IPC_Client
         end
 
-        subgraph "Air 🪁 (Daemon Sidecar)"
-            IPC_Server[gRPC Server]:::Air
-            UpdateMgr[Update Manager]:::Air
-            Downloader[Resilient Downloader]:::Air
-            AuthService[Signer & Auth]:::Air
+        subgraph "🪁 Air — Daemon Sidecar (port 50053)"
+            IPC_Server["📡 gRPC Server"]:::air
+            UpdateMgr["🔄 Update Manager"]:::air
+            Downloader["⏬ Resilient Downloader"]:::air
+            AuthService["🔐 Signer & Auth"]:::air
 
-            IPC_Server -- Routes to --> UpdateMgr
-            IPC_Server -- Routes to --> Downloader
-            IPC_Server -- Routes to --> AuthService
+            IPC_Server -- routes --> UpdateMgr
+            IPC_Server -- routes --> Downloader
+            IPC_Server -- routes --> AuthService
         end
 
-        IPC_Client -- IPC (Vine Protocol) --> IPC_Server
+        IPC_Client -- Vine gRPC --> IPC_Server
     end
 
     subgraph "External World"
-        Cloud[Update Servers / Registry]:::external
+        Cloud["☁️ Update Servers / Registry"]:::external
     end
 
-    UpdateMgr -- Fetches --> Cloud
-    Downloader -- Downloads --> Cloud
+    UpdateMgr -- fetches --> Cloud
+    Downloader -- downloads --> Cloud
 ```
 
 ---
 
-## `Air` in the Land Ecosystem&#x2001;🪁 + 🏞️
+## `Air`&#x2001;🪁 in the `Land`&#x2001;🏞️ Ecosystem
 
-| Component           | Role \& Key Responsibilities                                                         |
-| :------------------ | :----------------------------------------------------------------------------------- |
-| **Daemon Process**  | The persistent executable that runs independently of the main window.                |
-| **Server Host**     | Hosts a local server to accept commands from `Mountain` or other authorized clients. |
-| **Update Delegate** | The sole authority for modifying the installation files of the parent application.   |
-| **Signer**          | Handles cryptographic signing of artifacts and secure token storage for user login.  |
-| **Traffic Manager** | Acts as a proxy/downloader to keep network load off the main renderer process.       |
+| Component           | Role & Key Responsibilities                                                                              |
+| :------------------ | :------------------------------------------------------------------------------------------------------- |
+| **Daemon Process**  | Persistent executable that runs independently of the main window, even after the window closes.          |
+| **Server Host**     | Hosts a local `gRPC` server on `[::1]:50053` to accept commands from `Mountain`.                         |
+| **Update Delegate** | Sole authority for modifying installation files of the parent application.                               |
+| **Signer**          | Handles cryptographic signing of artifacts and secure token storage for user login.                      |
+| **Traffic Manager** | Proxy/downloader that keeps large network operations off the main renderer process.                       |
+
+### Port Allocation
+
+| Process    | Port    | Protocol                       | Purpose                              |
+| :--------- | :------ | :----------------------------- | :----------------------------------- |
+| **Air**    | `50053` | `Vine`/`Air.proto` (`gRPC`)    | Daemon services — updates, downloads |
+| **Cocoon** | `50052` | `Vine.proto` (`gRPC`)          | `VS Code` extension hosting          |
 
 ---
 
@@ -178,34 +171,28 @@ Air = { git = "https://github.com/CodeEditorLand/Air.git", branch = "Current" }
 
 ### Usage Pattern&#x2001;🚀
 
-**Air** is typically spawned automatically by `Mountain` during the startup
-phase.
+**Air** is typically spawned automatically by `Mountain` during startup.
 
 1. **Spawn:** `Mountain` detects if `Air` is running. If not, it spawns the
    binary.
-2. **Connect:** `Mountain` establishes a Vine (gRPC) connection to `Air`'s local
-   port `[::1]:50053` (reserved for Air, separate from Cocoon's port 50052).
-3. **Delegate:** When a user requests an update or a large download, `Mountain`
+2. **Connect:** `Mountain` establishes a `Vine` (`gRPC`) connection to `Air`'s
+   local port `[::1]:50053`.
+3. **Delegate:** When a user requests an update or large download, `Mountain`
    sends a command to `Air` and immediately returns control to the user.
 4. **Monitor:** `Air` emits progress events back to `Mountain` to update the UI
    status bars.
 
-### Port Allocation
-
-- **Air**: Port `50053` (Vine/Air.proto protocol - Air daemon services)
-- **Cocoon**: Port `50052` (Vine.proto protocol - VS Code extension hosting)
-
 ---
 
-## See Also
+## See Also&#x2001;🔗
 
 - [Air Documentation](https://editor.land/Doc/air)
 - [Architecture Overview](https://editor.land/Doc/architecture)
-- [Why Rust](https://editor.land/Doc/why-rust)
-- [Mountain](https://github.com/CodeEditorLand/Mountain)
-- [Vine](https://github.com/CodeEditorLand/Vine)
-- [Echo](https://github.com/CodeEditorLand/Echo)
-- [Mist](https://github.com/CodeEditorLand/Mist)
+- [Why `Rust`](https://editor.land/Doc/why-rust)
+- [`Mountain`](https://github.com/CodeEditorLand/Mountain)
+- [`Vine`](https://github.com/CodeEditorLand/Vine)
+- [`Echo`](https://github.com/CodeEditorLand/Echo)
+- [`Mist`](https://github.com/CodeEditorLand/Mist)
 
 ---
 
@@ -220,19 +207,18 @@ see the [`LICENSE`](https://github.com/CodeEditorLand/Air/tree/Current/) file.
 
 ## Changelog&#x2001;📜
 
-Stay updated with our progress! See
-[`CHANGELOG.md`](https://github.com/CodeEditorLand/Air/tree/Current/) for a
-history of changes specific to **Air**.
+See [`CHANGELOG.md`](https://github.com/CodeEditorLand/Air/tree/Current/) for a
+history of changes specific to **Air**&#x2001;🪁.
 
 ---
 
 ## Funding \& Acknowledgements&#x2001;🙏🏻
 
-**Air** is a core element of the **Land** ecosystem. This project is funded
-through [NGI0 Commons Fund](https://NLnet.NL/commonsfund), a fund established by
-[NLnet](https://NLnet.NL) with financial support from the European Commission's
-[Next Generation Internet](https://ngi.eu) program. Learn more at the
-[NLnet project page](https://NLnet.NL/project/Land).
+**Air**&#x2001;🪁 is a core element of the **Land**&#x2001;🏞️ ecosystem. This project is
+funded through [NGI0 Commons Fund](https://NLnet.NL/commonsfund), a fund
+established by [NLnet](https://NLnet.NL) with financial support from the
+European Commission's [Next Generation Internet](https://ngi.eu) program.
+Learn more at the [NLnet project page](https://NLnet.NL/project/Land).
 
 The project is operated by PlayForm, based in Sofia, Bulgaria.
 
