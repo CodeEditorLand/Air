@@ -111,7 +111,7 @@ use rand::{Rng, rng};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use zeroize::Zeroize;
 use subtle::ConstantTimeEq;
-use log::{debug, info};
+use crate::dev_log;
 
 use crate::{AirError, Result};
 
@@ -222,16 +222,9 @@ impl SecurityAuditor {
 		}
 
 		// Log to system logger
-		let level = match event.Severity {
-			SecuritySeverity::Informational => log::Level::Info,
-			SecuritySeverity::Warning => log::Level::Warn,
-			SecuritySeverity::Error => log::Level::Error,
-			SecuritySeverity::Critical => log::Level::Error,
-		};
-
-		log::log!(
-			level,
-			"[Security] {:?}: {} - {}",
+		dev_log!(
+			"security",
+			"{:?}: {} - {}",
 			event.EventType,
 			event.Details,
 			event.SourceIp.as_deref().unwrap_or("N/A")
@@ -794,11 +787,9 @@ impl SecureStorage {
 		// We need to update the master key, but SecureStorage is immutable
 		// In a real implementation, we'd use interior mutability or recreate the
 		// storage For now, we'll log the rotation
-		info!(
-			"[Security] Master key rotation from version {} to {}",
+		dev_log!("security", "[Security] Master key rotation from version {} to {}",
 			old_key_version,
-			old_key_version + 1
-		);
+			old_key_version + 1);
 
 		// Log key rotation event
 		let event = SecurityEvent {
@@ -904,8 +895,7 @@ fn zeroize(bytes:&mut SecureBytes) {
 	bytes.Data.zeroize();
 	// If bytes are shared (Arc count > 1), we can't zeroize here
 	// The Drop implementation will handle it when the last reference is dropped
-	debug!("[Security] Zeroized secure bytes (immediate cleanup requested)");
-}
+	dev_log!("security", "[Security] Zeroized secure bytes (immediate cleanup requested)");}
 
 #[cfg(test)]
 mod tests {

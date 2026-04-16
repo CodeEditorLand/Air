@@ -58,7 +58,7 @@
 
 use std::sync::Arc;
 use std::time::Duration;
-use log::{error, info};
+use crate::dev_log;
 
 use AirLibrary::{
     ApplicationState,
@@ -105,8 +105,7 @@ use AirLibrary::{
 pub async fn StartIndex(
     app_state: Arc<ApplicationState>,
 ) -> Result<Arc<FileIndexer>, String> {
-    info!("[Index] Starting file indexer...");
-    
+    dev_log!("lifecycle", "[Index] Starting file indexer...");    
     // Initialize file indexer with timeout
     let indexer_result = tokio::time::timeout(
         Duration::from_secs(10),
@@ -115,16 +114,13 @@ pub async fn StartIndex(
     
     match indexer_result {
         Ok(Ok(indexer)) => {
-            info!("[Index] File indexer initialized successfully");
-            Ok(Arc::new(indexer))
+            dev_log!("lifecycle", "[Index] File indexer initialized successfully");            Ok(Arc::new(indexer))
         }
         Ok(Err(e)) => {
-            error!("[Index] Failed to initialize file indexer: {}", e);
-            Err(format!("File indexer initialization failed: {}", e))
+            dev_log!("lifecycle", "error: [Index] Failed to initialize file indexer: {}", e);            Err(format!("File indexer initialization failed: {}", e))
         }
         Err(_) => {
-            error!("[Index] File indexer initialization timed out");
-            Err("File indexer initialization timed out".to_string())
+            dev_log!("lifecycle", "error: [Index] File indexer initialization timed out");            Err("File indexer initialization timed out".to_string())
         }
     }
 }

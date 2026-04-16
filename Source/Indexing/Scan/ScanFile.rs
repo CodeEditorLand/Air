@@ -69,6 +69,7 @@
 //!
 //! File scanning operations are designed for parallel execution and
 /// produce results that can be safely merged into shared state.
+use crate::dev_log;
 use std::{
 	path::PathBuf,
 	time::{Duration, Instant},
@@ -166,8 +167,9 @@ pub async fn IndexFileInternal(
 
 	let elapsed = start_time.elapsed();
 
-	log::trace!(
-		"[ScanFile] Indexed {} in {}ms ({} symbols)",
+	dev_log!(
+		"indexing",
+		"indexed {} in {}ms ({} symbols)",
 		file_path.display(),
 		elapsed.as_millis(),
 		symbols.len()

@@ -66,7 +66,7 @@
 
 use std::{sync::Arc, time::Duration};
 
-use log::{error, info};
+use crate::dev_log;
 use tokio as _;
 use AirLibrary::{ApplicationState, Configuration::AirConfiguration};
 
@@ -99,24 +99,20 @@ use AirLibrary::{ApplicationState, Configuration::AirConfiguration};
 /// - Implement state recovery from previous run
 /// - Add state snapshot for debugging
 pub async fn CreateState(configuration:Arc<AirConfiguration>) -> Result<Arc<ApplicationState>, String> {
-	info!("[State] Creating application state...");
-
+	dev_log!("lifecycle", "[State] Creating application state...");
 	// Initialize state with timeout
 	let state_result =
 		tokio::time::timeout(Duration::from_secs(10), ApplicationState::new(configuration.clone())).await;
 
 	match state_result {
 		Ok(Ok(state)) => {
-			info!("[State] Application state initialized successfully");
-			Ok(Arc::new(state))
+			dev_log!("lifecycle", "[State] Application state initialized successfully");			Ok(Arc::new(state))
 		},
 		Ok(Err(e)) => {
-			error!("[State] Failed to initialize application state: {}", e);
-			Err(format!("Application state initialization failed: {}", e))
+			dev_log!("lifecycle", "error: [State] Failed to initialize application state: {}", e);			Err(format!("Application state initialization failed: {}", e))
 		},
 		Err(_) => {
-			error!("[State] Application state initialization timed out");
-			Err("Application state initialization timed out".to_string())
+			dev_log!("lifecycle", "error: [State] Application state initialization timed out");			Err("Application state initialization timed out".to_string())
 		},
 	}
 }

@@ -65,7 +65,7 @@
 
 use std::{sync::Arc, time::Duration};
 
-use log::{debug, info, warn};
+use crate::dev_log;
 use tokio::time::interval;
 use AirLibrary::{ApplicationState, HealthCheck::HealthCheckManager, Metrics};
 
@@ -121,8 +121,7 @@ pub async fn StartMonitoring(
 	AppState:Arc<ApplicationState>,
 	HealthManager:Arc<HealthCheckManager>,
 ) -> MonitoringHandles {
-	info!("[Monitor] Starting background monitoring tasks...");
-
+	dev_log!("lifecycle", "[Monitor] Starting background monitoring tasks...");
 	// Start connection monitoring background task
 	let ConnectionMonitorHandle = tokio::spawn({
 		let AppState = AppState.clone();
@@ -136,8 +135,7 @@ pub async fn StartMonitoring(
 
 				// Update resource usage with error handling
 				if let Err(Error) = AppState.UpdateResourceUsage().await {
-					warn!("[ConnectionMonitor] Failed to update resource usage: {}", Error);
-				}
+					dev_log!("lifecycle", "warn: [ConnectionMonitor] Failed to update resource usage: {}", Error);				}
 
 				// Get resource metrics
 				let Resources = AppState.GetResourceUsage().await;
@@ -155,37 +153,31 @@ pub async fn StartMonitoring(
 					ActiveThreads,
 				);
 
-				debug!("[ConnectionMonitor] Active threads (tasks): {}", ActiveThreads);
-
+				dev_log!("lifecycle", "[ConnectionMonitor] Active threads (tasks): {}", ActiveThreads);
 				// Clean up stale connections (5 minute timeout)
 				if let Err(Error) = AppState.CleanupStaleConnections(300).await {
-					warn!("[ConnectionMonitor] Failed to cleanup stale connections: {}", Error);
-				}
+					dev_log!("lifecycle", "warn: [ConnectionMonitor] Failed to cleanup stale connections: {}", Error);				}
 
 				// Perform health checks
 				match HealthManager.CheckService("connections").await {
 					Ok(_) => {},
 					Err(Error) => {
-						warn!("[ConnectionMonitor] Health check failed: {}", Error);
-
+						dev_log!("lifecycle", "warn: [ConnectionMonitor] Health check failed: {}", Error);
 						// Record metrics for failed health check
 						let MetricsCollector = Metrics::GetMetrics();
 						MetricsCollector.RecordRequestFailure("health_check_failed", 0.0);
 					},
 				}
 
-				debug!(
-					"[ConnectionMonitor] Active connections: {}",
-					AppState.GetActiveConnectionCount().await
-				);
+				dev_log!("lifecycle", "[ConnectionMonitor] Active connections: {}",
+					AppState.GetActiveConnectionCount().await);
 			}
 		}
 	});
 
 	// Register background task with error handling
 	if let Err(Error) = AppState.RegisterBackgroundTask(ConnectionMonitorHandle.clone()).await {
-		warn!("[Monitor] Failed to register connection monitor: {}", Error);
-		// Non-fatal: continue without task tracking
+		dev_log!("lifecycle", "warn: [Monitor] Failed to register connection monitor: {}", Error);		// Non-fatal: continue without task tracking
 	}
 
 	// Start health monitoring background task
@@ -200,25 +192,21 @@ pub async fn StartMonitoring(
 				let Services = ["authentication", "updates", "downloader", "indexing", "grpc"];
 				for Service in Services.iter() {
 					if let Err(Error) = HealthManager.CheckService(Service).await {
-						warn!("[HealthMonitor] Health check failed for {}: {}", Service, Error);
-					}
+						dev_log!("lifecycle", "warn: [HealthMonitor] Health check failed for {}: {}", Service, Error);					}
 				}
 
 				// Log overall health status
 				let OverallHealth = HealthManager.GetOverallHealth().await;
-				debug!("[HealthMonitor] Overall health: {:?}", OverallHealth);
-			}
+				dev_log!("lifecycle", "[HealthMonitor] Overall health: {:?}", OverallHealth);			}
 		}
 	});
 
 	// Register health monitoring task with error handling
 	if let Err(Error) = AppState.RegisterBackgroundTask(HealthMonitorHandle.clone()).await {
-		warn!("[Monitor] Failed to register health monitor: {}", Error);
-		// Non-fatal: continue monitoring may not be tracked
+		dev_log!("lifecycle", "warn: [Monitor] Failed to register health monitor: {}", Error);		// Non-fatal: continue monitoring may not be tracked
 	}
 
-	info!("[Monitor] Background monitoring tasks started");
-
+	dev_log!("lifecycle", "[Monitor] Background monitoring tasks started");
 	MonitoringHandles { ConnectionMonitor:ConnectionMonitorHandle, HealthMonitor:HealthMonitorHandle }
 }
 

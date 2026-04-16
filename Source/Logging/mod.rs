@@ -78,9 +78,10 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
-use tracing::{debug, error, info, warn};
 use tracing_subscriber::{fmt::format::FmtSpan, prelude::*};
 use tracing_appender::rolling::Rotation;
+
+use crate::dev_log;
 
 use crate::Result;
 
@@ -253,7 +254,7 @@ thread_local! {
 /// Set the log context for the current thread
 pub fn SetLogContext(Context:LogContext) {
 	if let Err(e) = Context.Validate() {
-		error!("[Logging] Invalid log context provided: {:?}", e);
+		dev_log!("air", "error: [Logging] Invalid log context provided: {:?}", e);
 		return;
 	}
 	LOG_CONTEXT.with(|ctx| {
@@ -408,7 +409,7 @@ impl SensitiveDataFilter {
 		for pattern in &Config.CustomPatterns {
 			match regex::Regex::new(pattern) {
 				Ok(re) => filter.patterns.push(re),
-				Err(e) => warn!("[Logging] Failed to compile custom regex '{}': {}", pattern, e),
+				Err(e) => dev_log!("air", "warn: [Logging] Failed to compile custom regex '{}': {}", pattern, e),
 			}
 		}
 
@@ -599,7 +600,7 @@ impl ContextLogger {
 		}
 
 		*initialized = true;
-		info!("[Logging] ContextLogger initialized - JSON output: {}", self.json_output);
+		dev_log!("air", "[Logging] ContextLogger initialized - JSON output: {}", self.json_output);
 		Ok(())
 	}
 
@@ -607,16 +608,17 @@ impl ContextLogger {
 	pub fn Info(&self, message:impl Into<String>) {
 		let msg = self.sensitive_filter.Filter(&message.into());
 		if let Some(Context) = GetLogContext() {
-			info!(
-				RequestId = Context.RequestId,
-				TraceId = Context.TraceId,
-				SpanId = Context.SpanId,
-				Operation = Context.Operation,
-				"{}",
+			dev_log!(
+				"air",
+				"[{}] req={} trace={} span={} {}",
+				Context.Operation,
+				Context.RequestId,
+				Context.TraceId,
+				Context.SpanId,
 				msg
 			);
 		} else {
-			info!("{}", msg);
+			dev_log!("air", "{}", msg);
 		}
 	}
 
@@ -624,16 +626,17 @@ impl ContextLogger {
 	pub fn Debug(&self, message:impl Into<String>) {
 		let msg = self.sensitive_filter.Filter(&message.into());
 		if let Some(Context) = GetLogContext() {
-			debug!(
-				RequestId = Context.RequestId,
-				TraceId = Context.TraceId,
-				SpanId = Context.SpanId,
-				Operation = Context.Operation,
-				"{}",
+			dev_log!(
+				"air",
+				"[{}] req={} trace={} span={} {}",
+				Context.Operation,
+				Context.RequestId,
+				Context.TraceId,
+				Context.SpanId,
 				msg
 			);
 		} else {
-			debug!("{}", msg);
+			dev_log!("air", "{}", msg);
 		}
 	}
 
@@ -641,16 +644,17 @@ impl ContextLogger {
 	pub fn Warn(&self, message:impl Into<String>) {
 		let msg = self.sensitive_filter.Filter(&message.into());
 		if let Some(Context) = GetLogContext() {
-			warn!(
-				RequestId = Context.RequestId,
-				TraceId = Context.TraceId,
-				SpanId = Context.SpanId,
-				Operation = Context.Operation,
-				"{}",
+			dev_log!(
+				"air",
+				"warn: [{}] req={} trace={} span={} {}",
+				Context.Operation,
+				Context.RequestId,
+				Context.TraceId,
+				Context.SpanId,
 				msg
 			);
 		} else {
-			warn!("{}", msg);
+			dev_log!("air", "warn: {}", msg);
 		}
 	}
 
@@ -658,16 +662,17 @@ impl ContextLogger {
 	pub fn Error(&self, message:impl Into<String>) {
 		let msg = self.sensitive_filter.Filter(&message.into());
 		if let Some(Context) = GetLogContext() {
-			error!(
-				RequestId = Context.RequestId,
-				TraceId = Context.TraceId,
-				SpanId = Context.SpanId,
-				Operation = Context.Operation,
-				"{}",
+			dev_log!(
+				"air",
+				"error: [{}] req={} trace={} span={} {}",
+				Context.Operation,
+				Context.RequestId,
+				Context.TraceId,
+				Context.SpanId,
 				msg
 			);
 		} else {
-			error!("{}", msg);
+			dev_log!("air", "error: {}", msg);
 		}
 	}
 }

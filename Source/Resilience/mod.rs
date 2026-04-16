@@ -67,6 +67,7 @@
 //! - Avoid including request payloads in resilience events
 //! - Sanitize service names before publishing to telemetry
 
+use crate::dev_log;
 use std::{
 	collections::HashMap,
 	sync::Arc,
@@ -459,21 +460,17 @@ impl CircuitBreaker {
 				}
 
 				if failures >= self.Config.FailureThreshold {
-					log::warn!(
-						"[CircuitBreaker] State inconsistency: Closed but failure count ({}) >= threshold ({})",
+					dev_log!("resilience", "warn: [CircuitBreaker] State inconsistency: Closed but failure count ({}) >= threshold ({})",
 						failures,
-						self.Config.FailureThreshold
-					);
+						self.Config.FailureThreshold);
 				}
 			},
 
 			CircuitState::Open => {
 				if failures < self.Config.FailureThreshold {
-					log::warn!(
-						"[CircuitBreaker] State inconsistency: Open but failure count ({}) < threshold ({})",
+					dev_log!("resilience", "warn: [CircuitBreaker] State inconsistency: Open but failure count ({}) < threshold ({})",
 						failures,
-						self.Config.FailureThreshold
-					);
+						self.Config.FailureThreshold);
 				}
 			},
 
@@ -542,18 +539,15 @@ impl CircuitBreaker {
 		// Increment transition counter
 		*self.StateTransitionCounter.write().await += 1;
 
-		log::info!(
-			"[CircuitBreaker] State transition for {}: {:?} -> {:?} (reason: {})",
+		dev_log!("resilience", "[CircuitBreaker] State transition for {}: {:?} -> {:?} (reason: {})",
 			self.Name,
 			CurrentState,
 			NewState,
-			reason
-		);
+			reason);
 
 		// Validate new state consistency
 		self.ValidateState().await.map_err(|e| {
-			log::error!("[CircuitBreaker] State validation failed after transition: {}", e);
-
+			dev_log!("resilience", "error: [CircuitBreaker] State validation failed after transition: {}", e);
 			e
 		})?;
 
@@ -897,8 +891,7 @@ impl BulkheadExecutor {
 			if queue >= self.config.max_queue as u32 {
 				*self.total_rejected.write().await += 1;
 
-				log::warn!("[Bulkhead] Queue full for {}, rejecting request", self.name);
-
+				dev_log!("resilience", "warn: [Bulkhead] Queue full for {}, rejecting request", self.name);
 				return Err("Bulkhead queue full".to_string());
 			}
 
@@ -927,8 +920,7 @@ impl BulkheadExecutor {
 
 						*self.total_timed_out.write().await += 1;
 
-						log::warn!("[Bulkhead] Timeout waiting for permit for {}", self.name);
-
+						dev_log!("resilience", "warn: [Bulkhead] Timeout waiting for permit for {}", self.name);
 						return Err("Bulkhead timeout waiting for permit".to_string());
 					},
 				};
@@ -1087,8 +1079,7 @@ impl TimeoutManager {
 	/// Get remaining time with panic recovery
 	pub fn Remaining(&self) -> Option<Duration> {
 		std::panic::catch_unwind(|| self.remaining()).unwrap_or_else(|e| {
-			log::error!("[TimeoutManager] Panic in Remaining: {:?}", e);
-
+			dev_log!("resilience", "error: [TimeoutManager] Panic in Remaining: {:?}", e);
 			None
 		})
 	}
@@ -1114,8 +1105,7 @@ impl TimeoutManager {
 			}
 		})
 		.unwrap_or_else(|e| {
-			log::error!("[TimeoutManager] Panic in EffectiveTimeout: {:?}", e);
-
+			dev_log!("resilience", "error: [TimeoutManager] Panic in EffectiveTimeout: {:?}", e);
 			Duration::from_secs(30)
 		})
 	}
@@ -1126,8 +1116,7 @@ impl TimeoutManager {
 	/// Check if deadline has been exceeded with panic recovery
 	pub fn IsExceeded(&self) -> bool {
 		std::panic::catch_unwind(|| self.is_exceeded()).unwrap_or_else(|e| {
-			log::error!("[TimeoutManager] Panic in IsExceeded: {:?}", e);
-
+			dev_log!("resilience", "error: [TimeoutManager] Panic in IsExceeded: {:?}", e);
 			true // Fail safe: assume exceeded
 		})
 	}
@@ -1308,14 +1297,12 @@ impl ResilienceOrchestrator {
 					{
 						let Delay = self.retry_manager.CalculateAdaptiveRetryDelay(&E, Attempt);
 
-						log::debug!(
-							"[ResilienceOrchestrator] Retrying {} (attempt {}/{}) after {:?}, error: {}",
+						dev_log!("resilience", "[ResilienceOrchestrator] Retrying {} (attempt {}/{}) after {:?}, error: {}",
 							service,
 							Attempt + 1,
 							retry_policy.MaxRetries,
 							Delay,
-							self.redact_sensitive_data(&E)
-						);
+							self.redact_sensitive_data(&E));
 
 						tokio::time::sleep(Delay).await;
 

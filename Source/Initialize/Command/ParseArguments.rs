@@ -55,6 +55,8 @@
 
 use AirLibrary::CLI::{CliParser, Command};
 
+use crate::dev_log;
+
 /// Parsed command-line arguments
 ///
 /// Contains the results of parsing command-line arguments.
@@ -132,7 +134,7 @@ pub fn ParseArguments() -> ParsedArguments {
         }
     }
     
-    log::debug!("[Args] Parsing command-line arguments ({} args)", args.len());
+    dev_log!("lifecycle", "parsing command-line arguments ({} args)", args.len());
     
     // Check if we're running with CLI command (first arg is a known command)
     if args.len() > 1 {
@@ -142,7 +144,7 @@ pub fn ParseArguments() -> ParsedArguments {
                 // Parse CLI command with error handling
                 match CliParser::parse(args.clone()) {
                     Ok(cmd) => {
-                        log::debug!("[Args] CLI command parsed: {:?}", cmd);
+                        dev_log!("lifecycle", "CLI command parsed: {:?}", cmd);
                         return ParsedArguments {
                             config_path: None,
                             bind_address: None,
@@ -176,7 +178,7 @@ pub fn ParseArguments() -> ParsedArguments {
                         std::process::exit(1);
                     }
                     config_path = Some(path.clone());
-                    log::debug!("[Args] Config path: {}", path);
+                    dev_log!("lifecycle", "config path: {}", path);
                     i += 1;
                 } else {
                     eprintln!("[ERROR] --config flag requires a path argument");
@@ -197,7 +199,7 @@ pub fn ParseArguments() -> ParsedArguments {
                         std::process::exit(1);
                     }
                     bind_address = Some(addr.clone());
-                    log::debug!("[Args] Bind address: {}", addr);
+                    dev_log!("lifecycle", "bind address: {}", addr);
                     i += 1;
                 } else {
                     eprintln!("[ERROR] --bind flag requires an address argument");
@@ -212,7 +214,7 @@ pub fn ParseArguments() -> ParsedArguments {
         i += 1;
     }
     
-    log::debug!("[Args] Daemon mode - config: {:?}, bind: {:?}", config_path, bind_address);
+    dev_log!("lifecycle", "daemon mode - config: {:?}, bind: {:?}", config_path, bind_address);
     
     ParsedArguments {
         config_path,

@@ -59,7 +59,7 @@
 
 use std::sync::Arc;
 use std::time::Duration;
-use log::{error, info};
+use crate::dev_log;
 
 use AirLibrary::{
     ApplicationState,
@@ -103,8 +103,7 @@ use AirLibrary::{
 pub async fn StartUpdate(
     app_state: Arc<ApplicationState>,
 ) -> Result<Arc<UpdateManager>, String> {
-    info!("[Update] Starting update manager...");
-    
+    dev_log!("lifecycle", "[Update] Starting update manager...");    
     // Initialize update manager with timeout
     let update_result = tokio::time::timeout(
         Duration::from_secs(10),
@@ -113,16 +112,13 @@ pub async fn StartUpdate(
     
     match update_result {
         Ok(Ok(manager)) => {
-            info!("[Update] Update manager initialized successfully");
-            Ok(Arc::new(manager))
+            dev_log!("lifecycle", "[Update] Update manager initialized successfully");            Ok(Arc::new(manager))
         }
         Ok(Err(e)) => {
-            error!("[Update] Failed to initialize update manager: {}", e);
-            Err(format!("Update manager initialization failed: {}", e))
+            dev_log!("lifecycle", "error: [Update] Failed to initialize update manager: {}", e);            Err(format!("Update manager initialization failed: {}", e))
         }
         Err(_) => {
-            error!("[Update] Update manager initialization timed out");
-            Err("Update manager initialization timed out".to_string())
+            dev_log!("lifecycle", "error: [Update] Update manager initialization timed out");            Err("Update manager initialization timed out".to_string())
         }
     }
 }

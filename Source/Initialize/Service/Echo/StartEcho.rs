@@ -71,22 +71,20 @@
 /// - Provides basic connectivity verification
 /// - Can be extended with actual echo endpoints in the future
 pub async fn StartEcho() -> Result<(), String> {
-	log::info!("[Echo] Starting Echo scheduler service...");
-
+	dev_log!("lifecycle", "[Echo] Starting Echo scheduler service...");
 	// Echo service initialization
 	// The Echo service provides simple request/response functionality
 	// for testing gRPC connectivity and basic request handling.
 	// Currently implemented as a lightweight initialization stub that
 	// confirms the service can start successfully.
 
-	log::info!("[Echo] Echo scheduler service initialized successfully");
-	log::info!("[Echo] Ready to handle echo requests for connectivity testing");
-
+	dev_log!("lifecycle", "[Echo] Echo scheduler service initialized successfully");	dev_log!("lifecycle", "[Echo] Ready to handle echo requests for connectivity testing");
 	Ok(())
 }
 
 #[cfg(test)]
 mod tests {
+use crate::dev_log;
 	use super::*;
 
 	#[test]

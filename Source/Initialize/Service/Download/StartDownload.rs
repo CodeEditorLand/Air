@@ -58,7 +58,7 @@
 
 use std::sync::Arc;
 use std::time::Duration;
-use log::{error, info};
+use crate::dev_log;
 
 use AirLibrary::{
     ApplicationState,
@@ -105,8 +105,7 @@ use AirLibrary::{
 pub async fn StartDownload(
     app_state: Arc<ApplicationState>,
 ) -> Result<Arc<DownloadManager>, String> {
-    info!("[Download] Starting download manager...");
-    
+    dev_log!("lifecycle", "[Download] Starting download manager...");    
     // Initialize download manager with timeout
     let download_result = tokio::time::timeout(
         Duration::from_secs(10),
@@ -115,16 +114,13 @@ pub async fn StartDownload(
     
     match download_result {
         Ok(Ok(manager)) => {
-            info!("[Download] Download manager initialized successfully");
-            Ok(Arc::new(manager))
+            dev_log!("lifecycle", "[Download] Download manager initialized successfully");            Ok(Arc::new(manager))
         }
         Ok(Err(e)) => {
-            error!("[Download] Failed to initialize download manager: {}", e);
-            Err(format!("Download manager initialization failed: {}", e))
+            dev_log!("lifecycle", "error: [Download] Failed to initialize download manager: {}", e);            Err(format!("Download manager initialization failed: {}", e))
         }
         Err(_) => {
-            error!("[Download] Download manager initialization timed out");
-            Err("Download manager initialization timed out".to_string())
+            dev_log!("lifecycle", "error: [Download] Download manager initialization timed out");            Err("Download manager initialization timed out".to_string())
         }
     }
 }

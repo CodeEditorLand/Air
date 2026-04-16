@@ -59,7 +59,7 @@
 
 use std::sync::Arc;
 use std::time::Duration;
-use log::{error, info};
+use crate::dev_log;
 
 use AirLibrary::{
     ApplicationState,
@@ -103,8 +103,7 @@ use AirLibrary::{
 pub async fn StartAuth(
     app_state: Arc<ApplicationState>,
 ) -> Result<Arc<AuthenticationService>, String> {
-    info!("[Auth] Starting authentication service...");
-    
+    dev_log!("lifecycle", "[Auth] Starting authentication service...");    
     // Initialize auth service with timeout
     let auth_result = tokio::time::timeout(
         Duration::from_secs(10),
@@ -113,16 +112,13 @@ pub async fn StartAuth(
     
     match auth_result {
         Ok(Ok(service)) => {
-            info!("[Auth] Authentication service initialized successfully");
-            Ok(Arc::new(service))
+            dev_log!("lifecycle", "[Auth] Authentication service initialized successfully");            Ok(Arc::new(service))
         }
         Ok(Err(e)) => {
-            error!("[Auth] Failed to initialize authentication service: {}", e);
-            Err(format!("Authentication service initialization failed: {}", e))
+            dev_log!("lifecycle", "error: [Auth] Failed to initialize authentication service: {}", e);            Err(format!("Authentication service initialization failed: {}", e))
         }
         Err(_) => {
-            error!("[Auth] Authentication service initialization timed out");
-            Err("Authentication service initialization timed out".to_string())
+            dev_log!("lifecycle", "error: [Auth] Authentication service initialization timed out");            Err("Authentication service initialization timed out".to_string())
         }
     }
 }

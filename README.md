@@ -85,11 +85,11 @@ daemon functionality, see the following source files:
 
 - **[`Source/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/)** -
   Main daemon implementation.
-- **[`Source/Update/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Update/)** -
+- **[`Source/Updates/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Updates/)** -
   Update lifecycle management.
-- **[`Source/Download/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Download/)** -
+- **[`Source/Downloader/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Downloader/)** -
   Resilient download manager.
-- **[`Source/Auth/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Auth/)** -
+- **[`Source/Authentication/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Authentication/)** -
   Authentication and cryptographic signing.
 
 The source files explain the `gRPC` server implementation, task delegation from

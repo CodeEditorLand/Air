@@ -66,7 +66,7 @@
 
 use std::{net::SocketAddr, sync::Arc};
 
-use log::{error, info};
+use crate::dev_log;
 use AirLibrary::{
 	ApplicationState,
 	Authentication::AuthenticationService,
@@ -124,26 +124,17 @@ pub fn BuildServer(
 	file_indexer:Arc<FileIndexer>,
 	bind_addr:SocketAddr,
 ) -> Result<BuiltServer, String> {
-	info!("[Build] Building Vine gRPC service...");
-
+	dev_log!("lifecycle", "[Build] Building Vine gRPC service...");
 	// Create the Vine gRPC service with all dependencies
 	let service = AirVinegRPCService::new(app_state, auth_service, update_manager, download_manager, file_indexer)
 		.map_err(|e| {
-			error!("[Build] Failed to create Vine gRPC service: {}", e);
-			format!("Vine service creation failed: {}", e)
+			dev_log!("lifecycle", "error: [Build] Failed to create Vine gRPC service: {}", e);			format!("Vine service creation failed: {}", e)
 		})?;
 
 	// Create a oneshot channel to signal server shutdown
 	let (shutdown_tx, _shutdown_rx) = tokio::sync::oneshot::channel::<()>();
 
-	info!("[Build] Vine gRPC service built successfully");
-	info!("[Build] Service configured with:");
-	info!("  - Bind address: {}", bind_addr);
-	info!("  - Authentication service: [OK]");
-	info!("  - Update manager: [OK]");
-	info!("  - Download manager: [OK]");
-	info!("  - File indexer: [OK]");
-
+	dev_log!("lifecycle", "[Build] Vine gRPC service built successfully");	dev_log!("lifecycle", "[Build] Service configured with:");	dev_log!("lifecycle", "  - Bind address: {}", bind_addr);	dev_log!("lifecycle", "  - Authentication service: [OK]");	dev_log!("lifecycle", "  - Update manager: [OK]");	dev_log!("lifecycle", "  - Download manager: [OK]");	dev_log!("lifecycle", "  - File indexer: [OK]");
 	Ok(BuiltServer { service, shutdown_tx, bind_addr })
 }
 

@@ -7,7 +7,7 @@
 
 use std::{collections::HashMap, sync::Arc};
 
-use log::{debug, error, info, warn};
+use crate::dev_log;
 use tonic::{Request, Response, Status};
 use tokio_stream::StreamExt as TokioStreamExt;
 use async_trait::async_trait;
@@ -107,8 +107,7 @@ impl AirVinegRPCService {
 		DownloadManager:Arc<DownloadManager>,
 		FileIndexer:Arc<FileIndexer>,
 	) -> Self {
-		info!("[AirVinegRPCService] New instance created");
-
+		dev_log!("grpc", "[AirVinegRPCService] New instance created");
 		Self {
 			AppState,
 			AuthService,
@@ -189,11 +188,9 @@ impl AirVinegRPCService {
 		}
 
 		if ClientVersion < crate::ProtocolVersion {
-			warn!(
-				"Client using older protocol version {} (server: {})",
+			dev_log!("grpc", "warn: Client using older protocol version {} (server: {})",
 				ClientVersion,
-				crate::ProtocolVersion
-			);
+				crate::ProtocolVersion);
 		}
 
 		Ok(())
@@ -213,10 +210,8 @@ impl AirService for AirVinegRPCService {
 		let RequestData = Request.into_inner();
 		let request_id = RequestData.request_id.clone();
 
-		info!(
-			"[AirVinegRPCService] Authentication request received [ID: {}] [Connection: {}]",
-			request_id, ConnectionId
-		);
+		dev_log!("grpc", "[AirVinegRPCService] Authentication request received [ID: {}] [Connection: {}]",
+			request_id, ConnectionId);
 
 		self.AppState
 			.RegisterRequest(request_id.clone(), "authentication".to_string())
@@ -261,10 +256,8 @@ impl AirService for AirVinegRPCService {
 					.ok();
 
 				// Log successful authentication
-				info!(
-					"[AirVinegRPCService] Authentication successful for user: {} [Connection: {}]",
-					username_for_log, ConnectionId
-				);
+				dev_log!("grpc", "[AirVinegRPCService] Authentication successful for user: {} [Connection: {}]",
+					username_for_log, ConnectionId);
 
 				Ok(Response::new(air_generated::AuthenticationResponse {
 					request_id,
@@ -284,10 +277,8 @@ impl AirService for AirVinegRPCService {
 					.ok();
 
 				// Log failed authentication attempt
-				warn!(
-					"[AirVinegRPCService] Authentication failed for user: {} [Connection: {}] - {}",
-					username_for_log, ConnectionId, e
-				);
+				dev_log!("grpc", "warn: [AirVinegRPCService] Authentication failed for user: {} [Connection: {}] - {}",
+					username_for_log, ConnectionId, e);
 
 				Ok(Response::new(air_generated::AuthenticationResponse {
 					request_id,
@@ -307,10 +298,8 @@ impl AirService for AirVinegRPCService {
 		let RequestData = request.into_inner();
 		let request_id = RequestData.request_id.clone();
 
-		info!(
-			"[AirVinegRPCService] Update check request received [ID: {}] - Version: {}, Channel: {}",
-			request_id, RequestData.current_version, RequestData.channel
-		);
+		dev_log!("grpc", "[AirVinegRPCService] Update check request received [ID: {}] - Version: {}, Channel: {}",
+			request_id, RequestData.current_version, RequestData.channel);
 
 		self.AppState
 			.RegisterRequest(request_id.clone(), "updates".to_string())
@@ -361,10 +350,8 @@ impl AirService for AirVinegRPCService {
 					.await
 					.ok();
 
-				info!(
-					"[AirVinegRPCService] Update check successful - Available: {}",
-					UpdateInfo.is_some()
-				);
+				dev_log!("grpc", "[AirVinegRPCService] Update check successful - Available: {}",
+					UpdateInfo.is_some());
 
 				Ok(Response::new(air_generated::UpdateCheckResponse {
 					request_id,
@@ -380,8 +367,7 @@ impl AirService for AirVinegRPCService {
 					.UpdateRequestStatus(&request_id, crate::ApplicationState::RequestState::Failed(e.clone()), None)
 					.await
 					.ok();
-				error!("[AirVinegRPCService] Network error during update check: {}", e);
-				Err(Status::unavailable(e))
+				dev_log!("grpc", "error: [AirVinegRPCService] Network error during update check: {}", e);				Err(Status::unavailable(e))
 			},
 			Err(e) => {
 				self.AppState
@@ -392,8 +378,7 @@ impl AirService for AirVinegRPCService {
 					)
 					.await
 					.ok();
-				error!("[AirVinegRPCService] Update check failed: {}", e);
-				Ok(Response::new(air_generated::UpdateCheckResponse {
+				dev_log!("grpc", "error: [AirVinegRPCService] Update check failed: {}", e);				Ok(Response::new(air_generated::UpdateCheckResponse {
 					request_id,
 					update_available:false,
 					version:String::new(),
@@ -413,10 +398,8 @@ impl AirService for AirVinegRPCService {
 		let RequestData = request.into_inner();
 		let request_id = RequestData.request_id.clone();
 
-		info!(
-			"[AirVinegRPCService] Download request received [ID: {}] - URL: {}",
-			request_id, RequestData.url
-		);
+		dev_log!("grpc", "[AirVinegRPCService] Download request received [ID: {}] - URL: {}",
+			request_id, RequestData.url);
 
 		// Request ID for tracking (use provided or generate)
 		let download_request_id = if request_id.is_empty() {
@@ -487,8 +470,7 @@ impl AirService for AirVinegRPCService {
 			if !parent.exists() {
 				match tokio::fs::create_dir_all(parent).await {
 					Ok(_) => {
-						debug!("[AirVinegRPCService] Created destination directory: {}", parent.display());
-					},
+						dev_log!("grpc", "[AirVinegRPCService] Created destination directory: {}", parent.display());					},
 					Err(e) => {
 						let error_msg = format!("Failed to create destination directory: {}", e);
 						self.AppState
@@ -548,10 +530,8 @@ impl AirService for AirVinegRPCService {
 					.await
 					.ok();
 
-				info!(
-					"[AirVinegRPCService] Download completed [ID: {}] - Size: {} bytes",
-					download_request_id, file_info.size
-				);
+				dev_log!("grpc", "[AirVinegRPCService] Download completed [ID: {}] - Size: {} bytes",
+					download_request_id, file_info.size);
 
 				Ok(Response::new(DownloadResponse {
 					request_id:download_request_id,
@@ -572,10 +552,8 @@ impl AirService for AirVinegRPCService {
 					.await
 					.ok();
 
-				error!(
-					"[AirVinegRPCService] Download failed [ID: {}] - Error: {}",
-					download_request_id, e
-				);
+				dev_log!("grpc", "error: [AirVinegRPCService] Download failed [ID: {}] - Error: {}",
+					download_request_id, e);
 
 				Ok(Response::new(DownloadResponse {
 					request_id:download_request_id,
@@ -594,10 +572,8 @@ impl AirService for AirVinegRPCService {
 		let RequestData = request.into_inner();
 		let request_id = RequestData.request_id;
 
-		info!(
-			"[AirVinegRPCService] Index request received [ID: {}] - Path: {}",
-			request_id, RequestData.path
-		);
+		dev_log!("grpc", "[AirVinegRPCService] Index request received [ID: {}] - Path: {}",
+			request_id, RequestData.path);
 
 		self.AppState
 			.RegisterRequest(request_id.clone(), "indexing".to_string())
@@ -649,8 +625,7 @@ impl AirService for AirVinegRPCService {
 	) -> std::result::Result<Response<StatusResponse>, Status> {
 		let _RequestData = request.into_inner();
 
-		debug!("[AirVinegRPCService] Status request received");
-
+		dev_log!("grpc", "[AirVinegRPCService] Status request received");
 		let metrics = self.AppState.GetMetrics().await;
 		let resources = self.AppState.GetResourceUsage().await;
 
@@ -672,8 +647,7 @@ impl AirService for AirVinegRPCService {
 		&self,
 		_request:Request<HealthCheckRequest>,
 	) -> std::result::Result<Response<HealthCheckResponse>, Status> {
-		debug!("[AirVinegRPCService] Health check request received");
-
+		dev_log!("grpc", "[AirVinegRPCService] Health check request received");
 		Ok(Response::new(air_generated::HealthCheckResponse {
 			healthy:true,
 			timestamp:CurrentTimestamp(),
@@ -690,10 +664,8 @@ impl AirService for AirVinegRPCService {
 		let RequestData = request.into_inner();
 		let request_id = RequestData.request_id.clone();
 
-		info!(
-			"[AirVinegRPCService] Download update request received [ID: {}] - URL: {}, Destination: {}",
-			request_id, RequestData.url, RequestData.destination_path
-		);
+		dev_log!("grpc", "[AirVinegRPCService] Download update request received [ID: {}] - URL: {}, Destination: {}",
+			request_id, RequestData.url, RequestData.destination_path);
 
 		self.AppState
 			.RegisterRequest(request_id.clone(), "download_update".to_string())
@@ -797,10 +769,8 @@ impl AirService for AirVinegRPCService {
 					.await
 					.ok();
 
-				info!(
-					"[AirVinegRPCService] Update downloaded successfully - Path: {}, Size: {}, Checksum: {}",
-					result.path, result.size, result.checksum
-				);
+				dev_log!("grpc", "[AirVinegRPCService] Update downloaded successfully - Path: {}, Size: {}, Checksum: {}",
+					result.path, result.size, result.checksum);
 
 				Ok(Response::new(DownloadResponse {
 					request_id,
@@ -816,16 +786,14 @@ impl AirService for AirVinegRPCService {
 					.UpdateRequestStatus(&request_id, crate::ApplicationState::RequestState::Failed(e.clone()), None)
 					.await
 					.ok();
-				error!("[AirVinegRPCService] Download update network error: {}", e);
-				Err(Status::unavailable(e))
+				dev_log!("grpc", "error: [AirVinegRPCService] Download update network error: {}", e);				Err(Status::unavailable(e))
 			},
 			Err(crate::AirError::FileSystem(e)) => {
 				self.AppState
 					.UpdateRequestStatus(&request_id, crate::ApplicationState::RequestState::Failed(e.clone()), None)
 					.await
 					.ok();
-				error!("[AirVinegRPCService] Download update filesystem error: {}", e);
-				Err(Status::internal(e))
+				dev_log!("grpc", "error: [AirVinegRPCService] Download update filesystem error: {}", e);				Err(Status::internal(e))
 			},
 			Err(e) => {
 				self.AppState
@@ -836,8 +804,7 @@ impl AirService for AirVinegRPCService {
 					)
 					.await
 					.ok();
-				error!("[AirVinegRPCService] Download update failed: {}", e);
-				Ok(Response::new(DownloadResponse {
+				dev_log!("grpc", "error: [AirVinegRPCService] Download update failed: {}", e);				Ok(Response::new(DownloadResponse {
 					request_id,
 					success:false,
 					file_path:String::new(),
@@ -857,10 +824,8 @@ impl AirService for AirVinegRPCService {
 		let RequestData = request.into_inner();
 		let request_id = RequestData.request_id.clone();
 
-		info!(
-			"[AirVinegRPCService] Apply update request received [ID: {}] - Version: {}, Path: {}",
-			request_id, RequestData.version, RequestData.update_path
-		);
+		dev_log!("grpc", "[AirVinegRPCService] Apply update request received [ID: {}] - Version: {}, Path: {}",
+			request_id, RequestData.version, RequestData.update_path);
 
 		self.AppState
 			.RegisterRequest(request_id.clone(), "apply_update".to_string())
@@ -944,17 +909,14 @@ impl AirService for AirVinegRPCService {
 		// Prepare rollback capability before applying update
 		let rollback_backup_path = self.prepare_rollback_backup(&RequestData.version).await;
 		if let Err(ref e) = rollback_backup_path {
-			warn!(
-				"[AirVinegRPCService] Failed to prepare rollback backup: {}. Proceeding without rollback capability.",
-				e
-			);
+			dev_log!("grpc", "warn: [AirVinegRPCService] Failed to prepare rollback backup: {}. Proceeding without rollback capability.",
+				e);
 		}
 
 		// Verify update file integrity (checksum check)
 		match self.UpdateManager.verify_update(&RequestData.update_path, None).await {
 			Ok(true) => {
-				info!("[AirVinegRPCService] Update verification successful, preparing for installation");
-
+				dev_log!("grpc", "[AirVinegRPCService] Update verification successful, preparing for installation");
 				self.AppState
 					.UpdateRequestStatus(&request_id, crate::ApplicationState::RequestState::Completed, Some(100.0))
 					.await
@@ -967,22 +929,16 @@ impl AirService for AirVinegRPCService {
 
 				tokio::spawn(async move {
 					tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
-					log::info!(
-						"[AirVinegRPCService] Initiating graceful shutdown for update version {}",
-						version
-					);
+					dev_log!("grpc", "[AirVinegRPCService] Initiating graceful shutdown for update version {}",
+						version);
 
 					// Graceful shutdown implementation
 					if let Err(e) = AppState.StopAllBackgroundTasks().await {
-						log::error!("[AirVinegRPCService] Failed to initiate graceful shutdown: {}", e);
-
+						dev_log!("grpc", "error: [AirVinegRPCService] Failed to initiate graceful shutdown: {}", e);
 						// Implement rollback if update fails
-						log::warn!("[AirVinegRPCService] Rollback initiated due to graceful shutdown failure");
-						if let Err(rollback_error) = self_clone.perform_rollback(&version).await {
-							log::error!("[AirVinegRPCService] Rollback failed: {}", rollback_error);
-						} else {
-							log::info!("[AirVinegRPCService] Rollback completed successfully");
-						}
+						dev_log!("grpc", "warn: [AirVinegRPCService] Rollback initiated due to graceful shutdown failure");						if let Err(rollback_error) = self_clone.perform_rollback(&version).await {
+							dev_log!("grpc", "error: [AirVinegRPCService] Rollback failed: {}", rollback_error);						} else {
+							dev_log!("grpc", "[AirVinegRPCService] Rollback completed successfully");						}
 					}
 				});
 
@@ -1002,8 +958,7 @@ impl AirService for AirVinegRPCService {
 					)
 					.await
 					.ok();
-				error!("[AirVinegRPCService] {}", error_msg);
-
+				dev_log!("grpc", "error: [AirVinegRPCService] {}", error_msg);
 				// Clean up rollback backup if verification failed
 				let _ = self.cleanup_rollback_backup(&RequestData.version).await;
 
@@ -1014,8 +969,7 @@ impl AirService for AirVinegRPCService {
 					.UpdateRequestStatus(&request_id, crate::ApplicationState::RequestState::Failed(e.clone()), None)
 					.await
 					.ok();
-				error!("[AirVinegRPCService] Update verification filesystem error: {}", e);
-
+				dev_log!("grpc", "error: [AirVinegRPCService] Update verification filesystem error: {}", e);
 				// Clean up rollback backup if verification failed
 				let _ = self.cleanup_rollback_backup(&RequestData.version).await;
 
@@ -1030,8 +984,7 @@ impl AirService for AirVinegRPCService {
 					)
 					.await
 					.ok();
-				error!("[AirVinegRPCService] Update verification error: {}", e);
-
+				dev_log!("grpc", "error: [AirVinegRPCService] Update verification error: {}", e);
 				// Clean up rollback backup if verification failed
 				let _ = self.cleanup_rollback_backup(&RequestData.version).await;
 
@@ -1058,10 +1011,8 @@ impl AirService for AirVinegRPCService {
 		let RequestData = request.into_inner();
 		let request_id = RequestData.request_id.clone();
 
-		info!(
-			"[AirVinegRPCService] Download stream request received [ID: {}] - URL: {}",
-			request_id, RequestData.url
-		);
+		dev_log!("grpc", "[AirVinegRPCService] Download stream request received [ID: {}] - URL: {}",
+			request_id, RequestData.url);
 
 		self.AppState
 			.RegisterRequest(request_id.clone(), "downloader_stream".to_string())
@@ -1099,11 +1050,9 @@ impl AirService for AirVinegRPCService {
 		// Validate URL supports range headers for streaming
 		match self.validate_range_support(&RequestData.url).await {
 			Ok(true) => {
-				debug!("[AirVinegRPCService] URL supports range headers");
-			},
+				dev_log!("grpc", "[AirVinegRPCService] URL supports range headers");			},
 			Ok(false) => {
-				warn!("[AirVinegRPCService] URL does not support range headers, streaming may be inefficient");
-			},
+				dev_log!("grpc", "warn: [AirVinegRPCService] URL does not support range headers, streaming may be inefficient");			},
 			Err(e) => {
 				let error_msg = format!("Failed to validate range support: {}", e);
 				self.AppState
@@ -1146,10 +1095,8 @@ impl AirService for AirVinegRPCService {
 				.await
 				.is_err()
 			{
-				log::warn!(
-					"[AirVinegRPCService] Client disconnected before streaming started [ID: {}]",
-					download_request_id
-				);
+				dev_log!("grpc", "warn: [AirVinegRPCService] Client disconnected before streaming started [ID: {}]",
+					download_request_id);
 				return;
 			}
 
@@ -1286,10 +1233,8 @@ impl AirService for AirVinegRPCService {
 
 					while let Some(chunk_result) = TokioStreamExt::next(&mut stream).await {
 						if AppState.IsRequestCancelled(&download_request_id).await {
-							log::info!(
-								"[AirVinegRPCService] Download cancelled by client [ID: {}]",
-								download_request_id
-							);
+							dev_log!("grpc", "[AirVinegRPCService] Download cancelled by client [ID: {}]",
+								download_request_id);
 							AppState
 								.UpdateRequestStatus(
 									&download_request_id,
@@ -1343,10 +1288,8 @@ impl AirService for AirVinegRPCService {
 										.await
 										.is_err()
 									{
-										log::warn!(
-											"[AirVinegRPCService] Client disconnected during streaming [ID: {}]",
-											download_request_id
-										);
+										dev_log!("grpc", "warn: [AirVinegRPCService] Client disconnected during streaming [ID: {}]",
+											download_request_id);
 										AppState
 											.UpdateRequestStatus(
 												&download_request_id,
@@ -1360,23 +1303,19 @@ impl AirService for AirVinegRPCService {
 										return;
 									}
 
-									debug!(
-										"[AirVinegRPCService] Sent chunk of {} bytes [ID: {}] - Progress: {:.1}%",
+									dev_log!("grpc", "[AirVinegRPCService] Sent chunk of {} bytes [ID: {}] - Progress: {:.1}%",
 										buffer.len(),
 										download_request_id,
-										progress
-									);
+										progress);
 
 									buffer.clear();
 								}
 							},
 							Err(e) => {
 								let error = format!("Download error: {}", e);
-								log::error!(
-									"[AirVinegRPCService] Stream download failed [ID: {}]: {}",
+								dev_log!("grpc", "error: [AirVinegRPCService] Stream download failed [ID: {}]: {}",
 									download_request_id,
-									error
-								);
+									error);
 
 								let _ = response_tx
 									.send(Ok(DownloadStreamResponse {
@@ -1418,10 +1357,8 @@ impl AirService for AirVinegRPCService {
 							.await
 							.is_err()
 						{
-							log::warn!(
-								"[AirVinegRPCService] Client disconnected while sending final chunk [ID: {}]",
-								download_request_id
-							);
+							dev_log!("grpc", "warn: [AirVinegRPCService] Client disconnected while sending final chunk [ID: {}]",
+								download_request_id);
 							return;
 						}
 					}
@@ -1447,18 +1384,14 @@ impl AirService for AirVinegRPCService {
 						}))
 						.await;
 
-					info!(
-						"[AirVinegRPCService] Stream download completed [ID: {}] - Total: {} bytes",
-						download_request_id, total_downloaded
-					);
+					dev_log!("grpc", "[AirVinegRPCService] Stream download completed [ID: {}] - Total: {} bytes",
+						download_request_id, total_downloaded);
 				},
 				Err(e) => {
 					let error = format!("Failed to start streaming download: {}", e);
-					log::error!(
-						"[AirVinegRPCService] Stream download error [ID: {}]: {}",
+					dev_log!("grpc", "error: [AirVinegRPCService] Stream download error [ID: {}]: {}",
 						download_request_id,
-						error
-					);
+						error);
 
 					let _ = tx
 						.send(Ok(DownloadStreamResponse {
@@ -1496,10 +1429,8 @@ impl AirService for AirVinegRPCService {
 		let RequestData = request.into_inner();
 		let request_id = RequestData.request_id.clone();
 
-		debug!(
-			"[AirVinegRPCService] Search files request: query='{}' in path='{}'",
-			RequestData.query, RequestData.path
-		);
+		dev_log!("grpc", "[AirVinegRPCService] Search files request: query='{}' in path='{}'",
+			RequestData.query, RequestData.path);
 
 		// Validate search query
 		if RequestData.query.is_empty() {
@@ -1555,8 +1486,7 @@ impl AirService for AirVinegRPCService {
 					file_results.push(FileResult { path:r.path, size, match_preview, line_number });
 				}
 
-				info!("[AirVinegRPCService] Search completed: {} results found", file_results.len());
-
+				dev_log!("grpc", "[AirVinegRPCService] Search completed: {} results found", file_results.len());
 				let result_count = file_results.len();
 				Ok(Response::new(SearchResponse {
 					request_id,
@@ -1566,8 +1496,7 @@ impl AirService for AirVinegRPCService {
 				}))
 			},
 			Err(e) => {
-				error!("[AirVinegRPCService] Search failed: {}", e);
-				Ok(Response::new(SearchResponse {
+				dev_log!("grpc", "error: [AirVinegRPCService] Search failed: {}", e);				Ok(Response::new(SearchResponse {
 					request_id,
 					results:vec![],
 					total_results:0,
@@ -1585,8 +1514,7 @@ impl AirService for AirVinegRPCService {
 		let RequestData = request.into_inner();
 		let request_id = RequestData.request_id.clone();
 
-		debug!("[AirVinegRPCService] Get file info request: {}", RequestData.path);
-
+		dev_log!("grpc", "[AirVinegRPCService] Get file info request: {}", RequestData.path);
 		// Validate path
 		if RequestData.path.is_empty() {
 			return Ok(Response::new(FileInfoResponse {
@@ -1631,8 +1559,7 @@ impl AirService for AirVinegRPCService {
 
 				// Calculate checksum lazily or on-demand
 				let checksum = calculate_file_checksum(path).await.unwrap_or_else(|e| {
-					log::warn!("[AirVinegRPCService] Failed to calculate checksum: {}", e);
-					String::new()
+					dev_log!("grpc", "warn: [AirVinegRPCService] Failed to calculate checksum: {}", e);					String::new()
 				});
 
 				Ok(Response::new(FileInfoResponse {
@@ -1646,8 +1573,7 @@ impl AirService for AirVinegRPCService {
 				}))
 			},
 			Err(e) => {
-				error!("[AirVinegRPCService] Failed to get file metadata: {}", e);
-				Ok(Response::new(FileInfoResponse {
+				dev_log!("grpc", "error: [AirVinegRPCService] Failed to get file metadata: {}", e);				Ok(Response::new(FileInfoResponse {
 					request_id,
 					exists:false,
 					size:0,
@@ -1670,8 +1596,7 @@ impl AirService for AirVinegRPCService {
 		let RequestData = request.into_inner();
 		let request_id = RequestData.request_id.clone();
 
-		debug!("[AirVinegRPCService] Get metrics request: type='{}'", RequestData.metric_type);
-
+		dev_log!("grpc", "[AirVinegRPCService] Get metrics request: type='{}'", RequestData.metric_type);
 		let metrics = self.AppState.GetMetrics().await;
 		let mut metrics_map = std::collections::HashMap::new();
 
@@ -1707,8 +1632,7 @@ impl AirService for AirVinegRPCService {
 		let RequestData = request.into_inner();
 		let request_id = RequestData.request_id.clone();
 
-		debug!("[AirVinegRPCService] Get resource usage request");
-
+		dev_log!("grpc", "[AirVinegRPCService] Get resource usage request");
 		let resources = self.AppState.GetResourceUsage().await;
 
 		Ok(Response::new(ResourceUsageResponse {
@@ -1729,10 +1653,8 @@ impl AirService for AirVinegRPCService {
 		let RequestData = request.into_inner();
 		let request_id = RequestData.request_id.clone();
 
-		info!(
-			"[AirVinegRPCService] Set resource limits: memory={}MB, cpu={}%, disk={}MB",
-			RequestData.memory_limit_mb, RequestData.cpu_limit_percent, RequestData.disk_limit_mb
-		);
+		dev_log!("grpc", "[AirVinegRPCService] Set resource limits: memory={}MB, cpu={}%, disk={}MB",
+			RequestData.memory_limit_mb, RequestData.cpu_limit_percent, RequestData.disk_limit_mb);
 
 		// Validate limits
 		if RequestData.memory_limit_mb == 0 {
@@ -1789,10 +1711,8 @@ impl AirService for AirVinegRPCService {
 		let RequestData = request.into_inner();
 		let request_id = RequestData.request_id.clone();
 
-		debug!(
-			"[AirVinegRPCService] Get configuration request: section='{}'",
-			RequestData.section
-		);
+		dev_log!("grpc", "[AirVinegRPCService] Get configuration request: section='{}'",
+			RequestData.section);
 
 		// Get configuration from ApplicationState
 		let config = self.AppState.GetConfiguration().await;
@@ -1867,10 +1787,8 @@ impl AirService for AirVinegRPCService {
 		let RequestData = request.into_inner();
 		let request_id = RequestData.request_id.clone();
 
-		info!(
-			"[AirVinegRPCService] Update configuration request: section='{}'",
-			RequestData.section
-		);
+		dev_log!("grpc", "[AirVinegRPCService] Update configuration request: section='{}'",
+			RequestData.section);
 
 		// Validate section
 		if !["grpc", "authentication", "updates", "downloader", "indexing", ""].contains(&RequestData.section.as_str())
@@ -1965,11 +1883,9 @@ impl AirVinegRPCService {
 					if retries < config.MaxRetries as usize {
 						retries += 1;
 						let backoff_secs = 2u64.pow(retries as u32);
-						warn!(
-							"[AirVinegRPCService] Download failed [ID: {}], retrying (attempt {}/{}): {} - Backing \
+						dev_log!("grpc", "warn: [AirVinegRPCService] Download failed [ID: {}], retrying (attempt {}/{}): {} - Backing \
 							 off {} seconds",
-							request_id, retries, config.MaxRetries, e, backoff_secs
-						);
+							request_id, retries, config.MaxRetries, e, backoff_secs);
 
 						if let Some(ref callback) = progress_callback {
 							// Notify retry attempts
@@ -1979,10 +1895,8 @@ impl AirVinegRPCService {
 
 						tokio::time::sleep(tokio::time::Duration::from_secs(backoff_secs)).await;
 					} else {
-						error!(
-							"[AirVinegRPCService] Download failed after {} retries [ID: {}]: {}",
-							config.MaxRetries, request_id, e
-						);
+						dev_log!("grpc", "error: [AirVinegRPCService] Download failed after {} retries [ID: {}]: {}",
+							config.MaxRetries, request_id, e);
 						return Err(e);
 					}
 				},
@@ -2037,10 +1951,8 @@ impl AirVinegRPCService {
 			return Err(AirError::FileSystem(format!("Failed to create backup marker: {}", e)));
 		}
 
-		info!(
-			"[AirVinegRPCService] Rollback backup prepared for version {} at {:?}",
-			version, backup_file
-		);
+		dev_log!("grpc", "[AirVinegRPCService] Rollback backup prepared for version {} at {:?}",
+			version, backup_file);
 
 		Ok(())
 	}
@@ -2055,8 +1967,7 @@ impl AirVinegRPCService {
 			if let Err(e) = tokio::fs::remove_file(&backup_file).await {
 				return Err(AirError::FileSystem(format!("Failed to cleanup rollback backup: {}", e)));
 			}
-			info!("[AirVinegRPCService] Rollback backup cleaned up for version {}", version);
-		}
+			dev_log!("grpc", "[AirVinegRPCService] Rollback backup cleaned up for version {}", version);		}
 
 		Ok(())
 	}
@@ -2074,8 +1985,7 @@ impl AirVinegRPCService {
 			)));
 		}
 
-		log::info!("[AirVinegRPCService] Starting rollback for version {}", version);
-
+		dev_log!("grpc", "[AirVinegRPCService] Starting rollback for version {}", version);
 		// Read backup marker
 		let marker_content = tokio::fs::read_to_string(&backup_file)
 			.await
@@ -2103,16 +2013,13 @@ impl AirVinegRPCService {
 		// 2. Reverting configuration changes
 		// 3. Cleaning up failed update artifacts
 
-		log::info!(
-			"[AirVinegRPCService] Rollback completed for version {} (backup timestamp: {:?})",
+		dev_log!("grpc", "[AirVinegRPCService] Rollback completed for version {} (backup timestamp: {:?})",
 			version,
-			timestamp
-		);
+			timestamp);
 
 		// Cleanup backup marker after successful rollback
 		if let Err(e) = tokio::fs::remove_file(&backup_file).await {
-			log::warn!("[AirVinegRPCService] Failed to cleanup backup marker after rollback: {}", e);
-		}
+			dev_log!("grpc", "warn: [AirVinegRPCService] Failed to cleanup backup marker after rollback: {}", e);		}
 
 		Ok(())
 	}

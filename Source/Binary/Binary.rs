@@ -154,7 +154,7 @@ use std::time::Duration;
 // -------------------------------------------------------------------------
 // External Crate Imports
 // -------------------------------------------------------------------------
-use log::{error, info, warn};
+use crate::dev_log;
 
 // -------------------------------------------------------------------------
 // Internal Module Imports (AirLibrary)
@@ -431,12 +431,7 @@ impl Binary {
         let is_shutting_down = Arc::new(std::sync::atomic::AtomicBool::new(false));
 
         // Log binary creation
-        info!(
-            bind_address = %config.bind_address,
-            mode = config.mode.as_str(),
-            verbose = config.verbose,
-            "Creating Binary instance"
-        );
+        dev_log!("lifecycle", "Creating Binary instance bind_address={} mode={} verbose={}", config.bind_address, config.mode.as_str(), config.verbose);
 
         // Note: application_state will be created during initialize()
         // We create a placeholder here to satisfy the struct, but it will
@@ -499,7 +494,7 @@ impl Binary {
     pub async fn initialize(&mut self, binary_config: BinaryConfig) -> Result<StartupResult, Error> {
         let start_time = std::time::Instant::now();
 
-        info!(mode = binary_config.mode.as_str(), "Starting daemon initialization");
+        dev_log!("lifecycle", "Starting daemon initialization mode={}", binary_config.mode.as_str());
 
         // Phase 1: Initialize observability systems
         self.initialize_observability(&binary_config).await?;
@@ -535,12 +530,7 @@ impl Binary {
             error: None,
         };
 
-        info!(
-            duration_ms = startup_duration.as_millis(),
-            bind_address = %startup_result.bind_address,
-            protocol_version = startup_result.protocol_version,
-            "Daemon initialization completed successfully"
-        );
+        dev_log!("lifecycle", "Daemon initialization completed successfully duration_ms={} bind_address={} protocol_version={}", startup_duration.as_millis(), startup_result.bind_address, startup_result.protocol_version);
 
         Ok(startup_result)
     }
@@ -573,16 +563,16 @@ impl Binary {
     ///
     /// Logs at INFO level when entering/exiting run loop
     pub async fn run(&self) -> Result<(), Error> {
-        info!("Daemon running, waiting for shutdown signal");
+        dev_log!("lifecycle", "Daemon running, waiting for shutdown signal");
 
         // Wait for shutdown signal
         match WaitForShutdownSignal::wait().await {
             Ok(()) => {
-                info!("Shutdown signal received");
+                dev_log!("lifecycle", "Shutdown signal received");
                 Ok(())
             }
             Err(e) => {
-                error!(error = %e, "Failed to wait for shutdown signal");
+                dev_log!("lifecycle", "error: Failed to wait for shutdown signal: {}", e);
                 Err(Error::ShutdownSignal(e.to_string()))
             }
         }
@@ -618,7 +608,7 @@ impl Binary {
     ///
     /// Uses atomic flag for shutdown coordination across threads
     pub async fn shutdown(&self) -> Result<(), Error> {
-        info!("Starting graceful shutdown");
+        dev_log!("lifecycle", "Starting graceful shutdown");
 
         // Set shutdown flag to signal all components
         self.is_shutting_down.store(
@@ -636,7 +626,7 @@ impl Binary {
             self.stop_server(server_handle).await?;
         }
 
-        info!("Graceful shutdown completed");
+        dev_log!("lifecycle", "Graceful shutdown completed");
 
         Ok(())
     }
@@ -845,10 +835,7 @@ impl BinaryConfig {
 
         // Security warning for non-loopback bind
         if !self.bind_address.contains("127.0.0.1") && !self.bind_address.contains("::1") && self.bind_address != "localhost" {
-            warn!(
-                bind_address = %self.bind_address,
-                "Binding to non-loopback address - ensure this is intentional"
-            );
+            dev_log!("lifecycle", "warn: Binding to non-loopback address - ensure this is intentional bind_address={}", self.bind_address);
         }
 
         // Validate shutdown timeout (must be positive, reasonable max)
@@ -856,10 +843,7 @@ impl BinaryConfig {
             return Err(Error::InvalidConfiguration("Shutdown timeout must be positive".to_string()));
         }
         if self.shutdown_timeout_seconds > 300 {
-            warn!(
-                timeout = self.shutdown_timeout_seconds,
-                "Shutdown timeout is very long (>5 minutes)"
-            );
+            dev_log!("lifecycle", "warn: Shutdown timeout is very long (>5 minutes) timeout={}", self.shutdown_timeout_seconds);
         }
 
         // Validate health check interval (minimum 1 second to avoid busy loop)
@@ -874,10 +858,7 @@ impl BinaryConfig {
             return Err(Error::InvalidConfiguration("Max connections must be positive".to_string()));
         }
         if self.max_connections > 10000 {
-            warn!(
-                max_connections = self.max_connections,
-                "Max connections is very high - ensure sufficient system resources"
-            );
+            dev_log!("lifecycle", "warn: Max connections is very high - ensure sufficient system resources max_connections={}", self.max_connections);
         }
 
         // Validate config file path
@@ -1044,12 +1025,7 @@ impl Binary {
     /// Logs at INFO level when observability is initialized
     #[tracing::instrument(skip(config))]
     async fn initialize_observability(&mut self, config: &BinaryConfig) -> Result<(), Error> {
-        info!(
-            verbose = config.verbose,
-            enable_metrics = config.enable_metrics,
-            enable_tracing = config.enable_tracing,
-            "Initializing observability systems"
-        );
+        dev_log!("lifecycle", "Initializing observability systems verbose={} enable_metrics={} enable_tracing={}", config.verbose, config.enable_metrics, config.enable_tracing);
 
         // Initialize logging system
         Logging::initialize(config.verbose).map_err(|e| {
@@ -1061,7 +1037,7 @@ impl Binary {
             Metrics::initialize().map_err(|e| {
                 Error::ServiceInitializationFailed(format!("Failed to initialize metrics: {}", e))
             })?;
-            info!("Metrics collection enabled");
+            dev_log!("lifecycle", "Metrics collection enabled");
         }
 
         // Initialize tracing if enabled
@@ -1069,10 +1045,10 @@ impl Binary {
             Tracing::initialize().map_err(|e| {
                 Error::ServiceInitializationFailed(format!("Failed to initialize tracing: {}", e))
             })?;
-            info!("Distributed tracing enabled");
+            dev_log!("lifecycle", "Distributed tracing enabled");
         }
 
-        info!("Observability systems initialized successfully");
+        dev_log!("lifecycle", "Observability systems initialized successfully");
         Ok(())
     }
 
@@ -1103,10 +1079,7 @@ impl Binary {
     /// - Ensures config directory exists and is secure
     #[tracing::instrument(skip(config))]
     async fn load_configuration(&self, config: &BinaryConfig) -> Result<AirConfiguration, Error> {
-        info!(
-            config_file = %config.config_file.display(),
-            "Loading configuration"
-        );
+        dev_log!("lifecycle", "Loading configuration config_file={}", config.config_file.display());
 
         // Ensure config directory exists
         ensure_directory_exists(&config.config_file)?;
@@ -1121,7 +1094,7 @@ impl Binary {
             Error::InvalidConfiguration(format!("Failed to load configuration: {}", e))
         })?;
 
-        info!("Configuration loaded and validated successfully");
+        dev_log!("lifecycle", "Configuration loaded and validated successfully");
         Ok(Air_config)
     }
 
@@ -1156,7 +1129,7 @@ impl Binary {
     /// - File system permission validation
     #[tracing::instrument(skip(config))]
     async fn validate_environment(&self, config: &BinaryConfig) -> Result<(), Error> {
-        info!("Validating runtime environment");
+        dev_log!("lifecycle", "Validating runtime environment");
 
         // Validate bind address (should be loopback for security)
         validate_bind_address(&config.bind_address)?;
@@ -1177,12 +1150,7 @@ impl Binary {
         }
 
         // Log environment details
-        info!(
-            bind_address = %config.bind_address,
-            cocoon_address = %config.cocoon_address,
-            config_file = %config.config_file.display(),
-            "Environment validation completed"
-        );
+        dev_log!("lifecycle", "Environment validation completed bind_address={} cocoon_address={} config_file={}", config.bind_address, config.cocoon_address, config.config_file.display());
 
         Ok(())
     }
@@ -1210,7 +1178,7 @@ impl Binary {
     /// - Uses lazy initialization for non-critical services
     #[tracing::instrument]
     async fn create_application_state(&self) -> Result<ApplicationState, Error> {
-        info!("Creating application state");
+        dev_log!("lifecycle", "Creating application state");
 
         // Create default application state
         let mut state = ApplicationState::default();
@@ -1246,7 +1214,7 @@ impl Binary {
         })?;
         state.set_download(download_manager);
 
-        info!("Application state created successfully");
+        dev_log!("lifecycle", "Application state created successfully");
         Ok(state)
     }
 
@@ -1278,11 +1246,7 @@ impl Binary {
     /// - Limits max concurrent connections
     #[tracing::instrument(skip(config))]
     async fn start_server(&self, config: &BinaryConfig) -> Result<tokio::task::JoinHandle<()>, Error> {
-        info!(
-            bind_address = %config.bind_address,
-            max_connections = config.max_connections,
-            "Starting Vine gRPC server"
-        );
+        dev_log!("grpc", "Starting Vine gRPC server bind_address={} max_connections={}", config.bind_address, config.max_connections);
 
         // Validate the bind address one more time before binding
         validate_bind_address(&config.bind_address)?;
@@ -1295,15 +1259,11 @@ impl Binary {
         // Spawn the server in a background task
         let server_handle = tokio::spawn(async move {
             if let Err(e) = server.await {
-                error!(error = %e, "gRPC server error");
+                dev_log!("grpc", "error: gRPC server error: {}", e);
             }
         });
 
-        info!(
-            bind_address = %config.bind_address,
-            protocol_version = ProtocolVersion,
-            "Vine gRPC server started successfully"
-        );
+        dev_log!("grpc", "Vine gRPC server started successfully bind_address={} protocol_version={}", config.bind_address, ProtocolVersion);
 
         Ok(server_handle)
     }
@@ -1328,7 +1288,7 @@ impl Binary {
     /// Reports errors but continues with cleanup
     #[tracing::instrument(skip(server_handle))]
     async fn stop_server(&self, server_handle: &tokio::task::JoinHandle<()>) -> Result<(), Error> {
-        info!("Stopping Vine gRPC server");
+        dev_log!("grpc", "Stopping Vine gRPC server");
 
         // Cancel the server task
         server_handle.abort();
@@ -1336,7 +1296,7 @@ impl Binary {
         // Wait a moment for cleanup
         tokio::time::sleep(Duration::from_millis(100)).await;
 
-        info!("Vine gRPC server stopped");
+        dev_log!("grpc", "Vine gRPC server stopped");
         Ok(())
     }
 
@@ -1370,7 +1330,7 @@ impl Binary {
         config: &BinaryConfig,
         state: &Arc<ApplicationState>,
     ) -> Result<MonitoringHandles, Error> {
-        info!("Starting background monitoring");
+        dev_log!("lifecycle", "Starting background monitoring");
 
         let mut handles = MonitoringHandles {
             resource_monitor: None,
@@ -1388,7 +1348,7 @@ impl Binary {
                 if let Some(health_manager) = health_state.get_health_check() {
                     // Perform health check (implementation depends on HealthCheckManager API)
                     // For now, we'll just log
-                    info!("Health check performed");
+                    dev_log!("lifecycle", "Health check performed");
                 }
 
                 tokio::time::sleep(health_check_interval).await;
@@ -1397,7 +1357,7 @@ impl Binary {
 
         handles.health_check = Some(health_handle);
 
-        info!("Background monitoring started successfully");
+        dev_log!("lifecycle", "Background monitoring started successfully");
         Ok(handles)
     }
 
@@ -1421,7 +1381,7 @@ impl Binary {
     /// Reports errors but continues with cleanup
     #[tracing::instrument(skip(handles))]
     async fn stop_monitoring(&self, handles: &MonitoringHandles) -> Result<(), Error> {
-        info!("Stopping background monitoring");
+        dev_log!("lifecycle", "Stopping background monitoring");
 
         // Abort resource monitor if running
         if let Some(handle) = &handles.resource_monitor {
@@ -1441,7 +1401,7 @@ impl Binary {
         // Wait a moment for tasks to clean up
         tokio::time::sleep(Duration::from_millis(100)).await;
 
-        info!("Background monitoring stopped");
+        dev_log!("lifecycle", "Background monitoring stopped");
         Ok(())
     }
 }
@@ -1493,7 +1453,7 @@ fn validate_port(port: u16, name: &str) -> Result<(), Error> {
     // Note: We could check if port is in use here, but that's typically
     // handled when we actually try to bind to the port
 
-    info!("Port validation passed: {} port {}", name, port);
+    dev_log!("lifecycle", "Port validation passed: {} port {}", name, port);
     Ok(())
 }
 
@@ -1530,10 +1490,7 @@ fn validate_bind_address(addr: &str) -> Result<(), Error> {
     let is_loopback = addr.contains("127.0.0.1") || addr.contains("::1") || addr == "localhost";
 
     if !is_loopback {
-        warn!(
-            bind_address = %addr,
-            "Binding to non-loopback address - ensure this is intentional and firewalls are configured"
-        );
+        dev_log!("lifecycle", "warn: Binding to non-loopback address - ensure this is intentional and firewalls are configured bind_address={}", addr);
     }
 
     // Basic address format validation
@@ -1544,7 +1501,7 @@ fn validate_bind_address(addr: &str) -> Result<(), Error> {
         )));
     }
 
-    info!("Bind address validation passed: {}", addr);
+    dev_log!("lifecycle", "Bind address validation passed: {}", addr);
     Ok(())
 }
 
@@ -1621,11 +1578,7 @@ fn ensure_directory_exists(path: &PathBuf) -> Result<(), Error> {
         let permissions = metadata.permissions();
         // Ensure user has read/write/execute, group/others have no permissions (700)
         // This is a simplified check - in production would use proper permission masks
-        info!(
-            path = %path.display(),
-            "Directory exists with permissions: {:o}",
-            permissions.mode() & 0o777
-        );
+        dev_log!("lifecycle", "Directory exists with permissions: {:o} path={}", permissions.mode() & 0o777, path.display());
     } else {
         // Create directory with secure permissions (700)
         std::fs::create_dir_all(path).map_err(|e| {
@@ -1637,10 +1590,7 @@ fn ensure_directory_exists(path: &PathBuf) -> Result<(), Error> {
             Error::FileError(format!("Failed to set directory permissions: {}", e))
         })?;
 
-        info!(
-            path = %path.display(),
-            "Created directory with secure permissions (700)"
-        );
+        dev_log!("lifecycle", "Created directory with secure permissions (700) path={}", path.display());
     }
 
     Ok(())
@@ -1688,28 +1638,16 @@ fn check_file_permissions(path: &PathBuf) -> Result<(), Error> {
 
     // Check if file is world-readable (warning only, not error)
     if unix_mode & 0o004 != 0 {
-        warn!(
-            path = %path.display(),
-            mode = format!("{:o}", unix_mode),
-            "File is world-readable - consider using 600 or 640 permissions"
-        );
+        dev_log!("lifecycle", "warn: File is world-readable - consider using 600 or 640 permissions path={} mode={:o}", path.display(), unix_mode);
     }
 
     // Validate allowed modes (600 or 640)
     let valid_modes = [0o600, 0o640];
     if !valid_modes.contains(&unix_mode) {
-        warn!(
-            path = %path.display(),
-            mode = format!("{:o}", unix_mode),
-            "File permissions are not standard (expected 600 or 640)"
-        );
+        dev_log!("lifecycle", "warn: File permissions are not standard (expected 600 or 640) path={} mode={:o}", path.display(), unix_mode);
     }
 
-    info!(
-        path = %path.display(),
-        mode = format!("{:o}", unix_mode),
-        "File permissions validated"
-    );
+    dev_log!("lifecycle", "File permissions validated path={} mode={:o}", path.display(), unix_mode);
 
     Ok(())
 }

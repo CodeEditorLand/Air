@@ -58,7 +58,7 @@
 /// - Graceful shutdown preserves data integrity
 
 use std::time::Duration;
-use log::{error, info};
+use crate::dev_log;
 use tonic::transport::Server as TonicServer;
 
 use AirLibrary::Vine::Generated::air_service_server::AirServiceServer;
@@ -119,8 +119,7 @@ pub fn StartService(built: BuiltServer) -> StartedService {
         bind_addr,
     } = built;
     
-    info!("[Vine] Starting gRPC server on {}", bind_addr);
-
+    dev_log!("lifecycle", "[Vine] Starting gRPC server on {}", bind_addr);
     // Spawn the tonic gRPC server with panic handling
     let server_handle: tokio::task::JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>> = 
         tokio::spawn(async move {
@@ -136,20 +135,16 @@ pub fn StartService(built: BuiltServer) -> StartedService {
                 .serve_with_shutdown(bind_addr, async {
                     // Wait for shutdown signal
                     shutdown_rx.await;
-                    info!("[Vine] Shutdown signal received, stopping server...");
-                });
+                    dev_log!("lifecycle", "[Vine] Shutdown signal received, stopping server...");                });
 
-            info!("[Vine] gRPC server listening on {}", bind_addr);
-
+            dev_log!("lifecycle", "[Vine] gRPC server listening on {}", bind_addr);
             // Run the server
             match server.await {
                 Ok(_) => {
-                    info!("[Vine] gRPC server stopped cleanly");
-                    Ok(())
+                    dev_log!("lifecycle", "[Vine] gRPC server stopped cleanly");                    Ok(())
                 }
                 Err(e) => {
-                    error!("[Vine] gRPC server error: {}", e);
-                    Err(e.into())
+                    dev_log!("lifecycle", "error: [Vine] gRPC server error: {}", e);                    Err(e.into())
                 }
             }
         });
@@ -161,8 +156,7 @@ pub fn StartService(built: BuiltServer) -> StartedService {
     
     // Check if server started successfully
     if server_handle.is_finished() {
-        error!("[Vine] gRPC server failed to start");
-    }
+        dev_log!("lifecycle", "error: [Vine] gRPC server failed to start");    }
     
     StartedService { server_handle, shutdown_tx }
 }
@@ -194,8 +188,7 @@ pub async fn WaitForShutdown(
     } = started;
     
     // Signal shutdown
-    info!("[Vine] Signaling gRPC server to stop...");
-    let _ = shutdown_tx.send(());
+    dev_log!("lifecycle", "[Vine] Signaling gRPC server to stop...");    let _ = shutdown_tx.send(());
 
     // Await the server task to finish with timeout
     match tokio::time::timeout(
@@ -203,20 +196,16 @@ pub async fn WaitForShutdown(
         server_handle
     ).await {
         Ok(Ok(Ok(_))) => {
-            info!("[Vine] gRPC server stopped normally");
-            Ok(())
+            dev_log!("lifecycle", "[Vine] gRPC server stopped normally");            Ok(())
         }
         Ok(Ok(Err(e))) => {
-            error!("[Vine] gRPC server stopped with error: {}", e);
-            Err(format!("Server stopped with error: {}", e))
+            dev_log!("lifecycle", "error: [Vine] gRPC server stopped with error: {}", e);            Err(format!("Server stopped with error: {}", e))
         }
         Ok(Err(e)) => {
-            error!("[Vine] gRPC server task panicked: {:?}", e);
-            Err("Server task panicked".to_string())
+            dev_log!("lifecycle", "error: [Vine] gRPC server task panicked: {:?}", e);            Err("Server task panicked".to_string())
         }
         Err(_) => {
-            error!("[Vine] gRPC server shutdown timed out");
-            Err("Server shutdown timed out".to_string())
+            dev_log!("lifecycle", "error: [Vine] gRPC server shutdown timed out");            Err("Server shutdown timed out".to_string())
         }
     }
 }

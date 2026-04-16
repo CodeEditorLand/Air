@@ -59,7 +59,7 @@
 /// - Add external health check endpoint
 use std::sync::Arc;
 
-use log::info;
+use crate::dev_log;
 use AirLibrary::HealthCheck::{HealthCheckLevel, HealthCheckManager};
 
 /// Start the health check system
@@ -98,13 +98,11 @@ use AirLibrary::HealthCheck::{HealthCheckLevel, HealthCheckManager};
 /// - Implement health-based auto-recovery
 /// - Add health notification hooks
 pub async fn StartHealthCheck() -> Arc<HealthCheckManager> {
-	info!("[Health] Starting health check system...");
-
+	dev_log!("lifecycle", "[Health] Starting health check system...");
 	// Create health check manager
 	let health_manager = Arc::new(HealthCheckManager::new(None));
 
-	info!("[Health] Health check system initialized");
-
+	dev_log!("lifecycle", "[Health] Health check system initialized");
 	health_manager
 }
 

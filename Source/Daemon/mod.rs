@@ -90,7 +90,7 @@
 
 use std::{fs, path::PathBuf, sync::Arc, time::Duration};
 
-use log::{debug, error, info, warn};
+use crate::dev_log;
 use tokio::sync::{Mutex, RwLock};
 use sha2::{Digest, Sha256};
 
@@ -208,8 +208,7 @@ impl DaemonManager {
 	/// - Atomic operations with rollback on failure
 	/// - Timeout handling
 	pub async fn AcquireLock(&self) -> Result<()> {
-		info!("[Daemon] Acquiring daemon lock...");
-
+		dev_log!("daemon", "[Daemon] Acquiring daemon lock...");
 		// Acquire lock to prevent race conditions
 		tokio::select! {
 			_ = tokio::time::timeout(Duration::from_secs(30), self.PidLock.lock()) => {
@@ -296,12 +295,10 @@ impl DaemonManager {
 			use std::os::unix::fs::PermissionsExt;
 			let perms = fs::Permissions::from_mode(0o600);
 			if let Err(e) = fs::set_permissions(&self.PidFilePath, perms) {
-				warn!("[Daemon] Failed to set PID file permissions: {}", e);
-			}
+				dev_log!("daemon", "warn: [Daemon] Failed to set PID file permissions: {}", e);			}
 		}
 
-		info!("[Daemon] Daemon lock acquired (PID: {})", pid);
-		Ok(())
+		dev_log!("daemon", "[Daemon] Daemon lock acquired (PID: {})", pid);		Ok(())
 	}
 
 	/// Check if daemon is already running
@@ -312,8 +309,7 @@ impl DaemonManager {
 	/// - Stale PID file cleanup
 	pub async fn IsAlreadyRunning(&self) -> Result<bool> {
 		if !self.PidFilePath.exists() {
-			debug!("[Daemon] PID file does not exist");
-			return Ok(false);
+			dev_log!("daemon", "[Daemon] PID file does not exist");			return Ok(false);
 		}
 
 		// Read PID from file
@@ -323,14 +319,12 @@ impl DaemonManager {
 		// Parse PID content with checksum
 		let parts:Vec<&str> = PidContent.split('|').collect();
 		if parts.len() < 2 {
-			warn!("[Daemon] Invalid PID file format, treating as stale");
-			self.CleanupStalePidFile().await?;
+			dev_log!("daemon", "warn: [Daemon] Invalid PID file format, treating as stale");			self.CleanupStalePidFile().await?;
 			return Ok(false);
 		}
 
 		let pid:u32 = parts[0].trim().parse().map_err(|e| {
-			warn!("[Daemon] Invalid PID in file: {}", e);
-			AirError::FileSystem("Invalid PID file content".to_string())
+			dev_log!("daemon", "warn: [Daemon] Invalid PID in file: {}", e);			AirError::FileSystem("Invalid PID file content".to_string())
 		})?;
 
 		// Verify checksum if present
@@ -340,8 +334,7 @@ impl DaemonManager {
 
 			if let Some(ref cksum) = *CurrentChecksum {
 				if cksum != StoredChecksum {
-					warn!("[Daemon] PID file checksum mismatch, file may be corrupted");
-					// Don't automatically delete - could be a different daemon instance
+					dev_log!("daemon", "warn: [Daemon] PID file checksum mismatch, file may be corrupted");					// Don't automatically delete - could be a different daemon instance
 					return Ok(true);
 				}
 			}
@@ -352,8 +345,7 @@ impl DaemonManager {
 
 		if !IsRunning {
 			// Clean up stale PID file with validation
-			warn!("[Daemon] Detected stale PID file for PID {}", pid);
-			self.CleanupStalePidFile().await?;
+			dev_log!("daemon", "warn: [Daemon] Detected stale PID file for PID {}", pid);			self.CleanupStalePidFile().await?;
 		}
 
 		Ok(IsRunning)
@@ -381,8 +373,7 @@ impl DaemonManager {
 					}
 				},
 				Err(e) => {
-					error!("[Daemon] Failed to check process status: {}", e);
-					false
+					dev_log!("daemon", "error: [Daemon] Failed to check process status: {}", e);					false
 				},
 			}
 		}
@@ -409,8 +400,7 @@ impl DaemonManager {
 					}
 				},
 				Err(e) => {
-					error!("[Daemon] Failed to check process status: {}", e);
-					false
+					dev_log!("daemon", "error: [Daemon] Failed to check process status: {}", e);					false
 				},
 			}
 		}
@@ -425,8 +415,7 @@ impl DaemonManager {
 		// Verify the file is actually stale before deleting
 		let content = fs::read_to_string(&self.PidFilePath)
 			.map_err(|e| {
-				warn!("[Daemon] Cannot verify stale PID file: {}", e);
-				return false;
+				dev_log!("daemon", "warn: [Daemon] Cannot verify stale PID file: {}", e);				return false;
 			})
 			.ok();
 
@@ -434,11 +423,9 @@ impl DaemonManager {
 			if content.starts_with(|c:char| c.is_numeric()) {
 				// Clean up the stale PID file
 				if let Err(e) = fs::remove_file(&self.PidFilePath) {
-					warn!("[Daemon] Failed to remove stale PID file: {}", e);
-					return Err(AirError::FileSystem(format!("Failed to remove stale PID file: {}", e)));
+					dev_log!("daemon", "warn: [Daemon] Failed to remove stale PID file: {}", e);					return Err(AirError::FileSystem(format!("Failed to remove stale PID file: {}", e)));
 				}
-				info!("[Daemon] Cleaned up stale PID file");
-			}
+				dev_log!("daemon", "[Daemon] Cleaned up stale PID file");			}
 		}
 
 		Ok(())
@@ -447,8 +434,7 @@ impl DaemonManager {
 	/// Release daemon lock with proper cleanup and rollback
 	/// Ensures all resources are properly cleaned up even on failure
 	pub async fn ReleaseLock(&self) -> Result<()> {
-		info!("[Daemon] Releasing daemon lock...");
-
+		dev_log!("daemon", "[Daemon] Releasing daemon lock...");
 		// Acquire lock for atomic cleanup
 		let _lock = self.PidLock.lock().await;
 
@@ -462,11 +448,9 @@ impl DaemonManager {
 		if self.PidFilePath.exists() {
 			match fs::remove_file(&self.PidFilePath) {
 				Ok(_) => {
-					debug!("[Daemon] PID file removed successfully");
-				},
+					dev_log!("daemon", "[Daemon] PID file removed successfully");				},
 				Err(e) => {
-					error!("[Daemon] Failed to remove PID file: {}", e);
-					// Don't fail entire operation if PID file cleanup fails
+					dev_log!("daemon", "error: [Daemon] Failed to remove PID file: {}", e);					// Don't fail entire operation if PID file cleanup fails
 					return Err(AirError::FileSystem(format!("Failed to remove PID file: {}", e)));
 				},
 			}
@@ -478,8 +462,7 @@ impl DaemonManager {
 			let _ = fs::remove_file(&TempDir);
 		}
 
-		info!("[Daemon] Daemon lock released");
-		Ok(())
+		dev_log!("daemon", "[Daemon] Daemon lock released");		Ok(())
 	}
 
 	/// Check if daemon is running
@@ -487,15 +470,13 @@ impl DaemonManager {
 
 	/// Request graceful shutdown
 	pub async fn RequestShutdown(&self) -> Result<()> {
-		info!("[Daemon] Requesting graceful shutdown...");
-		*self.ShutdownRequested.write().await = true;
+		dev_log!("daemon", "[Daemon] Requesting graceful shutdown...");		*self.ShutdownRequested.write().await = true;
 		Ok(())
 	}
 
 	/// Clear shutdown request (for restart scenarios)
 	pub async fn ClearShutdownRequest(&self) -> Result<()> {
-		info!("[Daemon] Clearing shutdown request");
-		*self.ShutdownRequested.write().await = false;
+		dev_log!("daemon", "[Daemon] Clearing shutdown request");		*self.ShutdownRequested.write().await = false;
 		Ok(())
 	}
 
@@ -745,8 +726,7 @@ WantedBy=multi-user.target
 
 	/// Install daemon as system service with validation
 	pub async fn InstallService(&self) -> Result<()> {
-		info!("[Daemon] Installing system service...");
-
+		dev_log!("daemon", "[Daemon] Installing system service...");
 		match self.PlatformInfo.Platform {
 			Platform::Linux => self.InstallSystemdService().await,
 			Platform::MacOS => self.InstallLaunchdService().await,
@@ -803,13 +783,11 @@ WantedBy=multi-user.target
 			let perms = fs::Permissions::from_mode(0o644);
 			fs::set_permissions(&ServiceFilePath, perms)
 				.map_err(|e| {
-					error!("[Daemon] Failed to set service file permissions: {}", e);
-				})
+					dev_log!("daemon", "error: [Daemon] Failed to set service file permissions: {}", e);				})
 				.ok();
 		}
 
-		info!("[Daemon] Systemd service installed at {}", ServiceFilePath);
-
+		dev_log!("daemon", "[Daemon] Systemd service installed at {}", ServiceFilePath);
 		// Run daemon-reload to notify systemd
 		let _ = tokio::process::Command::new("systemctl").args(["daemon-reload"]).output().await;
 
@@ -853,13 +831,11 @@ WantedBy=multi-user.target
 			let perms = fs::Permissions::from_mode(0o644);
 			fs::set_permissions(&ServiceFilePath, perms)
 				.map_err(|e| {
-					error!("[Daemon] Failed to set plist file permissions: {}", e);
-				})
+					dev_log!("daemon", "error: [Daemon] Failed to set plist file permissions: {}", e);				})
 				.ok();
 		}
 
-		info!("[Daemon] Launchd service installed at {}", ServiceFilePath);
-
+		dev_log!("daemon", "[Daemon] Launchd service installed at {}", ServiceFilePath);
 		// No need to load immediately - launchd will pick it up automatically
 		// User can run: sudo launchctl load -w /Library/LaunchDaemons/Air-daemon.plist
 
@@ -900,22 +876,15 @@ WantedBy=multi-user.target
 			AirError::FileSystem(format!("Failed to rename service file: {}", e))
 		})?;
 
-		info!("[Daemon] Windows service configuration written to {}", ServiceFilePath);
-		info!("[Daemon] To register the service, run:");
-		info!(
-			"[Daemon]   sc create AirDaemon binPath= \"{}\" DisplayName= \"Air Daemon\"",
-			std::env::current_exe().unwrap_or_else(|_| "air.exe".into()).display()
-		);
-		info!("[Daemon]   sc config AirDaemon start= auto");
-		info!("[Daemon]   sc start AirDaemon");
-
+		dev_log!("daemon", "[Daemon] Windows service configuration written to {}", ServiceFilePath);		dev_log!("daemon", "[Daemon] To register the service, run:");		dev_log!("daemon", "[Daemon]   sc create AirDaemon binPath= \"{}\" DisplayName= \"Air Daemon\"",
+			std::env::current_exe().unwrap_or_else(|_| "air.exe".into()).display());
+		dev_log!("daemon", "[Daemon]   sc config AirDaemon start= auto");		dev_log!("daemon", "[Daemon]   sc start AirDaemon");
 		Ok(())
 	}
 
 	/// Uninstall system service with proper coordination
 	pub async fn UninstallService(&self) -> Result<()> {
-		info!("[Daemon] Uninstalling system service...");
-
+		dev_log!("daemon", "[Daemon] Uninstalling system service...");
 		match self.PlatformInfo.Platform {
 			Platform::Linux => self.UninstallSystemdService().await,
 			Platform::MacOS => self.UninstallLaunchdService().await,
@@ -953,16 +922,13 @@ WantedBy=multi-user.target
 
 		// Remove service file
 		if fs::remove_file(&ServiceFilePath).is_ok() {
-			info!("[Daemon] Systemd service file removed");
-		} else {
-			warn!("[Daemon] Service file {} not found", ServiceFilePath);
-		}
+			dev_log!("daemon", "[Daemon] Systemd service file removed");		} else {
+			dev_log!("daemon", "warn: [Daemon] Service file {} not found", ServiceFilePath);		}
 
 		// Reload systemd
 		let _ = tokio::process::Command::new("systemctl").args(["daemon-reload"]).output().await;
 
-		info!("[Daemon] Systemd service uninstalled");
-		Ok(())
+		dev_log!("daemon", "[Daemon] Systemd service uninstalled");		Ok(())
 	}
 
 	/// Uninstall launchd service with proper coordination
@@ -977,13 +943,10 @@ WantedBy=multi-user.target
 
 		// Remove service file
 		if fs::remove_file(&ServiceFilePath).is_ok() {
-			info!("[Daemon] Launchd service file removed");
-		} else {
-			warn!("[Daemon] Service file {} not found", ServiceFilePath);
-		}
+			dev_log!("daemon", "[Daemon] Launchd service file removed");		} else {
+			dev_log!("daemon", "warn: [Daemon] Service file {} not found", ServiceFilePath);		}
 
-		info!("[Daemon] Launchd service uninstalled");
-		Ok(())
+		dev_log!("daemon", "[Daemon] Launchd service uninstalled");		Ok(())
 	}
 
 	/// Uninstall Windows service
@@ -997,15 +960,10 @@ WantedBy=multi-user.target
 
 		// Remove the configuration file
 		if fs::remove_file(&ServiceFilePath).is_ok() {
-			info!("[Daemon] Windows service configuration removed");
-		} else {
-			warn!("[Daemon] Service file {} not found", ServiceFilePath);
-		}
+			dev_log!("daemon", "[Daemon] Windows service configuration removed");		} else {
+			dev_log!("daemon", "warn: [Daemon] Service file {} not found", ServiceFilePath);		}
 
-		info!("[Daemon] To unregister the service, run:");
-		info!("[Daemon]   sc stop AirDaemon");
-		info!("[Daemon]   sc delete AirDaemon");
-
+		dev_log!("daemon", "[Daemon] To unregister the service, run:");		dev_log!("daemon", "[Daemon]   sc stop AirDaemon");		dev_log!("daemon", "[Daemon]   sc delete AirDaemon");
 		Ok(())
 	}
 }

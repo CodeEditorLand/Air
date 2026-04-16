@@ -53,7 +53,7 @@
 
 #![allow(non_snake_case, non_camel_case_types, non_upper_case_globals)]
 
-use log::{error, info};
+use crate::dev_log;
 
 /// Shutdown signal handler for graceful termination
 ///
@@ -88,12 +88,11 @@ use log::{error, info};
 /// # }
 /// ```
 pub async fn WaitForShutdownSignal() {
-	info!("[Shutdown] Waiting for termination signal...");
-
+	dev_log!("lifecycle", "[Shutdown] Waiting for termination signal...");
 	let CtrlC = async {
 		match tokio::signal::ctrl_c().await {
-			Ok(()) => info!("[Shutdown] Received Ctrl+C signal"),
-			Err(Error) => error!("[Shutdown] Failed to install Ctrl+C handler: {}", Error),
+			Ok(()) => dev_log!("lifecycle", "[Shutdown] Received Ctrl+C signal"),
+			Err(Error) => dev_log!("lifecycle", "error: [Shutdown] Failed to install Ctrl+C handler: {}", Error),
 		}
 	};
 
@@ -102,9 +101,8 @@ pub async fn WaitForShutdownSignal() {
 		match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
 			Ok(mut Signal) => {
 				Signal.recv().await;
-				info!("[Shutdown] Received SIGTERM signal");
-			},
-			Err(Error) => error!("[Shutdown] Failed to install signal handler: {}", Error),
+				dev_log!("lifecycle", "[Shutdown] Received SIGTERM signal");			},
+			Err(Error) => dev_log!("lifecycle", "error: [Shutdown] Failed to install signal handler: {}", Error),
 		}
 	};
 
@@ -116,8 +114,7 @@ pub async fn WaitForShutdownSignal() {
 		_ = Terminate => {},
 	}
 
-	info!("[Shutdown] Signal received, initiating graceful shutdown");
-}
+	dev_log!("lifecycle", "[Shutdown] Signal received, initiating graceful shutdown");}
 
 #[cfg(test)]
 mod tests {

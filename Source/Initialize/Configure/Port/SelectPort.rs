@@ -58,6 +58,7 @@
 //! - Pure function, no mutable state
 //! - Thread-safe for any context
 
+use crate::dev_log;
 use std::net::SocketAddr;
 
 use AirLibrary::DefaultBindAddress;
@@ -116,8 +117,7 @@ pub fn SelectPort(bind_address:Option<String>) -> Result<SocketAddr, String> {
 				.parse::<SocketAddr>()
 				.map_err(|e| format!("Invalid bind address '{}': {}", addr, e))?;
 
-			log::info!("[Boot] [Port] Using custom bind address: {}", parsed);
-			Ok(parsed)
+			dev_log!("lifecycle", "[Boot] [Port] Using custom bind address: {}", parsed);			Ok(parsed)
 		},
 		None => {
 			// Use default address
@@ -125,8 +125,7 @@ pub fn SelectPort(bind_address:Option<String>) -> Result<SocketAddr, String> {
 				.parse::<SocketAddr>()
 				.map_err(|e| format!("Invalid default bind address '{}': {}", DefaultBindAddress, e))?;
 
-			log::info!("[Boot] [Port] Using default bind address: {}", parsed);
-			Ok(parsed)
+			dev_log!("lifecycle", "[Boot] [Port] Using default bind address: {}", parsed);			Ok(parsed)
 		},
 	}
 }

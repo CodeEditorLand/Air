@@ -97,6 +97,8 @@
 /// - Add structured log correlation IDs
 /// - Support syslog integration on Unix
 /// - Add Windows Event Log integration
+use crate::dev_log;
+
 pub fn ConfigureLog() {
 	// Validate environment variables
 	let json_output = match std::env::var("AIR_LOG_JSON") {
@@ -150,7 +152,7 @@ pub fn ConfigureLog() {
 				Some(path) => format!("file: {}", path),
 				None => "stdout/stderr".to_string(),
 			};
-			log::info!("[Boot] Logging initialized - JSON: {}, Output: {}", json_output, log_info);
+			dev_log!("air", "logging initialized - JSON: {}, Output: {}", json_output, log_info);
 		},
 		Err(e) => {
 			// Fallback: ensure we can at least log errors to stderr

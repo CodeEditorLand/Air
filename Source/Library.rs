@@ -167,6 +167,7 @@ pub mod Authentication;
 pub mod CLI;
 pub mod Configuration;
 pub mod Daemon;
+pub mod DevLog;
 pub mod Downloader;
 pub mod HealthCheck;
 pub mod HTTP;
