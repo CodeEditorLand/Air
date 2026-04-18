@@ -1202,8 +1202,8 @@ impl AirService for AirVinegRPCService {
 			}
 
 			// Create HTTP client with connection pooling hints
-			let dns_port = mist::dns_port();
-			let client_builder_result = crate::HTTP::secured_client_builder(dns_port);
+			let dns_port = Mist::dns_port();
+			let client_builder_result = crate::HTTP::Client::secured_client_builder(dns_port);
 
 			let client_builder = match client_builder_result {
 				Ok(builder) => builder,
@@ -2067,8 +2067,8 @@ impl AirVinegRPCService {
 
 	/// Validate URL supports range headers for streaming
 	async fn validate_range_support(&self, url:&str) -> Result<bool> {
-		let dns_port = mist::dns_port();
-		let client = crate::HTTP::secured_client_builder(dns_port)
+		let dns_port = Mist::dns_port();
+		let client = crate::HTTP::Client::secured_client_builder(dns_port)
 			.map_err(|e| crate::AirError::Network(format!("Failed to create HTTP client builder: {}", e)))?
 			.timeout(std::time::Duration::from_secs(10))
 			.build()

@@ -738,8 +738,8 @@ impl UpdateManager {
 		}
 
 		// Begin download
-		let dns_port = mist::dns_port();
-		let client = crate::HTTP::secured_client_with_timeout(dns_port, Duration::from_secs(300))
+		let dns_port = Mist::dns_port();
+		let client = crate::HTTP::Client::secured_client_with_timeout(dns_port, Duration::from_secs(300))
 			.map_err(|e| AirError::Network(format!("Failed to create HTTP client: {}", e)))?;
 
 		let mut request_builder = client.get(&update_info.download_url);
@@ -1226,8 +1226,8 @@ impl UpdateManager {
 				self.update_channel.as_str()
 			);
 
-			let dns_port = mist::dns_port();
-			let client = crate::HTTP::secured_client_with_timeout(dns_port, Duration::from_secs(30))
+			let dns_port = Mist::dns_port();
+			let client = crate::HTTP::Client::secured_client_with_timeout(dns_port, Duration::from_secs(30))
 				.map_err(|e| AirError::Network(format!("Failed to create HTTP client: {}", e)))?;
 
 			match client.get(&update_url).send().await {
@@ -1931,8 +1931,8 @@ impl UpdateManager {
 		{
 			if let Ok(telemetry_json) = serde_json::to_string(&telemetry) {
 				dev_log!("update", "[UpdateManager] Telemetry data: {}", telemetry_json); // In development, we log telemetry data
-				// In a production implementation, this would send to an
-				// analytics endpoint
+			// In a production implementation, this would send to an
+			// analytics endpoint
 			} else {
 				dev_log!("update", "error: [UpdateManager] Failed to serialize telemetry");
 			}

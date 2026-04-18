@@ -9,11 +9,11 @@ use std::{sync::Arc, time::Duration};
 
 use anyhow::Result;
 // Re-export types from Mist workspace dependency
-pub use mist::Resolver::LandDnsResolver;
+pub use Mist::Resolver::LandDnsResolver;
 #[allow(unused_imports)]
-pub use mist::Resolver::TokioResolver;
+pub use Mist::Resolver::TokioResolver;
 #[allow(unused_imports)]
-pub use mist::Resolver::LandResolver;
+pub use Mist::Resolver::LandResolver;
 
 /// Creates a secured reqwest ClientBuilder with DNS override configured.
 ///

@@ -374,8 +374,8 @@ impl DownloadManager {
 			.map_err(|e| AirError::Configuration(format!("Failed to create cache directory: {}", e)))?;
 
 		// Create HTTP client with connection pooling and timeouts
-		let dns_port = mist::dns_port();
-		let client = crate::HTTP::secured_client_builder(dns_port)
+		let dns_port = Mist::dns_port();
+		let client = crate::HTTP::Client::secured_client_builder(dns_port)
 			.map_err(|e| AirError::Network(format!("Failed to create HTTP client: {}", e)))?
 			.timeout(Duration::from_secs(config.DownloadTimeoutSecs))
 			.connect_timeout(Duration::from_secs(30))
