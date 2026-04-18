@@ -3,115 +3,115 @@
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct AuthenticationRequest {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(string, tag = "2")]
-	pub username:::prost::alloc::string::String,
+	pub username: ::prost::alloc::string::String,
 	#[prost(string, tag = "3")]
-	pub password:::prost::alloc::string::String,
+	pub password: ::prost::alloc::string::String,
 	/// e.g., "github", "gitlab", "microsoft"
 	#[prost(string, tag = "4")]
-	pub provider:::prost::alloc::string::String,
+	pub provider: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct AuthenticationResponse {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(bool, tag = "2")]
 	pub success:bool,
 	#[prost(string, tag = "3")]
-	pub token:::prost::alloc::string::String,
+	pub token: ::prost::alloc::string::String,
 	#[prost(string, tag = "4")]
-	pub error:::prost::alloc::string::String,
+	pub error: ::prost::alloc::string::String,
 }
 /// Update Messages
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct UpdateCheckRequest {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(string, tag = "2")]
-	pub current_version:::prost::alloc::string::String,
+	pub current_version: ::prost::alloc::string::String,
 	/// "stable", "beta", "nightly"
 	#[prost(string, tag = "3")]
-	pub channel:::prost::alloc::string::String,
+	pub channel: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct UpdateCheckResponse {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(bool, tag = "2")]
 	pub update_available:bool,
 	#[prost(string, tag = "3")]
-	pub version:::prost::alloc::string::String,
+	pub version: ::prost::alloc::string::String,
 	#[prost(string, tag = "4")]
-	pub download_url:::prost::alloc::string::String,
+	pub download_url: ::prost::alloc::string::String,
 	#[prost(string, tag = "5")]
-	pub release_notes:::prost::alloc::string::String,
+	pub release_notes: ::prost::alloc::string::String,
 	#[prost(string, tag = "6")]
-	pub error:::prost::alloc::string::String,
+	pub error: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ApplyUpdateRequest {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(string, tag = "2")]
-	pub version:::prost::alloc::string::String,
+	pub version: ::prost::alloc::string::String,
 	#[prost(string, tag = "3")]
-	pub update_path:::prost::alloc::string::String,
+	pub update_path: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ApplyUpdateResponse {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(bool, tag = "2")]
 	pub success:bool,
 	#[prost(string, tag = "3")]
-	pub error:::prost::alloc::string::String,
+	pub error: ::prost::alloc::string::String,
 }
 /// Download Messages
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DownloadRequest {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(string, tag = "2")]
-	pub url:::prost::alloc::string::String,
+	pub url: ::prost::alloc::string::String,
 	#[prost(string, tag = "3")]
-	pub destination_path:::prost::alloc::string::String,
+	pub destination_path: ::prost::alloc::string::String,
 	/// Optional SHA256 checksum for verification
 	#[prost(string, tag = "4")]
-	pub checksum:::prost::alloc::string::String,
+	pub checksum: ::prost::alloc::string::String,
 	#[prost(map = "string, string", tag = "5")]
-	pub headers:::std::collections::HashMap<::prost::alloc::string::String, ::prost::alloc::string::String>,
+	pub headers: ::std::collections::HashMap<::prost::alloc::string::String, ::prost::alloc::string::String>,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct DownloadResponse {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(bool, tag = "2")]
 	pub success:bool,
 	#[prost(string, tag = "3")]
-	pub file_path:::prost::alloc::string::String,
+	pub file_path: ::prost::alloc::string::String,
 	#[prost(uint64, tag = "4")]
 	pub file_size:u64,
 	#[prost(string, tag = "5")]
-	pub checksum:::prost::alloc::string::String,
+	pub checksum: ::prost::alloc::string::String,
 	#[prost(string, tag = "6")]
-	pub error:::prost::alloc::string::String,
+	pub error: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DownloadStreamRequest {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(string, tag = "2")]
-	pub url:::prost::alloc::string::String,
+	pub url: ::prost::alloc::string::String,
 	#[prost(map = "string, string", tag = "3")]
-	pub headers:::std::collections::HashMap<::prost::alloc::string::String, ::prost::alloc::string::String>,
+	pub headers: ::std::collections::HashMap<::prost::alloc::string::String, ::prost::alloc::string::String>,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct DownloadStreamResponse {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(bytes = "vec", tag = "2")]
-	pub chunk:::prost::alloc::vec::Vec<u8>,
+	pub chunk: ::prost::alloc::vec::Vec<u8>,
 	#[prost(uint64, tag = "3")]
 	pub total_size:u64,
 	#[prost(uint64, tag = "4")]
@@ -119,28 +119,28 @@ pub struct DownloadStreamResponse {
 	#[prost(bool, tag = "5")]
 	pub completed:bool,
 	#[prost(string, tag = "6")]
-	pub error:::prost::alloc::string::String,
+	pub error: ::prost::alloc::string::String,
 }
 /// Indexing Messages
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct IndexRequest {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(string, tag = "2")]
-	pub path:::prost::alloc::string::String,
+	pub path: ::prost::alloc::string::String,
 	/// File patterns to include
 	#[prost(string, repeated, tag = "3")]
-	pub patterns:::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+	pub patterns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 	/// File patterns to exclude
 	#[prost(string, repeated, tag = "4")]
-	pub exclude_patterns:::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+	pub exclude_patterns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 	#[prost(uint32, tag = "5")]
 	pub max_depth:u32,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct IndexResponse {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(bool, tag = "2")]
 	pub success:bool,
 	#[prost(uint32, tag = "3")]
@@ -148,75 +148,75 @@ pub struct IndexResponse {
 	#[prost(uint64, tag = "4")]
 	pub total_size:u64,
 	#[prost(string, tag = "5")]
-	pub error:::prost::alloc::string::String,
+	pub error: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct SearchRequest {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(string, tag = "2")]
-	pub query:::prost::alloc::string::String,
+	pub query: ::prost::alloc::string::String,
 	#[prost(string, tag = "3")]
-	pub path:::prost::alloc::string::String,
+	pub path: ::prost::alloc::string::String,
 	#[prost(uint32, tag = "4")]
 	pub max_results:u32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SearchResponse {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(message, repeated, tag = "2")]
-	pub results:::prost::alloc::vec::Vec<FileResult>,
+	pub results: ::prost::alloc::vec::Vec<FileResult>,
 	#[prost(uint32, tag = "3")]
 	pub total_results:u32,
 	#[prost(string, tag = "4")]
-	pub error:::prost::alloc::string::String,
+	pub error: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct FileResult {
 	#[prost(string, tag = "1")]
-	pub path:::prost::alloc::string::String,
+	pub path: ::prost::alloc::string::String,
 	#[prost(uint64, tag = "2")]
 	pub size:u64,
 	#[prost(string, tag = "3")]
-	pub match_preview:::prost::alloc::string::String,
+	pub match_preview: ::prost::alloc::string::String,
 	#[prost(uint32, tag = "4")]
 	pub line_number:u32,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct FileInfoRequest {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(string, tag = "2")]
-	pub path:::prost::alloc::string::String,
+	pub path: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct FileInfoResponse {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(bool, tag = "2")]
 	pub exists:bool,
 	#[prost(uint64, tag = "3")]
 	pub size:u64,
 	#[prost(string, tag = "4")]
-	pub mime_type:::prost::alloc::string::String,
+	pub mime_type: ::prost::alloc::string::String,
 	#[prost(string, tag = "5")]
-	pub checksum:::prost::alloc::string::String,
+	pub checksum: ::prost::alloc::string::String,
 	#[prost(uint64, tag = "6")]
 	pub modified_time:u64,
 	#[prost(string, tag = "7")]
-	pub error:::prost::alloc::string::String,
+	pub error: ::prost::alloc::string::String,
 }
 /// Status Messages
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct StatusRequest {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct StatusResponse {
 	#[prost(string, tag = "1")]
-	pub version:::prost::alloc::string::String,
+	pub version: ::prost::alloc::string::String,
 	#[prost(uint64, tag = "2")]
 	pub uptime_seconds:u64,
 	#[prost(uint64, tag = "3")]
@@ -246,30 +246,30 @@ pub struct HealthCheckResponse {
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct MetricsRequest {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	/// "performance", "resources", "requests"
 	#[prost(string, tag = "2")]
-	pub metric_type:::prost::alloc::string::String,
+	pub metric_type: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MetricsResponse {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(map = "string, string", tag = "2")]
-	pub metrics:::std::collections::HashMap<::prost::alloc::string::String, ::prost::alloc::string::String>,
+	pub metrics: ::std::collections::HashMap<::prost::alloc::string::String, ::prost::alloc::string::String>,
 	#[prost(string, tag = "3")]
-	pub error:::prost::alloc::string::String,
+	pub error: ::prost::alloc::string::String,
 }
 /// Resource Management Messages
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ResourceUsageRequest {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ResourceUsageResponse {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(double, tag = "2")]
 	pub memory_usage_mb:f64,
 	#[prost(double, tag = "3")]
@@ -279,12 +279,12 @@ pub struct ResourceUsageResponse {
 	#[prost(double, tag = "5")]
 	pub network_usage_mbps:f64,
 	#[prost(string, tag = "6")]
-	pub error:::prost::alloc::string::String,
+	pub error: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ResourceLimitsRequest {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(uint32, tag = "2")]
 	pub memory_limit_mb:u32,
 	#[prost(uint32, tag = "3")]
@@ -295,47 +295,47 @@ pub struct ResourceLimitsRequest {
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ResourceLimitsResponse {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(bool, tag = "2")]
 	pub success:bool,
 	#[prost(string, tag = "3")]
-	pub error:::prost::alloc::string::String,
+	pub error: ::prost::alloc::string::String,
 }
 /// Configuration Messages
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ConfigurationRequest {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	/// "grpc", "authentication", "updates", etc.
 	#[prost(string, tag = "2")]
-	pub section:::prost::alloc::string::String,
+	pub section: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ConfigurationResponse {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(map = "string, string", tag = "2")]
-	pub configuration:::std::collections::HashMap<::prost::alloc::string::String, ::prost::alloc::string::String>,
+	pub configuration: ::std::collections::HashMap<::prost::alloc::string::String, ::prost::alloc::string::String>,
 	#[prost(string, tag = "3")]
-	pub error:::prost::alloc::string::String,
+	pub error: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct UpdateConfigurationRequest {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(string, tag = "2")]
-	pub section:::prost::alloc::string::String,
+	pub section: ::prost::alloc::string::String,
 	#[prost(map = "string, string", tag = "3")]
-	pub updates:::std::collections::HashMap<::prost::alloc::string::String, ::prost::alloc::string::String>,
+	pub updates: ::std::collections::HashMap<::prost::alloc::string::String, ::prost::alloc::string::String>,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct UpdateConfigurationResponse {
 	#[prost(string, tag = "1")]
-	pub request_id:::prost::alloc::string::String,
+	pub request_id: ::prost::alloc::string::String,
 	#[prost(bool, tag = "2")]
 	pub success:bool,
 	#[prost(string, tag = "3")]
-	pub error:::prost::alloc::string::String,
+	pub error: ::prost::alloc::string::String,
 }
 /// Generated client implementations.
 pub mod air_service_client {
