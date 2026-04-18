@@ -4,7 +4,6 @@
 //! for the Air daemon. This service manages secure storage of credentials
 //! and provides authentication services to Mountain with resilient patterns.
 
-use crate::dev_log;
 use std::{collections::HashMap, sync::Arc};
 
 use chrono::{DateTime, Utc};
@@ -13,7 +12,14 @@ use tokio::sync::{Mutex, RwLock};
 use base64::{Engine as _, engine::general_purpose::URL_SAFE};
 use ring::{aead, rand::SecureRandom};
 
-use crate::{AirError, ApplicationState::ApplicationState, Configuration::ConfigurationManager, Result, Utility};
+use crate::{
+	AirError,
+	ApplicationState::ApplicationState,
+	Configuration::ConfigurationManager,
+	Result,
+	Utility,
+	dev_log,
+};
 
 /// Authentication service implementation
 pub struct AuthenticationService {
@@ -341,7 +347,8 @@ impl AuthenticationService {
 
 			// Save credentials periodically
 			if let Err(E) = self.SaveCredentialsPeriodically().await {
-				dev_log!("lifecycle", "error: [Authentication] Failed to save credentials: {}", E);			}
+				dev_log!("lifecycle", "error: [Authentication] Failed to save credentials: {}", E);
+			}
 		}
 	}
 
@@ -352,7 +359,8 @@ impl AuthenticationService {
 
 		Sessions.retain(|_, Session| Session.ExpiresAt > Now && Session.IsValid);
 
-		dev_log!("lifecycle", "[Authentication] Cleaned up expired sessions");	}
+		dev_log!("lifecycle", "[Authentication] Cleaned up expired sessions");
+	}
 
 	/// Save credentials periodically
 	async fn SaveCredentialsPeriodically(&self) -> Result<()> {
@@ -363,7 +371,8 @@ impl AuthenticationService {
 	/// Stop background tasks
 	pub async fn StopBackgroundTasks(&self) {
 		// Implementation for graceful shutdown
-		dev_log!("lifecycle", "[Authentication] Stopping background tasks");	}
+		dev_log!("lifecycle", "[Authentication] Stopping background tasks");
+	}
 }
 
 impl Clone for AuthenticationService {

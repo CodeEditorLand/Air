@@ -84,9 +84,8 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
-use crate::dev_log;
 
-use crate::{AirError, Result};
+use crate::{AirError, Result, dev_log};
 
 /// Overflow-protected metric update helper
 #[allow(dead_code)]
@@ -106,7 +105,8 @@ impl MetricGuard {
 			self.current += 1;
 			true
 		} else {
-			dev_log!("metrics", "warn: [Metrics] Metric overflow detected, wrapping around");			self.current = 0;
+			dev_log!("metrics", "warn: [Metrics] Metric overflow detected, wrapping around");
+			self.current = 0;
 			true
 		}
 	}
@@ -131,7 +131,8 @@ impl AggregationValidator {
 	fn validate(&mut self) -> std::result::Result<(), String> {
 		let now = Instant::now();
 		if now.duration_since(self.last_timestamp) > self.validation_window {
-			dev_log!("metrics", "warn: [Metrics] Aggregation outside validation window, resetting");			self.last_timestamp = now;
+			dev_log!("metrics", "warn: [Metrics] Aggregation outside validation window, resetting");
+			self.last_timestamp = now;
 			Ok(())
 		} else {
 			Ok(())
@@ -215,7 +216,8 @@ impl MetricsCollector {
 		match self.aggregator.lock() {
 			Ok(mut validator) => validator.validate().map_err(|e| AirError::Internal(e)),
 			Err(_) => {
-				dev_log!("metrics", "warn: [Metrics] Failed to acquire aggregation validator lock");				Ok(())
+				dev_log!("metrics", "warn: [Metrics] Failed to acquire aggregation validator lock");
+				Ok(())
 			},
 		}
 	}
@@ -237,7 +239,12 @@ impl MetricsCollector {
 		// Update min/max latency
 		MinMaxUpdate(&self.request_latency_min_ms, &self.request_latency_max_ms, LatencyMs);
 
-		dev_log!("metrics", "[Metrics] Recorded successful request with latency: {:.3}s", LatencySeconds);	}
+		dev_log!(
+			"metrics",
+			"[Metrics] Recorded successful request with latency: {:.3}s",
+			LatencySeconds
+		);
+	}
 
 	/// Record a failed request with thread-safe atomic updates
 	pub fn RecordRequestFailure(&self, ErrorType:&str, LatencySeconds:f64) {
@@ -264,8 +271,12 @@ impl MetricsCollector {
 			*error_map.entry(RedactedError).or_insert(0) += 1;
 		}
 
-		dev_log!("metrics", "[Metrics] Recorded failed request: {}, latency: {:.3}s",
-			RedactedErrorClone, LatencySeconds);
+		dev_log!(
+			"metrics",
+			"[Metrics] Recorded failed request: {}, latency: {:.3}s",
+			RedactedErrorClone,
+			LatencySeconds
+		);
 	}
 
 	/// Update resource usage metrics with thread-safe atomic updates
@@ -275,8 +286,14 @@ impl MetricsCollector {
 		self.active_connections.store(ActiveConns, Ordering::Relaxed);
 		self.threads_active.store(ActiveThreads, Ordering::Relaxed);
 
-		dev_log!("metrics", "[Metrics] Updated resource metrics - Memory: {}B, CPU: {:.1}%, Connections: {}, Threads: {}",
-			MemoryBytes, CPUPercent, ActiveConns, ActiveThreads);
+		dev_log!(
+			"metrics",
+			"[Metrics] Updated resource metrics - Memory: {}B, CPU: {:.1}%, Connections: {}, Threads: {}",
+			MemoryBytes,
+			CPUPercent,
+			ActiveConns,
+			ActiveThreads
+		);
 	}
 
 	/// Record authentication operation
@@ -562,5 +579,6 @@ pub fn GetMetrics() -> &'static MetricsCollector { METRICS_INSTANCE.get_or_init(
 /// Initialize the global metrics collector
 pub fn InitializeMetrics() -> Result<()> {
 	let _collector = GetMetrics();
-	dev_log!("metrics", "[Metrics] Global metrics collector initialized");	Ok(())
+	dev_log!("metrics", "[Metrics] Global metrics collector initialized");
+	Ok(())
 }

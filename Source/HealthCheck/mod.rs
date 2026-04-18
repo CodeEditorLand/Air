@@ -89,11 +89,10 @@
 
 use std::{collections::HashMap, sync::Arc};
 
-use crate::dev_log;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
-use crate::{AirError, Result, Utility};
+use crate::{AirError, Result, Utility, dev_log};
 
 /// Health check manager
 #[derive(Debug)]
@@ -270,8 +269,12 @@ impl HealthCheckManager {
 			},
 		);
 
-		dev_log!("lifecycle", "[HealthCheck] Registered service for monitoring: {} ({:?})",
-			ServiceName, CheckLevel);
+		dev_log!(
+			"lifecycle",
+			"[HealthCheck] Registered service for monitoring: {} ({:?})",
+			ServiceName,
+			CheckLevel
+		);
 		Ok(())
 	}
 
@@ -291,13 +294,15 @@ impl HealthCheckManager {
 				"grpc" => self.CheckgRPCService().await,
 				"connections" => self.CheckConnectionsService().await,
 				_ => {
-					dev_log!("lifecycle", "warn: [HealthCheck] Unknown service: {}", ServiceName);					return (HealthStatus::Unhealthy, Some(format!("Unknown service: {}", ServiceName)));
+					dev_log!("lifecycle", "warn: [HealthCheck] Unknown service: {}", ServiceName);
+					return (HealthStatus::Unhealthy, Some(format!("Unknown service: {}", ServiceName)));
 				},
 			}
 		})
 		.await
 		.map_err(|_| {
-			dev_log!("lifecycle", "warn: [HealthCheck] Timeout checking service: {}", ServiceName);			(
+			dev_log!("lifecycle", "warn: [HealthCheck] Timeout checking service: {}", ServiceName);
+			(
 				HealthStatus::Unhealthy,
 				Some(format!("Health check timeout for service: {}", ServiceName)),
 			)
@@ -357,7 +362,8 @@ impl HealthCheckManager {
 			);
 		}
 
-		dev_log!("lifecycle", "[HealthCheck] Authentication service healthy");		(HealthStatus::Healthy, None)
+		dev_log!("lifecycle", "[HealthCheck] Authentication service healthy");
+		(HealthStatus::Healthy, None)
 	}
 
 	/// Check updates service health
@@ -386,7 +392,8 @@ impl HealthCheckManager {
 			);
 		}
 
-		dev_log!("lifecycle", "[HealthCheck] Updates service healthy");		(HealthStatus::Healthy, None)
+		dev_log!("lifecycle", "[HealthCheck] Updates service healthy");
+		(HealthStatus::Healthy, None)
 	}
 
 	/// Check downloader service health
@@ -416,7 +423,8 @@ impl HealthCheckManager {
 			);
 		}
 
-		dev_log!("lifecycle", "[HealthCheck] Downloader service healthy");		(HealthStatus::Healthy, None)
+		dev_log!("lifecycle", "[HealthCheck] Downloader service healthy");
+		(HealthStatus::Healthy, None)
 	}
 
 	/// Check indexing service health
@@ -446,7 +454,8 @@ impl HealthCheckManager {
 			);
 		}
 
-		dev_log!("lifecycle", "[HealthCheck] Indexing service healthy");		(HealthStatus::Healthy, None)
+		dev_log!("lifecycle", "[HealthCheck] Indexing service healthy");
+		(HealthStatus::Healthy, None)
 	}
 
 	/// Check gRPC service health
@@ -476,7 +485,8 @@ impl HealthCheckManager {
 			);
 		}
 
-		dev_log!("lifecycle", "[HealthCheck] gRPC service healthy");		(HealthStatus::Healthy, None)
+		dev_log!("lifecycle", "[HealthCheck] gRPC service healthy");
+		(HealthStatus::Healthy, None)
 	}
 
 	/// Check connections service health
@@ -506,7 +516,8 @@ impl HealthCheckManager {
 			);
 		}
 
-		dev_log!("lifecycle", "[HealthCheck] Connections service healthy");		(HealthStatus::Healthy, None)
+		dev_log!("lifecycle", "[HealthCheck] Connections service healthy");
+		(HealthStatus::Healthy, None)
 	}
 
 	/// Update service health status
@@ -542,8 +553,13 @@ impl HealthCheckManager {
 			return Err(AirError::Internal(format!("Service not registered: {}", ServiceName)));
 		}
 
-		dev_log!("lifecycle", "[HealthCheck] Updated health for {}: {:?} ({}ms)",
-			ServiceName, status, ResponseTime);
+		dev_log!(
+			"lifecycle",
+			"[HealthCheck] Updated health for {}: {:?} ({}ms)",
+			ServiceName,
+			status,
+			ResponseTime
+		);
 		Ok(())
 	}
 
@@ -580,8 +596,12 @@ impl HealthCheckManager {
 		if let Some(ServiceHealth) = HealthMap.get(ServiceName) {
 			// Check if recovery is needed based on failure count
 			if ServiceHealth.FailureCount >= self.config.ConsecutiveFailuresThreshold {
-				dev_log!("lifecycle", "warn: [HealthCheck] Service {} has {} consecutive failures, triggering recovery",
-					ServiceName, ServiceHealth.FailureCount);
+				dev_log!(
+					"lifecycle",
+					"warn: [HealthCheck] Service {} has {} consecutive failures, triggering recovery",
+					ServiceName,
+					ServiceHealth.FailureCount
+				);
 
 				self.PerformRecoveryAction(ServiceName).await;
 			}
@@ -589,8 +609,13 @@ impl HealthCheckManager {
 			// Check if recovery is needed based on response time
 			if let Some(ResponseTime) = ServiceHealth.ResponseTimeMs {
 				if ResponseTime > self.config.ResponseTimeThresholdMs {
-					dev_log!("lifecycle", "warn: [HealthCheck] Service {} response time {}ms exceeds threshold {}ms",
-						ServiceName, ResponseTime, self.config.ResponseTimeThresholdMs);
+					dev_log!(
+						"lifecycle",
+						"warn: [HealthCheck] Service {} response time {}ms exceeds threshold {}ms",
+						ServiceName,
+						ResponseTime,
+						self.config.ResponseTimeThresholdMs
+					);
 
 					self.HandleResponseTimeRecovery(ServiceName, ResponseTime).await;
 				}
@@ -600,36 +625,54 @@ impl HealthCheckManager {
 
 	/// Handle response time-based recovery
 	async fn HandleResponseTimeRecovery(&self, ServiceName:&str, ResponseTime:u64) {
-		dev_log!("lifecycle", "[HealthCheck] Handling response time recovery for {}: {}ms",
-			ServiceName, ResponseTime);
+		dev_log!(
+			"lifecycle",
+			"[HealthCheck] Handling response time recovery for {}: {}ms",
+			ServiceName,
+			ResponseTime
+		);
 
 		match ServiceName {
 			"grpc" => {
-				dev_log!("lifecycle", "warn: [HealthCheck] Response time recovery: Optimizing gRPC server for {}",
-					ServiceName);
+				dev_log!(
+					"lifecycle",
+					"warn: [HealthCheck] Response time recovery: Optimizing gRPC server for {}",
+					ServiceName
+				);
 				// In production, this might:
 				// - Adjust connection pool sizes
 				// - Clear connection caches
 				// - Trigger connection rebalancing
 			},
 			"connections" => {
-				dev_log!("lifecycle", "warn: [HealthCheck] Response time recovery: Optimizing connections for {}",
-					ServiceName);
+				dev_log!(
+					"lifecycle",
+					"warn: [HealthCheck] Response time recovery: Optimizing connections for {}",
+					ServiceName
+				);
 				// In production, this might:
 				// - Clear idle connections
 				// - Adjust connection timeouts
 				// - Trigger connection pool refresh
 			},
 			_ => {
-				dev_log!("lifecycle", "warn: [HealthCheck] Response time recovery: Generic optimization for {}", ServiceName);			},
+				dev_log!(
+					"lifecycle",
+					"warn: [HealthCheck] Response time recovery: Generic optimization for {}",
+					ServiceName
+				);
+			},
 		}
 	}
 
 	/// Handle critical health alerts
 	async fn HandleCriticalAlerts(&self, ServiceName:&str, status:&HealthStatus) {
 		if *status == HealthStatus::Unhealthy {
-			dev_log!("lifecycle", "warn: [HealthCheck] CRITICAL: Service {} is UNHEALTHY - immediate attention required",
-				ServiceName);
+			dev_log!(
+				"lifecycle",
+				"warn: [HealthCheck] CRITICAL: Service {} is UNHEALTHY - immediate attention required",
+				ServiceName
+			);
 
 			// In production, this would:
 			// - Send alerts to monitoring systems (Mountain)
@@ -653,7 +696,12 @@ impl HealthCheckManager {
 				"grpc" => self.RestartgRPCService().await,
 				"connections" => self.ResetConnectionsService().await,
 				_ => {
-					dev_log!("lifecycle", "warn: [HealthCheck] No specific recovery action for {}", ServiceName);					Ok(())
+					dev_log!(
+						"lifecycle",
+						"warn: [HealthCheck] No specific recovery action for {}",
+						ServiceName
+					);
+					Ok(())
 				},
 			}
 		})
@@ -661,47 +709,59 @@ impl HealthCheckManager {
 
 		match result {
 			Ok(Ok(())) => {
-				dev_log!("lifecycle", "[HealthCheck] Recovery action completed successfully for {}", ServiceName);			},
+				dev_log!(
+					"lifecycle",
+					"[HealthCheck] Recovery action completed successfully for {}",
+					ServiceName
+				);
+			},
 			Ok(Err(e)) => {
-				dev_log!("lifecycle", "warn: [HealthCheck] Recovery action failed for {}: {:?}", ServiceName, e);			},
+				dev_log!(
+					"lifecycle",
+					"warn: [HealthCheck] Recovery action failed for {}: {:?}",
+					ServiceName,
+					e
+				);
+			},
 			Err(_) => {
-				dev_log!("lifecycle", "warn: [HealthCheck] Recovery action timed out for {}", ServiceName);			},
+				dev_log!("lifecycle", "warn: [HealthCheck] Recovery action timed out for {}", ServiceName);
+			},
 		}
 	}
 
 	/// Restart authentication service
 	async fn RestartAuthenticationService(&self) -> Result<()> {
-		dev_log!("lifecycle", "warn: [HealthCheck] Recovery: Restarting authentication service");		// In production, this would signal the authentication service to restart
+		dev_log!("lifecycle", "warn: [HealthCheck] Recovery: Restarting authentication service"); // In production, this would signal the authentication service to restart
 		Ok(())
 	}
 
 	/// Restart updates service
 	async fn RestartUpdatesService(&self) -> Result<()> {
-		dev_log!("lifecycle", "warn: [HealthCheck] Recovery: Restarting updates service");		// In production, this would signal the updates service to restart
+		dev_log!("lifecycle", "warn: [HealthCheck] Recovery: Restarting updates service"); // In production, this would signal the updates service to restart
 		Ok(())
 	}
 
 	/// Restart downloader service
 	async fn RestartDownloaderService(&self) -> Result<()> {
-		dev_log!("lifecycle", "warn: [HealthCheck] Recovery: Restarting downloader service");		// In production, this would signal the downloader service to restart
+		dev_log!("lifecycle", "warn: [HealthCheck] Recovery: Restarting downloader service"); // In production, this would signal the downloader service to restart
 		Ok(())
 	}
 
 	/// Restart indexing service
 	async fn RestartIndexingService(&self) -> Result<()> {
-		dev_log!("lifecycle", "warn: [HealthCheck] Recovery: Restarting indexing service");		// In production, this would signal the indexing service to restart
+		dev_log!("lifecycle", "warn: [HealthCheck] Recovery: Restarting indexing service"); // In production, this would signal the indexing service to restart
 		Ok(())
 	}
 
 	/// Restart gRPC service
 	async fn RestartgRPCService(&self) -> Result<()> {
-		dev_log!("lifecycle", "warn: [HealthCheck] Recovery: Restarting gRPC server");		// In production, this would gracefully restart the gRPC server
+		dev_log!("lifecycle", "warn: [HealthCheck] Recovery: Restarting gRPC server"); // In production, this would gracefully restart the gRPC server
 		Ok(())
 	}
 
 	/// Reset connections service
 	async fn ResetConnectionsService(&self) -> Result<()> {
-		dev_log!("lifecycle", "warn: [HealthCheck] Recovery: Resetting connections service");		// In production, this would reset connection pools and re-establish connections
+		dev_log!("lifecycle", "warn: [HealthCheck] Recovery: Resetting connections service"); // In production, this would reset connection pools and re-establish connections
 		Ok(())
 	}
 

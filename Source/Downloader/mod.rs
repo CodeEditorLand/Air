@@ -100,7 +100,6 @@
 //! - Pre-fetching and caching of frequently accessed resources
 //! - Download deduplication across the ecosystem
 
-use crate::dev_log;
 use std::{
 	collections::{HashMap, VecDeque},
 	path::{Path, PathBuf},
@@ -111,7 +110,14 @@ use std::{
 use serde::{Deserialize, Serialize};
 use tokio::sync::{RwLock, Semaphore};
 
-use crate::{AirError, ApplicationState::ApplicationState, Configuration::ConfigurationManager, Result, Utility};
+use crate::{
+	AirError,
+	ApplicationState::ApplicationState,
+	Configuration::ConfigurationManager,
+	Result,
+	Utility,
+	dev_log,
+};
 
 /// Download manager implementation with full resilience and capabilities
 pub struct DownloadManager {
@@ -409,8 +415,11 @@ impl DownloadManager {
 			.await
 			.map_err(|e| AirError::Internal(e.to_string()))?;
 
-		dev_log!("update", "[DownloadManager] Initialized with cache directory: {}",
-			CacheDirectory.display());
+		dev_log!(
+			"update",
+			"[DownloadManager] Initialized with cache directory: {}",
+			CacheDirectory.display()
+		);
 
 		Ok(manager)
 	}
@@ -429,9 +438,12 @@ impl DownloadManager {
 		// Defensive: Check if download is already active
 		let DownloadId = Utility::GenerateRequestId();
 
-		dev_log!("update", "[DownloadManager] Starting download [ID: {}] - URL: {}",
+		dev_log!(
+			"update",
+			"[DownloadManager] Starting download [ID: {}] - URL: {}",
 			DownloadId,
-			SanitizedUrl);
+			SanitizedUrl
+		);
 
 		// Defensive: URL cannot be empty
 		if SanitizedUrl.is_empty() {
@@ -498,11 +510,14 @@ impl DownloadManager {
 				self.UpdateDownloadStatus(&DownloadId, DownloadState::Completed, Some(100.0), None)
 					.await?;
 
-				dev_log!("update", "[DownloadManager] Download completed [ID: {}] - Size: {} bytes in {:.2}s ({:.2} MB/s)",
+				dev_log!(
+					"update",
+					"[DownloadManager] Download completed [ID: {}] - Size: {} bytes in {:.2}s ({:.2} MB/s)",
 					DownloadId,
 					FileInfo.size,
 					Duration.as_secs_f64(),
-					FileInfo.size as f64 / 1_048_576.0 / Duration.as_secs_f64());
+					FileInfo.size as f64 / 1_048_576.0 / Duration.as_secs_f64()
+				);
 
 				Ok(FileInfo)
 			},
@@ -516,9 +531,19 @@ impl DownloadManager {
 				// Defensive: Clean up partial/failed download
 				if Destination.exists() {
 					let _ = tokio::fs::remove_file(&Destination).await;
-					dev_log!("update", "warn: [DownloadManager] Cleaned up failed download: {}", Destination.display());				}
+					dev_log!(
+						"update",
+						"warn: [DownloadManager] Cleaned up failed download: {}",
+						Destination.display()
+					);
+				}
 
-				dev_log!("update", "error: [DownloadManager] Download failed [ID: {}] - Error: {}", DownloadId, E);
+				dev_log!(
+					"update",
+					"error: [DownloadManager] Download failed [ID: {}] - Error: {}",
+					DownloadId,
+					E
+				);
 				Err(E)
 			},
 		}
@@ -595,32 +620,46 @@ impl DownloadManager {
 		let MountPoint = self.FindMountPoint(&DestPath)?;
 
 		// NOTE: Disk space checking is handled by the file system
-		dev_log!("update", "[DownloadManager] Validating disk space for URL {} (requires {} bytes) on mount point: {}",
+		dev_log!(
+			"update",
+			"[DownloadManager] Validating disk space for URL {} (requires {} bytes) on mount point: {}",
 			url,
 			RequiredBytes,
-			MountPoint.display());
+			MountPoint.display()
+		);
 
 		#[cfg(unix)]
 		{
 			match self.GetDiskStatvfs(&MountPoint) {
 				Ok((AvailableBytes, TotalBytes)) => {
 					if AvailableBytes < RequiredBytes {
-						dev_log!("update", "warn: [DownloadManager] Insufficient disk space: {} bytes available, {} bytes required",
+						dev_log!(
+							"update",
+							"warn: [DownloadManager] Insufficient disk space: {} bytes available, {} bytes required",
 							AvailableBytes,
-							RequiredBytes);
+							RequiredBytes
+						);
 						return Err(AirError::FileSystem(format!(
 							"Insufficient disk space: {} bytes available, {} bytes required",
 							AvailableBytes, RequiredBytes
 						)));
 					}
 
-					dev_log!("update", "[DownloadManager] Sufficient disk space: {} bytes available, {} bytes required (total: {})",
+					dev_log!(
+						"update",
+						"[DownloadManager] Sufficient disk space: {} bytes available, {} bytes required (total: {})",
 						AvailableBytes,
 						RequiredBytes,
-						TotalBytes);
+						TotalBytes
+					);
 				},
 				Err(e) => {
-					dev_log!("update", "warn: [DownloadManager] Failed to check disk space: {}, proceeding anyway", e);				},
+					dev_log!(
+						"update",
+						"warn: [DownloadManager] Failed to check disk space: {}, proceeding anyway",
+						e
+					);
+				},
 			}
 		}
 
@@ -629,26 +668,41 @@ impl DownloadManager {
 			match self.GetDiskSpaceWindows(&MountPoint) {
 				Ok(AvailableBytes) => {
 					if AvailableBytes < RequiredBytes {
-						dev_log!("update", "warn: [DownloadManager] Insufficient disk space: {} bytes available, {} bytes required",
+						dev_log!(
+							"update",
+							"warn: [DownloadManager] Insufficient disk space: {} bytes available, {} bytes required",
 							AvailableBytes,
-							RequiredBytes);
+							RequiredBytes
+						);
 						return Err(AirError::FileSystem(format!(
 							"Insufficient disk space: {} bytes available, {} bytes required",
 							available_bytes, RequiredBytes
 						)));
 					}
-					dev_log!("update", "[DownloadManager] Sufficient disk space: {} bytes available, {} bytes required",
+					dev_log!(
+						"update",
+						"[DownloadManager] Sufficient disk space: {} bytes available, {} bytes required",
 						available_bytes,
-						RequiredBytes);
+						RequiredBytes
+					);
 				},
 				Err(e) => {
-					dev_log!("update", "warn: [DownloadManager] Failed to check disk space: {}, proceeding anyway", e);				},
+					dev_log!(
+						"update",
+						"warn: [DownloadManager] Failed to check disk space: {}, proceeding anyway",
+						e
+					);
+				},
 			}
 		}
 
 		#[cfg(not(any(unix, windows)))]
 		{
-			dev_log!("update", "warn: [DownloadManager] Disk space validation not available on this platform");		}
+			dev_log!(
+				"update",
+				"warn: [DownloadManager] Disk space validation not available on this platform"
+			);
+		}
 
 		Ok(())
 	}
@@ -677,10 +731,13 @@ impl DownloadManager {
 		let available_bytes = fragment_size * stat.f_bavail as u64;
 		let total_bytes = fragment_size * stat.f_blocks as u64;
 
-		dev_log!("update", "[DownloadManager] Disk space at {}: {} bytes available, {} bytes total",
+		dev_log!(
+			"update",
+			"[DownloadManager] Disk space at {}: {} bytes available, {} bytes total",
 			path.display(),
 			available_bytes,
-			total_bytes);
+			total_bytes
+		);
 
 		Ok((available_bytes, total_bytes))
 	}
@@ -714,10 +771,13 @@ impl DownloadManager {
 			return Err(AirError::FileSystem(format!("Failed to get disk space: {}", err)));
 		}
 
-		dev_log!("update", "[DownloadManager] Disk space at {}: {} bytes available, {} bytes total",
+		dev_log!(
+			"update",
+			"[DownloadManager] Disk space at {}: {} bytes available, {} bytes total",
 			path.display(),
 			free_bytes_available,
-			total_bytes);
+			total_bytes
+		);
 
 		Ok(free_bytes_available)
 	}
@@ -839,16 +899,25 @@ impl DownloadManager {
 							.await?;
 
 						if let Err(e) = self.VerifyChecksum(destination, ExpectedChecksum).await {
-							dev_log!("update", "warn: [DownloadManager] Checksum verification failed [ID: {}]: {}", DownloadId, e);							CircuitBreaker.RecordFailure().await;
+							dev_log!(
+								"update",
+								"warn: [DownloadManager] Checksum verification failed [ID: {}]: {}",
+								DownloadId,
+								e
+							);
+							CircuitBreaker.RecordFailure().await;
 
 							if attempt < config.MaxRetries && RetryManager.CanRetry("downloader").await {
 								attempt += 1;
 								let delay = RetryManager.CalculateRetryDelay(attempt);
-								dev_log!("update", "[DownloadManager] Retrying download [ID: {}] (attempt {}/{}) after {:?}",
+								dev_log!(
+									"update",
+									"[DownloadManager] Retrying download [ID: {}] (attempt {}/{}) after {:?}",
 									DownloadId,
 									attempt + 1,
 									config.MaxRetries + 1,
-									delay);
+									delay
+								);
 								tokio::time::sleep(delay).await;
 								continue;
 							} else {
@@ -868,11 +937,14 @@ impl DownloadManager {
 
 					if attempt < config.MaxRetries && RetryManager.CanRetry("downloader").await {
 						attempt += 1;
-						dev_log!("update", "warn: [DownloadManager] Download failed [ID: {}], retrying (attempt {}/{}): {}",
+						dev_log!(
+							"update",
+							"warn: [DownloadManager] Download failed [ID: {}], retrying (attempt {}/{}): {}",
 							DownloadId,
 							attempt + 1,
 							config.MaxRetries + 1,
-							e);
+							e
+						);
 
 						let delay = RetryManager.CalculateRetryDelay(attempt);
 						tokio::time::sleep(delay).await;
@@ -910,7 +982,8 @@ impl DownloadManager {
 		if TempDestination.exists() {
 			if let Ok(metadata) = tokio::fs::metadata(&TempDestination).await {
 				ExistingSize = metadata.len();
-				dev_log!("update", "[DownloadManager] Resuming download from {} bytes", ExistingSize);			}
+				dev_log!("update", "[DownloadManager] Resuming download from {} bytes", ExistingSize);
+			}
 		}
 
 		// Build request with Range header for resume
@@ -929,7 +1002,8 @@ impl DownloadManager {
 		// Handle redirect if needed
 		let FinalUrl = response.url().clone();
 		let response = if FinalUrl.as_str() != url {
-			dev_log!("update", "[DownloadManager] Redirected to: {}", FinalUrl);			response
+			dev_log!("update", "[DownloadManager] Redirected to: {}", FinalUrl);
+			response
 		} else {
 			response
 		};
@@ -999,7 +1073,12 @@ impl DownloadManager {
 										return Err(AirError::Network("Download cancelled".to_string()));
 									},
 									_ => {
-										dev_log!("update", "[DownloadManager] Resuming paused download [ID: {}]", DownloadId);										break;
+										dev_log!(
+											"update",
+											"[DownloadManager] Resuming paused download [ID: {}]",
+											DownloadId
+										);
+										break;
 									},
 								}
 							} else {
@@ -1018,7 +1097,12 @@ impl DownloadManager {
 					{
 						let mut bucket = self.TokenBucket.write().await;
 						if let Err(e) = bucket.consume(ChunkSize as u64).await {
-							dev_log!("update", "warn: [DownloadManager] Bandwidth throttling error: {}, continuing anyway", e);						}
+							dev_log!(
+								"update",
+								"warn: [DownloadManager] Bandwidth throttling error: {}, continuing anyway",
+								e
+							);
+						}
 					}
 
 					file.write_all(&chunk)
@@ -1045,7 +1129,8 @@ impl DownloadManager {
 				Err(e) => {
 					// Defensive: Check if this is a timeout
 					if e.is_timeout() || e.is_connect() {
-						dev_log!("update", "warn: [DownloadManager] Connection/timeout error, may retry: {}", e);						return Err(AirError::Network(format!("Network error: {}", e)));
+						dev_log!("update", "warn: [DownloadManager] Connection/timeout error, may retry: {}", e);
+						return Err(AirError::Network(format!("Network error: {}", e)));
 					}
 					return Err(AirError::Network(format!("Failed to read response: {}", e)));
 				},
@@ -1098,10 +1183,13 @@ impl DownloadManager {
 		let NormalizedActual = ActualChecksum.trim().to_lowercase();
 
 		if NormalizedActual != NormalizedExpected {
-			dev_log!("update", "error: [DownloadManager] Checksum mismatch for {}: expected {}, got {}",
+			dev_log!(
+				"update",
+				"error: [DownloadManager] Checksum mismatch for {}: expected {}, got {}",
 				FilePath.display(),
 				NormalizedExpected,
-				NormalizedActual);
+				NormalizedActual
+			);
 			return Err(AirError::Network(format!(
 				"Checksum verification failed: expected {}, got {}",
 				NormalizedExpected, NormalizedActual
@@ -1286,7 +1374,8 @@ impl DownloadManager {
 	/// Pause a download (supports resume)
 	pub async fn PauseDownload(&self, DownloadId:&str) -> Result<()> {
 		self.UpdateDownloadStatus(DownloadId, DownloadState::Paused, None, None).await?;
-		dev_log!("update", "[DownloadManager] Download paused [ID: {}]", DownloadId);		Ok(())
+		dev_log!("update", "[DownloadManager] Download paused [ID: {}]", DownloadId);
+		Ok(())
 	}
 
 	/// Resume a paused download
@@ -1298,7 +1387,8 @@ impl DownloadManager {
 				// The download loop handles the actual resume
 				self.UpdateDownloadStatus(DownloadId, DownloadState::Downloading, None, None)
 					.await?;
-				dev_log!("update", "[DownloadManager] Download resumed [ID: {}]", DownloadId);			} else {
+				dev_log!("update", "[DownloadManager] Download resumed [ID: {}]", DownloadId);
+			} else {
 				return Err(AirError::Network("Can only resume paused downloads".to_string()));
 			}
 		} else {
@@ -1374,9 +1464,12 @@ impl DownloadManager {
 			stats.QueuedDownloads += 1;
 		}
 
-		dev_log!("update", "[DownloadManager] Download queued [ID: {}] with priority {:?}",
+		dev_log!(
+			"update",
+			"[DownloadManager] Download queued [ID: {}] with priority {:?}",
 			DownloadId,
-			priority);
+			priority
+		);
 
 		Ok(DownloadId)
 	}
@@ -1409,7 +1502,12 @@ impl DownloadManager {
 			let download_id_clone = download_id.clone();
 			tokio::spawn(async move {
 				if let Err(e) = manager.DownloadFileWithConfig(config).await {
-					dev_log!("update", "error: [DownloadManager] Queued download failed [ID: {}]: {}", download_id_clone, e);					// Update download status to failed
+					dev_log!(
+						"update",
+						"error: [DownloadManager] Queued download failed [ID: {}]: {}",
+						download_id_clone,
+						e
+					); // Update download status to failed
 					let _ = manager
 						.UpdateDownloadStatus(&download_id_clone, DownloadState::Failed, None, Some(e.to_string()))
 						.await;
@@ -1443,14 +1541,16 @@ impl DownloadManager {
 
 			// Process queue
 			if let Err(e) = self.ProcessQueue().await {
-				dev_log!("update", "error: [DownloadManager] Queue processing error: {}", e);			}
+				dev_log!("update", "error: [DownloadManager] Queue processing error: {}", e);
+			}
 
 			// Clean up completed downloads
 			self.CleanupCompletedDownloads().await;
 
 			// Clean up old cache files
 			if let Err(e) = self.CleanupCache().await {
-				dev_log!("update", "error: [DownloadManager] Cache cleanup failed: {}", e);			}
+				dev_log!("update", "error: [DownloadManager] Cache cleanup failed: {}", e);
+			}
 		}
 	}
 
@@ -1471,7 +1571,8 @@ impl DownloadManager {
 		});
 
 		if cleaned_count > 0 {
-			dev_log!("update", "[DownloadManager] Cleaned up {} completed downloads", cleaned_count);		}
+			dev_log!("update", "[DownloadManager] Cleaned up {} completed downloads", cleaned_count);
+		}
 	}
 
 	/// Clean up old cache files with safety checks
@@ -1518,14 +1619,20 @@ impl DownloadManager {
 				if age.num_days() > max_age_days {
 					match tokio::fs::remove_file(&path).await {
 						Ok(_) => {
-							dev_log!("update", "[DownloadManager] Removed old cache file: {}",
-								entry.file_name().to_string_lossy());
+							dev_log!(
+								"update",
+								"[DownloadManager] Removed old cache file: {}",
+								entry.file_name().to_string_lossy()
+							);
 							cleaned_count += 1;
 						},
 						Err(e) => {
-							dev_log!("update", "warn: [DownloadManager] Failed to remove cache file {}: {}",
+							dev_log!(
+								"update",
+								"warn: [DownloadManager] Failed to remove cache file {}: {}",
 								entry.file_name().to_string_lossy(),
-								e);
+								e
+							);
 						},
 					}
 				}
@@ -1533,7 +1640,8 @@ impl DownloadManager {
 		}
 
 		if cleaned_count > 0 {
-			dev_log!("update", "[DownloadManager] Cleaned up {} old cache files", cleaned_count);		}
+			dev_log!("update", "[DownloadManager] Cleaned up {} old cache files", cleaned_count);
+		}
 
 		Ok(())
 	}
@@ -1588,9 +1696,12 @@ impl DownloadManager {
 		let permits = mb_per_sec.max(1).min(1000);
 		self.BandwidthLimiter = Arc::new(Semaphore::new(permits));
 
-		dev_log!("update", "[DownloadManager] Bandwidth limit set to {} MB/s ({} bytes/s)",
+		dev_log!(
+			"update",
+			"[DownloadManager] Bandwidth limit set to {} MB/s ({} bytes/s)",
 			mb_per_sec,
-			bytes_per_sec);
+			bytes_per_sec
+		);
 	}
 
 	/// Set maximum concurrent downloads
@@ -1599,7 +1710,8 @@ impl DownloadManager {
 	pub async fn SetMaxConcurrentDownloads(&mut self, max:usize) {
 		let permits = max.max(1).min(20);
 		self.ConcurrentLimiter = Arc::new(Semaphore::new(permits));
-		dev_log!("update", "[DownloadManager] Max concurrent downloads set to {}", max);	}
+		dev_log!("update", "[DownloadManager] Max concurrent downloads set to {}", max);
+	}
 }
 
 impl Clone for DownloadManager {
@@ -1712,9 +1824,12 @@ impl DownloadManager {
 		checksum:String,
 		chunk_size_mb:usize,
 	) -> Result<DownloadResult> {
-		dev_log!("update", "[DownloadManager] Starting chunked download - URL: {}, Chunk size: {} MB",
+		dev_log!(
+			"update",
+			"[DownloadManager] Starting chunked download - URL: {}, Chunk size: {} MB",
 			url,
-			chunk_size_mb);
+			chunk_size_mb
+		);
 
 		// Defensive: Validate URL first
 		let sanitized_url = Self::ValidateAndSanitizeUrl(&url)?;
@@ -1726,7 +1841,11 @@ impl DownloadManager {
 		// For small files, use normal download
 		let chunk_threshold = 50 * 1024 * 1024; // 50MB
 		if total_size < chunk_threshold {
-			dev_log!("update", "[DownloadManager] File too small for chunked download, using normal download");			return self.DownloadFile(url, destination, checksum).await;
+			dev_log!(
+				"update",
+				"[DownloadManager] File too small for chunked download, using normal download"
+			);
+			return self.DownloadFile(url, destination, checksum).await;
 		}
 
 		// Calculate number of chunks
@@ -1734,9 +1853,12 @@ impl DownloadManager {
 		let num_chunks = ((total_size + chunk_size - 1) / chunk_size) as usize;
 		let num_concurrent = num_chunks.min(4); // Max 4 concurrent chunks
 
-		dev_log!("update", "[DownloadManager] Downloading in {} chunks ({} concurrent)",
+		dev_log!(
+			"update",
+			"[DownloadManager] Downloading in {} chunks ({} concurrent)",
 			num_chunks,
-			num_concurrent);
+			num_concurrent
+		);
 
 		let DownloadId = Utility::GenerateRequestId();
 		let DestinationPath = if destination.is_empty() {
@@ -1786,11 +1908,14 @@ impl DownloadManager {
 					*completed += 1;
 
 					let progress = (*downloaded as f32 / total_size as f32) * 100.0;
-					dev_log!("update", "Chunk {} completed ({}/{}) - Progress: {:.1}%",
+					dev_log!(
+						"update",
+						"Chunk {} completed ({}/{}) - Progress: {:.1}%",
 						i + 1,
 						*completed,
 						num_chunks,
-						progress);
+						progress
+					);
 				}
 
 				Ok::<_, AirError>(())
@@ -1812,11 +1937,13 @@ impl DownloadManager {
 		}
 
 		// Reassemble chunks
-		dev_log!("update", "[DownloadManager] Reassembling chunks into final file");		self.ReassembleChunks(&chunks, &DestinationPath).await?;
+		dev_log!("update", "[DownloadManager] Reassembling chunks into final file");
+		self.ReassembleChunks(&chunks, &DestinationPath).await?;
 
 		// Clean up temporary directory
 		tokio::fs::remove_dir_all(&temp_dir).await.map_err(|e| {
-			dev_log!("update", "warn: [DownloadManager] Failed to clean up temp directory: {}", e);			AirError::FileSystem(e.to_string())
+			dev_log!("update", "warn: [DownloadManager] Failed to clean up temp directory: {}", e);
+			AirError::FileSystem(e.to_string())
 		})?;
 
 		// Verify checksum
@@ -1857,10 +1984,13 @@ impl DownloadManager {
 
 	/// Download a single chunk using HTTP Range request
 	async fn DownloadChunk(&self, url:&str, chunk:&ChunkInfo, chunk_index:usize) -> Result<()> {
-		dev_log!("update", "[DownloadManager] Downloading chunk {} (bytes {}-{})",
+		dev_log!(
+			"update",
+			"[DownloadManager] Downloading chunk {} (bytes {}-{})",
 			chunk_index,
 			chunk.start,
-			chunk.end);
+			chunk.end
+		);
 
 		let range_header = format!("bytes={}-{}", chunk.start, chunk.end);
 
@@ -1890,7 +2020,12 @@ impl DownloadManager {
 			.await
 			.map_err(|e| AirError::FileSystem(format!("Failed to write chunk: {}", e)))?;
 
-		dev_log!("update", "[DownloadManager] Chunk {} downloaded: {} bytes", chunk_index, bytes.len());
+		dev_log!(
+			"update",
+			"[DownloadManager] Chunk {} downloaded: {} bytes",
+			chunk_index,
+			bytes.len()
+		);
 		Ok(())
 	}
 
@@ -1915,7 +2050,13 @@ impl DownloadManager {
 				.await
 				.map_err(|e| AirError::FileSystem(format!("Failed to write chunk to file: {}", e)))?;
 
-			dev_log!("update", "[DownloadManager] Reassembled chunk (bytes {}-{})", chunk.start, chunk.end);		}
+			dev_log!(
+				"update",
+				"[DownloadManager] Reassembled chunk (bytes {}-{})",
+				chunk.start,
+				chunk.end
+			);
+		}
 
 		file.flush()
 			.await

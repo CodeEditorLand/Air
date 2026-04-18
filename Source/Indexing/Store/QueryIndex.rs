@@ -63,12 +63,11 @@
 //! Query operations read from shared Arc<RwLock<>> state and
 //! return safe-ownership results for the caller.
 
-use crate::dev_log;
 use std::path::PathBuf;
 
 use regex::Regex;
 
-use crate::{AirError, Result};
+use crate::{AirError, Result, dev_log};
 // Use the full paths to types in State::CreateState
 use crate::Indexing::State::CreateState::{FileIndex, FileMetadata};
 
@@ -185,7 +184,12 @@ pub async fn QueryIndexSearch(
 	path_filter:Option<String>,
 	language_filter:Option<String>,
 ) -> Result<PaginatedSearchResults> {
-	dev_log!("indexing", "[QueryIndex] Searching for: '{}' (mode: {:?})", query.query, query.mode);
+	dev_log!(
+		"indexing",
+		"[QueryIndex] Searching for: '{}' (mode: {:?})",
+		query.query,
+		query.mode
+	);
 	// Sanitize search query
 	let sanitized_query = SanitizeSearchQuery(&query.query)?;
 
@@ -275,10 +279,13 @@ pub async fn QueryIndexSearch(
 	let end = ((page + 1) * max_results).min(total_count) as usize;
 	let page_results = all_results[start..end].to_vec();
 
-	dev_log!("indexing", "[QueryIndex] Search completed: {} total results, page {} of {}",
+	dev_log!(
+		"indexing",
+		"[QueryIndex] Search completed: {} total results, page {} of {}",
 		total_count,
 		page + 1,
-		total_pages);
+		total_pages
+	);
 
 	Ok(PaginatedSearchResults { results:page_results, total_count, page, total_pages, page_size:max_results })
 }

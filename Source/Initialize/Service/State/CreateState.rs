@@ -66,9 +66,10 @@
 
 use std::{sync::Arc, time::Duration};
 
-use crate::dev_log;
 use tokio as _;
 use AirLibrary::{ApplicationState, Configuration::AirConfiguration};
+
+use crate::dev_log;
 
 /// Create the shared application state
 ///
@@ -106,13 +107,16 @@ pub async fn CreateState(configuration:Arc<AirConfiguration>) -> Result<Arc<Appl
 
 	match state_result {
 		Ok(Ok(state)) => {
-			dev_log!("lifecycle", "[State] Application state initialized successfully");			Ok(Arc::new(state))
+			dev_log!("lifecycle", "[State] Application state initialized successfully");
+			Ok(Arc::new(state))
 		},
 		Ok(Err(e)) => {
-			dev_log!("lifecycle", "error: [State] Failed to initialize application state: {}", e);			Err(format!("Application state initialization failed: {}", e))
+			dev_log!("lifecycle", "error: [State] Failed to initialize application state: {}", e);
+			Err(format!("Application state initialization failed: {}", e))
 		},
 		Err(_) => {
-			dev_log!("lifecycle", "error: [State] Application state initialization timed out");			Err("Application state initialization timed out".to_string())
+			dev_log!("lifecycle", "error: [State] Application state initialization timed out");
+			Err("Application state initialization timed out".to_string())
 		},
 	}
 }

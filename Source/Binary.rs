@@ -313,7 +313,12 @@ fn InitializeLogging() {
 				Some(path) => format!("file: {}", path),
 				None => "stdout/stderr".to_string(),
 			};
-			dev_log!("lifecycle", "[Boot] Logging initialized - JSON: {}, Output: {}", json_output, log_info);
+			dev_log!(
+				"lifecycle",
+				"[Boot] Logging initialized - JSON: {}, Output: {}",
+				json_output,
+				log_info
+			);
 		},
 		Err(e) => {
 			// Fallback: ensure we can at least log errors to stderr
@@ -431,7 +436,12 @@ fn ParseArguments() -> (Option<String>, Option<String>, Option<Command>) {
 		i += 1;
 	}
 
-	dev_log!("lifecycle", "[Boot] Daemon mode - config: {:?}, bind: {:?}", config_path, bind_address);
+	dev_log!(
+		"lifecycle",
+		"[Boot] Daemon mode - config: {:?}, bind: {:?}",
+		config_path,
+		bind_address
+	);
 
 	(config_path, bind_address, None)
 }
@@ -1288,10 +1298,20 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	dev_log!("lifecycle", "[Boot] ===========================================");
 	dev_log!("lifecycle", "[Boot] Starting Air Daemon");
 	dev_log!("lifecycle", "[Boot] ===========================================");
-	dev_log!("lifecycle", "[Boot] Version: {} ({})", env!("CARGO_PKG_VERSION"), env!("CARGO_PKG_NAME"));
+	dev_log!(
+		"lifecycle",
+		"[Boot] Version: {} ({})",
+		env!("CARGO_PKG_VERSION"),
+		env!("CARGO_PKG_NAME")
+	);
 	let build_timestamp = env::var("BUILD_TIMESTAMP").unwrap_or_else(|_| "unknown".to_string());
 	dev_log!("lifecycle", "[Boot] Build: {}", build_timestamp);
-	dev_log!("lifecycle", "[Boot] Target: {}-{}", std::env::consts::OS, std::env::consts::ARCH);
+	dev_log!(
+		"lifecycle",
+		"[Boot] Target: {}-{}",
+		std::env::consts::OS,
+		std::env::consts::ARCH
+	);
 
 	// -------------------------------------------------------------------------
 	// [Boot] [Environment] Validate environment before starting
@@ -1572,7 +1592,12 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 			match DefaultBindAddress.parse() {
 				Ok(parsed) => parsed,
 				Err(e) => {
-					dev_log!("lifecycle", "error: [Boot] Invalid default bind address '{}': {}", DefaultBindAddress, e);
+					dev_log!(
+						"lifecycle",
+						"error: [Boot] Invalid default bind address '{}': {}",
+						DefaultBindAddress,
+						e
+					);
 					return Err(format!("Invalid default bind address: {}", e).into());
 				},
 			}
@@ -1665,7 +1690,11 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
 				// Clean up stale connections (5 minute timeout)
 				if let Err(e) = AppState.CleanupStaleConnections(300).await {
-					dev_log!("lifecycle", "warn: [ConnectionMonitor] Failed to cleanup stale connections: {}", e);
+					dev_log!(
+						"lifecycle",
+						"warn: [ConnectionMonitor] Failed to cleanup stale connections: {}",
+						e
+					);
 				}
 
 				// Perform health checks
@@ -1680,7 +1709,11 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 					},
 				}
 
-				dev_log!("lifecycle", "[ConnectionMonitor] Active connections: {}", AppState.GetActiveConnectionCount().await);
+				dev_log!(
+					"lifecycle",
+					"[ConnectionMonitor] Active connections: {}",
+					AppState.GetActiveConnectionCount().await
+				);
 			}
 		}
 	});
@@ -1815,7 +1848,12 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	dev_log!("lifecycle", "  - CPU: {:.2}%", resources.CPUUsagePercent);
 	dev_log!("lifecycle", "[Shutdown] Health:");
 	dev_log!("lifecycle", "  - Overall: {:.2}%", health_stats.OverallHealthPercentage());
-	dev_log!("lifecycle", "  - Healthy services: {}/{}", health_stats.HealthyServices, health_stats.TotalServices);
+	dev_log!(
+		"lifecycle",
+		"  - Healthy services: {}/{}",
+		health_stats.HealthyServices,
+		health_stats.TotalServices
+	);
 	dev_log!("lifecycle", "===========================================");
 
 	// Release daemon lock
@@ -1841,7 +1879,12 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 /// - Validate system resources (CPU, RAM)
 async fn validate_environment() -> Result<(), String> {
 	// Validate OS and architecture
-	dev_log!("lifecycle", "[Environment] OS: {}, Arch: {}", std::env::consts::OS, std::env::consts::ARCH);
+	dev_log!(
+		"lifecycle",
+		"[Environment] OS: {}, Arch: {}",
+		std::env::consts::OS,
+		std::env::consts::ARCH
+	);
 
 	// Validate required environment variables
 	if let Ok(home) = std::env::var("HOME") {

@@ -62,10 +62,9 @@
 //! Storage operations use async file I/O and return results that can be
 //! safely merged into shared Ar c<RwLock<>> state.
 
-use crate::dev_log;
 use std::path::{Path, PathBuf};
 
-use crate::{AirError, Indexing::State::CreateState::FileIndex, Result};
+use crate::{AirError, Indexing::State::CreateState::FileIndex, Result, dev_log};
 
 /// Save index to disk with atomic write
 pub async fn SaveIndex(index_directory:&Path, index:&FileIndex) -> Result<()> {
@@ -85,10 +84,13 @@ pub async fn SaveIndex(index_directory:&Path, index:&FileIndex) -> Result<()> {
 		.await
 		.map_err(|e| AirError::FileSystem(format!("Failed to rename index file: {}", e)))?;
 
-	dev_log!("indexing", "[StoreEntry] Index saved to: {} ({} files, {} symbols)",
+	dev_log!(
+		"indexing",
+		"[StoreEntry] Index saved to: {} ({} files, {} symbols)",
 		index_file.display(),
 		index.files.len(),
-		index.symbol_index.len());
+		index.symbol_index.len()
+	);
 
 	Ok(())
 }
@@ -137,11 +139,15 @@ pub async fn LoadOrCreateIndex(index_directory:&Path) -> Result<FileIndex> {
 		// Try to load existing index
 		match LoadIndex(index_directory).await {
 			Ok(index) => {
-				dev_log!("indexing", "[StoreEntry] Loaded index with {} files", index.files.len());				Ok(index)
+				dev_log!("indexing", "[StoreEntry] Loaded index with {} files", index.files.len());
+				Ok(index)
 			},
 			Err(e) => {
-				dev_log!("indexing", "warn: [StoreEntry] Failed to load index (may be corrupted): {}. Creating new index.",
-					e);
+				dev_log!(
+					"indexing",
+					"warn: [StoreEntry] Failed to load index (may be corrupted): {}. Creating new index.",
+					e
+				);
 				// Backup corrupted index
 				BackupCorruptedIndex(index_directory).await?;
 				Ok(CreateNewIndex())
@@ -181,7 +187,11 @@ pub async fn BackupCorruptedIndex(index_directory:&Path) -> Result<()> {
 		.await
 		.map_err(|e| AirError::FileSystem(format!("Failed to backup corrupted index: {}", e)))?;
 
-	dev_log!("indexing", "[StoreEntry] Backed up corrupted index to: {}", backup_file.display());
+	dev_log!(
+		"indexing",
+		"[StoreEntry] Backed up corrupted index to: {}",
+		backup_file.display()
+	);
 	Ok(())
 }
 
@@ -193,7 +203,12 @@ pub async fn LoadIndexWithRecovery(index_directory:&Path, max_retries:usize) -> 
 		match LoadOrCreateIndex(index_directory).await {
 			Ok(index) => {
 				if attempt > 0 {
-					dev_log!("indexing", "[StoreEntry] Successfully loaded index after {} attempts", attempt + 1);				}
+					dev_log!(
+						"indexing",
+						"[StoreEntry] Successfully loaded index after {} attempts",
+						attempt + 1
+					);
+				}
 				return Ok(index);
 			},
 			Err(e) => {
@@ -272,10 +287,17 @@ pub async fn CleanupOldBackups(index_directory:&Path, keep_count:usize) -> Resul
 	for (path, _) in backups.iter().take(backups.len().saturating_sub(keep_count)) {
 		match tokio::fs::remove_file(path).await {
 			Ok(_) => {
-				dev_log!("indexing", "[StoreEntry] Removed old backup: {}", path.display());				removed_count += 1;
+				dev_log!("indexing", "[StoreEntry] Removed old backup: {}", path.display());
+				removed_count += 1;
 			},
 			Err(e) => {
-				dev_log!("indexing", "warn: [StoreEntry] Failed to remove backup {}: {}", path.display(), e);			},
+				dev_log!(
+					"indexing",
+					"warn: [StoreEntry] Failed to remove backup {}: {}",
+					path.display(),
+					e
+				);
+			},
 		}
 	}
 

@@ -78,13 +78,14 @@ pub async fn StartEcho() -> Result<(), String> {
 	// Currently implemented as a lightweight initialization stub that
 	// confirms the service can start successfully.
 
-	dev_log!("lifecycle", "[Echo] Echo scheduler service initialized successfully");	dev_log!("lifecycle", "[Echo] Ready to handle echo requests for connectivity testing");
+	dev_log!("lifecycle", "[Echo] Echo scheduler service initialized successfully");
+	dev_log!("lifecycle", "[Echo] Ready to handle echo requests for connectivity testing");
 	Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-use crate::dev_log;
+	use crate::dev_log;
 	use super::*;
 
 	#[test]

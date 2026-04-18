@@ -64,7 +64,6 @@
 //! Scan operations are designed to be called from async tasks and
 //! return collectable results for parallel processing.
 
-use crate::dev_log;
 use std::{path::Path, sync::Arc};
 
 use tokio::sync::Semaphore;
@@ -74,6 +73,7 @@ use crate::{
 	Configuration::IndexingConfig,
 	Indexing::{Scan::ScanFile::ValidateFileAccess, State::CreateState::FileIndex},
 	Result,
+	dev_log,
 };
 
 /// Scan directory result with statistics
@@ -144,7 +144,8 @@ pub async fn ScanDirectory(
 
 					// Check if file is a symbolic link
 					if entry.path_is_symlink() {
-						dev_log!("indexing", "[ScanDirectory] Skipping symlink: {}", file_path.display());						files_skipped += 1;
+						dev_log!("indexing", "[ScanDirectory] Skipping symlink: {}", file_path.display());
+						files_skipped += 1;
 						continue;
 					}
 
@@ -153,9 +154,12 @@ pub async fn ScanDirectory(
 						let file_size = metadata.len();
 
 						if file_size > config.MaxFileSizeMb as u64 * 1024 * 1024 {
-							dev_log!("indexing", "warn: [ScanDirectory] Skipping oversized file: {} ({} bytes)",
+							dev_log!(
+								"indexing",
+								"warn: [ScanDirectory] Skipping oversized file: {} ({} bytes)",
 								file_path.display(),
-								file_size);
+								file_size
+							);
 							files_skipped += 1;
 							continue;
 						}
@@ -168,8 +172,11 @@ pub async fn ScanDirectory(
 								files_found += 1;
 								total_size += file_size;
 							} else {
-								dev_log!("indexing", "warn: [ScanDirectory] Cannot access file (permission denied): {}",
-									file_path.display());
+								dev_log!(
+									"indexing",
+									"warn: [ScanDirectory] Cannot access file (permission denied): {}",
+									file_path.display()
+								);
 								errors += 1;
 							}
 						} else {
@@ -181,16 +188,20 @@ pub async fn ScanDirectory(
 				}
 			},
 			Err(e) => {
-				dev_log!("indexing", "warn: [ScanDirectory] Error walking directory: {}", e);				errors += 1;
+				dev_log!("indexing", "warn: [ScanDirectory] Error walking directory: {}", e);
+				errors += 1;
 			},
 		}
 	}
 
-	dev_log!("indexing", "[ScanDirectory] Directory scan completed: {} files, {} skipped, {} errors, {} bytes",
+	dev_log!(
+		"indexing",
+		"[ScanDirectory] Directory scan completed: {} files, {} skipped, {} errors, {} bytes",
 		files_found,
 		files_skipped,
 		errors,
-		total_size);
+		total_size
+	);
 
 	Ok((
 		files_to_scan,
@@ -331,10 +342,12 @@ pub async fn ScanDirectoriesParallel(
 				total_result.total_size += result.total_size;
 			},
 			Ok(Err(e)) => {
-				dev_log!("indexing", "error: [ScanDirectory] Parallel scan failed: {}", e);				total_result.errors += 1;
+				dev_log!("indexing", "error: [ScanDirectory] Parallel scan failed: {}", e);
+				total_result.errors += 1;
 			},
 			Err(e) => {
-				dev_log!("indexing", "error: [ScanDirectory] Parallel task panicked: {}", e);				total_result.errors += 1;
+				dev_log!("indexing", "error: [ScanDirectory] Parallel task panicked: {}", e);
+				total_result.errors += 1;
 			},
 		}
 	}

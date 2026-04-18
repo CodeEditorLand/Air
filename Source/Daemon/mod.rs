@@ -90,11 +90,10 @@
 
 use std::{fs, path::PathBuf, sync::Arc, time::Duration};
 
-use crate::dev_log;
 use tokio::sync::{Mutex, RwLock};
 use sha2::{Digest, Sha256};
 
-use crate::{AirError, Result};
+use crate::{AirError, Result, dev_log};
 
 /// Daemon lifecycle manager
 #[derive(Debug)]
@@ -295,10 +294,12 @@ impl DaemonManager {
 			use std::os::unix::fs::PermissionsExt;
 			let perms = fs::Permissions::from_mode(0o600);
 			if let Err(e) = fs::set_permissions(&self.PidFilePath, perms) {
-				dev_log!("daemon", "warn: [Daemon] Failed to set PID file permissions: {}", e);			}
+				dev_log!("daemon", "warn: [Daemon] Failed to set PID file permissions: {}", e);
+			}
 		}
 
-		dev_log!("daemon", "[Daemon] Daemon lock acquired (PID: {})", pid);		Ok(())
+		dev_log!("daemon", "[Daemon] Daemon lock acquired (PID: {})", pid);
+		Ok(())
 	}
 
 	/// Check if daemon is already running
@@ -309,7 +310,8 @@ impl DaemonManager {
 	/// - Stale PID file cleanup
 	pub async fn IsAlreadyRunning(&self) -> Result<bool> {
 		if !self.PidFilePath.exists() {
-			dev_log!("daemon", "[Daemon] PID file does not exist");			return Ok(false);
+			dev_log!("daemon", "[Daemon] PID file does not exist");
+			return Ok(false);
 		}
 
 		// Read PID from file
@@ -319,12 +321,14 @@ impl DaemonManager {
 		// Parse PID content with checksum
 		let parts:Vec<&str> = PidContent.split('|').collect();
 		if parts.len() < 2 {
-			dev_log!("daemon", "warn: [Daemon] Invalid PID file format, treating as stale");			self.CleanupStalePidFile().await?;
+			dev_log!("daemon", "warn: [Daemon] Invalid PID file format, treating as stale");
+			self.CleanupStalePidFile().await?;
 			return Ok(false);
 		}
 
 		let pid:u32 = parts[0].trim().parse().map_err(|e| {
-			dev_log!("daemon", "warn: [Daemon] Invalid PID in file: {}", e);			AirError::FileSystem("Invalid PID file content".to_string())
+			dev_log!("daemon", "warn: [Daemon] Invalid PID in file: {}", e);
+			AirError::FileSystem("Invalid PID file content".to_string())
 		})?;
 
 		// Verify checksum if present
@@ -334,7 +338,7 @@ impl DaemonManager {
 
 			if let Some(ref cksum) = *CurrentChecksum {
 				if cksum != StoredChecksum {
-					dev_log!("daemon", "warn: [Daemon] PID file checksum mismatch, file may be corrupted");					// Don't automatically delete - could be a different daemon instance
+					dev_log!("daemon", "warn: [Daemon] PID file checksum mismatch, file may be corrupted"); // Don't automatically delete - could be a different daemon instance
 					return Ok(true);
 				}
 			}
@@ -345,7 +349,8 @@ impl DaemonManager {
 
 		if !IsRunning {
 			// Clean up stale PID file with validation
-			dev_log!("daemon", "warn: [Daemon] Detected stale PID file for PID {}", pid);			self.CleanupStalePidFile().await?;
+			dev_log!("daemon", "warn: [Daemon] Detected stale PID file for PID {}", pid);
+			self.CleanupStalePidFile().await?;
 		}
 
 		Ok(IsRunning)
@@ -373,7 +378,8 @@ impl DaemonManager {
 					}
 				},
 				Err(e) => {
-					dev_log!("daemon", "error: [Daemon] Failed to check process status: {}", e);					false
+					dev_log!("daemon", "error: [Daemon] Failed to check process status: {}", e);
+					false
 				},
 			}
 		}
@@ -400,7 +406,8 @@ impl DaemonManager {
 					}
 				},
 				Err(e) => {
-					dev_log!("daemon", "error: [Daemon] Failed to check process status: {}", e);					false
+					dev_log!("daemon", "error: [Daemon] Failed to check process status: {}", e);
+					false
 				},
 			}
 		}
@@ -415,7 +422,8 @@ impl DaemonManager {
 		// Verify the file is actually stale before deleting
 		let content = fs::read_to_string(&self.PidFilePath)
 			.map_err(|e| {
-				dev_log!("daemon", "warn: [Daemon] Cannot verify stale PID file: {}", e);				return false;
+				dev_log!("daemon", "warn: [Daemon] Cannot verify stale PID file: {}", e);
+				return false;
 			})
 			.ok();
 
@@ -423,9 +431,11 @@ impl DaemonManager {
 			if content.starts_with(|c:char| c.is_numeric()) {
 				// Clean up the stale PID file
 				if let Err(e) = fs::remove_file(&self.PidFilePath) {
-					dev_log!("daemon", "warn: [Daemon] Failed to remove stale PID file: {}", e);					return Err(AirError::FileSystem(format!("Failed to remove stale PID file: {}", e)));
+					dev_log!("daemon", "warn: [Daemon] Failed to remove stale PID file: {}", e);
+					return Err(AirError::FileSystem(format!("Failed to remove stale PID file: {}", e)));
 				}
-				dev_log!("daemon", "[Daemon] Cleaned up stale PID file");			}
+				dev_log!("daemon", "[Daemon] Cleaned up stale PID file");
+			}
 		}
 
 		Ok(())
@@ -448,9 +458,10 @@ impl DaemonManager {
 		if self.PidFilePath.exists() {
 			match fs::remove_file(&self.PidFilePath) {
 				Ok(_) => {
-					dev_log!("daemon", "[Daemon] PID file removed successfully");				},
+					dev_log!("daemon", "[Daemon] PID file removed successfully");
+				},
 				Err(e) => {
-					dev_log!("daemon", "error: [Daemon] Failed to remove PID file: {}", e);					// Don't fail entire operation if PID file cleanup fails
+					dev_log!("daemon", "error: [Daemon] Failed to remove PID file: {}", e); // Don't fail entire operation if PID file cleanup fails
 					return Err(AirError::FileSystem(format!("Failed to remove PID file: {}", e)));
 				},
 			}
@@ -462,7 +473,8 @@ impl DaemonManager {
 			let _ = fs::remove_file(&TempDir);
 		}
 
-		dev_log!("daemon", "[Daemon] Daemon lock released");		Ok(())
+		dev_log!("daemon", "[Daemon] Daemon lock released");
+		Ok(())
 	}
 
 	/// Check if daemon is running
@@ -470,13 +482,15 @@ impl DaemonManager {
 
 	/// Request graceful shutdown
 	pub async fn RequestShutdown(&self) -> Result<()> {
-		dev_log!("daemon", "[Daemon] Requesting graceful shutdown...");		*self.ShutdownRequested.write().await = true;
+		dev_log!("daemon", "[Daemon] Requesting graceful shutdown...");
+		*self.ShutdownRequested.write().await = true;
 		Ok(())
 	}
 
 	/// Clear shutdown request (for restart scenarios)
 	pub async fn ClearShutdownRequest(&self) -> Result<()> {
-		dev_log!("daemon", "[Daemon] Clearing shutdown request");		*self.ShutdownRequested.write().await = false;
+		dev_log!("daemon", "[Daemon] Clearing shutdown request");
+		*self.ShutdownRequested.write().await = false;
 		Ok(())
 	}
 
@@ -783,7 +797,8 @@ WantedBy=multi-user.target
 			let perms = fs::Permissions::from_mode(0o644);
 			fs::set_permissions(&ServiceFilePath, perms)
 				.map_err(|e| {
-					dev_log!("daemon", "error: [Daemon] Failed to set service file permissions: {}", e);				})
+					dev_log!("daemon", "error: [Daemon] Failed to set service file permissions: {}", e);
+				})
 				.ok();
 		}
 
@@ -831,7 +846,8 @@ WantedBy=multi-user.target
 			let perms = fs::Permissions::from_mode(0o644);
 			fs::set_permissions(&ServiceFilePath, perms)
 				.map_err(|e| {
-					dev_log!("daemon", "error: [Daemon] Failed to set plist file permissions: {}", e);				})
+					dev_log!("daemon", "error: [Daemon] Failed to set plist file permissions: {}", e);
+				})
 				.ok();
 		}
 
@@ -876,9 +892,19 @@ WantedBy=multi-user.target
 			AirError::FileSystem(format!("Failed to rename service file: {}", e))
 		})?;
 
-		dev_log!("daemon", "[Daemon] Windows service configuration written to {}", ServiceFilePath);		dev_log!("daemon", "[Daemon] To register the service, run:");		dev_log!("daemon", "[Daemon]   sc create AirDaemon binPath= \"{}\" DisplayName= \"Air Daemon\"",
-			std::env::current_exe().unwrap_or_else(|_| "air.exe".into()).display());
-		dev_log!("daemon", "[Daemon]   sc config AirDaemon start= auto");		dev_log!("daemon", "[Daemon]   sc start AirDaemon");
+		dev_log!(
+			"daemon",
+			"[Daemon] Windows service configuration written to {}",
+			ServiceFilePath
+		);
+		dev_log!("daemon", "[Daemon] To register the service, run:");
+		dev_log!(
+			"daemon",
+			"[Daemon]   sc create AirDaemon binPath= \"{}\" DisplayName= \"Air Daemon\"",
+			std::env::current_exe().unwrap_or_else(|_| "air.exe".into()).display()
+		);
+		dev_log!("daemon", "[Daemon]   sc config AirDaemon start= auto");
+		dev_log!("daemon", "[Daemon]   sc start AirDaemon");
 		Ok(())
 	}
 
@@ -922,13 +948,16 @@ WantedBy=multi-user.target
 
 		// Remove service file
 		if fs::remove_file(&ServiceFilePath).is_ok() {
-			dev_log!("daemon", "[Daemon] Systemd service file removed");		} else {
-			dev_log!("daemon", "warn: [Daemon] Service file {} not found", ServiceFilePath);		}
+			dev_log!("daemon", "[Daemon] Systemd service file removed");
+		} else {
+			dev_log!("daemon", "warn: [Daemon] Service file {} not found", ServiceFilePath);
+		}
 
 		// Reload systemd
 		let _ = tokio::process::Command::new("systemctl").args(["daemon-reload"]).output().await;
 
-		dev_log!("daemon", "[Daemon] Systemd service uninstalled");		Ok(())
+		dev_log!("daemon", "[Daemon] Systemd service uninstalled");
+		Ok(())
 	}
 
 	/// Uninstall launchd service with proper coordination
@@ -943,10 +972,13 @@ WantedBy=multi-user.target
 
 		// Remove service file
 		if fs::remove_file(&ServiceFilePath).is_ok() {
-			dev_log!("daemon", "[Daemon] Launchd service file removed");		} else {
-			dev_log!("daemon", "warn: [Daemon] Service file {} not found", ServiceFilePath);		}
+			dev_log!("daemon", "[Daemon] Launchd service file removed");
+		} else {
+			dev_log!("daemon", "warn: [Daemon] Service file {} not found", ServiceFilePath);
+		}
 
-		dev_log!("daemon", "[Daemon] Launchd service uninstalled");		Ok(())
+		dev_log!("daemon", "[Daemon] Launchd service uninstalled");
+		Ok(())
 	}
 
 	/// Uninstall Windows service
@@ -960,10 +992,14 @@ WantedBy=multi-user.target
 
 		// Remove the configuration file
 		if fs::remove_file(&ServiceFilePath).is_ok() {
-			dev_log!("daemon", "[Daemon] Windows service configuration removed");		} else {
-			dev_log!("daemon", "warn: [Daemon] Service file {} not found", ServiceFilePath);		}
+			dev_log!("daemon", "[Daemon] Windows service configuration removed");
+		} else {
+			dev_log!("daemon", "warn: [Daemon] Service file {} not found", ServiceFilePath);
+		}
 
-		dev_log!("daemon", "[Daemon] To unregister the service, run:");		dev_log!("daemon", "[Daemon]   sc stop AirDaemon");		dev_log!("daemon", "[Daemon]   sc delete AirDaemon");
+		dev_log!("daemon", "[Daemon] To unregister the service, run:");
+		dev_log!("daemon", "[Daemon]   sc stop AirDaemon");
+		dev_log!("daemon", "[Daemon]   sc delete AirDaemon");
 		Ok(())
 	}
 }

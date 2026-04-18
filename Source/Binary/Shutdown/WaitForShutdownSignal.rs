@@ -101,7 +101,8 @@ pub async fn WaitForShutdownSignal() {
 		match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
 			Ok(mut Signal) => {
 				Signal.recv().await;
-				dev_log!("lifecycle", "[Shutdown] Received SIGTERM signal");			},
+				dev_log!("lifecycle", "[Shutdown] Received SIGTERM signal");
+			},
 			Err(Error) => dev_log!("lifecycle", "error: [Shutdown] Failed to install signal handler: {}", Error),
 		}
 	};
@@ -114,7 +115,8 @@ pub async fn WaitForShutdownSignal() {
 		_ = Terminate => {},
 	}
 
-	dev_log!("lifecycle", "[Shutdown] Signal received, initiating graceful shutdown");}
+	dev_log!("lifecycle", "[Shutdown] Signal received, initiating graceful shutdown");
+}
 
 #[cfg(test)]
 mod tests {

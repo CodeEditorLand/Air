@@ -12,7 +12,7 @@
 //! - Context-aware logging with operation tracking
 //! - Log level filtering (TRACE, DEBUG, INFO, WARN, ERROR)
 //!
-//! ###Log Rotation
+//! ### Log Rotation
 //! - Size-based log rotation to prevent disk exhaustion
 //! - Time-based rotation (daily) for archival
 //! - Automatic cleanup of old log files
@@ -81,9 +81,7 @@ use serde::{Deserialize, Serialize};
 use tracing_subscriber::{fmt::format::FmtSpan, prelude::*};
 use tracing_appender::rolling::Rotation;
 
-use crate::dev_log;
-
-use crate::Result;
+use crate::{Result, dev_log};
 
 /// Configuration for log rotation and management
 #[derive(Debug, Clone, Serialize, Deserialize)]

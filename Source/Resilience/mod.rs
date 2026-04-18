@@ -67,7 +67,6 @@
 //! - Avoid including request payloads in resilience events
 //! - Sanitize service names before publishing to telemetry
 
-use crate::dev_log;
 use std::{
 	collections::HashMap,
 	sync::Arc,
@@ -76,6 +75,8 @@ use std::{
 
 use tokio::sync::{Mutex, RwLock, broadcast};
 use serde::{Deserialize, Serialize};
+
+use crate::dev_log;
 
 /// Error classification for adaptive retry policies
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -460,17 +461,23 @@ impl CircuitBreaker {
 				}
 
 				if failures >= self.Config.FailureThreshold {
-					dev_log!("resilience", "warn: [CircuitBreaker] State inconsistency: Closed but failure count ({}) >= threshold ({})",
+					dev_log!(
+						"resilience",
+						"warn: [CircuitBreaker] State inconsistency: Closed but failure count ({}) >= threshold ({})",
 						failures,
-						self.Config.FailureThreshold);
+						self.Config.FailureThreshold
+					);
 				}
 			},
 
 			CircuitState::Open => {
 				if failures < self.Config.FailureThreshold {
-					dev_log!("resilience", "warn: [CircuitBreaker] State inconsistency: Open but failure count ({}) < threshold ({})",
+					dev_log!(
+						"resilience",
+						"warn: [CircuitBreaker] State inconsistency: Open but failure count ({}) < threshold ({})",
 						failures,
-						self.Config.FailureThreshold);
+						self.Config.FailureThreshold
+					);
 				}
 			},
 
@@ -539,15 +546,22 @@ impl CircuitBreaker {
 		// Increment transition counter
 		*self.StateTransitionCounter.write().await += 1;
 
-		dev_log!("resilience", "[CircuitBreaker] State transition for {}: {:?} -> {:?} (reason: {})",
+		dev_log!(
+			"resilience",
+			"[CircuitBreaker] State transition for {}: {:?} -> {:?} (reason: {})",
 			self.Name,
 			CurrentState,
 			NewState,
-			reason);
+			reason
+		);
 
 		// Validate new state consistency
 		self.ValidateState().await.map_err(|e| {
-			dev_log!("resilience", "error: [CircuitBreaker] State validation failed after transition: {}", e);
+			dev_log!(
+				"resilience",
+				"error: [CircuitBreaker] State validation failed after transition: {}",
+				e
+			);
 			e
 		})?;
 
@@ -1297,12 +1311,15 @@ impl ResilienceOrchestrator {
 					{
 						let Delay = self.retry_manager.CalculateAdaptiveRetryDelay(&E, Attempt);
 
-						dev_log!("resilience", "[ResilienceOrchestrator] Retrying {} (attempt {}/{}) after {:?}, error: {}",
+						dev_log!(
+							"resilience",
+							"[ResilienceOrchestrator] Retrying {} (attempt {}/{}) after {:?}, error: {}",
 							service,
 							Attempt + 1,
 							retry_policy.MaxRetries,
 							Delay,
-							self.redact_sensitive_data(&E));
+							self.redact_sensitive_data(&E)
+						);
 
 						tokio::time::sleep(Delay).await;
 

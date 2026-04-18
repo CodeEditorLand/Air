@@ -68,11 +68,12 @@
 //! - Sensitive information is masked in logs and error messages
 //! - Timeouts prevent hanging on unresponsive daemon
 
-use crate::dev_log;
 use std::{collections::HashMap, time::Duration};
 
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+
+use crate::dev_log;
 
 // =============================================================================
 // Command Types
@@ -1056,7 +1057,8 @@ impl CliHandler {
 		if required == PermissionLevel::Admin {
 			// In production, check for elevated privileges
 			// For now, we'll just log a warning
-			dev_log!("lifecycle", "warn: Admin privileges required for command");		}
+			dev_log!("lifecycle", "warn: Admin privileges required for command");
+		}
 
 		Ok(())
 	}

@@ -89,14 +89,13 @@
 //! - `ResourceLimit`: Resource limits exceeded
 //! - `Internal`: Internal state inconsistencies
 
-use crate::dev_log;
 use std::{collections::HashMap, sync::Arc};
 
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, RwLock};
 use systemstat::{Platform, System};
 
-use crate::{AirError, Configuration::AirConfiguration, Result, Utility};
+use crate::{AirError, Configuration::AirConfiguration, Result, Utility, dev_log};
 
 /// Application state structure
 #[derive(Debug)]
@@ -317,7 +316,14 @@ impl ApplicationState {
 			},
 		);
 
-		dev_log!("lifecycle", "Connection registered: {} - {} ({:?})", ConnectionId, ClientId, ConnectionType);		Ok(())
+		dev_log!(
+			"lifecycle",
+			"Connection registered: {} - {} ({:?})",
+			ConnectionId,
+			ClientId,
+			ConnectionType
+		);
+		Ok(())
 	}
 
 	/// Update connection heartbeat with validation
@@ -335,17 +341,23 @@ impl ApplicationState {
 
 			// Validate heartbeat timing
 			if CurrentTime - Connection.LastHeartbeat > MAX_HEARTBEAT_INTERVAL {
-				dev_log!("lifecycle", "warn: Long heartbeat interval for connection {}: {}ms",
+				dev_log!(
+					"lifecycle",
+					"warn: Long heartbeat interval for connection {}: {}ms",
 					ConnectionId,
-					CurrentTime - Connection.LastHeartbeat);
+					CurrentTime - Connection.LastHeartbeat
+				);
 			}
 
 			Connection.LastHeartbeat = CurrentTime;
 			Connection.IsActive = true;
 
-			dev_log!("lifecycle", "Heartbeat updated for connection: {} (client: {})",
+			dev_log!(
+				"lifecycle",
+				"Heartbeat updated for connection: {} (client: {})",
 				ConnectionId,
-				Connection.ClientId);
+				Connection.ClientId
+			);
 		} else {
 			return Err(AirError::Internal(format!("Connection {} not found", ConnectionId)));
 		}
@@ -363,10 +375,13 @@ impl ApplicationState {
 		let mut Connection = self.Connection.write().await;
 
 		if let Some(Connection) = Connection.remove(ConnectionId) {
-			dev_log!("lifecycle", "Connection removed: {} (client: {}, type: {:?})",
+			dev_log!(
+				"lifecycle",
+				"Connection removed: {} (client: {}, type: {:?})",
 				ConnectionId,
 				Connection.ClientId,
-				Connection.ConnectionType);
+				Connection.ConnectionType
+			);
 
 			// Clean up any resources associated with this connection
 			// Note: The Connection struct would contain references to resources that need
@@ -375,7 +390,12 @@ impl ApplicationState {
 			// needed.
 			drop(Connection); // Explicit drop to trigger any cleanup logic
 		} else {
-			dev_log!("lifecycle", "warn: Attempted to remove non-existent connection: {}", ConnectionId);		}
+			dev_log!(
+				"lifecycle",
+				"warn: Attempted to remove non-existent connection: {}",
+				ConnectionId
+			);
+		}
 
 		Ok(())
 	}
@@ -446,11 +466,14 @@ impl ApplicationState {
 
 		Connection.retain(|Id, Connection| {
 			if CurrentTime - Connection.LastHeartbeat > TimeoutMs {
-				dev_log!("lifecycle", "warn: Removing stale connection: {} - {} ({:?}) - idle: {}ms",
+				dev_log!(
+					"lifecycle",
+					"warn: Removing stale connection: {} - {} ({:?}) - idle: {}ms",
 					Id,
 					Connection.ClientId,
 					Connection.ConnectionType,
-					CurrentTime - Connection.LastHeartbeat);
+					CurrentTime - Connection.LastHeartbeat
+				);
 
 				*RemovedByType.entry(format!("{:?}", Connection.ConnectionType)).or_insert(0) += 1;
 
@@ -462,8 +485,10 @@ impl ApplicationState {
 		});
 
 		if RemovedCount > 0 {
-			dev_log!("lifecycle", "Cleaned up {} stale connections", RemovedCount);			for (ConnType, Count) in RemovedByType {
-				dev_log!("lifecycle", "  - {} connections: {}", ConnType, Count);			}
+			dev_log!("lifecycle", "Cleaned up {} stale connections", RemovedCount);
+			for (ConnType, Count) in RemovedByType {
+				dev_log!("lifecycle", "  - {} connections: {}", ConnType, Count);
+			}
 		}
 
 		Ok(RemovedCount)
@@ -473,7 +498,8 @@ impl ApplicationState {
 	pub async fn RegisterBackgroundTask(&self, TaskItem:tokio::task::JoinHandle<()>) -> Result<()> {
 		let mut BackgroundTask = self.BackgroundTask.lock().await;
 		BackgroundTask.push(TaskItem);
-		dev_log!("lifecycle", "Background task registered. Total tasks: {}", BackgroundTask.len());		Ok(())
+		dev_log!("lifecycle", "Background task registered. Total tasks: {}", BackgroundTask.len());
+		Ok(())
 	}
 
 	/// Stop all background tasks with graceful shutdown
@@ -487,7 +513,8 @@ impl ApplicationState {
 			TaskItem.abort();
 		}
 
-		dev_log!("lifecycle", "Stopped all {} background tasks", TaskCount);		Ok(())
+		dev_log!("lifecycle", "Stopped all {} background tasks", TaskCount);
+		Ok(())
 	}
 
 	/// Update service status with validation
@@ -499,7 +526,8 @@ impl ApplicationState {
 		let mut ServiceStatus = self.ServiceStatus.write().await;
 		let StatusClone = Status.clone();
 		ServiceStatus.insert(Service.to_string(), Status);
-		dev_log!("lifecycle", "Service status updated: {} -> {:?}", Service, StatusClone);		Ok(())
+		dev_log!("lifecycle", "Service status updated: {} -> {:?}", Service, StatusClone);
+		Ok(())
 	}
 
 	/// Get service status
@@ -542,7 +570,8 @@ impl ApplicationState {
 			},
 		);
 
-		dev_log!("lifecycle", "Request registered: {}", RequestId);		Ok(())
+		dev_log!("lifecycle", "Request registered: {}", RequestId);
+		Ok(())
 	}
 
 	/// Update request status with validation
@@ -579,7 +608,8 @@ impl ApplicationState {
 		let mut request = self.ActiveRequest.lock().await;
 
 		if request.remove(RequestId).is_some() {
-			dev_log!("lifecycle", "Request removed: {}", RequestId);		}
+			dev_log!("lifecycle", "Request removed: {}", RequestId);
+		}
 
 		Ok(())
 	}
@@ -612,7 +642,8 @@ impl ApplicationState {
 		let MemoryUsage = if let Ok(Memory) = Sys.memory() {
 			(Memory.total.as_u64() - Memory.free.as_u64()) as f64 / 1024.0 / 1024.0
 		} else {
-			dev_log!("lifecycle", "warn: Failed to get memory usage");			0.0
+			dev_log!("lifecycle", "warn: Failed to get memory usage");
+			0.0
 		};
 
 		// CPU usage - requires sampling, do this outside lock
@@ -621,10 +652,12 @@ impl ApplicationState {
 			if let Ok(CPU) = CPU.done() {
 				(CPU.user + CPU.nice + CPU.system) as f64 * 100.0
 			} else {
-				dev_log!("lifecycle", "warn: Failed to get CPU usage after sampling");				0.0
+				dev_log!("lifecycle", "warn: Failed to get CPU usage after sampling");
+				0.0
 			}
 		} else {
-			dev_log!("lifecycle", "warn: Failed to start CPU load sampling");			0.0
+			dev_log!("lifecycle", "warn: Failed to start CPU load sampling");
+			0.0
 		};
 
 		// Update state with collected metrics
@@ -693,15 +726,20 @@ impl ApplicationState {
 
 		match Section.as_str() {
 			"grpc" => {
-				dev_log!("lifecycle", "Updating gRPC configuration: {:?}", Updates);			},
+				dev_log!("lifecycle", "Updating gRPC configuration: {:?}", Updates);
+			},
 			"updates" => {
-				dev_log!("lifecycle", "Updating updates configuration: {:?}", Updates);			},
+				dev_log!("lifecycle", "Updating updates configuration: {:?}", Updates);
+			},
 			"downloader" => {
-				dev_log!("lifecycle", "Updating downloader configuration: {:?}", Updates);			},
+				dev_log!("lifecycle", "Updating downloader configuration: {:?}", Updates);
+			},
 			"indexing" => {
-				dev_log!("lifecycle", "Updating indexing configuration: {:?}", Updates);			},
+				dev_log!("lifecycle", "Updating indexing configuration: {:?}", Updates);
+			},
 			"daemon" => {
-				dev_log!("lifecycle", "Updating daemon configuration: {:?}", Updates);			},
+				dev_log!("lifecycle", "Updating daemon configuration: {:?}", Updates);
+			},
 			_ => {
 				return Err(AirError::Configuration(format!("Unknown configuration section: {}", Section)));
 			},
@@ -717,10 +755,13 @@ impl ApplicationState {
 		CPULimitPercent:Option<f64>,
 		DiskLimitMb:Option<u64>,
 	) -> Result<()> {
-		dev_log!("lifecycle", "[ApplicationState] Setting resource limits memory={:?}, CPU={:?}, disk={:?}",
+		dev_log!(
+			"lifecycle",
+			"[ApplicationState] Setting resource limits memory={:?}, CPU={:?}, disk={:?}",
 			MemoryLimitMb,
 			CPULimitPercent,
-			DiskLimitMb);
+			DiskLimitMb
+		);
 
 		// Validate CPU limit
 		if let Some(CPU) = CPULimitPercent {
@@ -753,11 +794,14 @@ impl ApplicationState {
 		// 5. Implement graceful degradation
 
 		if MemoryLimitMb.is_some() {
-			dev_log!("lifecycle", "Memory limit set: {} MB", MemoryLimitMb.unwrap());		}
+			dev_log!("lifecycle", "Memory limit set: {} MB", MemoryLimitMb.unwrap());
+		}
 		if CPULimitPercent.is_some() {
-			dev_log!("lifecycle", "CPU limit set: {}%", CPULimitPercent.unwrap());		}
+			dev_log!("lifecycle", "CPU limit set: {}%", CPULimitPercent.unwrap());
+		}
 		if DiskLimitMb.is_some() {
-			dev_log!("lifecycle", "Disk limit set: {} MB", DiskLimitMb.unwrap());		}
+			dev_log!("lifecycle", "Disk limit set: {} MB", DiskLimitMb.unwrap());
+		}
 
 		Ok(())
 	}

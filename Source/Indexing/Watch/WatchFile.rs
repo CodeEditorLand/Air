@@ -64,12 +64,11 @@
 //! Event handlers acquire write locks on shared state and process
 //! events asynchronously to avoid blocking the watcher loop.
 
-use crate::dev_log;
 use std::path::PathBuf;
 
 use tokio::sync::{Mutex, RwLock};
 
-use crate::{AirError, Configuration::IndexingConfig, Indexing::State::CreateState::FileIndex, Result};
+use crate::{AirError, Configuration::IndexingConfig, Indexing::State::CreateState::FileIndex, Result, dev_log};
 
 /// Handle file watcher event for incremental indexing
 ///
@@ -82,35 +81,56 @@ pub async fn HandleFileEvent(event:notify::Event, index_arc:&RwLock<FileIndex>, 
 	match event.kind {
 		notify::EventKind::Create(notify::event::CreateKind::File) => {
 			for path in event.paths {
-				dev_log!("indexing", "[WatchFile] File created: {}", path.display());				let mut index = index_arc.write().await;
+				dev_log!("indexing", "[WatchFile] File created: {}", path.display());
+				let mut index = index_arc.write().await;
 				if let Err(e) = crate::Indexing::Store::UpdateIndex::UpdateSingleFile(&mut index, &path, config).await {
-					dev_log!("indexing", "warn: [WatchFile] Failed to index new file {}: {}", path.display(), e);				}
+					dev_log!(
+						"indexing",
+						"warn: [WatchFile] Failed to index new file {}: {}",
+						path.display(),
+						e
+					);
+				}
 			}
 		},
 		notify::EventKind::Modify(notify::event::ModifyKind::Data(_))
 		| notify::EventKind::Modify(notify::event::ModifyKind::Name(notify::event::RenameMode::Both)) => {
 			for path in event.paths {
-				dev_log!("indexing", "[WatchFile] File modified: {}", path.display());				let mut index = index_arc.write().await;
+				dev_log!("indexing", "[WatchFile] File modified: {}", path.display());
+				let mut index = index_arc.write().await;
 				if let Err(e) = crate::Indexing::Store::UpdateIndex::UpdateSingleFile(&mut index, &path, config).await {
-					dev_log!("indexing", "warn: [WatchFile] Failed to re-index modified file {}: {}", path.display(), e);				}
+					dev_log!(
+						"indexing",
+						"warn: [WatchFile] Failed to re-index modified file {}: {}",
+						path.display(),
+						e
+					);
+				}
 			}
 		},
 		notify::EventKind::Remove(notify::event::RemoveKind::File) => {
 			for path in event.paths {
-				dev_log!("indexing", "[WatchFile] File removed: {}", path.display());				let mut index = index_arc.write().await;
+				dev_log!("indexing", "[WatchFile] File removed: {}", path.display());
+				let mut index = index_arc.write().await;
 				if let Err(e) = crate::Indexing::State::UpdateState::RemoveFileFromIndex(&mut index, &path) {
-					dev_log!("indexing", "warn: [WatchFile] Failed to remove file from index {}: {}", path.display(), e);				}
+					dev_log!(
+						"indexing",
+						"warn: [WatchFile] Failed to remove file from index {}: {}",
+						path.display(),
+						e
+					);
+				}
 			}
 		},
 		notify::EventKind::Create(notify::event::CreateKind::Folder) => {
 			for path in event.paths {
-				dev_log!("indexing", "[WatchFile] Directory created: {}", path.display());				// Directories themselves don't need indexing, just their
+				dev_log!("indexing", "[WatchFile] Directory created: {}", path.display()); // Directories themselves don't need indexing, just their
 				// contents
 			}
 		},
 		notify::EventKind::Remove(notify::event::RemoveKind::Folder) => {
 			for path in event.paths {
-				dev_log!("indexing", "[WatchFile] Directory removed: {}", path.display());				// Remove all files from this directory
+				dev_log!("indexing", "[WatchFile] Directory removed: {}", path.display()); // Remove all files from this directory
 				let mut index = index_arc.write().await;
 				let mut paths_to_remove = Vec::new();
 				for indexed_path in index.files.keys() {
@@ -121,7 +141,13 @@ pub async fn HandleFileEvent(event:notify::Event, index_arc:&RwLock<FileIndex>, 
 				for indexed_path in paths_to_remove {
 					if let Err(e) = crate::Indexing::State::UpdateState::RemoveFileFromIndex(&mut index, &indexed_path)
 					{
-						dev_log!("indexing", "warn: [WatchFile] Failed to remove file {}: {}", indexed_path.display(), e);					}
+						dev_log!(
+							"indexing",
+							"warn: [WatchFile] Failed to remove file {}: {}",
+							indexed_path.display(),
+							e
+						);
+					}
 				}
 			}
 		},
@@ -192,9 +218,12 @@ impl DebouncedEventHandler {
 		};
 
 		for (path, change_info) in expired_paths {
-			dev_log!("indexing", "[WatchFile] Processing debounced change for {} (suppressed: {})",
+			dev_log!(
+				"indexing",
+				"[WatchFile] Processing debounced change for {} (suppressed: {})",
 				path.display(),
-				change_info.suppressed_count);
+				change_info.suppressed_count
+			);
 
 			let result = match change_info.change_type {
 				FileChangeType::Created => {

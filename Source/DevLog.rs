@@ -169,16 +169,20 @@ macro_rules! dev_log {
 // OTLP Span Emission — sends spans directly to Jaeger/OTEL collector
 // ============================================================================
 
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{
+	sync::atomic::{AtomicBool, Ordering},
+	time::{SystemTime, UNIX_EPOCH},
+};
 
 static OTLP_AVAILABLE:AtomicBool = AtomicBool::new(true);
 static OTLP_TRACE_ID:OnceLock<String> = OnceLock::new();
 
 fn GetTraceId() -> &'static str {
 	OTLP_TRACE_ID.get_or_init(|| {
-		use std::collections::hash_map::DefaultHasher;
-		use std::hash::{Hash, Hasher};
+		use std::{
+			collections::hash_map::DefaultHasher,
+			hash::{Hash, Hasher},
+		};
 		let mut H = DefaultHasher::new();
 		std::process::id().hash(&mut H);
 		SystemTime::now()
@@ -190,12 +194,7 @@ fn GetTraceId() -> &'static str {
 	})
 }
 
-pub fn NowNano() -> u64 {
-	SystemTime::now()
-		.duration_since(UNIX_EPOCH)
-		.unwrap_or_default()
-		.as_nanos() as u64
-}
+pub fn NowNano() -> u64 { SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_nanos() as u64 }
 
 /// Emit an OTLP span to the local collector (Jaeger at 127.0.0.1:4318).
 /// Fire-and-forget on a background thread. Stops trying after first failure.
@@ -246,12 +245,13 @@ pub fn EmitOTLPSpan(Name:&str, StartNano:u64, EndNano:u64, Attributes:&[(&str, &
 
 	// Fire-and-forget on a background thread
 	std::thread::spawn(move || {
-		use std::io::{Read as IoRead, Write as IoWrite};
-		use std::net::TcpStream;
-		use std::time::Duration;
+		use std::{
+			io::{Read as IoRead, Write as IoWrite},
+			net::TcpStream,
+			time::Duration,
+		};
 
-		let Ok(mut Stream) =
-			TcpStream::connect_timeout(&"127.0.0.1:4318".parse().unwrap(), Duration::from_millis(200))
+		let Ok(mut Stream) = TcpStream::connect_timeout(&"127.0.0.1:4318".parse().unwrap(), Duration::from_millis(200))
 		else {
 			OTLP_AVAILABLE.store(false, Ordering::Relaxed);
 			return;
@@ -260,11 +260,16 @@ pub fn EmitOTLPSpan(Name:&str, StartNano:u64, EndNano:u64, Attributes:&[(&str, &
 		let _ = Stream.set_read_timeout(Some(Duration::from_millis(200)));
 
 		let HttpReq = format!(
-			"POST /v1/traces HTTP/1.1\r\nHost: 127.0.0.1:4318\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+			"POST /v1/traces HTTP/1.1\r\nHost: 127.0.0.1:4318\r\nContent-Type: application/json\r\nContent-Length: \
+			 {}\r\nConnection: close\r\n\r\n",
 			Payload.len()
 		);
-		if Stream.write_all(HttpReq.as_bytes()).is_err() { return; }
-		if Stream.write_all(Payload.as_bytes()).is_err() { return; }
+		if Stream.write_all(HttpReq.as_bytes()).is_err() {
+			return;
+		}
+		if Stream.write_all(Payload.as_bytes()).is_err() {
+			return;
+		}
 		let mut Buf = [0u8; 32];
 		let _ = Stream.read(&mut Buf);
 		if !(Buf.starts_with(b"HTTP/1.1 2") || Buf.starts_with(b"HTTP/1.0 2")) {
@@ -274,8 +279,10 @@ pub fn EmitOTLPSpan(Name:&str, StartNano:u64, EndNano:u64, Attributes:&[(&str, &
 }
 
 fn rand_u64() -> u64 {
-	use std::collections::hash_map::DefaultHasher;
-	use std::hash::{Hash, Hasher};
+	use std::{
+		collections::hash_map::DefaultHasher,
+		hash::{Hash, Hasher},
+	};
 	let mut H = DefaultHasher::new();
 	std::thread::current().id().hash(&mut H);
 	NowNano().hash(&mut H);

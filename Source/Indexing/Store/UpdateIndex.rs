@@ -67,7 +67,6 @@
 //! Update operations acquire write locks on shared state and return
 //! results for persistence.
 
-use crate::dev_log;
 use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use tokio::{
@@ -80,6 +79,7 @@ use crate::{
 	Configuration::IndexingConfig,
 	Indexing::State::CreateState::{FileIndex, FileMetadata},
 	Result,
+	dev_log,
 };
 
 /// Update index for a single file
@@ -94,7 +94,8 @@ pub async fn UpdateSingleFile(
 	if !file_path.exists() {
 		// File was deleted, remove from index
 		crate::Indexing::State::UpdateState::RemoveFileFromIndex(index, file_path)?;
-		dev_log!("indexing", "[UpdateIndex] Removed deleted file: {}", file_path.display());		return Ok(None);
+		dev_log!("indexing", "[UpdateIndex] Removed deleted file: {}", file_path.display());
+		return Ok(None);
 	}
 
 	// Get current file metadata
@@ -206,7 +207,13 @@ pub async fn UpdateFilesBatch(
 				removed_count += 1;
 			},
 			Err(e) => {
-				dev_log!("indexing", "warn: [UpdateIndex] Failed to update file {}: {}", file_path.display(), e);				error_count += 1;
+				dev_log!(
+					"indexing",
+					"warn: [UpdateIndex] Failed to update file {}: {}",
+					file_path.display(),
+					e
+				);
+				error_count += 1;
 			},
 		}
 	}
@@ -276,10 +283,16 @@ impl DebouncedUpdate {
 
 			match UpdateSingleFile(&mut index, &self.file_path, &self.config).await {
 				Ok(_) => {
-					dev_log!("indexing", "[UpdateIndex] Debounced update completed: {}", self.file_path.display());					return Ok(true);
+					dev_log!(
+						"indexing",
+						"[UpdateIndex] Debounced update completed: {}",
+						self.file_path.display()
+					);
+					return Ok(true);
 				},
 				Err(e) => {
-					dev_log!("indexing", "warn: [UpdateIndex] Debounced update failed: {}", e);					return Err(e);
+					dev_log!("indexing", "warn: [UpdateIndex] Debounced update failed: {}", e);
+					return Err(e);
 				},
 			}
 		}
@@ -302,18 +315,21 @@ pub async fn ProcessWatcherEvent(
 	for file_path in event.paths {
 		match event.kind {
 			notify::EventKind::Create(notify::event::CreateKind::File) => {
-				dev_log!("indexing", "[UpdateIndex] File created: {}", file_path.display());				if UpdateSingleFile(index, &file_path, config).await.is_ok() {
+				dev_log!("indexing", "[UpdateIndex] File created: {}", file_path.display());
+				if UpdateSingleFile(index, &file_path, config).await.is_ok() {
 					updated += 1;
 				}
 			},
 			notify::EventKind::Modify(notify::event::ModifyKind::Data(_))
 			| notify::EventKind::Modify(notify::event::ModifyKind::Name(notify::event::RenameMode::Both)) => {
-				dev_log!("indexing", "[UpdateIndex] File modified: {}", file_path.display());				if UpdateSingleFile(index, &file_path, config).await.is_ok() {
+				dev_log!("indexing", "[UpdateIndex] File modified: {}", file_path.display());
+				if UpdateSingleFile(index, &file_path, config).await.is_ok() {
 					updated += 1;
 				}
 			},
 			notify::EventKind::Remove(notify::event::RemoveKind::File) => {
-				dev_log!("indexing", "[UpdateIndex] File removed: {}", file_path.display());				if super::super::State::UpdateState::RemoveFileFromIndex(index, &file_path).is_ok() {
+				dev_log!("indexing", "[UpdateIndex] File removed: {}", file_path.display());
+				if super::super::State::UpdateState::RemoveFileFromIndex(index, &file_path).is_ok() {
 					removed += 1;
 				}
 			},
@@ -407,9 +423,11 @@ pub async fn RebuildIndex(
 				total_size += file_size;
 			},
 			Ok(Err(e)) => {
-				dev_log!("indexing", "warn: [UpdateIndex] Rebuild task failed: {}", e);			},
+				dev_log!("indexing", "warn: [UpdateIndex] Rebuild task failed: {}", e);
+			},
 			Err(e) => {
-				dev_log!("indexing", "warn: [UpdateIndex] Rebuild task join failed: {}", e);			},
+				dev_log!("indexing", "warn: [UpdateIndex] Rebuild task join failed: {}", e);
+			},
 		}
 	}
 
@@ -435,7 +453,8 @@ pub async fn ValidateAndRepairIndex(index:&mut FileIndex) -> Result<RepairResult
 	match super::super::State::UpdateState::ValidateIndexConsistency(index) {
 		Ok(()) => {},
 		Err(e) => {
-			dev_log!("indexing", "warn: [UpdateIndex] Index validation failed: {}", e);			repaired_files += 1;
+			dev_log!("indexing", "warn: [UpdateIndex] Index validation failed: {}", e);
+			repaired_files += 1;
 		},
 	}
 

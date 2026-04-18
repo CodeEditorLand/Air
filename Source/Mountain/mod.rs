@@ -37,12 +37,13 @@
 
 use std::{env, fs::File, io::BufReader, path::PathBuf, time::Duration};
 
-use crate::dev_log;
 use tonic::transport::{Channel, Endpoint};
 #[cfg(feature = "mtls")]
 use rustls::ClientConfig;
 #[cfg(feature = "mtls")]
 use rustls::RootCertStore;
+
+use crate::dev_log;
 
 /// Default Vine server address for Mountain component.
 ///
@@ -152,7 +153,8 @@ pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, B
 
 	if let Some(ca_path) = &tls_config.ca_cert_path {
 		// Load CA certificate from file
-		dev_log!("grpc", "Loading CA certificate from {:?}", ca_path);		let ca_file = File::open(ca_path).map_err(|e| format!("Failed to open CA certificate file: {}", e))?;
+		dev_log!("grpc", "Loading CA certificate from {:?}", ca_path);
+		let ca_file = File::open(ca_path).map_err(|e| format!("Failed to open CA certificate file: {}", e))?;
 		let mut reader = BufReader::new(ca_file);
 
 		let certs:Result<Vec<_>, _> = rustls_pemfile::certs(&mut reader).collect();
@@ -168,18 +170,26 @@ pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, B
 				.map_err(|e| format!("Failed to add CA certificate to root store: {}", e))?;
 		}
 
-		dev_log!("grpc", "Loaded CA certificate from {:?}", ca_path);	} else {
+		dev_log!("grpc", "Loaded CA certificate from {:?}", ca_path);
+	} else {
 		// Use system root certificates via rustls-native-certs 0.8.x API
-		dev_log!("grpc", "Loading system root certificates");		let cert_result = rustls_native_certs::load_native_certs();
+		dev_log!("grpc", "Loading system root certificates");
+		let cert_result = rustls_native_certs::load_native_certs();
 
 		// Log any errors encountered while loading certificates
 		if !cert_result.errors.is_empty() {
-			dev_log!("grpc", "warn: Encountered errors loading system certificates: {:?}", cert_result.errors);		}
+			dev_log!(
+				"grpc",
+				"warn: Encountered errors loading system certificates: {:?}",
+				cert_result.errors
+			);
+		}
 
 		let native_certs = cert_result.certs;
 
 		if native_certs.is_empty() {
-			dev_log!("grpc", "warn: No system root certificates found");		}
+			dev_log!("grpc", "warn: No system root certificates found");
+		}
 
 		for cert in native_certs {
 			root_store
@@ -187,14 +197,16 @@ pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, B
 				.map_err(|e| format!("Failed to add system certificate to root store: {}", e))?;
 		}
 
-		dev_log!("grpc", "Loaded {} system root certificates", root_store.len());	}
+		dev_log!("grpc", "Loaded {} system root certificates", root_store.len());
+	}
 
 	// Load client certificate and key for mTLS (if provided)
 	let client_certs = if tls_config.client_cert_path.is_some() && tls_config.client_key_path.is_some() {
 		let cert_path = tls_config.client_cert_path.as_ref().unwrap();
 		let key_path = tls_config.client_key_path.as_ref().unwrap();
 
-		dev_log!("grpc", "Loading client certificate from {:?}", cert_path);		let cert_file = File::open(cert_path).map_err(|e| format!("Failed to open client certificate file: {}", e))?;
+		dev_log!("grpc", "Loading client certificate from {:?}", cert_path);
+		let cert_file = File::open(cert_path).map_err(|e| format!("Failed to open client certificate file: {}", e))?;
 		let mut cert_reader = BufReader::new(cert_file);
 
 		let certs:Result<Vec<_>, _> = rustls_pemfile::certs(&mut cert_reader).collect();
@@ -204,7 +216,8 @@ pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, B
 			return Err("No client certificates found in file".into());
 		}
 
-		dev_log!("grpc", "Loading client private key from {:?}", key_path);		let key_file = File::open(key_path).map_err(|e| format!("Failed to open private key file: {}", e))?;
+		dev_log!("grpc", "Loading client private key from {:?}", key_path);
+		let key_file = File::open(key_path).map_err(|e| format!("Failed to open private key file: {}", e))?;
 		let mut key_reader = BufReader::new(key_file);
 
 		let key = rustls_pemfile::private_key(&mut key_reader)
@@ -246,7 +259,10 @@ pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, B
 	// building If verification needs to be disabled, use NoServerAuthVerifier
 	// during build
 	if !tls_config.verify_certs {
-		dev_log!("grpc", "warn: Certificate verification disabled - this is NOT secure for production!");		// For development/testing, consider using a custom verifier
+		dev_log!(
+			"grpc",
+			"warn: Certificate verification disabled - this is NOT secure for production!"
+		); // For development/testing, consider using a custom verifier
 		// For now, this is a placeholder - verification is always enabled
 	}
 
@@ -428,7 +444,8 @@ impl MountainClient {
 		if let Some(tls_config) = &config.tls_config {
 			dev_log!("grpc", "TLS configuration provided, configuring secure connection");
 			let _client_config = create_tls_client_config(tls_config).map_err(|e| {
-				dev_log!("grpc", "error: Failed to create TLS client configuration: {}", e);				format!("TLS configuration error: {}", e)
+				dev_log!("grpc", "error: Failed to create TLS client configuration: {}", e);
+				format!("TLS configuration error: {}", e)
 			})?;
 
 			// Create TLS configuration using tonic's API
@@ -443,11 +460,13 @@ impl MountainClient {
 				.await
 				.map_err(|e| format!("Failed to connect with TLS: {}", e))?;
 
-			dev_log!("grpc", "Successfully connected to Mountain at {} with TLS", config.address);			return Ok(Self { channel, config });
+			dev_log!("grpc", "Successfully connected to Mountain at {} with TLS", config.address);
+			return Ok(Self { channel, config });
 		}
 
 		// Unencrypted connection
-		dev_log!("grpc", "Using unencrypted connection");		let channel = endpoint.connect().await?;
+		dev_log!("grpc", "Using unencrypted connection");
+		let channel = endpoint.connect().await?;
 		dev_log!("grpc", "Successfully connected to Mountain at {}", config.address);
 		Ok(Self { channel, config })
 	}
@@ -481,13 +500,16 @@ impl MountainClient {
 		.await
 		{
 			Ok(Ok(())) => {
-				dev_log!("grpc", "Mountain health check: healthy");				Ok(true)
+				dev_log!("grpc", "Mountain health check: healthy");
+				Ok(true)
 			},
 			Ok(Err(e)) => {
-				dev_log!("grpc", "warn: Mountain health check: disconnected - {}", e);				Ok(false)
+				dev_log!("grpc", "warn: Mountain health check: disconnected - {}", e);
+				Ok(false)
 			},
 			Err(_) => {
-				dev_log!("grpc", "warn: Mountain health check: timeout");				Ok(false)
+				dev_log!("grpc", "warn: Mountain health check: timeout");
+				Ok(false)
 			},
 		}
 	}

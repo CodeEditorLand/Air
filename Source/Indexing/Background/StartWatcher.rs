@@ -63,7 +63,6 @@
 //! Background tasks use Arc for shared state and async/await
 //! for safe concurrent operations.
 
-use crate::dev_log;
 use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use tokio::{
@@ -71,7 +70,7 @@ use tokio::{
 	task::JoinHandle,
 };
 
-use crate::{AirError, ApplicationState::ApplicationState, Indexing::State::CreateState::FileIndex, Result};
+use crate::{AirError, ApplicationState::ApplicationState, Indexing::State::CreateState::FileIndex, Result, dev_log};
 
 /// Maximum number of parallel watch event processors
 const MAX_WATCH_PROCESSORS:usize = 5;
@@ -126,7 +125,11 @@ pub async fn StartFileWatcher(context:&BackgroundIndexerContext, paths:Vec<PathB
 			if let Ok(event) = res {
 				// Check corruption flag before processing events
 				if *corruption_flag.blocking_lock() {
-					dev_log!("indexing", "warn: [StartWatcher] Skipping file event - index marked as corrupted");					return;
+					dev_log!(
+						"indexing",
+						"warn: [StartWatcher] Skipping file event - index marked as corrupted"
+					);
+					return;
 				}
 
 				let index = index.clone();
@@ -162,16 +165,27 @@ pub async fn StartFileWatcher(context:&BackgroundIndexerContext, paths:Vec<PathB
 					watcher
 						.watch(path, notify::RecursiveMode::Recursive)
 						.map_err(|e| AirError::FileSystem(format!("Failed to watch path {}: {}", path.display(), e)))?;
-					dev_log!("indexing", "[StartWatcher] Watching path: {}", path.display());				},
+					dev_log!("indexing", "[StartWatcher] Watching path: {}", path.display());
+				},
 				Err(e) => {
-					dev_log!("indexing", "warn: [StartWatcher] Skipping invalid watch path {}: {}", path.display(), e);				},
+					dev_log!(
+						"indexing",
+						"warn: [StartWatcher] Skipping invalid watch path {}: {}",
+						path.display(),
+						e
+					);
+				},
 			}
 		}
 	}
 
 	*context.file_watcher.lock().await = Some(watcher);
 
-	dev_log!("indexing", "[StartWatcher] File watcher started successfully for {} paths", paths.len());
+	dev_log!(
+		"indexing",
+		"[StartWatcher] File watcher started successfully for {} paths",
+		paths.len()
+	);
 	Ok(())
 }
 
@@ -188,7 +202,8 @@ pub fn StartDebounceProcessor(context:Arc<BackgroundIndexerContext>) -> JoinHand
 			{
 				// Check corruption flag
 				if *context.corruption_detected.lock().await {
-					dev_log!("indexing", "warn: [StartWatcher] Index corrupted, pausing debounce processing");					tokio::time::sleep(Duration::from_secs(5)).await;
+					dev_log!("indexing", "warn: [StartWatcher] Index corrupted, pausing debounce processing");
+					tokio::time::sleep(Duration::from_secs(5)).await;
 					continue;
 				}
 
@@ -202,10 +217,12 @@ pub fn StartDebounceProcessor(context:Arc<BackgroundIndexerContext>) -> JoinHand
 				{
 					Ok(changes) => {
 						if !changes.is_empty() {
-							dev_log!("indexing", "[StartWatcher] Processed {} debounced changes", changes.len());						}
+							dev_log!("indexing", "[StartWatcher] Processed {} debounced changes", changes.len());
+						}
 					},
 					Err(e) => {
-						dev_log!("indexing", "error: [StartWatcher] Failed to process pending changes: {}", e);					},
+						dev_log!("indexing", "error: [StartWatcher] Failed to process pending changes: {}", e);
+					},
 				}
 			}
 		}
@@ -217,7 +234,8 @@ pub async fn StartBackgroundTasks(context:Arc<BackgroundIndexerContext>) -> Resu
 	let config = &context.app_state.Configuration.Indexing;
 
 	if !config.Enabled {
-		dev_log!("indexing", "[StartWatcher] Background indexing disabled in configuration");		return Err(AirError::Configuration("Background indexing is disabled".to_string()));
+		dev_log!("indexing", "[StartWatcher] Background indexing disabled in configuration");
+		return Err(AirError::Configuration("Background indexing is disabled".to_string()));
 	}
 
 	let handle = tokio::spawn(BackgroundTask(context));
@@ -228,14 +246,15 @@ pub async fn StartBackgroundTasks(context:Arc<BackgroundIndexerContext>) -> Resu
 
 /// Stop background tasks
 pub async fn StopBackgroundTasks(_context:&BackgroundIndexerContext) {
-	dev_log!("indexing", "[StartWatcher] Stopping background tasks");	// Tasks are cancelled when the task handle is dropped
+	dev_log!("indexing", "[StartWatcher] Stopping background tasks"); // Tasks are cancelled when the task handle is dropped
 }
 
 /// Stop file watcher
 pub async fn StopFileWatcher(context:&BackgroundIndexerContext) {
 	if let Some(watcher) = context.file_watcher.lock().await.take() {
 		drop(watcher);
-		dev_log!("indexing", "[StartWatcher] File watcher stopped");	}
+		dev_log!("indexing", "[StartWatcher] File watcher stopped");
+	}
 }
 
 /// Background task for periodic indexing
@@ -245,15 +264,19 @@ async fn BackgroundTask(context:Arc<BackgroundIndexerContext>) {
 	let interval = Duration::from_secs(config.UpdateIntervalMinutes as u64 * 60);
 	let mut interval = tokio::time::interval(interval);
 
-	dev_log!("indexing", "[StartWatcher] Background indexing configured for {} minute intervals",
-		config.UpdateIntervalMinutes);
+	dev_log!(
+		"indexing",
+		"[StartWatcher] Background indexing configured for {} minute intervals",
+		config.UpdateIntervalMinutes
+	);
 
 	loop {
 		interval.tick().await;
 		{
 			// Check corruption flag
 			if *context.corruption_detected.lock().await {
-				dev_log!("indexing", "warn: [StartWatcher] Index corrupted, skipping background update");				continue;
+				dev_log!("indexing", "warn: [StartWatcher] Index corrupted, skipping background update");
+				continue;
 			}
 
 			dev_log!("indexing", "[StartWatcher] Running periodic background index...");
@@ -261,7 +284,8 @@ async fn BackgroundTask(context:Arc<BackgroundIndexerContext>) {
 			let directories = config.IndexDirectory.clone();
 			if let Err(e) = crate::Indexing::Scan::ScanDirectory::ScanDirectory(&directories, vec![], &config, 10).await
 			{
-				dev_log!("indexing", "error: [StartWatcher] Background indexing failed: {}", e);			}
+				dev_log!("indexing", "error: [StartWatcher] Background indexing failed: {}", e);
+			}
 		}
 	}
 }
@@ -295,7 +319,8 @@ pub async fn StartAll(
 				Some(StartDebounceProcessor(context.clone()))
 			},
 			Err(e) => {
-				dev_log!("indexing", "error: [StartWatcher] Failed to start file watcher: {}", e);				None
+				dev_log!("indexing", "error: [StartWatcher] Failed to start file watcher: {}", e);
+				None
 			},
 		}
 	} else {
@@ -305,7 +330,8 @@ pub async fn StartAll(
 	let background_handle = match StartBackgroundTasks(context.clone()).await {
 		Ok(handle) => Some(handle),
 		Err(e) => {
-			dev_log!("indexing", "warn: [StartWatcher] Failed to start background tasks: {}", e);			None
+			dev_log!("indexing", "warn: [StartWatcher] Failed to start background tasks: {}", e);
+			None
 		},
 	};
 

@@ -103,9 +103,8 @@ use tokio::{
 };
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Result as NotifyResult, Watcher};
 use chrono::{DateTime, Utc};
-use crate::dev_log;
 
-use crate::{AirError, Configuration::AirConfiguration, Result};
+use crate::{AirError, Configuration::AirConfiguration, Result, dev_log};
 
 // =============================================================================
 // Configuration Hot-Reload Manager
@@ -683,7 +682,8 @@ impl ConfigHotReload {
 		self.watcher = Some(Arc::new(RwLock::new(watcher)));
 		*self.enabled.write().await = true;
 
-		dev_log!("config", "[HotReload] File watching enabled for: {}", config_path.display());		Ok(())
+		dev_log!("config", "[HotReload] File watching enabled for: {}", config_path.display());
+		Ok(())
 	}
 
 	/// Disable file watching
@@ -694,7 +694,8 @@ impl ConfigHotReload {
 			drop(watcher);
 		}
 
-		dev_log!("config", "[HotReload] File watching disabled");		Ok(())
+		dev_log!("config", "[HotReload] File watching disabled");
+		Ok(())
 	}
 
 	/// Start the reload request processor
@@ -726,11 +727,14 @@ impl ConfigHotReload {
 				// Process the reload
 				match request {
 					ReloadRequest::Manual => {
-						dev_log!("config", "[HotReload] Processing manual reload request");					},
+						dev_log!("config", "[HotReload] Processing manual reload request");
+					},
 					ReloadRequest::Signal => {
-						dev_log!("config", "[HotReload] Processing signal-based reload request");					},
+						dev_log!("config", "[HotReload] Processing signal-based reload request");
+					},
 					ReloadRequest::FileChange => {
-						dev_log!("config", "[HotReload] Processing file change reload request");					},
+						dev_log!("config", "[HotReload] Processing file change reload request");
+					},
 					ReloadRequest::Periodic => {
 						dev_log!("config", "processing periodic reload check");
 					},
@@ -741,7 +745,11 @@ impl ConfigHotReload {
 
 	/// Reload configuration from file with retry logic and rollback support
 	pub async fn Reload(&self) -> Result<()> {
-		dev_log!("config", "[HotReload] Reloading configuration from: {}", self.config_path.display());
+		dev_log!(
+			"config",
+			"[HotReload] Reloading configuration from: {}",
+			self.config_path.display()
+		);
 		// Check if enabled
 		if !*self.enabled.read().await {
 			return Err(AirError::Configuration("Hot-reload is disabled".to_string()));
@@ -770,16 +778,20 @@ impl ConfigHotReload {
 						stats.last_error = None;
 					}
 
-					dev_log!("config", "[HotReload] Configuration reloaded successfully in {:?}", duration);					return Ok(());
+					dev_log!("config", "[HotReload] Configuration reloaded successfully in {:?}", duration);
+					return Ok(());
 				},
 				Err(e) => {
 					last_error = Some(e.clone());
 					if attempt < self.max_retries {
 						let delay = self.retry_delay * 2_u32.pow(attempt);
-						dev_log!("config", "warn: [HotReload] Reload attempt {} failed, retrying in {:?}: {}",
+						dev_log!(
+							"config",
+							"warn: [HotReload] Reload attempt {} failed, retrying in {:?}: {}",
 							attempt + 1,
 							delay,
-							e);
+							e
+						);
 						sleep(delay).await;
 					}
 				},
@@ -797,8 +809,10 @@ impl ConfigHotReload {
 
 		// Attempt rollback if enabled
 		if *self.auto_rollback_enabled.read().await {
-			dev_log!("config", "[HotReload] Attempting rollback due to reload failure");			if let Err(rollback_err) = self.Rollback().await {
-				dev_log!("config", "error: [HotReload] Rollback also failed: {}", rollback_err);			}
+			dev_log!("config", "[HotReload] Attempting rollback due to reload failure");
+			if let Err(rollback_err) = self.Rollback().await {
+				dev_log!("config", "error: [HotReload] Rollback also failed: {}", rollback_err);
+			}
 		}
 
 		Err(error)
@@ -832,7 +846,8 @@ impl ConfigHotReload {
 
 		if let Some(ref hash) = current_hash {
 			if hash == &new_hash {
-				dev_log!("config", "[HotReload] Configuration unchanged, skipping reload");				return Ok(());
+				dev_log!("config", "[HotReload] Configuration unchanged, skipping reload");
+				return Ok(());
 			}
 		}
 
@@ -906,20 +921,27 @@ impl ConfigHotReload {
 				let mut stats = self.stats.write().await;
 				stats.validation_errors += 1;
 				stats.last_error = Some(format!("{}: {}", validator.name(), e));
-				dev_log!("config", "error: [HotReload] Validation failed ({}): {}", validator.name(), e);				return Err(AirError::Configuration(format!("{}: {}", validator.name(), e)));
+				dev_log!("config", "error: [HotReload] Validation failed ({}): {}", validator.name(), e);
+				return Err(AirError::Configuration(format!("{}: {}", validator.name(), e)));
 			}
 
 			dev_log!("config", "validator '{}' passed", validator.name());
 		}
 
-		dev_log!("config", "[HotReload] Configuration validation passed ({} validators)", validators.len());		Ok(())
+		dev_log!(
+			"config",
+			"[HotReload] Configuration validation passed ({} validators)",
+			validators.len()
+		);
+		Ok(())
 	}
 
 	/// Register a custom validator
 	pub async fn RegisterValidator(&self, validator:Box<dyn ConfigValidator>) {
 		let mut validators = self.validators.write().await;
 		validators.push(validator);
-		dev_log!("config", "[HotReload] Registered validator (total: {})", validators.len());	}
+		dev_log!("config", "[HotReload] Registered validator (total: {})", validators.len());
+	}
 
 	/// Rollback to previous configuration
 	pub async fn Rollback(&self) -> Result<()> {
@@ -966,7 +988,8 @@ impl ConfigHotReload {
 
 		let _ = self.change_sender.send(event);
 
-		dev_log!("config", "[HotReload] Configuration rolled back successfully");		Ok(())
+		dev_log!("config", "[HotReload] Configuration rolled back successfully");
+		Ok(())
 	}
 
 	/// Get current configuration
@@ -998,7 +1021,8 @@ impl ConfigHotReload {
 		// Trigger reload
 		self.Reload().await?;
 
-		dev_log!("config", "[HotReload] Configuration value updated: {} = {}", path, value);		Ok(())
+		dev_log!("config", "[HotReload] Configuration value updated: {} = {}", path, value);
+		Ok(())
 	}
 
 	/// Get configuration value by path
@@ -1150,7 +1174,12 @@ impl ConfigHotReload {
 	/// Set whether auto-rollback is enabled
 	pub async fn SetAutoRollback(&self, enabled:bool) {
 		*self.auto_rollback_enabled.write().await = enabled;
-		dev_log!("config", "[HotReload] Auto-rollback {}", if enabled { "enabled" } else { "disabled" });	}
+		dev_log!(
+			"config",
+			"[HotReload] Auto-rollback {}",
+			if enabled { "enabled" } else { "disabled" }
+		);
+	}
 
 	/// Get configuration change event receiver
 	///
@@ -1165,7 +1194,8 @@ impl ConfigHotReload {
 		// For now, just log that debounce delay would be changed
 		// In a proper implementation, we'd make debounce_delay mutable or use
 		// Arc<RwLock<Duration>>
-		dev_log!("config", "[HotReload] Debounce delay set to {:?}", delay);	}
+		dev_log!("config", "[HotReload] Debounce delay set to {:?}", delay);
+	}
 }
 
 #[cfg(test)]

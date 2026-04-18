@@ -72,7 +72,6 @@ pub mod Watch;
 pub mod Background;
 
 // Import types and functions needed for the FileIndexer implementation
-use crate::dev_log;
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
 use tokio::sync::{Mutex, RwLock};
@@ -94,6 +93,7 @@ use crate::{
 		},
 	},
 	Result,
+	dev_log,
 };
 // Import types from submodules with explicit full paths
 use crate::Indexing::State::CreateState::{CreateNewIndex, FileIndex, FileMetadata, SymbolInfo, SymbolLocation};
@@ -195,7 +195,11 @@ impl FileIndexer {
 			.await
 			.map_err(|e| AirError::Internal(e.to_string()))?;
 
-		dev_log!("indexing", "[FileIndexer] Initialized with index directory: {}", index_directory.display());
+		dev_log!(
+			"indexing",
+			"[FileIndexer] Initialized with index directory: {}",
+			index_directory.display()
+		);
 		Ok(indexer)
 	}
 
@@ -228,7 +232,8 @@ impl FileIndexer {
 		}
 
 		if missing_files > 0 {
-			dev_log!("indexing", "warn: [FileIndexer] Found {} missing files in index", missing_files);		}
+			dev_log!("indexing", "warn: [FileIndexer] Found {} missing files in index", missing_files);
+		}
 
 		dev_log!("indexing", "[FileIndexer] Index integrity verified successfully");
 		Ok(())
@@ -282,7 +287,13 @@ impl FileIndexer {
 
 					// Index content for search
 					if let Err(e) = UpdateFileContent(&mut index, &file_path, &metadata).await {
-						dev_log!("indexing", "warn: [FileIndexer] Failed to index content for {}: {}", file_path.display(), e);					}
+						dev_log!(
+							"indexing",
+							"warn: [FileIndexer] Failed to index content for {}: {}",
+							file_path.display(),
+							e
+						);
+					}
 
 					// Index symbols
 					index.file_symbols.insert(file_path.clone(), symbols.clone());
@@ -304,7 +315,8 @@ impl FileIndexer {
 					files_with_errors += 1;
 				},
 				Err(e) => {
-					dev_log!("indexing", "error: [FileIndexer] Indexing task failed: {}", e);					files_with_errors += 1;
+					dev_log!("indexing", "error: [FileIndexer] Indexing task failed: {}", e);
+					files_with_errors += 1;
 				},
 			}
 		}
@@ -320,12 +332,15 @@ impl FileIndexer {
 
 		let duration = start_time.elapsed().as_secs_f64();
 
-		dev_log!("indexing", "[FileIndexer] Indexing completed: {} files, {} bytes, {} symbols, {} errors in {:.2}s",
+		dev_log!(
+			"indexing",
+			"[FileIndexer] Indexing completed: {} files, {} bytes, {} symbols, {} errors in {:.2}s",
 			files_indexed,
 			total_size,
 			symbols_extracted,
 			files_with_errors,
-			duration);
+			duration
+		);
 
 		Ok(IndexResult {
 			files_indexed,

@@ -88,7 +88,6 @@
 
 pub mod HotReload;
 
-use crate::dev_log;
 use std::{
 	collections::HashMap,
 	env,
@@ -99,7 +98,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value as JsonValue, json};
 use sha2::Digest;
 
-use crate::{AirError, DefaultConfigFile, Result};
+use crate::{AirError, DefaultConfigFile, Result, dev_log};
 
 // =============================================================================
 // Configuration Main Structure
@@ -745,9 +744,11 @@ impl ConfigurationManager {
 		let ConfigPath = self.GetConfigPath()?;
 
 		if ConfigPath.exists() {
-			dev_log!("config", "Loading configuration from: {}", ConfigPath.display());			config = self.LoadFromFile(&ConfigPath).await?;
+			dev_log!("config", "Loading configuration from: {}", ConfigPath.display());
+			config = self.LoadFromFile(&ConfigPath).await?;
 		} else {
-			dev_log!("config", "No configuration file found, using defaults");		}
+			dev_log!("config", "No configuration file found, using defaults");
+		}
 
 		// Apply environment variable overrides
 		self.ApplyEnvironmentOverrides(&mut config)?;
@@ -758,7 +759,8 @@ impl ConfigurationManager {
 		// Validate all configuration values
 		self.ValidateConfiguration(&config)?;
 
-		dev_log!("config", "Configuration loaded successfully (profile: {})", config.Profile);		Ok(config)
+		dev_log!("config", "Configuration loaded successfully (profile: {})", config.Profile);
+		Ok(config)
 	}
 
 	/// Load configuration from a specific file
@@ -780,7 +782,8 @@ impl ConfigurationManager {
 		})?;
 
 		// Type validation is done by serde automatically
-		dev_log!("config", "Configuration file parsed successfully");		Ok(config)
+		dev_log!("config", "Configuration file parsed successfully");
+		Ok(config)
 	}
 
 	/// Save configuration to file with backup and atomic write
@@ -827,7 +830,8 @@ impl ConfigurationManager {
 			AirError::Configuration(format!("Failed to rename temp config to '{}': {}", ConfigPath.display(), e))
 		})?;
 
-		dev_log!("config", "Configuration saved to: {}", ConfigPath.display());		Ok(())
+		dev_log!("config", "Configuration saved to: {}", ConfigPath.display());
+		Ok(())
 	}
 
 	/// Validate configuration with comprehensive checks
@@ -866,7 +870,8 @@ impl ConfigurationManager {
 		// Performance configuration validation
 		self.ValidatePerformanceConfig(&config.Performance)?;
 
-		dev_log!("config", "All configuration validation checks passed");		Ok(())
+		dev_log!("config", "All configuration validation checks passed");
+		Ok(())
 	}
 
 	/// Validate schema version format
@@ -1134,8 +1139,11 @@ impl ConfigurationManager {
 				}
 
 				if !FileType.contains('*') {
-					dev_log!("config", "warn: File type pattern '{}' does not contain wildcards, may not match as expected",
-						FileType);
+					dev_log!(
+						"config",
+						"warn: File type pattern '{}' does not contain wildcards, may not match as expected",
+						FileType
+					);
 				}
 			}
 		}
@@ -1364,7 +1372,8 @@ impl ConfigurationManager {
 			return Err(AirError::Configuration("Configuration must be an object".to_string()));
 		}
 
-		dev_log!("config", "Schema validation passed");		Ok(())
+		dev_log!("config", "Schema validation passed");
+		Ok(())
 	}
 
 	/// Apply environment variable overrides to configuration
@@ -1426,7 +1435,8 @@ impl ConfigurationManager {
 		}
 
 		if override_count > 0 {
-			dev_log!("config", "Applied {} environment variable override(s)", override_count);		}
+			dev_log!("config", "Applied {} environment variable override(s)", override_count);
+		}
 
 		Ok(())
 	}
@@ -1460,7 +1470,8 @@ impl ConfigurationManager {
 			AirError::Configuration(format!("Failed to create backup '{}': {}", backup_path.display(), e))
 		})?;
 
-		dev_log!("config", "Configuration backed up to: {}", backup_path.display());		Ok(())
+		dev_log!("config", "Configuration backed up to: {}", backup_path.display());
+		Ok(())
 	}
 
 	/// Rollback configuration from the most recent backup
@@ -1510,7 +1521,8 @@ impl ConfigurationManager {
 			AirError::Configuration(format!("Failed to restore from backup '{}': {}", backup_path.display(), e))
 		})?;
 
-		dev_log!("config", "Configuration rolled back from: {}", backup_path.display());		Ok(backup_path)
+		dev_log!("config", "Configuration rolled back from: {}", backup_path.display());
+		Ok(backup_path)
 	}
 
 	/// Get the configuration file path

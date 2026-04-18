@@ -87,10 +87,9 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use chrono::{DateTime, Utc};
-use crate::dev_log;
 use uuid::Uuid;
 
-use crate::{AirError, Result};
+use crate::{AirError, Result, dev_log};
 
 // =============================================================================
 // Plugin Types and Traits
@@ -357,7 +356,12 @@ impl PluginManager {
 	pub async fn register(&self, plugin:Arc<Box<dyn Plugin>>) -> Result<()> {
 		let metadata = plugin.metadata();
 
-		dev_log!("extensions", "[PluginManager] Registering plugin: {} v{}", metadata.name, metadata.version);
+		dev_log!(
+			"extensions",
+			"[PluginManager] Registering plugin: {} v{}",
+			metadata.name,
+			metadata.version
+		);
 		// Validate plugin metadata
 		self.ValidatePluginMetadata(metadata)?;
 
@@ -388,7 +392,13 @@ impl PluginManager {
 				AirError::Plugin(format!("Plugin {} load timeout after {:?}", metadata.name, self.StartupTimeout))
 			})?
 			.map_err(|e| {
-				dev_log!("extensions", "error: [PluginManager] Failed to load plugin {}: {}", metadata.name, e);				e
+				dev_log!(
+					"extensions",
+					"error: [PluginManager] Failed to load plugin {}: {}",
+					metadata.name,
+					e
+				);
+				e
 			})?;
 
 		// Register in map
@@ -405,7 +415,8 @@ impl PluginManager {
 			},
 		);
 
-		dev_log!("extensions", "[PluginManager] Plugin registered: {}", metadata.name);		Ok(())
+		dev_log!("extensions", "[PluginManager] Plugin registered: {}", metadata.name);
+		Ok(())
 	}
 
 	/// Validate plugin metadata
@@ -439,11 +450,19 @@ impl PluginManager {
 		for permission in &permissions {
 			match permission {
 				PluginPermission::Filesystem { write, .. } if *write => {
-					dev_log!("extensions", "warn: [PluginManager] Plugin {} requests filesystem write access",
-						plugin.metadata().id);
+					dev_log!(
+						"extensions",
+						"warn: [PluginManager] Plugin {} requests filesystem write access",
+						plugin.metadata().id
+					);
 				},
 				PluginPermission::Network { .. } => {
-					dev_log!("extensions", "warn: [PluginManager] Plugin {} requests network access", plugin.metadata().id);				},
+					dev_log!(
+						"extensions",
+						"warn: [PluginManager] Plugin {} requests network access",
+						plugin.metadata().id
+					);
+				},
 				_ => {},
 			}
 		}
@@ -517,14 +536,16 @@ impl PluginManager {
 			.ok_or_else(|| AirError::Plugin(format!("Plugin not found: {}", PluginId)))?;
 
 		if registry.state == PluginState::Running {
-			dev_log!("extensions", "[PluginManager] Plugin {} already running", PluginId);			return Ok(());
+			dev_log!("extensions", "[PluginManager] Plugin {} already running", PluginId);
+			return Ok(());
 		}
 
 		registry.state = PluginState::Starting;
 
 		// Check sandbox configuration
 		if self.EnableSandbox && registry.sandbox.enabled {
-			dev_log!("extensions", "[PluginManager] Starting plugin {} in sandbox mode", PluginId);		}
+			dev_log!("extensions", "[PluginManager] Starting plugin {} in sandbox mode", PluginId);
+		}
 
 		let plugin = registry.plugin.clone();
 		drop(plugins);
@@ -539,7 +560,8 @@ impl PluginManager {
 					registry.StartedAt = Some(Utc::now());
 					registry.error = None;
 				}
-				dev_log!("extensions", "[PluginManager] Plugin started: {}", PluginId);				Ok(())
+				dev_log!("extensions", "[PluginManager] Plugin started: {}", PluginId);
+				Ok(())
 			},
 			Ok(Err(e)) => {
 				let mut plugins = self.plugins.write().await;
@@ -547,7 +569,8 @@ impl PluginManager {
 					registry.state = PluginState::Error;
 					registry.error = Some(e.to_string());
 				}
-				dev_log!("extensions", "error: [PluginManager] Plugin start failed: {}: {}", PluginId, e);				Err(e)
+				dev_log!("extensions", "error: [PluginManager] Plugin start failed: {}: {}", PluginId, e);
+				Err(e)
 			},
 			Err(_) => {
 				let mut plugins = self.plugins.write().await;
@@ -555,7 +578,8 @@ impl PluginManager {
 					registry.state = PluginState::Error;
 					registry.error = Some(format!("Startup timeout after {:?}", self.StartupTimeout));
 				}
-				dev_log!("extensions", "error: [PluginManager] Plugin start timeout: {}", PluginId);				Err(AirError::Plugin(format!("Plugin {} startup timeout", PluginId)))
+				dev_log!("extensions", "error: [PluginManager] Plugin start timeout: {}", PluginId);
+				Err(AirError::Plugin(format!("Plugin {} startup timeout", PluginId)))
 			},
 		}
 	}
@@ -568,7 +592,8 @@ impl PluginManager {
 			.ok_or_else(|| AirError::Plugin(format!("Plugin not found: {}", PluginId)))?;
 
 		if registry.state != PluginState::Running {
-			dev_log!("extensions", "[PluginManager] Plugin {} not running", PluginId);			return Ok(());
+			dev_log!("extensions", "[PluginManager] Plugin {} not running", PluginId);
+			return Ok(());
 		}
 
 		registry.state = PluginState::Stopping;
@@ -584,7 +609,8 @@ impl PluginManager {
 					registry.state = PluginState::Loaded;
 					registry.StartedAt = None;
 				}
-				dev_log!("extensions", "[PluginManager] Plugin stopped: {}", PluginId);				Ok(())
+				dev_log!("extensions", "[PluginManager] Plugin stopped: {}", PluginId);
+				Ok(())
 			},
 			Ok(Err(e)) => {
 				let mut plugins = self.plugins.write().await;
@@ -592,7 +618,8 @@ impl PluginManager {
 					registry.state = PluginState::Error;
 					registry.error = Some(e.to_string());
 				}
-				dev_log!("extensions", "error: [PluginManager] Plugin stop failed: {}: {}", PluginId, e);				Err(e)
+				dev_log!("extensions", "error: [PluginManager] Plugin stop failed: {}: {}", PluginId, e);
+				Err(e)
 			},
 			Err(_) => {
 				let mut plugins = self.plugins.write().await;
@@ -600,7 +627,8 @@ impl PluginManager {
 					registry.state = PluginState::Error;
 					registry.error = Some(format!("Stop timeout after {:?}", self.OperationTimeout));
 				}
-				dev_log!("extensions", "error: [PluginManager] Plugin stop timeout: {}", PluginId);				Err(AirError::Plugin(format!("Plugin {} stop timeout", PluginId)))
+				dev_log!("extensions", "error: [PluginManager] Plugin stop timeout: {}", PluginId);
+				Err(AirError::Plugin(format!("Plugin {} stop timeout", PluginId)))
 			},
 		}
 	}
@@ -612,7 +640,8 @@ impl PluginManager {
 		dev_log!("extensions", "[PluginManager] Starting {} plugins", PluginIds.len());
 		for PluginId in PluginIds {
 			if let Err(e) = self.start(&PluginId).await {
-				dev_log!("extensions", "warn: [PluginManager] Failed to start plugin {}: {}", PluginId, e);			}
+				dev_log!("extensions", "warn: [PluginManager] Failed to start plugin {}: {}", PluginId, e);
+			}
 		}
 
 		Ok(())
@@ -626,7 +655,8 @@ impl PluginManager {
 		// Stop in reverse order to respect dependencies
 		for plugin_id in PluginIds.into_iter().rev() {
 			if let Err(e) = self.stop(&plugin_id).await {
-				dev_log!("extensions", "warn: [PluginManager] Failed to stop plugin {}: {}", plugin_id, e);			}
+				dev_log!("extensions", "warn: [PluginManager] Failed to stop plugin {}: {}", plugin_id, e);
+			}
 		}
 
 		Ok(())
@@ -640,7 +670,8 @@ impl PluginManager {
 			.ok_or_else(|| AirError::Plugin(format!("Plugin not found: {}", plugin_id)))?;
 
 		if registry.state != PluginState::Unloaded {
-			dev_log!("extensions", "[PluginManager] Plugin {} already loaded", plugin_id);			return Ok(());
+			dev_log!("extensions", "[PluginManager] Plugin {} already loaded", plugin_id);
+			return Ok(());
 		}
 
 		let plugin = registry.plugin.clone();
@@ -656,7 +687,8 @@ impl PluginManager {
 					registry.LoadedAt = Some(Utc::now());
 					registry.error = None;
 				}
-				dev_log!("extensions", "[PluginManager] Plugin loaded: {}", plugin_id);				Ok(())
+				dev_log!("extensions", "[PluginManager] Plugin loaded: {}", plugin_id);
+				Ok(())
 			},
 			Ok(Err(e)) => {
 				let mut plugins = self.plugins.write().await;
@@ -664,7 +696,8 @@ impl PluginManager {
 					registry.state = PluginState::Error;
 					registry.error = Some(e.to_string());
 				}
-				dev_log!("extensions", "error: [PluginManager] Plugin load failed: {}: {}", plugin_id, e);				Err(e)
+				dev_log!("extensions", "error: [PluginManager] Plugin load failed: {}: {}", plugin_id, e);
+				Err(e)
 			},
 			Err(_) => {
 				let mut plugins = self.plugins.write().await;
@@ -672,7 +705,8 @@ impl PluginManager {
 					registry.state = PluginState::Error;
 					registry.error = Some(format!("Load timeout after {:?}", self.StartupTimeout));
 				}
-				dev_log!("extensions", "error: [PluginManager] Plugin load timeout: {}", plugin_id);				Err(AirError::Plugin(format!("Plugin {} load timeout", plugin_id)))
+				dev_log!("extensions", "error: [PluginManager] Plugin load timeout: {}", plugin_id);
+				Err(AirError::Plugin(format!("Plugin {} load timeout", plugin_id)))
 			},
 		}
 	}
@@ -694,15 +728,18 @@ impl PluginManager {
 
 		match UnloadResult {
 			Ok(Ok(())) => {
-				dev_log!("extensions", "[PluginManager] Plugin unloaded: {}", plugin_id);				Ok(())
+				dev_log!("extensions", "[PluginManager] Plugin unloaded: {}", plugin_id);
+				Ok(())
 			},
 			Ok(Err(e)) => {
 				// Plugin is removed from registry even if unload fails
-				dev_log!("extensions", "error: [PluginManager] Plugin unload error: {}: {}", plugin_id, e);				Err(e)
+				dev_log!("extensions", "error: [PluginManager] Plugin unload error: {}: {}", plugin_id, e);
+				Err(e)
 			},
 			Err(_) => {
 				// Plugin is removed from registry even if timeout occurs
-				dev_log!("extensions", "warn: [PluginManager] Plugin unload timeout: {}", plugin_id);				Err(AirError::Plugin(format!("Plugin {} unload timeout", plugin_id)))
+				dev_log!("extensions", "warn: [PluginManager] Plugin unload timeout: {}", plugin_id);
+				Err(AirError::Plugin(format!("Plugin {} unload timeout", plugin_id)))
 			},
 		}
 	}
@@ -963,7 +1000,8 @@ impl PluginEventBus {
 		let handlers = self.handlers.read().await;
 		for handler in handlers.iter() {
 			if let Err(e) = handler.handle_event(&event).await {
-				dev_log!("extensions", "error: [PluginEventBus] Event handler error: {}", e);			}
+				dev_log!("extensions", "error: [PluginEventBus] Event handler error: {}", e);
+			}
 		}
 	}
 }
@@ -1022,7 +1060,13 @@ impl PluginLoader {
 					results.append(&mut discovered);
 				},
 				Err(e) => {
-					dev_log!("extensions", "warn: [PluginLoader] Failed to discover plugins in {}: {}", path, e);				},
+					dev_log!(
+						"extensions",
+						"warn: [PluginLoader] Failed to discover plugins in {}: {}",
+						path,
+						e
+					);
+				},
 			}
 		}
 

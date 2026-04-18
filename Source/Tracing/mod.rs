@@ -71,13 +71,12 @@
 //! - No user-identifiable information in spans
 //! - Error messages are sanitized before export
 
-use crate::dev_log;
 use std::{collections::HashMap, sync::Arc};
 
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
-use crate::{AirError, Result};
+use crate::{AirError, Result, dev_log};
 
 /// Trace ID generator and manager with sampling support
 #[derive(Debug, Clone)]
@@ -222,14 +221,16 @@ impl TraceGenerator {
 	/// Generate a new trace ID with panic recovery
 	pub fn generate_trace_id() -> String {
 		std::panic::catch_unwind(|| uuid::Uuid::new_v4().to_string()).unwrap_or_else(|e| {
-			dev_log!("air", "error: [Tracing] Panic in generate_trace_id, using fallback: {:?}", e);			format!("{:x}", rand::random::<u64>())
+			dev_log!("air", "error: [Tracing] Panic in generate_trace_id, using fallback: {:?}", e);
+			format!("{:x}", rand::random::<u64>())
 		})
 	}
 
 	/// Generate a new span ID
 	pub fn generate_span_id() -> String {
 		std::panic::catch_unwind(|| uuid::Uuid::new_v4().to_string()).unwrap_or_else(|e| {
-			dev_log!("air", "error: [Tracing] Panic in generate_span_id, using fallback: {:?}", e);			format!("{:x}", rand::random::<u64>())
+			dev_log!("air", "error: [Tracing] Panic in generate_span_id, using fallback: {:?}", e);
+			format!("{:x}", rand::random::<u64>())
 		})
 	}
 
@@ -312,10 +313,13 @@ impl TraceGenerator {
 
 		let config = self.sampling_config.read().await;
 		if trace_span_count >= config.max_spans_per_trace {
-			dev_log!("air", "warn: [Tracing] Trace {} exceeds max spans ({}), dropping span {}",
+			dev_log!(
+				"air",
+				"warn: [Tracing] Trace {} exceeds max spans ({}), dropping span {}",
 				trace_id,
 				config.max_spans_per_trace,
-				span_id);
+				span_id
+			);
 			return Err(AirError::Internal("Max spans per trace exceeded".to_string()));
 		}
 
@@ -590,7 +594,8 @@ pub fn initialize_tracing(sampling_config:Option<SamplingConfig>) -> Result<()> 
 	};
 
 	let _old = TRACE_GENERATOR.set(generator);
-	dev_log!("air", "[Tracing] Trace generator initialized with tracing");	Ok(())
+	dev_log!("air", "[Tracing] Trace generator initialized with tracing");
+	Ok(())
 }
 
 thread_local! {

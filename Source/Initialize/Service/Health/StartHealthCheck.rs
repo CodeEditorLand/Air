@@ -59,8 +59,9 @@
 /// - Add external health check endpoint
 use std::sync::Arc;
 
-use crate::dev_log;
 use AirLibrary::HealthCheck::{HealthCheckLevel, HealthCheckManager};
+
+use crate::dev_log;
 
 /// Start the health check system
 ///

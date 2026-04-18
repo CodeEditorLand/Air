@@ -65,9 +65,10 @@
 
 use std::{sync::Arc, time::Duration};
 
-use crate::dev_log;
 use tokio::time::interval;
 use AirLibrary::{ApplicationState, HealthCheck::HealthCheckManager, Metrics};
+
+use crate::dev_log;
 
 /// Spawned monitoring task handles
 ///
@@ -135,7 +136,12 @@ pub async fn StartMonitoring(
 
 				// Update resource usage with error handling
 				if let Err(Error) = AppState.UpdateResourceUsage().await {
-					dev_log!("lifecycle", "warn: [ConnectionMonitor] Failed to update resource usage: {}", Error);				}
+					dev_log!(
+						"lifecycle",
+						"warn: [ConnectionMonitor] Failed to update resource usage: {}",
+						Error
+					);
+				}
 
 				// Get resource metrics
 				let Resources = AppState.GetResourceUsage().await;
@@ -156,7 +162,12 @@ pub async fn StartMonitoring(
 				dev_log!("lifecycle", "[ConnectionMonitor] Active threads (tasks): {}", ActiveThreads);
 				// Clean up stale connections (5 minute timeout)
 				if let Err(Error) = AppState.CleanupStaleConnections(300).await {
-					dev_log!("lifecycle", "warn: [ConnectionMonitor] Failed to cleanup stale connections: {}", Error);				}
+					dev_log!(
+						"lifecycle",
+						"warn: [ConnectionMonitor] Failed to cleanup stale connections: {}",
+						Error
+					);
+				}
 
 				// Perform health checks
 				match HealthManager.CheckService("connections").await {
@@ -169,15 +180,18 @@ pub async fn StartMonitoring(
 					},
 				}
 
-				dev_log!("lifecycle", "[ConnectionMonitor] Active connections: {}",
-					AppState.GetActiveConnectionCount().await);
+				dev_log!(
+					"lifecycle",
+					"[ConnectionMonitor] Active connections: {}",
+					AppState.GetActiveConnectionCount().await
+				);
 			}
 		}
 	});
 
 	// Register background task with error handling
 	if let Err(Error) = AppState.RegisterBackgroundTask(ConnectionMonitorHandle.clone()).await {
-		dev_log!("lifecycle", "warn: [Monitor] Failed to register connection monitor: {}", Error);		// Non-fatal: continue without task tracking
+		dev_log!("lifecycle", "warn: [Monitor] Failed to register connection monitor: {}", Error); // Non-fatal: continue without task tracking
 	}
 
 	// Start health monitoring background task
@@ -192,18 +206,25 @@ pub async fn StartMonitoring(
 				let Services = ["authentication", "updates", "downloader", "indexing", "grpc"];
 				for Service in Services.iter() {
 					if let Err(Error) = HealthManager.CheckService(Service).await {
-						dev_log!("lifecycle", "warn: [HealthMonitor] Health check failed for {}: {}", Service, Error);					}
+						dev_log!(
+							"lifecycle",
+							"warn: [HealthMonitor] Health check failed for {}: {}",
+							Service,
+							Error
+						);
+					}
 				}
 
 				// Log overall health status
 				let OverallHealth = HealthManager.GetOverallHealth().await;
-				dev_log!("lifecycle", "[HealthMonitor] Overall health: {:?}", OverallHealth);			}
+				dev_log!("lifecycle", "[HealthMonitor] Overall health: {:?}", OverallHealth);
+			}
 		}
 	});
 
 	// Register health monitoring task with error handling
 	if let Err(Error) = AppState.RegisterBackgroundTask(HealthMonitorHandle.clone()).await {
-		dev_log!("lifecycle", "warn: [Monitor] Failed to register health monitor: {}", Error);		// Non-fatal: continue monitoring may not be tracked
+		dev_log!("lifecycle", "warn: [Monitor] Failed to register health monitor: {}", Error); // Non-fatal: continue monitoring may not be tracked
 	}
 
 	dev_log!("lifecycle", "[Monitor] Background monitoring tasks started");
