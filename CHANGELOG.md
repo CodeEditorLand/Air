@@ -3,7 +3,7 @@
 All notable changes to Air (Background Daemon) are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/).
 
-## [v2.1] — Q2 2026: Full Workbench Lift
+## [v2.1] - Q2 2026: Full Workbench Lift
 
 ### Added
 
@@ -18,9 +18,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/).
 - Obsolete TODOs removed (12 changes)
 - Consistent formatting pass (14 files, 275 changes)
 
-## [v2.0] — Q1 2026: Editor Launch Sprint
+## [v2.0] - Q1 2026: Editor Launch Sprint
 
-**73 Rust modules — massive buildout quarter.**
+**73 Rust modules - massive buildout quarter.**
 
 ### March 4: TODO Closure (Pivotal Commit ca1542c)
 
@@ -30,33 +30,33 @@ Format: [Keep a Changelog](https://keepachangelog.com/).
 
 #### Added
 
-- `Source/HTTP/client.rs` (160 lines) — DNS-based security with local resolver
-- `tests/dns_resolver_tests.rs` (367 lines) — comprehensive test suite
+- `Source/HTTP/client.rs` (160 lines) - DNS-based security with local resolver
+- `tests/dns_resolver_tests.rs` (367 lines) - comprehensive test suite
 - 23 files modified, 786 insertions, 144 deletions
 
 ### Full Module Inventory (73 modules)
 
 #### Core
 
-- `Source/Binary.rs` (66KB) — sidecar entry point
-- `Source/Library.rs` (21KB) — core architecture + module exports
-- `Source/DevLog.rs` (295 lines) — structured logging
+- `Source/Binary.rs` (66KB) - sidecar entry point
+- `Source/Library.rs` (21KB) - core architecture + module exports
+- `Source/DevLog.rs` (295 lines) - structured logging
 
 #### Subsystems
 
-- `Source/ApplicationState/` — persistent state management
-- `Source/Updates/` — download verification, patch application, versioning
-- `Source/Downloader/` — resilient multi-file with pause/resume
-- `Source/Authentication/` — cryptographic signing, secure login
-- `Source/Indexing/` (7 modules) — file scanning, watching, storage queries
-- `Source/HTTP/client.rs` — DNS security, local resolver, resilient HTTP
-- `Source/Mountain/` — Mountain daemon communication
-- `Source/Vine/Server/AirVinegRPCService.rs` (281 lines) — gRPC handler
-- `Source/Binary/Monitor/` — health monitoring, state tracking
-- `Source/Binary/Shutdown/` — graceful shutdown coordination
-- `Source/Configuration/HotReload.rs` — config reload detection
-- `Source/Logging/`, `Source/Metrics/`, `Source/Tracing/` — observability
-- `Source/Resilience/`, `Source/Security/`, `Source/Plugins/` — cross-cutting
+- `Source/ApplicationState/` - persistent state management
+- `Source/Updates/` - download verification, patch application, versioning
+- `Source/Downloader/` - resilient multi-file with pause/resume
+- `Source/Authentication/` - cryptographic signing, secure login
+- `Source/Indexing/` (7 modules) - file scanning, watching, storage queries
+- `Source/HTTP/client.rs` - DNS security, local resolver, resilient HTTP
+- `Source/Mountain/` - Mountain daemon communication
+- `Source/Vine/Server/AirVinegRPCService.rs` (281 lines) - gRPC handler
+- `Source/Binary/Monitor/` - health monitoring, state tracking
+- `Source/Binary/Shutdown/` - graceful shutdown coordination
+- `Source/Configuration/HotReload.rs` - config reload detection
+- `Source/Logging/`, `Source/Metrics/`, `Source/Tracing/` - observability
+- `Source/Resilience/`, `Source/Security/`, `Source/Plugins/` - cross-cutting
 
 ### Changed
 
@@ -72,7 +72,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/).
   appimage, deb, rpm
 - Platform: libc (Unix), windows 0.62 (Windows)
 
-## [v1.2] — Q3 2025: Full Stack Integration
+## [v1.2] - Q3 2025: Full Stack Integration
 
 ### Added
 

@@ -166,7 +166,7 @@ macro_rules! dev_log {
 }
 
 // ============================================================================
-// OTLP Span Emission — sends spans directly to Jaeger/OTEL collector
+// OTLP Span Emission - sends spans directly to Jaeger/OTEL collector
 // ============================================================================
 
 use std::{

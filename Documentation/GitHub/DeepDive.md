@@ -1,4 +1,4 @@
-# Air — Deep Dive
+# Air - Deep Dive
 
 This document provides the technical foundation for the Air background daemon
 within the Land ecosystem. **Air** runs as a persistent sidecar process
@@ -15,8 +15,8 @@ responsibilities: updates, downloads, authentication, and health monitoring.
 
 ```mermaid
 graph TB
-    subgraph "Air — Background Daemon"
-        Binary["Binary.rs — Entry Point"]
+    subgraph "Air - Background Daemon"
+        Binary["Binary.rs - Entry Point"]
         VineServer["Vine gRPC Server\nPort 50053"]
         UpdateMgr["Updates/\nUpdate Lifecycle"]
         Downloader["Downloader/\nResilient Downloads"]
@@ -28,7 +28,7 @@ graph TB
         Logging["Logging/\nStructured Tracing"]
     end
 
-    subgraph "Mountain — Main Application"
+    subgraph "Mountain - Main Application"
         MountainCore["Mountain Core"]
         VineClient["Vine gRPC Client"]
     end
