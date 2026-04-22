@@ -487,7 +487,9 @@ impl ChecksumVerifier {
 
 		let mut hasher = Sha256::new();
 		hasher.update(&content);
-		let checksum = format!("{:x}", hasher.finalize());
+		// sha2 0.11: see note in Indexing/Scan/ScanFile.rs - `hex::encode`
+		// replaces the removed `LowerHex` impl on the digest output.
+		let checksum = hex::encode(hasher.finalize());
 
 		Ok(checksum)
 	}
@@ -509,7 +511,7 @@ impl ChecksumVerifier {
 	pub fn CalculateSha256Bytes(&self, data:&[u8]) -> String {
 		let mut hasher = Sha256::new();
 		hasher.update(data);
-		format!("{:x}", hasher.finalize())
+		hex::encode(hasher.finalize())
 	}
 
 	/// Calculate MD5 checksum (legacy support)

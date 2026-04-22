@@ -211,7 +211,9 @@ pub fn CalculateIndexChecksum(index:&FileIndex) -> Result<String> {
 
 	let mut hasher = Sha256::new();
 	hasher.update(checksum_input.as_bytes());
-	Ok(format!("{:x}", hasher.finalize()))
+	// sha2 0.11: digest output is `hybrid_array::Array` which has no
+	// `LowerHex` impl; `hex::encode` is the 1:1 replacement.
+	Ok(hex::encode(hasher.finalize()))
 }
 
 /// Create file metadata from raw information

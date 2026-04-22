@@ -2210,10 +2210,12 @@ fn match_url_scheme(url:&str) -> bool {
 
 /// Calculate chunk checksum for verification
 fn calculate_chunk_checksum(chunk:&[u8]) -> String {
+	// sha2 0.11: see note in Indexing/Scan/ScanFile.rs - `hex::encode`
+	// substitutes for the removed `LowerHex` impl on the digest output.
 	use sha2::{Digest, Sha256};
 	let mut hasher = Sha256::new();
 	hasher.update(chunk);
-	format!("{:x}", hasher.finalize())
+	hex::encode(hasher.finalize())
 }
 
 /// Calculate file checksum for integrity verification
@@ -2242,5 +2244,5 @@ async fn calculate_file_checksum(path:&std::path::Path) -> Result<String> {
 	}
 
 	let result = hasher.finalize();
-	Ok(format!("{:x}", result))
+	Ok(hex::encode(result))
 }

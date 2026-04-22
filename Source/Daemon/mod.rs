@@ -261,7 +261,11 @@ impl DaemonManager {
 		// Calculate checksum for integrity verification
 		let mut hasher = Sha256::new();
 		hasher.update(PidContent.as_bytes());
-		let checksum = format!("{:x}", hasher.finalize());
+		// sha2 0.11: `Digest::finalize()` output dropped its `LowerHex` impl
+		// (moved onto `hybrid_array::Array`). `hex::encode` produces the same
+		// lowercase-hex string as the former `format!("{:x}", …)` and keeps
+		// the PID-file checksum payload byte-identical.
+		let checksum = hex::encode(hasher.finalize());
 
 		// Write to temporary file first (atomic operation)
 		let TempFileContent = format!("{}|CHECKSUM:{}", PidContent, checksum);

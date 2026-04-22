@@ -215,10 +215,14 @@ pub async fn ValidateFileAccess(file_path:&PathBuf) -> bool {
 
 /// Calculate SHA-256 checksum for file content
 pub fn CalculateChecksum(content:&[u8]) -> String {
+	// sha2 0.11 moved `Digest::finalize()` to `hybrid_array::Array`, which has
+	// no `LowerHex` impl (the old `GenericArray` did). `hex::encode` over the
+	// byte output is the drop-in replacement - same lowercase hex string,
+	// same length. `hex` is already a workspace dependency of Air.
 	use sha2::{Digest, Sha256};
 	let mut hasher = Sha256::new();
 	hasher.update(content);
-	format!("{:x}", hasher.finalize())
+	hex::encode(hasher.finalize())
 }
 
 /// Get file permissions as string

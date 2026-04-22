@@ -1949,9 +1949,12 @@ impl UpdateManager {
 
 	/// Calculate SHA256 checksum of a byte slice
 	fn CalculateSha256(&self, data:&[u8]) -> String {
+		// sha2 0.11 dropped `LowerHex` on digest outputs (moved to
+		// `hybrid_array::Array`). `hex::encode` restores the old
+		// `format!("{:x}", …)` behaviour byte-for-byte.
 		let mut hasher = Sha256::new();
 		hasher.update(data);
-		format!("{:x}", hasher.finalize())
+		hex::encode(hasher.finalize())
 	}
 
 	/// Calculate SHA512 checksum of a byte slice
@@ -1959,7 +1962,7 @@ impl UpdateManager {
 		use sha2::Sha512;
 		let mut hasher = Sha512::new();
 		hasher.update(data);
-		format!("{:x}", hasher.finalize())
+		hex::encode(hasher.finalize())
 	}
 
 	/// Calculate MD5 checksum of a byte slice
