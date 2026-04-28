@@ -1,20 +1,20 @@
 //! # DevLog - Tag-filtered development logging
 //!
-//! Controlled by `LAND_DEV_LOG` environment variable.
+//! Controlled by `Trace` environment variable.
 //! The same tags work in Mountain (Rust), Air (Rust), Wind/Sky (TypeScript).
 //!
 //! ## Usage
 //! ```bash
-//! LAND_DEV_LOG=lifecycle,grpc ./Air          # only lifecycle + gRPC
-//! LAND_DEV_LOG=all ./Air                     # everything
-//! LAND_DEV_LOG=short ./Air                   # everything, compressed + deduped
-//! LAND_DEV_LOG=indexing,http ./Air           # indexing + HTTP
+//! Trace=lifecycle,grpc ./Air          # only lifecycle + gRPC
+//! Trace=all ./Air                     # everything
+//! Trace=short ./Air                   # everything, compressed + deduped
+//! Trace=indexing,http ./Air           # indexing + HTTP
 //! ./Air                                      # nothing (silent daemon)
 //! ```
 //!
 //! ## Short Mode
 //!
-//! `LAND_DEV_LOG=short` enables all tags but compresses output:
+//! `Trace=short` enables all tags but compresses output:
 //! - Long app-data paths aliased to `$APP`
 //! - Consecutive duplicate messages counted (`(x14)` suffix)
 //! - Rust log targets compressed (`D::Binary::Main::Entry` → `Entry`)
@@ -102,14 +102,14 @@ pub fn FlushDedup() {
 
 fn EnabledTags() -> &'static Vec<String> {
 	ENABLED_TAGS.get_or_init(|| {
-		match std::env::var("LAND_DEV_LOG") {
+		match std::env::var("Trace") {
 			Ok(Val) => Val.split(',').map(|S| S.trim().to_lowercase()).collect(),
 			Err(_) => vec![],
 		}
 	})
 }
 
-/// Whether `LAND_DEV_LOG=short` is active.
+/// Whether `Trace=short` is active.
 pub fn IsShort() -> bool { *SHORT_MODE.get_or_init(|| EnabledTags().iter().any(|T| T == "short")) }
 
 /// Check if a tag is enabled.
@@ -123,7 +123,7 @@ pub fn IsEnabled(Tag:&str) -> bool {
 }
 
 /// Log a tagged dev message. Only prints if the tag is enabled via
-/// LAND_DEV_LOG.
+/// Trace.
 ///
 /// In `short` mode: aliases long paths, deduplicates consecutive identical
 /// lines.
