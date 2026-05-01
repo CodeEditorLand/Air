@@ -1080,31 +1080,31 @@ impl CliHandler {
 		self.check_permission(&command)?;
 
 		match command {
-			Command::Status { service, verbose, json } => self.handle_status(service, verbose, json),
-			Command::Restart { service, force } => self.handle_restart(service, force),
-			Command::Config(config_cmd) => self.handle_config(config_cmd),
-			Command::Metrics { json, service } => self.handle_metrics(json, service),
-			Command::Logs { service, tail, filter, follow } => self.handle_logs(service, tail, filter, follow),
-			Command::Debug(debug_cmd) => self.handle_debug(debug_cmd),
+			Command::Status { service, verbose, json } => self.Status(service, verbose, json),
+			Command::Restart { service, force } => self.Restart(service, force),
+			Command::Config(config_cmd) => self.Config(config_cmd),
+			Command::Metrics { json, service } => self.Metrics(json, service),
+			Command::Logs { service, tail, filter, follow } => self.Logs(service, tail, filter, follow),
+			Command::Debug(debug_cmd) => self.Debug(debug_cmd),
 			Command::Help { command } => Ok(OutputFormatter::format_help(command.as_deref(), "0.1.0")),
 			Command::Version => Ok("Air 🪁 v0.1.0".to_string()),
 		}
 	}
 
 	/// Handle status command
-	fn handle_status(&self, service:Option<String>, verbose:bool, json:bool) -> Result<String, String> {
+	fn Status(&self, service:Option<String>, verbose:bool, json:bool) -> Result<String, String> {
 		let response = self.client.execute_status(service)?;
 		Ok(OutputFormatter::format_status(&response, verbose, json))
 	}
 
 	/// Handle restart command
-	fn handle_restart(&self, service:Option<String>, force:bool) -> Result<String, String> {
+	fn Restart(&self, service:Option<String>, force:bool) -> Result<String, String> {
 		let result = self.client.execute_restart(service, force)?;
 		Ok(result)
 	}
 
 	/// Handle config commands
-	fn handle_config(&self, cmd:ConfigCommand) -> Result<String, String> {
+	fn Config(&self, cmd:ConfigCommand) -> Result<String, String> {
 		match cmd {
 			ConfigCommand::Get { key } => {
 				let response = self.client.execute_config_get(&key)?;
@@ -1138,13 +1138,13 @@ impl CliHandler {
 	}
 
 	/// Handle metrics command
-	fn handle_metrics(&self, json:bool, service:Option<String>) -> Result<String, String> {
+	fn Metrics(&self, json:bool, service:Option<String>) -> Result<String, String> {
 		let response = self.client.execute_metrics(service)?;
 		Ok(OutputFormatter::format_metrics(&response, json))
 	}
 
 	/// Handle logs command
-	fn handle_logs(
+	fn Logs(
 		&self,
 		service:Option<String>,
 		tail:Option<usize>,
@@ -1171,7 +1171,7 @@ impl CliHandler {
 	}
 
 	/// Handle debug commands
-	fn handle_debug(&self, cmd:DebugCommand) -> Result<String, String> {
+	fn Debug(&self, cmd:DebugCommand) -> Result<String, String> {
 		match cmd {
 			DebugCommand::DumpState { service, json } => {
 				let state = self.client.execute_debug_dump_state(service)?;

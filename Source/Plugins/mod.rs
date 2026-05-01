@@ -207,7 +207,7 @@ pub trait Plugin: PluginHooks + Send + Sync {
 	fn permissions(&self) -> Vec<PluginPermission> { vec![] }
 
 	/// Handle inter-plugin message
-	async fn handle_message(&self, from:&str, _message:&PluginMessage) -> Result<PluginMessage> {
+	async fn Message(&self, from:&str, _message:&PluginMessage) -> Result<PluginMessage> {
 		Err(AirError::Plugin(format!("Plugin {} does not handle messages", from)))
 	}
 
@@ -779,7 +779,7 @@ impl PluginManager {
 
 		// Send message with timeout
 		let SendResult =
-			tokio::time::timeout(self.OperationTimeout, plugin.handle_message(&message.from, &message)).await;
+			tokio::time::timeout(self.OperationTimeout, plugin.Message(&message.from, &message)).await;
 
 		SendResult.map_err(|_| AirError::Plugin(format!("Message send timeout: {} -> {}", message.from, message.to)))?
 	}
@@ -977,7 +977,7 @@ pub enum PluginEvent {
 #[async_trait]
 pub trait PluginEventHandler: Send + Sync {
 	/// Handle a plugin event
-	async fn handle_event(&self, event:&PluginEvent) -> Result<()>;
+	async fn Event(&self, event:&PluginEvent) -> Result<()>;
 }
 
 /// Event bus for plugin events
@@ -999,7 +999,7 @@ impl PluginEventBus {
 	pub async fn emit(&self, event:PluginEvent) {
 		let handlers = self.handlers.read().await;
 		for handler in handlers.iter() {
-			if let Err(e) = handler.handle_event(&event).await {
+			if let Err(e) = handler.Event(&event).await {
 				dev_log!("extensions", "error: [PluginEventBus] Event handler error: {}", e);
 			}
 		}
