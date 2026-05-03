@@ -1291,6 +1291,13 @@ fn HandleMetricsRequest() -> String {
 /// - Implement feature flag system
 async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	// -------------------------------------------------------------------------
+	// [Boot] [Telemetry] Bring up shared dual-pipe (PostHog + OTLP) so any
+	// boot error captured from this point lands in the project. No-op in
+	// release builds and when `Capture=false`. Idempotent.
+	// -------------------------------------------------------------------------
+	CommonLibrary::Telemetry::Initialize::Fn(CommonLibrary::Telemetry::Tier::Tier::Air).await;
+
+	// -------------------------------------------------------------------------
 	// [Boot] [Logging] Initialize logging system
 	// -------------------------------------------------------------------------
 	InitializeLogging();

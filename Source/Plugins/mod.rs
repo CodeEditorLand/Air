@@ -778,8 +778,7 @@ impl PluginManager {
 		drop(plugins);
 
 		// Send message with timeout
-		let SendResult =
-			tokio::time::timeout(self.OperationTimeout, plugin.Message(&message.from, &message)).await;
+		let SendResult = tokio::time::timeout(self.OperationTimeout, plugin.Message(&message.from, &message)).await;
 
 		SendResult.map_err(|_| AirError::Plugin(format!("Message send timeout: {} -> {}", message.from, message.to)))?
 	}

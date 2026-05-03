@@ -64,8 +64,8 @@ seamless background updates and persistent state management.
   `Mountain`, communicating via high-performance IPC (`gRPC`/`Vine`) to handle
   requests without blocking the UI thread.
 - **Dedicated Update Management:** Takes full ownership of the update lifecycle
-  - downloading, verifying, and applying patches for `Land` - without user
-  interruption or restart prompts.
+    - downloading, verifying, and applying patches for `Land` - without user
+      interruption or restart prompts.
 - **Isolated Authentication & Signing:** Manages sensitive cryptographic
   operations, including binary signing and secure login flows, keeping security
   logic isolated from the main application view.
@@ -141,20 +141,20 @@ graph LR
 
 ## `Air`&#x2001;🪁 in the `Land`&#x2001;🏞️ Ecosystem
 
-| Component           | Role & Key Responsibilities                                                                              |
-| :------------------ | :------------------------------------------------------------------------------------------------------- |
-| **Daemon Process**  | Persistent executable that runs independently of the main window, even after the window closes.          |
-| **Server Host**     | Hosts a local `gRPC` server on `[::1]:50053` to accept commands from `Mountain`.                         |
-| **Update Delegate** | Sole authority for modifying installation files of the parent application.                               |
-| **Signer**          | Handles cryptographic signing of artifacts and secure token storage for user login.                      |
-| **Traffic Manager** | Proxy/downloader that keeps large network operations off the main renderer process.                       |
+| Component           | Role & Key Responsibilities                                                                     |
+| :------------------ | :---------------------------------------------------------------------------------------------- |
+| **Daemon Process**  | Persistent executable that runs independently of the main window, even after the window closes. |
+| **Server Host**     | Hosts a local `gRPC` server on `[::1]:50053` to accept commands from `Mountain`.                |
+| **Update Delegate** | Sole authority for modifying installation files of the parent application.                      |
+| **Signer**          | Handles cryptographic signing of artifacts and secure token storage for user login.             |
+| **Traffic Manager** | Proxy/downloader that keeps large network operations off the main renderer process.             |
 
 ### Port Allocation
 
-| Process    | Port    | Protocol                       | Purpose                              |
-| :--------- | :------ | :----------------------------- | :----------------------------------- |
-| **Air**    | `50053` | `Vine`/`Air.proto` (`gRPC`)    | Daemon services - updates, downloads |
-| **Cocoon** | `50052` | `Vine.proto` (`gRPC`)          | `VS Code` extension hosting          |
+| Process    | Port    | Protocol                    | Purpose                              |
+| :--------- | :------ | :-------------------------- | :----------------------------------- |
+| **Air**    | `50053` | `Vine`/`Air.proto` (`gRPC`) | Daemon services - updates, downloads |
+| **Cocoon** | `50052` | `Vine.proto` (`gRPC`)       | `VS Code` extension hosting          |
 
 ---
 
@@ -214,11 +214,11 @@ history of changes specific to **Air**&#x2001;🪁.
 
 ## Funding \& Acknowledgements&#x2001;🙏🏻
 
-**Air**&#x2001;🪁 is a core element of the **Land**&#x2001;🏞️ ecosystem. This project is
-funded through [NGI0 Commons Fund](https://NLnet.NL/commonsfund), a fund
-established by [NLnet](https://NLnet.NL) with financial support from the
-European Commission's [Next Generation Internet](https://ngi.eu) program.
-Learn more at the [NLnet project page](https://NLnet.NL/project/Land).
+**Air**&#x2001;🪁 is a core element of the **Land**&#x2001;🏞️ ecosystem. This
+project is funded through [NGI0 Commons Fund](https://NLnet.NL/commonsfund), a
+fund established by [NLnet](https://NLnet.NL) with financial support from the
+European Commission's [Next Generation Internet](https://ngi.eu) program. Learn
+more at the [NLnet project page](https://NLnet.NL/project/Land).
 
 The project is operated by PlayForm, based in Sofia, Bulgaria.
 

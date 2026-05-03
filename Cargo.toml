@@ -32,6 +32,7 @@ thiserror = { workspace = true }
 reqwest = { workspace = true }
 futures = { workspace = true }
 Mist = { workspace = true }
+Common = { workspace = true }
 futures-util = { workspace = true }
 async-trait = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
