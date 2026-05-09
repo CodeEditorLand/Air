@@ -126,9 +126,13 @@ pub struct ApplicationState {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ServiceStatus {
 	Starting,
+
 	Running,
+
 	Stopping,
+
 	Stopped,
+
 	Error(String),
 }
 
@@ -136,9 +140,13 @@ pub enum ServiceStatus {
 #[derive(Debug, Clone)]
 pub struct RequestStatus {
 	pub RequestId:String,
+
 	pub Service:String,
+
 	pub StartedAt:u64,
+
 	pub Status:RequestState,
+
 	pub Progress:Option<f32>,
 }
 
@@ -146,9 +154,13 @@ pub struct RequestStatus {
 #[derive(Debug, Clone)]
 pub enum RequestState {
 	Pending,
+
 	InProgress,
+
 	Completed,
+
 	Failed(String),
+
 	Cancelled,
 }
 
@@ -156,10 +168,15 @@ pub enum RequestState {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PerformanceMetrics {
 	pub TotalRequest:u64,
+
 	pub SuccessfulRequest:u64,
+
 	pub FailedRequest:u64,
+
 	pub AverageResponseTime:f64,
+
 	pub UptimeSeconds:u64,
+
 	pub LastUpdated:u64,
 }
 
@@ -167,9 +184,13 @@ pub struct PerformanceMetrics {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourceUsage {
 	pub MemoryUsageMb:f64,
+
 	pub CPUUsagePercent:f64,
+
 	pub DiskUsageMb:f64,
+
 	pub NetworkUsageMbps:f64,
+
 	pub LastUpdated:u64,
 }
 
@@ -177,11 +198,17 @@ pub struct ResourceUsage {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConnectionInfo {
 	pub ConnectionId:String,
+
 	pub ClientId:String,
+
 	pub ClientVersion:String,
+
 	pub ProtocolVersion:u32,
+
 	pub LastHeartbeat:u64,
+
 	pub IsActive:bool,
+
 	pub ConnectionType:ConnectionType,
 }
 
@@ -189,9 +216,13 @@ pub struct ConnectionInfo {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum ConnectionType {
 	MountainMain,
+
 	MountainWorker,
+
 	Cocoon,
+
 	Wind,
+
 	External,
 }
 
@@ -199,9 +230,13 @@ pub enum ConnectionType {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConnectionHealthReport {
 	pub TotalConnection:usize,
+
 	pub HealthyConnection:usize,
+
 	pub StaleConnection:usize,
+
 	pub ConnectionByType:HashMap<String, usize>,
+
 	pub LastChecked:u64,
 }
 
@@ -210,8 +245,11 @@ impl ApplicationState {
 	pub async fn New(Configuration:Arc<AirConfiguration>) -> Result<Self> {
 		let State = Self {
 			Configuration,
+
 			ServiceStatus:Arc::new(RwLock::new(HashMap::new())),
+
 			ActiveRequest:Arc::new(Mutex::new(HashMap::new())),
+
 			Metrics:Arc::new(RwLock::new(PerformanceMetrics {
 				TotalRequest:0,
 				SuccessfulRequest:0,
@@ -220,6 +258,7 @@ impl ApplicationState {
 				UptimeSeconds:0,
 				LastUpdated:Utility::CurrentTimestamp(),
 			})),
+
 			Resources:Arc::new(RwLock::new(ResourceUsage {
 				MemoryUsageMb:0.0,
 				CPUUsagePercent:0.0,
@@ -227,7 +266,9 @@ impl ApplicationState {
 				NetworkUsageMbps:0.0,
 				LastUpdated:Utility::CurrentTimestamp(),
 			})),
+
 			Connection:Arc::new(RwLock::new(HashMap::new())),
+
 			BackgroundTask:Arc::new(Mutex::new(Vec::new())),
 		};
 
@@ -242,10 +283,15 @@ impl ApplicationState {
 		let mut Status = self.ServiceStatus.write().await;
 
 		Status.insert("authentication".to_string(), ServiceStatus::Starting);
+
 		Status.insert("updates".to_string(), ServiceStatus::Starting);
+
 		Status.insert("downloader".to_string(), ServiceStatus::Starting);
+
 		Status.insert("indexing".to_string(), ServiceStatus::Starting);
+
 		Status.insert("grpc".to_string(), ServiceStatus::Starting);
+
 		Status.insert("connections".to_string(), ServiceStatus::Starting);
 
 		Ok(())
@@ -255,10 +301,15 @@ impl ApplicationState {
 	/// Supports connection pooling for Mountain clients
 	pub async fn RegisterConnection(
 		&self,
+
 		ConnectionId:String,
+
 		ClientId:String,
+
 		ClientVersion:String,
+
 		ProtocolVersion:u32,
+
 		ConnectionType:ConnectionType,
 	) -> Result<()> {
 		// Validate connection ID
@@ -295,6 +346,7 @@ impl ApplicationState {
 				.count();
 
 			const MAX_CONN_PER_CLIENT:usize = 10;
+
 			if ClientConnCount >= MAX_CONN_PER_CLIENT {
 				return Err(AirError::ResourceLimit(format!(
 					"Client {} exceeds maximum connection limit ({})",
@@ -323,6 +375,7 @@ impl ApplicationState {
 			ClientId,
 			ConnectionType
 		);
+
 		Ok(())
 	}
 
@@ -337,6 +390,7 @@ impl ApplicationState {
 
 		if let Some(Connection) = Connection.get_mut(ConnectionId) {
 			let CurrentTime = Utility::CurrentTimestamp();
+
 			const MAX_HEARTBEAT_INTERVAL:u64 = 120000; // 2 minutes
 
 			// Validate heartbeat timing
@@ -350,6 +404,7 @@ impl ApplicationState {
 			}
 
 			Connection.LastHeartbeat = CurrentTime;
+
 			Connection.IsActive = true;
 
 			dev_log!(
@@ -403,12 +458,14 @@ impl ApplicationState {
 	/// Get active connection count with optional filtering by type
 	pub async fn GetActiveConnectionCount(&self) -> usize {
 		let Connection = self.Connection.read().await;
+
 		Connection.values().filter(|c| c.IsActive).count()
 	}
 
 	/// Get connection count by type
 	pub async fn GetConnectionCountByType(&self, ConnectionType:ConnectionType) -> usize {
 		let Connection = self.Connection.read().await;
+
 		Connection
 			.values()
 			.filter(|c| c.ConnectionType == ConnectionType && c.IsActive)
@@ -418,6 +475,7 @@ impl ApplicationState {
 	/// Get connections by type
 	pub async fn GetConnectionsByType(&self, ConnectionType:ConnectionType) -> Vec<ConnectionInfo> {
 		let Connection = self.Connection.read().await;
+
 		Connection
 			.values()
 			.filter(|c| c.ConnectionType == ConnectionType)
@@ -458,10 +516,13 @@ impl ApplicationState {
 	/// period
 	pub async fn CleanupStaleConnections(&self, TimeoutSeconds:u64) -> Result<usize> {
 		let mut Connection = self.Connection.write().await;
+
 		let CurrentTime = Utility::CurrentTimestamp();
+
 		let TimeoutMs = TimeoutSeconds * 1000;
 
 		let mut RemovedCount = 0;
+
 		let mut RemovedByType:HashMap<String, usize> = HashMap::new();
 
 		Connection.retain(|Id, Connection| {
@@ -486,6 +547,7 @@ impl ApplicationState {
 
 		if RemovedCount > 0 {
 			dev_log!("lifecycle", "Cleaned up {} stale connections", RemovedCount);
+
 			for (ConnType, Count) in RemovedByType {
 				dev_log!("lifecycle", "  - {} connections: {}", ConnType, Count);
 			}
@@ -497,8 +559,11 @@ impl ApplicationState {
 	/// Register background task with tracking
 	pub async fn RegisterBackgroundTask(&self, TaskItem:tokio::task::JoinHandle<()>) -> Result<()> {
 		let mut BackgroundTask = self.BackgroundTask.lock().await;
+
 		BackgroundTask.push(TaskItem);
+
 		dev_log!("lifecycle", "Background task registered. Total tasks: {}", BackgroundTask.len());
+
 		Ok(())
 	}
 
@@ -507,13 +572,16 @@ impl ApplicationState {
 		let mut BackgroundTask = self.BackgroundTask.lock().await;
 
 		let TaskCount = BackgroundTask.len();
+
 		dev_log!("lifecycle", "Stopping {} background tasks", TaskCount);
+
 		// Abort all tasks
 		for TaskItem in BackgroundTask.drain(..) {
 			TaskItem.abort();
 		}
 
 		dev_log!("lifecycle", "Stopped all {} background tasks", TaskCount);
+
 		Ok(())
 	}
 
@@ -524,21 +592,27 @@ impl ApplicationState {
 		}
 
 		let mut ServiceStatus = self.ServiceStatus.write().await;
+
 		let StatusClone = Status.clone();
+
 		ServiceStatus.insert(Service.to_string(), Status);
+
 		dev_log!("lifecycle", "Service status updated: {} -> {:?}", Service, StatusClone);
+
 		Ok(())
 	}
 
 	/// Get service status
 	pub async fn GetServiceStatus(&self, Service:&str) -> Option<ServiceStatus> {
 		let ServiceStatus = self.ServiceStatus.read().await;
+
 		ServiceStatus.get(Service).cloned()
 	}
 
 	/// Get all service statuses
 	pub async fn GetAllServiceStatuses(&self) -> HashMap<String, ServiceStatus> {
 		let ServiceStatus = self.ServiceStatus.read().await;
+
 		ServiceStatus.clone()
 	}
 
@@ -571,6 +645,7 @@ impl ApplicationState {
 		);
 
 		dev_log!("lifecycle", "Request registered: {}", RequestId);
+
 		Ok(())
 	}
 
@@ -591,6 +666,7 @@ impl ApplicationState {
 
 		if let Some(Request) = Request.get_mut(RequestId) {
 			Request.Status = Status;
+
 			Request.Progress = Progress;
 		} else {
 			return Err(AirError::Internal(format!("Request {} not found", RequestId)));
@@ -619,6 +695,7 @@ impl ApplicationState {
 		let mut Metrics = self.Metrics.write().await;
 
 		Metrics.TotalRequest += 1;
+
 		if Success {
 			Metrics.SuccessfulRequest += 1;
 		} else {
@@ -643,27 +720,34 @@ impl ApplicationState {
 			(Memory.total.as_u64() - Memory.free.as_u64()) as f64 / 1024.0 / 1024.0
 		} else {
 			dev_log!("lifecycle", "warn: Failed to get memory usage");
+
 			0.0
 		};
 
 		// CPU usage - requires sampling, do this outside lock
 		let CPUUsage = if let Ok(CPU) = Sys.cpu_load_aggregate() {
 			tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+
 			if let Ok(CPU) = CPU.done() {
 				(CPU.user + CPU.nice + CPU.system) as f64 * 100.0
 			} else {
 				dev_log!("lifecycle", "warn: Failed to get CPU usage after sampling");
+
 				0.0
 			}
 		} else {
 			dev_log!("lifecycle", "warn: Failed to start CPU load sampling");
+
 			0.0
 		};
 
 		// Update state with collected metrics
 		let mut Resources = self.Resources.write().await;
+
 		Resources.MemoryUsageMb = MemoryUsage;
+
 		Resources.CPUUsagePercent = CPUUsage;
+
 		Resources.LastUpdated = Utility::CurrentTimestamp();
 
 		Ok(())
@@ -672,24 +756,28 @@ impl ApplicationState {
 	/// Get performance metrics
 	pub async fn GetMetrics(&self) -> PerformanceMetrics {
 		let metrics = self.Metrics.read().await;
+
 		metrics.clone()
 	}
 
 	/// Get resource usage
 	pub async fn GetResourceUsage(&self) -> ResourceUsage {
 		let Resources = self.Resources.read().await;
+
 		Resources.clone()
 	}
 
 	/// Get active request count
 	pub async fn GetActiveRequestCount(&self) -> usize {
 		let Request = self.ActiveRequest.lock().await;
+
 		Request.len()
 	}
 
 	/// Check if a request is cancelled
 	pub async fn IsRequestCancelled(&self, RequestId:&str) -> bool {
 		let Request = self.ActiveRequest.lock().await;
+
 		if let Some(Request) = Request.get(RequestId) {
 			matches!(Request.Status, RequestState::Cancelled)
 		} else {
@@ -703,10 +791,13 @@ impl ApplicationState {
 	/// Update configuration with validation and atomic operations
 	pub async fn UpdateConfiguration(
 		&self,
+
 		Section:String,
+
 		Updates:std::collections::HashMap<String, String>,
 	) -> Result<()> {
 		dev_log!("lifecycle", "[ApplicationState] Updating configuration section: {}", Section);
+
 		// Validate section
 		if Section.is_empty() {
 			return Err(AirError::Configuration("Configuration section cannot be empty".to_string()));
@@ -728,18 +819,23 @@ impl ApplicationState {
 			"grpc" => {
 				dev_log!("lifecycle", "Updating gRPC configuration: {:?}", Updates);
 			},
+
 			"updates" => {
 				dev_log!("lifecycle", "Updating updates configuration: {:?}", Updates);
 			},
+
 			"downloader" => {
 				dev_log!("lifecycle", "Updating downloader configuration: {:?}", Updates);
 			},
+
 			"indexing" => {
 				dev_log!("lifecycle", "Updating indexing configuration: {:?}", Updates);
 			},
+
 			"daemon" => {
 				dev_log!("lifecycle", "Updating daemon configuration: {:?}", Updates);
 			},
+
 			_ => {
 				return Err(AirError::Configuration(format!("Unknown configuration section: {}", Section)));
 			},
@@ -751,8 +847,11 @@ impl ApplicationState {
 	/// Set resource limits with validation and enforcement
 	pub async fn SetResourceLimits(
 		&self,
+
 		MemoryLimitMb:Option<u64>,
+
 		CPULimitPercent:Option<f64>,
+
 		DiskLimitMb:Option<u64>,
 	) -> Result<()> {
 		dev_log!(
@@ -796,9 +895,11 @@ impl ApplicationState {
 		if MemoryLimitMb.is_some() {
 			dev_log!("lifecycle", "Memory limit set: {} MB", MemoryLimitMb.unwrap());
 		}
+
 		if CPULimitPercent.is_some() {
 			dev_log!("lifecycle", "CPU limit set: {}%", CPULimitPercent.unwrap());
 		}
+
 		if DiskLimitMb.is_some() {
 			dev_log!("lifecycle", "Disk limit set: {} MB", DiskLimitMb.unwrap());
 		}
@@ -819,10 +920,13 @@ impl ApplicationState {
 	/// Get connection health report
 	pub async fn GetConnectionHealthReport(&self) -> ConnectionHealthReport {
 		let Connection = self.Connection.read().await;
+
 		let CurrentTime = Utility::CurrentTimestamp();
 
 		let mut Healthy = 0;
+
 		let mut Stale = 0;
+
 		let mut ByType:HashMap<String, usize> = HashMap::new();
 
 		for ConnectionItem in Connection.values() {
@@ -839,9 +943,13 @@ impl ApplicationState {
 
 		ConnectionHealthReport {
 			TotalConnection:Connection.len(),
+
 			HealthyConnection:Healthy,
+
 			StaleConnection:Stale,
+
 			ConnectionByType:ByType,
+
 			LastChecked:CurrentTime,
 		}
 	}

@@ -506,14 +506,17 @@ impl CircuitBreaker {
 		// Validate the proposed transition
 		match (CurrentState, NewState) {
 			(CircuitState::Closed, CircuitState::Open) | (CircuitState::HalfOpen, CircuitState::Open) => {
+
 				// Valid transitions
 			},
 
 			(CircuitState::Open, CircuitState::HalfOpen) => {
+
 				// Valid transition through recovery
 			},
 
 			(CircuitState::HalfOpen, CircuitState::Closed) => {
+
 				// Valid recovery transition
 			},
 
@@ -906,6 +909,7 @@ impl BulkheadExecutor {
 				*self.total_rejected.write().await += 1;
 
 				dev_log!("resilience", "warn: [Bulkhead] Queue full for {}, rejecting request", self.name);
+
 				return Err("Bulkhead queue full".to_string());
 			}
 
@@ -935,6 +939,7 @@ impl BulkheadExecutor {
 						*self.total_timed_out.write().await += 1;
 
 						dev_log!("resilience", "warn: [Bulkhead] Timeout waiting for permit for {}", self.name);
+
 						return Err("Bulkhead timeout waiting for permit".to_string());
 					},
 				};
@@ -1396,6 +1401,7 @@ impl Clone for ResilienceOrchestrator {
 
 #[cfg(test)]
 mod tests {
+
 	use super::*;
 
 	#[test]

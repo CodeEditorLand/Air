@@ -81,10 +81,13 @@ use crate::{
 pub struct ScanDirectoryResult {
 	/// Number of files discovered
 	pub files_found:u32,
+
 	/// Number of files skipped (due to patterns/size)
 	pub files_skipped:u32,
+
 	/// Number of errors encountered
 	pub errors:u32,
+
 	/// Total size of discovered files in bytes
 	pub total_size:u64,
 }
@@ -100,8 +103,11 @@ pub struct ScanDirectoryResult {
 /// - Parallel scanning with semaphore limits
 pub async fn ScanDirectory(
 	path:&str,
+
 	patterns:Vec<String>,
+
 	config:&IndexingConfig,
+
 	_max_parallel:usize,
 ) -> Result<(Vec<std::path::PathBuf>, ScanDirectoryResult)> {
 	let directory_path = crate::Configuration::ConfigurationManager::ExpandPath(path)?;
@@ -129,9 +135,13 @@ pub async fn ScanDirectory(
 		.build();
 
 	let mut files_to_scan:Vec<std::path::PathBuf> = Vec::new();
+
 	let mut files_found = 0u32;
+
 	let mut files_skipped = 0u32;
+
 	let mut errors = 0u32;
+
 	let mut total_size = 0u64;
 
 	// Collect all files first
@@ -145,7 +155,9 @@ pub async fn ScanDirectory(
 					// Check if file is a symbolic link
 					if entry.path_is_symlink() {
 						dev_log!("indexing", "[ScanDirectory] Skipping symlink: {}", file_path.display());
+
 						files_skipped += 1;
+
 						continue;
 					}
 
@@ -160,7 +172,9 @@ pub async fn ScanDirectory(
 								file_path.display(),
 								file_size
 							);
+
 							files_skipped += 1;
+
 							continue;
 						}
 
@@ -169,7 +183,9 @@ pub async fn ScanDirectory(
 							// Try to get file access to validate permissions
 							if ValidateFileAccess(&file_path).await {
 								files_to_scan.push(file_path);
+
 								files_found += 1;
+
 								total_size += file_size;
 							} else {
 								dev_log!(
@@ -177,6 +193,7 @@ pub async fn ScanDirectory(
 									"warn: [ScanDirectory] Cannot access file (permission denied): {}",
 									file_path.display()
 								);
+
 								errors += 1;
 							}
 						} else {
@@ -187,8 +204,10 @@ pub async fn ScanDirectory(
 					}
 				}
 			},
+
 			Err(e) => {
 				dev_log!("indexing", "warn: [ScanDirectory] Error walking directory: {}", e);
+
 				errors += 1;
 			},
 		}
@@ -212,6 +231,7 @@ pub async fn ScanDirectory(
 /// Scan a directory and remove deleted files from index
 pub async fn ScanAndRemoveDeleted(index:&mut FileIndex, directory_path:&Path) -> Result<u32> {
 	let mut paths_to_remove = Vec::new();
+
 	let all_paths:Vec<_> = index.files.keys().cloned().collect();
 
 	for path in all_paths {
@@ -221,8 +241,10 @@ pub async fn ScanAndRemoveDeleted(index:&mut FileIndex, directory_path:&Path) ->
 	}
 
 	let removed_count = paths_to_remove.len();
+
 	for path in paths_to_remove {
 		index.files.remove(&path);
+
 		index.file_symbols.remove(&path);
 
 		// Remove from symbol index
@@ -273,6 +295,7 @@ pub fn MatchesPatterns(file_path:&std::path::Path, patterns:&[String]) -> bool {
 pub fn MatchesPattern(filename:&str, pattern:&str) -> bool {
 	if pattern.starts_with("*.") {
 		let extension = &pattern[2..];
+
 		filename.ends_with(extension)
 	} else {
 		filename == pattern
@@ -308,19 +331,26 @@ pub fn GetDefaultExcludePatterns() -> Vec<String> {
 /// Parallel scan of multiple directories
 pub async fn ScanDirectoriesParallel(
 	directories:Vec<String>,
+
 	patterns:Vec<String>,
+
 	config:&IndexingConfig,
+
 	max_parallel:usize,
 ) -> Result<(Vec<std::path::PathBuf>, ScanDirectoryResult)> {
 	let semaphore = Arc::new(Semaphore::new(max_parallel));
+
 	let mut all_files = Vec::new();
+
 	let mut total_result = ScanDirectoryResult { files_found:0, files_skipped:0, errors:0, total_size:0 };
 
 	let mut scan_tasks = Vec::new();
 
 	for directory in directories {
 		let permit = semaphore.clone().acquire_owned().await.unwrap();
+
 		let config_clone = config.clone();
+
 		let patterns_clone = patterns.clone();
 
 		let task = tokio::spawn(async move {
@@ -336,17 +366,25 @@ pub async fn ScanDirectoriesParallel(
 		match task.await {
 			Ok(Ok((files, result))) => {
 				all_files.extend(files);
+
 				total_result.files_found += result.files_found;
+
 				total_result.files_skipped += result.files_skipped;
+
 				total_result.errors += result.errors;
+
 				total_result.total_size += result.total_size;
 			},
+
 			Ok(Err(e)) => {
 				dev_log!("indexing", "error: [ScanDirectory] Parallel scan failed: {}", e);
+
 				total_result.errors += 1;
 			},
+
 			Err(e) => {
 				dev_log!("indexing", "error: [ScanDirectory] Parallel task panicked: {}", e);
+
 				total_result.errors += 1;
 			},
 		}
@@ -364,8 +402,11 @@ pub async fn GetDirectoryStatistics(path:&str, max_depth:Option<usize>) -> Resul
 	}
 
 	let mut file_count = 0u64;
+
 	let mut total_size = 0u64;
+
 	let mut directory_count = 0u64;
+
 	let mut hidden_count = 0u64;
 
 	let walker = ignore::WalkBuilder::new(&directory_path)
@@ -379,6 +420,7 @@ pub async fn GetDirectoryStatistics(path:&str, max_depth:Option<usize>) -> Resul
 
 		if file_type.is_file() {
 			file_count += 1;
+
 			if let Ok(metadata) = entry.metadata() {
 				total_size += metadata.len();
 			}
@@ -403,7 +445,10 @@ pub async fn GetDirectoryStatistics(path:&str, max_depth:Option<usize>) -> Resul
 #[derive(Debug, Clone)]
 pub struct DirectoryStatistics {
 	pub file_count:u64,
+
 	pub directory_count:u64,
+
 	pub hidden_count:u64,
+
 	pub total_size:u64,
 }

@@ -84,7 +84,9 @@ use AirLibrary::DefaultBindAddress;
 //! - "Connection timeout (5s)" - Connection did not complete in time
 
 pub async fn Connect() -> Result<(), String> {
+
     use tokio::net::TcpStream;
+
     use tokio::time::{timeout, Duration};
     
     let addr = DefaultBindAddress;
@@ -95,20 +97,25 @@ pub async fn Connect() -> Result<(), String> {
     }).await;
     
     match connection_result {
+
         Ok(Ok(_)) => Ok(()),
+
         Ok(Err(e)) => Err(format!("Connection failed: {}", e)),
+
         Err(_) => Err("Connection timeout (5s)".to_string()),
     }
 }
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
     
     #[test]
     #[ignore] // Requires running daemon
     #[tokio::test]
     async fn test_connect_to_daemon() {
+
         // This test requires a running daemon
         // and is ignored for automated test runs.
     }

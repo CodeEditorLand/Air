@@ -70,10 +70,12 @@ use crate::Indexing::State::CreateState::{SymbolInfo, SymbolKind};
 /// Extract Rust symbols (struct, impl, fn, mod, enum, trait)
 pub fn ExtractRustSymbols(content:&str, file_path:&PathBuf) -> Vec<SymbolInfo> {
 	let mut symbols = Vec::new();
+
 	let lines:Vec<&str> = content.lines().collect();
 
 	for (line_idx, line) in lines.iter().enumerate() {
 		let line_content = line.trim();
+
 		let line_num = line_idx as u32 + 1;
 
 		// Check for comments and skip them

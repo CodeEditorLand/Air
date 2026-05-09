@@ -55,6 +55,7 @@
 /// - Non-implemented commands show workarounds
 
 use AirLibrary::CLI::{Command, ConfigCommand, DebugCommand, OutputFormatter};
+
 use AirLibrary::{DefaultConfigFile, DefaultBindAddress, VERSION, ProtocolVersion};
 
 /// Validate and dispatch a CLI command
@@ -90,75 +91,118 @@ use AirLibrary::{DefaultConfigFile, DefaultBindAddress, VERSION, ProtocolVersion
 //! - Implement interactive mode
 
 pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error>> {
+
     // Validate command parameters before execution
     let validation_result = super::ValidateCommand::ValidateCommand(&cmd);
+
     if let Err(e) = validation_result {
+
         eprintln!("[ERROR] Command validation failed: {}", e);
+
         return Err(e.into());
     }
     
     match cmd {
+
         Command::Help { command } => {
+
             // Defensive: Ensure command string is not too long
             if let Some(ref cmd) = command {
+
                 if cmd.len() > 128 {
+
                     eprintln!("[ERROR] Command name too long (max: 128 characters)");
+
                     return Err("Command name too long".into());
                 }
             }
+
             println!("{}", OutputFormatter::format_help(command.as_deref(), VERSION));
+
             Ok(())
         }
         
         Command::Version => {
+
             println!("Air {} ({})", VERSION, env!("CARGO_PKG_NAME"));
+
             println!("Protocol: Version {} (gRPC)", ProtocolVersion);
+
             println!("Port: {} (Air), {} (Cocoon)", DefaultBindAddress, "[::1]:50052");
+
             println!("Build: {} {}", env!("CARGO_PKG_VERSION"), env!("CARGO_PKG_NAME"));
+
             Ok(())
         }
         
         Command::Status { service, verbose, json } => {
+
             // Validate inputs
             if let Some(ref svc) = service {
+
                 if svc.is_empty() || svc.len() > 64 {
+
                     return Err("Service name must be 1-64 characters".into());
                 }
             }
             
             // Attempt connection with timeout
             match super::Connect::ConnectDaemon::Connect().await {
+
                 Ok(_) => {
+
                     // Basic status output
                     if let Some(svc) = service {
+
                         println!("Status for service: {}", svc);
+
                         println!("  Status: Running (basic check)");
+
                         println!("  Note: Detailed status not yet implemented");
                     } else {
+
                         println!("Air Daemon Status");
+
                         println!("");
+
                         println!("  Overall: Running (basic check)");
+
                         println!("");
+
                         println!("  Services:");
+
                         println!("    gRPC Server: [OK] Listening");
+
                         println!("    Authentication: [?] Not checked");
+
                         println!("    Updates: [?] Not checked");
+
                         println!("    Download Manager: [?] Not checked");
+
                         println!("    File Indexer: [?] Not checked");
                     }
 
                     if verbose {
+
                         println!("");
+
                         println!("Verbose Information:");
+
                         println!("  Debug mode: Disabled by default");
+
                         println!("  Log level: info");
+
                         println!("  Config file: {}", DefaultConfigFile);
                     }
                     
                     if json {
+
                         println!("");
+
                         println!("JSON Output:");
+
                         println!("{}",
+
                             serde_json::json!({
                                 "overall": "running",
                                 "services": {
@@ -169,42 +213,62 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                             })
                         );
                     }
+
                     Ok(())
                 }
+
                 Err(e) => {
+
                     println!("  Status: [ERROR] Daemon not running");
+
                     println!("  Error: {}", e);
+
                     println!("");
+
                     println!("  To start the daemon, run: Air --daemon");
+
                     Err(format!("Daemon not running: {}", e).into())
                 }
             }
         }
         
         Command::Restart { service, force } => {
+
             // Validate input
             if let Some(ref svc) = service {
+
                 if svc.is_empty() || svc.len() > 64 {
+
                     return Err("Service name must be 1-64 characters".into());
                 }
             }
             
             println!("Restart Command");
+
             println!("");
             
             if let Some(svc) = service {
+
                 println!("Restarting service: {}", svc);
+
                 println!("  Note: Individual service restart not yet implemented");
+
                 println!("  Workaround: Restart the entire daemon");
             } else {
+
                 println!("Restarting all services...");
+
                 println!("  Note: Full daemon restart not yet implemented");
+
                 println!("  Workaround: Use: kill <pid> && Air --daemon");
             }
             
             if force {
+
                 println!("");
+
                 println!("Force mode enabled");
+
                 println!("  Warning: This will terminate in-progress operations");
             }
             
@@ -212,44 +276,68 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
         }
         
         Command::Config(config_cmd) => {
+
             HandleConfigCommand(config_cmd).await
         }
         
         Command::Metrics { json, service } => {
+
             // Validate inputs
             if let Some(ref svc) = service {
+
                 if svc.is_empty() || svc.len() > 64 {
+
                     return Err("Service name must be 1-64 characters".into());
                 }
             }
             
             println!("Metrics");
+
             println!("");
             
             match super::Connect::ConnectDaemon::Connect().await {
+
                 Ok(_) => {
+
                     println!("  Status: [OK] Daemon is running");
+
                     println!("");
+
                     println!("  Note: Metrics collection is partially implemented");
+
                     println!("");
+
                     println!("  Current Metrics (basic):");
+
                     println!("    Uptime: Not tracked yet");
+
                     println!("    Requests: Not tracked yet");
+
                     println!("    Errors: Not tracked yet");
+
                     println!("    Memory: Not tracked yet");
+
                     println!("    CPU: Not tracked yet");
                 }
+
                 Err(e) => {
+
                     println!("  Status: [ERROR] Cannot connect to daemon");
+
                     println!("  Error: {}", e);
+
                     return Err(format!("Cannot retrieve metrics: {}", e).into());
                 }
             }
             
             if json {
+
                 println!("");
+
                 println!("JSON Output:");
+
                 println!("{}",
+
                     serde_json::json!({
                         "note": "Detailed metrics not yet implemented",
                         "suggestion": "Use /metrics endpoint when daemon is running"
@@ -258,8 +346,11 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
             }
             
             if let Some(svc) = service {
+
                 println!("");
+
                 println!("  Service-specific metrics requested: {}", svc);
+
                 println!("  Note: Service isolation not yet implemented");
             }
             
@@ -267,60 +358,90 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
         }
         
         Command::Logs { service, tail, filter, follow } => {
+
             // Validate inputs
             if let Some(ref svc) = service {
+
                 if svc.is_empty() || svc.len() > 64 {
+
                     return Err("Service name must be 1-64 characters".into());
                 }
             }
+
             if let Some(n) = tail {
+
                 if n < 1 || n > 10000 {
+
                     return Err("Tail count must be 1-10000 lines".into());
                 }
             }
+
             if let Some(ref f) = filter {
+
                 if f.is_empty() || f.len() > 512 {
+
                     return Err("Filter string must be 1-512 characters".into());
                 }
             }
             
             println!("Logs");
+
             println!("");
             
             let log_file = std::env::var("AIR_LOG_FILE").ok();
+
             let log_dir = std::env::var("AIR_LOG_DIR").ok();
             
             match (log_file, log_dir) {
+
                 (Some(file), _) => {
+
                     println!("  Log file: {}", file);
                     
                     if std::path::Path::new(&file).exists() {
+
                         println!("  Status: [OK] Log file exists");
+
                         println!("");
+
                         println!("  Note: Log viewing not yet implemented");
+
                         println!("  Workaround: Use standard tools:");
+
                         println!("    - tail -n {} {}", tail.unwrap_or(100), file);
                         
                         if let Some(f) = filter {
+
                             println!("    - grep '{}' {} | tail -n {}", f, file, tail.unwrap_or(100));
                         }
                         
                         if follow {
+
                             println!("    - tail -f {}", file);
                         }
                     } else {
+
                         println!("  Status: [ERROR] Log file not found");
+
                         println!("  Check logging configuration");
                     }
                 }
+
                 (_, Some(dir)) => {
+
                     println!("  Log directory: {}", dir);
+
                     println!("  Note: Log file viewing not yet implemented");
                 }
+
                 _ => {
+
                     println!("  Log file: Not configured");
+
                     println!("  Set via: AIR_LOG_FILE=/path/to/Air.log");
+
                     println!("");
+
                     println!("  Logs are likely going to stdout/stderr");
                 }
             }
@@ -329,6 +450,7 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
         }
         
         Command::Debug(debug_cmd) => {
+
             HandleDebugCommand(debug_cmd).await
         }
     }
@@ -336,65 +458,100 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
 
 /// Handle config sub-commands
 async fn HandleConfigCommand(config_cmd: ConfigCommand) -> Result<(), Box<dyn std::error::Error>> {
+
     match config_cmd {
+
         ConfigCommand::Get { key } => {
+
             // Validate key
             if key.is_empty() || key.len() > 256 {
+
                 return Err("Configuration key must be 1-256 characters".into());
             }
+
             if key.contains('\0') || key.contains('\n') {
+
                 return Err("Configuration key contains invalid characters".into());
             }
             
             println!("Get Configuration");
+
             println!("  Key: {}", key);
+
             println!("");
+
             println!("  Note: Config retrieval not yet implemented");
+
             println!("  Workaround: Check config file directly: cat {}", DefaultConfigFile);
             
             Err("Config 'get' command not yet implemented".into())
         }
         
         ConfigCommand::Set { key, value } => {
+
             // Validate inputs
             if key.is_empty() || key.len() > 256 {
+
                 return Err("Configuration key must be 1-256 characters".into());
             }
+
             if value.len() > 8192 {
+
                 return Err("Configuration value too long (max: 8192 characters)".into());
             }
+
             if key.contains('\0') || key.contains('\n') {
+
                 return Err("Configuration key contains invalid characters".into());
             }
             
             println!("Set Configuration");
+
             println!("  Key: {}", key);
+
             println!("  Value: {}", value);
+
             println!("");
+
             println!("  Note: Config update not yet implemented");
+
             println!("  Workaround: Edit config file directly, then use 'Air config reload'");
             
             Err("Config 'set' command not yet implemented".into())
         }
         
         ConfigCommand::Reload { validate } => {
+
             println!("Reload Configuration");
+
             println!("");
             
             match super::Connect::ConnectDaemon::Connect().await {
+
                 Ok(_) => {
+
                     println!("  Status: [OK] Daemon is running");
+
                     println!("");
+
                     println!("  Note: Config reload not yet implemented");
+
                     println!("  Workaround: Restart daemon to apply config changes");
+
                     println!("");
+
                     if validate {
+
                         println!("  Validation mode requested");
                     }
                 }
+
                 Err(e) => {
+
                     println!("  Status: [ERROR] Cannot connect to daemon");
+
                     println!("  Error: {}", e);
+
                     return Err(format!("Cannot reload config: {}", e).into());
                 }
             }
@@ -403,49 +560,71 @@ async fn HandleConfigCommand(config_cmd: ConfigCommand) -> Result<(), Box<dyn st
         }
         
         ConfigCommand::Show { json } => {
+
             println!("Show Configuration");
+
             println!("");
             
             if json {
+
                 println!("  JSON output requested");
+
                 println!("  Note: JSON config export not yet implemented");
             } else {
+
                 println!("  Current Configuration:");
+
                 println!("  Note: Config display not yet implemented");
+
                 println!("  Workaround: View config file: cat {}", DefaultConfigFile);
             }
             
             println!("");
+
             println!("  Default config file: {}", DefaultConfigFile);
+
             println!("  Config directory: ~/.config/Air/");
             
             Err("Config 'show' command not yet implemented".into())
         }
         
         ConfigCommand::Validate { path } => {
+
             // Validate path if provided
             if let Some(ref p) = path {
+
                 if p.is_empty() || p.len() > 512 {
+
                     return Err("Config path must be 1-512 characters".into());
                 }
+
                 if p.contains("..") || p.contains('\0') {
+
                     return Err("Config path contains invalid characters".into());
                 }
             }
             
             println!("Validate Configuration");
+
             println!("");
             
             let config_path = path.unwrap_or_else(|| DefaultConfigFile.to_string());
+
             println!("  Config file: {}", config_path);
+
             println!("");
             
             if std::path::Path::new(&config_path).exists() {
+
                 println!("  [OK] Config file exists");
+
                 println!("  Note: Detailed validation not yet implemented");
+
                 println!("  Workaround: Use: Air --validate-config");
             } else {
+
                 println!("  [ERROR] Config file not found");
+
                 println!("  Hint: Create a config file or use defaults");
             }
             
@@ -456,120 +635,186 @@ async fn HandleConfigCommand(config_cmd: ConfigCommand) -> Result<(), Box<dyn st
 
 /// Handle debug sub-commands
 async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::error::Error>> {
+
     match debug_cmd {
+
         DebugCommand::DumpState { service, json } => {
+
             // Validate input
             if let Some(ref svc) = service {
+
                 if svc.is_empty() || svc.len() > 64 {
+
                     return Err("Service name must be 1-64 characters".into());
                 }
             }
             
             println!("Debug: Dump State");
+
             println!("");
             
             if let Some(svc) = service {
+
                 println!("  Service: {}", svc);
+
                 println!("  Note: Service state isolation not yet implemented");
             } else {
+
                 println!("  Dumping all service states...");
+
                 println!("  Note: State dumping not yet implemented");
             }
             
             if json {
+
                 println!("");
+
                 println!("  JSON format requested");
+
                 println!("  Note: JSON state export not yet implemented");
             }
             
             println!("");
+
             println!("  Note: State dumping requires gRPC integration:");
+
             println!("    - Application state");
+
             println!("    - Service states");
+
             println!("    - Connection pool");
+
             println!("    - Background tasks");
+
             println!("    - Metrics cache");
+
             println!("    - Configuration snapshot");
             
             Err("Debug 'dump-state' command not yet implemented".into())
         }
         
         DebugCommand::DumpConnections { format } => {
+
             println!("Debug: Dump Connections");
+
             println!("");
             
             match super::Connect::ConnectDaemon::Connect().await {
+
                 Ok(_) => {
+
                     println!("  Status: [OK] Daemon is running");
+
                     println!("");
+
                     println!("  Active Connections: 0");
+
                     println!("  Note: Connection tracking not yet implemented");
                 }
+
                 Err(e) => {
+
                     println!("  Status: [ERROR] Cannot connect to daemon");
+
                     println!("  Error: {}", e);
+
                     return Err(format!("Cannot dump connections: {}", e).into());
                 }
             }
             
             if let Some(fmt) = format {
+
                 println!("");
+
                 println!("  Format: {}", fmt);
+
                 println!("  Note: Custom format not yet implemented");
             }
             
             println!("");
+
             println!("  Note: Connection dump requires gRPC integration:");
+
             println!("    - Connection ID");
+
             println!("    - Remote address");
+
             println!("    - Connected at timestamp");
+
             println!("    - Last activity");
+
             println!("    - Active requests");
+
             println!("    - Bytes transferred");
             
             Err("Debug 'dump-connections' command not yet implemented".into())
         }
         
         DebugCommand::HealthCheck { verbose, service } => {
+
             // Validate input
             if let Some(ref svc) = service {
+
                 if svc.is_empty() || svc.len() > 64 {
+
                     return Err("Service name must be 1-64 characters".into());
                 }
             }
             
             println!("Debug: Health Check");
+
             println!("");
             
             match super::Connect::ConnectDaemon::Connect().await {
+
                 Ok(_) => {
+
                     println!("  Overall: [OK] Basic check passed");
+
                     println!("");
                     
                     if let Some(svc) = service {
+
                         println!("  Service: {}", svc);
+
                         println!("  Status: Not checked (detailed checks not implemented)");
                     } else {
+
                         println!("  Services:");
+
                         println!("    gRPC Server: [OK] Responding");
+
                         println!("    Authentication: [?] Not checked");
+
                         println!("    Updates: [?] Not checked");
+
                         println!("    Download Manager: [?] Not checked");
+
                         println!("    File Indexer: [?] Not checked");
                     }
                     
                     if verbose {
+
                         println!("");
+
                         println!("   Verbose Information:");
+
                         println!("    Last health check: Not tracked");
+
                         println!("    Health check interval: 30s (default)");
+
                         println!("    Failure threshold: 3 (configurable)");
+
                         println!("    Recovery threshold: 2 (configurable)");
                     }
                 }
+
                 Err(e) => {
+
                     println!("  Overall: [ERROR] Daemon unreachable");
+
                     println!("  Error: {}", e);
+
                     return Err(format!("Health check failed: {}", e).into());
                 }
             }
@@ -578,33 +823,52 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
         }
         
         DebugCommand::Diagnostics { level } => {
+
             println!("Debug: Diagnostics");
+
             println!("");
+
             println!("  Level: {:?}", level);
+
             println!("");
             
             println!("  System Information:");
+
             println!("    OS: {}", std::env::consts::OS);
+
             println!("    Arch: {}", std::env::consts::ARCH);
+
             println!("    Air Version: {}", VERSION);
+
             println!("");
             
             match super::Connect::ConnectDaemon::Connect().await {
+
                 Ok(_) => {
+
                     println!("  Daemon: [OK] Running");
                 }
+
                 Err(e) => {
+
                     println!("  Daemon: [ERROR] Running");
+
                     println!("  Error: {}", e);
                 }
             }
             
             println!("");
+
             println!("  Note: Advanced diagnostics require additional infrastructure:");
+
             println!("    - Thread dump");
+
             println!("    - Memory profiling");
+
             println!("    - Lock contention analysis");
+
             println!("    - Resource leak detection");
+
             println!("    - Performance bottlenecks");
             
             Ok(())
@@ -614,12 +878,15 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
     
     #[test]
     #[ignore] // Requires async runtime
    async fn test_handle_version() {
+
         let cmd = Command::Version;
+
         assert!(HandleCommand(cmd).await.is_ok());
     }
 }

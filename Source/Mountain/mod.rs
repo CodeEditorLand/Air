@@ -88,9 +88,13 @@ impl Default for TlsConfig {
 	fn default() -> Self {
 		Self {
 			ca_cert_path:None,
+
 			client_cert_path:None,
+
 			client_key_path:None,
+
 			server_name:None,
+
 			verify_certs:true,
 		}
 	}
@@ -108,9 +112,13 @@ impl TlsConfig {
 	pub fn server_auth(ca_cert_path:PathBuf) -> Self {
 		Self {
 			ca_cert_path:Some(ca_cert_path),
+
 			client_cert_path:None,
+
 			client_key_path:None,
+
 			server_name:Some("localhost".to_string()),
+
 			verify_certs:true,
 		}
 	}
@@ -127,9 +135,13 @@ impl TlsConfig {
 	pub fn mtls(ca_cert_path:PathBuf, client_cert_path:PathBuf, client_key_path:PathBuf) -> Self {
 		Self {
 			ca_cert_path:Some(ca_cert_path),
+
 			client_cert_path:Some(client_cert_path),
+
 			client_key_path:Some(client_key_path),
+
 			server_name:Some("localhost".to_string()),
+
 			verify_certs:true,
 		}
 	}
@@ -148,16 +160,20 @@ impl TlsConfig {
 #[cfg(feature = "mtls")]
 pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, Box<dyn std::error::Error>> {
 	dev_log!("grpc", "Creating TLS client configuration");
+
 	// Build the root certificate store
 	let mut root_store = RootCertStore::empty();
 
 	if let Some(ca_path) = &tls_config.ca_cert_path {
 		// Load CA certificate from file
 		dev_log!("grpc", "Loading CA certificate from {:?}", ca_path);
+
 		let ca_file = File::open(ca_path).map_err(|e| format!("Failed to open CA certificate file: {}", e))?;
+
 		let mut reader = BufReader::new(ca_file);
 
 		let certs:Result<Vec<_>, _> = rustls_pemfile::certs(&mut reader).collect();
+
 		let certs = certs.map_err(|e| format!("Failed to parse CA certificate: {}", e))?;
 
 		if certs.is_empty() {
@@ -174,6 +190,7 @@ pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, B
 	} else {
 		// Use system root certificates via rustls-native-certs 0.8.x API
 		dev_log!("grpc", "Loading system root certificates");
+
 		let cert_result = rustls_native_certs::load_native_certs();
 
 		// Log any errors encountered while loading certificates
@@ -203,13 +220,17 @@ pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, B
 	// Load client certificate and key for mTLS (if provided)
 	let client_certs = if tls_config.client_cert_path.is_some() && tls_config.client_key_path.is_some() {
 		let cert_path = tls_config.client_cert_path.as_ref().unwrap();
+
 		let key_path = tls_config.client_key_path.as_ref().unwrap();
 
 		dev_log!("grpc", "Loading client certificate from {:?}", cert_path);
+
 		let cert_file = File::open(cert_path).map_err(|e| format!("Failed to open client certificate file: {}", e))?;
+
 		let mut cert_reader = BufReader::new(cert_file);
 
 		let certs:Result<Vec<_>, _> = rustls_pemfile::certs(&mut cert_reader).collect();
+
 		let certs = certs.map_err(|e| format!("Failed to parse client certificate: {}", e))?;
 
 		if certs.is_empty() {
@@ -217,7 +238,9 @@ pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, B
 		}
 
 		dev_log!("grpc", "Loading client private key from {:?}", key_path);
+
 		let key_file = File::open(key_path).map_err(|e| format!("Failed to open private key file: {}", e))?;
+
 		let mut key_reader = BufReader::new(key_file);
 
 		let key = rustls_pemfile::private_key(&mut key_reader)
@@ -239,14 +262,17 @@ pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, B
 				.map_err(|e| format!("Failed to configure client authentication: {}", e))?;
 
 			dev_log!("grpc", "Configured mTLS with client certificate");
+
 			client_config
 		},
+
 		None => {
 			// TLS configuration with server authentication only
 			// rustls 0.23: The builder will auto-complete when no client auth needed
 			let client_config = ClientConfig::builder().with_root_certificates(root_store).with_no_client_auth();
 
 			dev_log!("grpc", "Configured TLS with server authentication only");
+
 			client_config
 		},
 	};
@@ -267,6 +293,7 @@ pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, B
 	}
 
 	dev_log!("grpc", "TLS client configuration created successfully");
+
 	Ok(config)
 }
 
@@ -291,8 +318,11 @@ impl Default for MountainClientConfig {
 	fn default() -> Self {
 		Self {
 			address:DEFAULT_MOUNTAIN_ADDRESS.to_string(),
+
 			connection_timeout_secs:DEFAULT_CONNECTION_TIMEOUT_SECS,
+
 			request_timeout_secs:DEFAULT_REQUEST_TIMEOUT_SECS,
+
 			#[cfg(feature = "mtls")]
 			tls_config:None,
 		}
@@ -364,8 +394,11 @@ impl MountainClientConfig {
 
 		Self {
 			address,
+
 			connection_timeout_secs,
+
 			request_timeout_secs,
+
 			#[cfg(feature = "mtls")]
 			tls_config,
 		}
@@ -380,6 +413,7 @@ impl MountainClientConfig {
 	/// Self for method chaining
 	pub fn with_connection_timeout(mut self, timeout_secs:u64) -> Self {
 		self.connection_timeout_secs = timeout_secs;
+
 		self
 	}
 
@@ -392,6 +426,7 @@ impl MountainClientConfig {
 	/// Self for method chaining
 	pub fn with_request_timeout(mut self, timeout_secs:u64) -> Self {
 		self.request_timeout_secs = timeout_secs;
+
 		self
 	}
 
@@ -405,6 +440,7 @@ impl MountainClientConfig {
 	#[cfg(feature = "mtls")]
 	pub fn with_tls(mut self, tls_config:TlsConfig) -> Self {
 		self.tls_config = Some(tls_config);
+
 		self
 	}
 }
@@ -436,6 +472,7 @@ impl MountainClient {
 	/// Result containing the new MountainClient or a connection error
 	pub async fn connect(config:MountainClientConfig) -> Result<Self, Box<dyn std::error::Error>> {
 		dev_log!("grpc", "Connecting to Mountain at {}", config.address);
+
 		let endpoint = Endpoint::from_shared(config.address.clone())?
 			.connect_timeout(Duration::from_secs(config.connection_timeout_secs));
 
@@ -443,6 +480,7 @@ impl MountainClient {
 		#[cfg(feature = "mtls")]
 		if let Some(tls_config) = &config.tls_config {
 			dev_log!("grpc", "TLS configuration provided, configuring secure connection");
+
 			let _client_config = create_tls_client_config(tls_config).map_err(|e| {
 				dev_log!("grpc", "error: Failed to create TLS client configuration: {}", e);
 				format!("TLS configuration error: {}", e)
@@ -450,9 +488,12 @@ impl MountainClient {
 
 			// Create TLS configuration using tonic's API
 			let domain_name = tls_config.server_name.clone().unwrap_or_else(|| "localhost".to_string());
+
 			dev_log!("grpc", "Setting server name for SNI: {}", domain_name);
+
 			// Convert to tonic's ClientTlsConfig for gRPC over TLS
 			let tls = tonic::transport::ClientTlsConfig::new().domain_name(domain_name.clone());
+
 			let channel = endpoint
 				.tcp_keepalive(Some(Duration::from_secs(60)))
 				.tls_config(tls)?
@@ -461,13 +502,17 @@ impl MountainClient {
 				.map_err(|e| format!("Failed to connect with TLS: {}", e))?;
 
 			dev_log!("grpc", "Successfully connected to Mountain at {} with TLS", config.address);
+
 			return Ok(Self { channel, config });
 		}
 
 		// Unencrypted connection
 		dev_log!("grpc", "Using unencrypted connection");
+
 		let channel = endpoint.connect().await?;
+
 		dev_log!("grpc", "Successfully connected to Mountain at {}", config.address);
+
 		Ok(Self { channel, config })
 	}
 
@@ -491,6 +536,7 @@ impl MountainClient {
 	/// Result indicating health status (true if healthy, false otherwise)
 	pub async fn health_check(&self) -> Result<bool, Box<dyn std::error::Error>> {
 		dev_log!("grpc", "Checking Mountain health");
+
 		// Basic connectivity check using channel readiness
 		match tokio::time::timeout(Duration::from_secs(self.config.request_timeout_secs), async {
 			// The Channel doesn't have a ready() method in modern tonic,
@@ -501,14 +547,19 @@ impl MountainClient {
 		{
 			Ok(Ok(())) => {
 				dev_log!("grpc", "Mountain health check: healthy");
+
 				Ok(true)
 			},
+
 			Ok(Err(e)) => {
 				dev_log!("grpc", "warn: Mountain health check: disconnected - {}", e);
+
 				Ok(false)
 			},
+
 			Err(_) => {
 				dev_log!("grpc", "warn: Mountain health check: timeout");
+
 				Ok(false)
 			},
 		}
@@ -523,6 +574,7 @@ impl MountainClient {
 	/// Result containing the status or an error
 	pub async fn get_status(&self) -> Result<String, Box<dyn std::error::Error>> {
 		dev_log!("grpc", "Getting Mountain status");
+
 		// This is a stub - in a full implementation, this would call
 		// the actual GetStatus RPC on Mountain
 		Ok("connected".to_string())
@@ -540,6 +592,7 @@ impl MountainClient {
 	/// Result containing the configuration value or an error
 	pub async fn get_config(&self, key:&str) -> Result<Option<String>, Box<dyn std::error::Error>> {
 		dev_log!("grpc", "Getting Mountain config: {}", key);
+
 		// This is a stub - in a full implementation, this would call
 		// the actual GetConfiguration RPC on Mountain
 		Ok(None)
@@ -558,6 +611,7 @@ impl MountainClient {
 	/// Result indicating success or failure
 	pub async fn set_config(&self, key:&str, value:&str) -> Result<(), Box<dyn std::error::Error>> {
 		dev_log!("grpc", "Setting Mountain config: {} = {}", key, value);
+
 		// This is a stub - in a full implementation, this would call
 		// the actual UpdateConfiguration RPC on Mountain
 		Ok(())
@@ -585,13 +639,17 @@ pub async fn connect_to_mountain_at(address:impl Into<String>) -> Result<Mountai
 
 #[cfg(test)]
 mod tests {
+
 	use super::*;
 
 	#[test]
 	fn test_default_config() {
 		let config = MountainClientConfig::default();
+
 		assert_eq!(config.address, DEFAULT_MOUNTAIN_ADDRESS);
+
 		assert_eq!(config.connection_timeout_secs, DEFAULT_CONNECTION_TIMEOUT_SECS);
+
 		assert_eq!(config.request_timeout_secs, DEFAULT_REQUEST_TIMEOUT_SECS);
 	}
 
@@ -602,7 +660,9 @@ mod tests {
 			.with_request_timeout(60);
 
 		assert_eq!(config.address, "[::1]:50060");
+
 		assert_eq!(config.connection_timeout_secs, 10);
+
 		assert_eq!(config.request_timeout_secs, 60);
 	}
 
@@ -610,10 +670,15 @@ mod tests {
 	#[test]
 	fn test_tls_config_server_auth() {
 		let tls = TlsConfig::server_auth(std::path::PathBuf::from("/path/to/ca.pem"));
+
 		assert_eq!(tls.server_name, Some("localhost".to_string()));
+
 		assert!(tls.client_cert_path.is_none());
+
 		assert!(tls.client_key_path.is_none());
+
 		assert!(tls.ca_cert_path.is_some());
+
 		assert!(tls.verify_certs);
 	}
 
@@ -625,10 +690,15 @@ mod tests {
 			std::path::PathBuf::from("/path/to/cert.pem"),
 			std::path::PathBuf::from("/path/to/key.pem"),
 		);
+
 		assert!(tls.client_cert_path.is_some());
+
 		assert!(tls.client_key_path.is_some());
+
 		assert!(tls.ca_cert_path.is_some());
+
 		assert!(tls.verify_certs);
+
 		assert_eq!(tls.server_name, Some("localhost".to_string()));
 	}
 
@@ -636,10 +706,15 @@ mod tests {
 	#[test]
 	fn test_tls_config_default() {
 		let tls = TlsConfig::default();
+
 		assert!(tls.ca_cert_path.is_none());
+
 		assert!(tls.client_cert_path.is_none());
+
 		assert!(tls.client_key_path.is_none());
+
 		assert!(tls.server_name.is_none());
+
 		assert!(tls.verify_certs);
 	}
 
@@ -649,19 +724,25 @@ mod tests {
 		unsafe {
 			env::remove_var("MOUNTAIN_ADDRESS");
 		}
+
 		unsafe {
 			env::remove_var("MOUNTAIN_CONNECTION_TIMEOUT_SECS");
 		}
+
 		unsafe {
 			env::remove_var("MOUNTAIN_REQUEST_TIMEOUT_SECS");
 		}
+
 		unsafe {
 			env::remove_var("MOUNTAIN_TLS_ENABLED");
 		}
 
 		let config = MountainClientConfig::from_env();
+
 		assert_eq!(config.address, DEFAULT_MOUNTAIN_ADDRESS);
+
 		assert_eq!(config.connection_timeout_secs, DEFAULT_CONNECTION_TIMEOUT_SECS);
+
 		assert_eq!(config.request_timeout_secs, DEFAULT_REQUEST_TIMEOUT_SECS);
 	}
 
@@ -670,25 +751,32 @@ mod tests {
 		unsafe {
 			env::set_var("MOUNTAIN_ADDRESS", "[::1]:50060");
 		}
+
 		unsafe {
 			env::set_var("MOUNTAIN_CONNECTION_TIMEOUT_SECS", "10");
 		}
+
 		unsafe {
 			env::set_var("MOUNTAIN_REQUEST_TIMEOUT_SECS", "60");
 		}
 
 		let config = MountainClientConfig::from_env();
+
 		assert_eq!(config.address, "[::1]:50060");
+
 		assert_eq!(config.connection_timeout_secs, 10);
+
 		assert_eq!(config.request_timeout_secs, 60);
 
 		// Clean up
 		unsafe {
 			env::remove_var("MOUNTAIN_ADDRESS");
 		}
+
 		unsafe {
 			env::remove_var("MOUNTAIN_CONNECTION_TIMEOUT_SECS");
 		}
+
 		unsafe {
 			env::remove_var("MOUNTAIN_REQUEST_TIMEOUT_SECS");
 		}
@@ -700,27 +788,36 @@ mod tests {
 		unsafe {
 			env::set_var("MOUNTAIN_TLS_ENABLED", "1");
 		}
+
 		unsafe {
 			env::set_var("MOUNTAIN_CA_CERT", "/path/to/ca.pem");
 		}
+
 		unsafe {
 			env::set_var("MOUNTAIN_SERVER_NAME", "mymountain.com");
 		}
 
 		let config = MountainClientConfig::from_env();
+
 		assert!(config.tls_config.is_some());
+
 		let tls = config.tls_config.unwrap();
+
 		assert_eq!(tls.ca_cert_path, Some(std::path::PathBuf::from("/path/to/ca.pem")));
+
 		assert_eq!(tls.server_name, Some("mymountain.com".to_string()));
+
 		assert!(tls.verify_certs);
 
 		// Clean up
 		unsafe {
 			env::remove_var("MOUNTAIN_TLS_ENABLED");
 		}
+
 		unsafe {
 			env::remove_var("MOUNTAIN_CA_CERT");
 		}
+
 		unsafe {
 			env::remove_var("MOUNTAIN_SERVER_NAME");
 		}
@@ -732,34 +829,46 @@ mod tests {
 		unsafe {
 			env::set_var("MOUNTAIN_TLS_ENABLED", "true");
 		}
+
 		unsafe {
 			env::set_var("MOUNTAIN_CA_CERT", "/path/to/ca.pem");
 		}
+
 		unsafe {
 			env::set_var("MOUNTAIN_CLIENT_CERT", "/path/to/cert.pem");
 		}
+
 		unsafe {
 			env::set_var("MOUNTAIN_CLIENT_KEY", "/path/to/key.pem");
 		}
 
 		let config = MountainClientConfig::from_env();
+
 		assert!(config.tls_config.is_some());
+
 		let tls = config.tls_config.unwrap();
+
 		assert_eq!(tls.ca_cert_path, Some(std::path::PathBuf::from("/path/to/ca.pem")));
+
 		assert_eq!(tls.client_cert_path, Some(std::path::PathBuf::from("/path/to/cert.pem")));
+
 		assert_eq!(tls.client_key_path, Some(std::path::PathBuf::from("/path/to/key.pem")));
+
 		assert!(tls.verify_certs);
 
 		// Clean up
 		unsafe {
 			env::remove_var("MOUNTAIN_TLS_ENABLED");
 		}
+
 		unsafe {
 			env::remove_var("MOUNTAIN_CA_CERT");
 		}
+
 		unsafe {
 			env::remove_var("MOUNTAIN_CLIENT_CERT");
 		}
+
 		unsafe {
 			env::remove_var("MOUNTAIN_CLIENT_KEY");
 		}

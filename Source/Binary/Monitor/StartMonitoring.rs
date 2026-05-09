@@ -76,6 +76,7 @@ use crate::dev_log;
 pub struct MonitoringHandles {
 	/// Connection monitor task handle
 	pub ConnectionMonitor:tokio::task::JoinHandle<()>,
+
 	/// Health monitor task handle
 	pub HealthMonitor:tokio::task::JoinHandle<()>,
 }
@@ -120,9 +121,11 @@ pub struct MonitoringHandles {
 /// count as tokio uses work-stealing scheduling with a limited worker pool.
 pub async fn StartMonitoring(
 	AppState:Arc<ApplicationState>,
+
 	HealthManager:Arc<HealthCheckManager>,
 ) -> MonitoringHandles {
 	dev_log!("lifecycle", "[Monitor] Starting background monitoring tasks...");
+
 	// Start connection monitoring background task
 	let ConnectionMonitorHandle = tokio::spawn({
 		let AppState = AppState.clone();
@@ -228,17 +231,20 @@ pub async fn StartMonitoring(
 	}
 
 	dev_log!("lifecycle", "[Monitor] Background monitoring tasks started");
+
 	MonitoringHandles { ConnectionMonitor:ConnectionMonitorHandle, HealthMonitor:HealthMonitorHandle }
 }
 
 #[cfg(test)]
 mod tests {
+
 	use super::*;
 
 	#[test]
 	#[ignore] // Requires actual app state
 	#[tokio::test]
 	async fn TestStartMonitoring() {
+
 		// This test requires proper app state and health manager setup
 		// and is ignored for automated test runs.
 	}

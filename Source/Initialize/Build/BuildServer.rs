@@ -84,8 +84,10 @@ use crate::dev_log;
 pub struct BuiltServer {
 	/// The configured Vine gRPC service
 	pub service:AirVinegRPCService,
+
 	/// Sender for shutdown signal
 	pub shutdown_tx:tokio::sync::oneshot::Sender<()>,
+
 	/// Bind address for the server
 	pub bind_addr:SocketAddr,
 }
@@ -119,13 +121,19 @@ pub struct BuiltServer {
 /// - Add service version compatibility checks
 pub fn BuildServer(
 	app_state:Arc<ApplicationState>,
+
 	auth_service:Arc<AuthenticationService>,
+
 	update_manager:Arc<UpdateManager>,
+
 	download_manager:Arc<DownloadManager>,
+
 	file_indexer:Arc<FileIndexer>,
+
 	bind_addr:SocketAddr,
 ) -> Result<BuiltServer, String> {
 	dev_log!("lifecycle", "[Build] Building Vine gRPC service...");
+
 	// Create the Vine gRPC service with all dependencies
 	let service = AirVinegRPCService::new(app_state, auth_service, update_manager, download_manager, file_indexer)
 		.map_err(|e| {
@@ -137,17 +145,25 @@ pub fn BuildServer(
 	let (shutdown_tx, _shutdown_rx) = tokio::sync::oneshot::channel::<()>();
 
 	dev_log!("lifecycle", "[Build] Vine gRPC service built successfully");
+
 	dev_log!("lifecycle", "[Build] Service configured with:");
+
 	dev_log!("lifecycle", "  - Bind address: {}", bind_addr);
+
 	dev_log!("lifecycle", "  - Authentication service: [OK]");
+
 	dev_log!("lifecycle", "  - Update manager: [OK]");
+
 	dev_log!("lifecycle", "  - Download manager: [OK]");
+
 	dev_log!("lifecycle", "  - File indexer: [OK]");
+
 	Ok(BuiltServer { service, shutdown_tx, bind_addr })
 }
 
 #[cfg(test)]
 mod tests {
+
 	use std::sync::Arc;
 
 	use super::*;
@@ -155,6 +171,7 @@ mod tests {
 	#[test]
 	#[ignore] // Requires actual app state setup
 	fn test_build_server() {
+
 		// This test requires proper initialization of all services
 		// and is ignored for automated test runs.
 		// In practice, this would be an integration test.

@@ -57,7 +57,9 @@
 //! - Partial downloads can be resumed
 
 use std::sync::Arc;
+
 use std::time::Duration;
+
 use crate::dev_log;
 
 use AirLibrary::{
@@ -105,21 +107,30 @@ use AirLibrary::{
 pub async fn StartDownload(
     app_state: Arc<ApplicationState>,
 ) -> Result<Arc<DownloadManager>, String> {
+
     dev_log!("lifecycle", "[Download] Starting download manager...");    
+
     // Initialize download manager with timeout
     let download_result = tokio::time::timeout(
         Duration::from_secs(10),
+
         DownloadManager::new(app_state.clone())
     ).await;
     
     match download_result {
+
         Ok(Ok(manager)) => {
+
             dev_log!("lifecycle", "[Download] Download manager initialized successfully");            Ok(Arc::new(manager))
         }
+
         Ok(Err(e)) => {
+
             dev_log!("lifecycle", "error: [Download] Failed to initialize download manager: {}", e);            Err(format!("Download manager initialization failed: {}", e))
         }
+
         Err(_) => {
+
             dev_log!("lifecycle", "error: [Download] Download manager initialization timed out");            Err("Download manager initialization timed out".to_string())
         }
     }
@@ -127,11 +138,13 @@ pub async fn StartDownload(
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
     
     #[test]
     #[ignore] // Requires actual app state
     async fn test_start_download() {
+
         // This test requires proper application state setup
         // and is ignored for automated test runs.
     }

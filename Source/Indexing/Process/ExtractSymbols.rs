@@ -80,11 +80,14 @@ use crate::{
 /// - Go: type, func, struct, interface
 pub async fn ExtractSymbols(file_path:&PathBuf, content:&[u8], language:&str) -> Result<Vec<SymbolInfo>> {
 	let content_str = String::from_utf8_lossy(content);
+
 	let mut symbols = Vec::new();
 
 	match language.to_lowercase().as_str() {
 		"rust" => symbols.extend(ExtractRustSymbols(&content_str, file_path)),
+
 		"typescript" | "javascript" => symbols.extend(ExtractTypeScriptSymbols(&content_str, file_path)),
+
 		_ => {},
 	}
 
@@ -108,6 +111,7 @@ pub fn SortSymbolsByLine(symbols:&mut Vec<SymbolInfo>) { symbols.sort_by(|a, b| 
 /// Filter symbols by name pattern
 pub fn FilterSymbolsByName<'a>(symbols:&'a [SymbolInfo], pattern:&str) -> Vec<&'a SymbolInfo> {
 	let pattern_lower = pattern.to_lowercase();
+
 	symbols
 		.iter()
 		.filter(|s| s.name.to_lowercase().contains(&pattern_lower))
@@ -144,15 +148,18 @@ pub fn GetSymbolStatistics(symbols:&[SymbolInfo]) -> SymbolStatistics {
 #[derive(Debug, Clone)]
 pub struct SymbolStatistics {
 	pub total:usize,
+
 	pub by_kind:std::collections::HashMap<SymbolKind, usize>,
 }
 
 impl std::fmt::Display for SymbolStatistics {
 	fn fmt(&self, f:&mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		write!(f, "Total symbols: {}", self.total)?;
+
 		for (kind, count) in &self.by_kind {
 			write!(f, ", {:?}: {}", kind, count)?;
 		}
+
 		Ok(())
 	}
 }
@@ -165,15 +172,18 @@ pub fn ValidateSymbol(symbol:&SymbolInfo) -> bool {
 /// Deduplicate symbols by name and line
 pub fn DeduplicateSymbols(symbols:Vec<SymbolInfo>) -> Vec<SymbolInfo> {
 	let mut seen = std::collections::HashSet::new();
+
 	symbols.into_iter().filter(|s| seen.insert((s.name.clone(), s.line))).collect()
 }
 
 /// Merge symbol lists from multiple files
 pub fn MergeSymbolLists(symbol_lists:Vec<Vec<SymbolInfo>>) -> Vec<SymbolInfo> {
 	let mut merged = Vec::new();
+
 	for symbols in symbol_lists {
 		merged.extend(symbols);
 	}
+
 	DeduplicateSymbols(merged)
 }
 
@@ -185,17 +195,22 @@ pub fn DeduplicateLists(symbol_lists:Vec<Vec<SymbolInfo>>) -> Vec<Vec<SymbolInfo
 /// Create a symbol search index (name -> symbols)
 pub fn CreateSymbolIndex(symbols:&[SymbolInfo]) -> std::collections::HashMap<String, Vec<usize>> {
 	let mut index = std::collections::HashMap::new();
+
 	for (idx, symbol) in symbols.iter().enumerate() {
 		index.entry(symbol.name.to_lowercase()).or_insert_with(Vec::new).push(idx);
 	}
+
 	index
 }
 
 /// Find symbols matching multiple criteria
 pub fn FindSymbolsMatching<'a>(
 	symbols:&'a [SymbolInfo],
+
 	name_pattern:Option<&'a str>,
+
 	kind:&Option<SymbolKind>,
+
 	line_range:Option<(u32, u32)>,
 ) -> Vec<&'a SymbolInfo> {
 	symbols

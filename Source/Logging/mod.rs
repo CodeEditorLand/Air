@@ -88,14 +88,19 @@ use crate::{Result, dev_log};
 pub struct LogRotationConfig {
 	/// Maximum size of a single log file in bytes before rotation
 	pub MaxFileSizeBytes:u64,
+
 	/// Maximum number of rotated log files to retain
 	pub MaxFiles:usize,
+
 	/// Rotation strategy (daily, hourly, never)
 	pub Rotation:LogRotation,
+
 	/// Whether to compress rotated log files
 	pub Compress:bool,
+
 	/// Log directory path
 	pub LogDirectory:String,
+
 	/// Log file name prefix
 	pub LogFilePrefix:String,
 }
@@ -105,10 +110,13 @@ pub struct LogRotationConfig {
 pub enum LogRotation {
 	/// Rotate daily
 	Daily,
+
 	/// Rotate every hour
 	Hourly,
+
 	/// Rotate every minute (for debugging)
 	Minutely,
+
 	/// Never rotate automatically
 	Never,
 }
@@ -123,8 +131,11 @@ impl Default for LogRotationConfig {
 			MaxFileSizeBytes:100 * 1024 * 1024, // 100 MB
 			MaxFiles:30,                        // Keep 30 days of logs
 			Rotation:LogRotation::Daily,
+
 			Compress:true,
+
 			LogDirectory:"./Log".to_string(),
+
 			LogFilePrefix:"Air".to_string(),
 		}
 	}
@@ -136,17 +147,21 @@ impl LogRotationConfig {
 		if self.MaxFileSizeBytes == 0 {
 			return Err("MaxFileSizeBytes must be greater than 0".into());
 		}
+
 		if self.MaxFileSizeBytes > 10 * 1024 * 1024 * 1024 {
 			// Max 10 GB
 			return Err("MaxFileSizeBytes cannot exceed 10 GB".into());
 		}
+
 		if self.MaxFiles == 0 {
 			return Err("MaxFiles must be greater than 0".into());
 		}
+
 		if self.MaxFiles > 365 {
 			// Max 1 year retention
 			return Err("MaxFiles cannot exceed 365".into());
 		}
+
 		Ok(())
 	}
 
@@ -154,7 +169,9 @@ impl LogRotationConfig {
 	pub fn ToTracingRotation(&self) -> Rotation {
 		match self.Rotation {
 			LogRotation::Daily => Rotation::DAILY,
+
 			LogRotation::Hourly => Rotation::HOURLY,
+
 			LogRotation::Minutely => Rotation::NEVER, // No minutely support
 			LogRotation::Never => Rotation::NEVER,
 		}
@@ -166,8 +183,10 @@ impl LogRotationConfig {
 pub struct SensitiveDataConfig {
 	/// Enable automatic sensitive data redaction
 	pub Enabled:bool,
+
 	/// Custom patterns to redact (regex)
 	pub CustomPatterns:Vec<String>,
+
 	/// Standard patterns to include (password, token, secret, etc.)
 	pub IncludeStandardPatterns:bool,
 }
@@ -180,11 +199,17 @@ impl Default for SensitiveDataConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogContext {
 	pub RequestId:String,
+
 	pub TraceId:String,
+
 	pub SpanId:String,
+
 	pub UserId:Option<String>,
+
 	pub SessionId:Option<String>,
+
 	pub Operation:String,
+
 	pub Metadata:HashMap<String, String>,
 }
 
@@ -192,16 +217,24 @@ impl LogContext {
 	/// Create a new log context
 	pub fn New(Operation:impl Into<String>) -> Self {
 		let RequestId = crate::Utility::GenerateRequestId();
+
 		let TraceId = crate::Utility::GenerateRequestId();
+
 		let SpanId = uuid::Uuid::new_v4().to_string();
 
 		Self {
 			RequestId,
+
 			TraceId,
+
 			SpanId,
+
 			UserId:None,
+
 			SessionId:None,
+
 			Operation:Operation.into(),
+
 			Metadata:HashMap::new(),
 		}
 	}
@@ -211,41 +244,49 @@ impl LogContext {
 		if self.RequestId.is_empty() {
 			return Err("RequestId cannot be empty".into());
 		}
+
 		if self.TraceId.is_empty() {
 			return Err("TraceId cannot be empty".into());
 		}
+
 		if self.Operation.is_empty() {
 			return Err("Operation cannot be empty".into());
 		}
+
 		Ok(())
 	}
 
 	/// Set user ID in context
 	pub fn WithUserId(mut self, UserId:String) -> Self {
 		self.UserId = Some(UserId);
+
 		self
 	}
 
 	/// Set session ID in context
 	pub fn WithSessionId(mut self, SessionId:String) -> Self {
 		self.SessionId = Some(SessionId);
+
 		self
 	}
 
 	/// Add metadata to context
 	pub fn WithMetadata(mut self, Key:String, Value:String) -> Self {
 		self.Metadata.insert(Key, Value);
+
 		self
 	}
 
 	/// Add multiple metadata entries
 	pub fn WithMetadataMap(mut self, Metadata:HashMap<String, String>) -> Self {
 		self.Metadata.extend(Metadata);
+
 		self
 	}
 }
 
 thread_local! {
+
 	static LOG_CONTEXT: std::cell::RefCell<Option<LogContext>> = std::cell::RefCell::new(None);
 }
 
@@ -253,8 +294,10 @@ thread_local! {
 pub fn SetLogContext(Context:LogContext) {
 	if let Err(e) = Context.Validate() {
 		dev_log!("air", "error: [Logging] Invalid log context provided: {:?}", e);
+
 		return;
 	}
+
 	LOG_CONTEXT.with(|ctx| {
 		*ctx.borrow_mut() = Some(Context);
 	});
@@ -274,7 +317,9 @@ pub fn ClearLogContext() {
 #[allow(dead_code)]
 pub struct LogManager {
 	Config:LogRotationConfig,
+
 	CurrentFile:Arc<Mutex<Option<PathBuf>>>,
+
 	CurrentSize:Arc<Mutex<u64>>,
 }
 
@@ -297,6 +342,7 @@ impl LogManager {
 	#[allow(dead_code)]
 	fn ShouldRotate(&self) -> bool {
 		let size = *self.CurrentSize.lock().unwrap();
+
 		size >= self.Config.MaxFileSizeBytes
 	}
 
@@ -332,6 +378,7 @@ impl LogManager {
 	fn CompressFile(&self, path:&str) -> crate::Result<()> {
 		// Basic compression - in production would use actual compression
 		let _ = path;
+
 		Ok(())
 	}
 
@@ -375,6 +422,7 @@ impl LogManager {
 #[derive(Debug, Clone)]
 pub struct SensitiveDataFilter {
 	enabled:bool,
+
 	patterns:Vec<regex::Regex>,
 }
 
@@ -384,10 +432,15 @@ impl Default for SensitiveDataFilter {
 
 		// Standard sensitive patterns - simplified to avoid escaping issues
 		patterns.push(regex::Regex::new(r"(?i)password[=[:space:]]+\S+").unwrap());
+
 		patterns.push(regex::Regex::new(r"(?i)token[=[:space:]]+\S+").unwrap());
+
 		patterns.push(regex::Regex::new(r"(?i)secret[=[:space:]]+\S+").unwrap());
+
 		patterns.push(regex::Regex::new(r"(?i)(api|private)[_-]?key[=[:space:]]+\S+").unwrap());
+
 		patterns.push(regex::Regex::new(r"(?i)authorization[=[:space:]]+Bearer[[:space:]]+\S+").unwrap());
+
 		patterns.push(regex::Regex::new(r"(?i)credential[=[:space:]]+\S+").unwrap());
 
 		Self { enabled:true, patterns }
@@ -397,6 +450,7 @@ impl Default for SensitiveDataFilter {
 impl SensitiveDataFilter {
 	fn new(Config:SensitiveDataConfig) -> Result<Self> {
 		let mut filter = Self::default();
+
 		filter.enabled = Config.Enabled;
 
 		if !Config.IncludeStandardPatterns {
@@ -407,6 +461,7 @@ impl SensitiveDataFilter {
 		for pattern in &Config.CustomPatterns {
 			match regex::Regex::new(pattern) {
 				Ok(re) => filter.patterns.push(re),
+
 				Err(e) => dev_log!("air", "warn: [Logging] Failed to compile custom regex '{}': {}", pattern, e),
 			}
 		}
@@ -434,13 +489,21 @@ impl SensitiveDataFilter {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StructuredLogEntry {
 	pub Timestamp:u64,
+
 	pub Level:String,
+
 	pub Message:String,
+
 	pub RequestId:Option<String>,
+
 	pub TraceId:Option<String>,
+
 	pub SpanId:Option<String>,
+
 	pub Operation:Option<String>,
+
 	pub UserId:Option<String>,
+
 	pub Metadata:HashMap<String, String>,
 }
 
@@ -450,16 +513,20 @@ impl StructuredLogEntry {
 		if self.Level.is_empty() {
 			return Err("log level cannot be empty".into());
 		}
+
 		if self.Message.is_empty() {
 			return Err("log message cannot be empty".into());
 		}
+
 		if !["TRACE", "DEBUG", "INFO", "WARN", "ERROR"].contains(&self.Level.as_str()) {
 			return Err(format!("invalid log level: {}", self.Level).into());
 		}
+
 		if self.Message.len() > 10000 {
 			// Max 10KB message
 			return Err("log message too large".into());
 		}
+
 		Ok(())
 	}
 }
@@ -468,10 +535,14 @@ impl StructuredLogEntry {
 #[derive(Debug, Clone)]
 pub struct ContextLogger {
 	json_output:bool,
+
 	log_file_path:Option<String>,
+
 	#[allow(dead_code)]
 	rotation_config:Option<LogRotationConfig>,
+
 	sensitive_filter:Arc<SensitiveDataFilter>,
+
 	initialized:Arc<Mutex<bool>>,
 }
 
@@ -480,9 +551,13 @@ impl ContextLogger {
 	pub fn New(json_output:bool, log_file_path:Option<String>) -> Self {
 		Self {
 			json_output,
+
 			log_file_path,
+
 			rotation_config:None,
+
 			sensitive_filter:Arc::new(SensitiveDataFilter::default()),
+
 			initialized:Arc::new(Mutex::new(false)),
 		}
 	}
@@ -490,7 +565,9 @@ impl ContextLogger {
 	/// Create with log rotation configuration
 	pub fn WithRotation(
 		json_output:bool,
+
 		log_file_path:Option<String>,
+
 		rotation_config:LogRotationConfig,
 	) -> Result<Self> {
 		rotation_config.Validate()?;
@@ -507,6 +584,7 @@ impl ContextLogger {
 	/// Set sensitive data filter configuration
 	pub fn WithSensitiveFilter(mut self, Config:SensitiveDataConfig) -> Result<Self> {
 		self.sensitive_filter = Arc::new(SensitiveDataFilter::new(Config)?);
+
 		Ok(self)
 	}
 
@@ -514,6 +592,7 @@ impl ContextLogger {
 	pub fn Initialize(&self) -> Result<()> {
 		// Check if already initialized
 		let mut initialized = self.initialized.lock().unwrap();
+
 		if *initialized {
 			return Ok(());
 		}
@@ -539,11 +618,13 @@ impl ContextLogger {
 			// Set up log file if specified
 			if let Some(ref log_path) = self.log_file_path {
 				let log_dir = std::path::Path::new(log_path).parent().unwrap_or(std::path::Path::new("."));
+
 				let log_file = std::path::Path::new(log_path)
 					.file_name()
 					.unwrap_or(std::ffi::OsStr::new("Air.log"));
 
 				let file_appender = tracing_appender::rolling::daily(log_dir, log_file);
+
 				let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
 
 				let file_layer = tracing_subscriber::fmt::layer()
@@ -576,11 +657,13 @@ impl ContextLogger {
 			// Set up log file if specified
 			if let Some(ref log_path) = self.log_file_path {
 				let log_dir = std::path::Path::new(log_path).parent().unwrap_or(std::path::Path::new("."));
+
 				let log_file = std::path::Path::new(log_path)
 					.file_name()
 					.unwrap_or(std::ffi::OsStr::new("Air.log"));
 
 				let file_appender = tracing_appender::rolling::daily(log_dir, log_file);
+
 				let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
 
 				let file_layer = tracing_subscriber::fmt::layer()
@@ -599,12 +682,14 @@ impl ContextLogger {
 
 		*initialized = true;
 		dev_log!("air", "[Logging] ContextLogger initialized - JSON output: {}", self.json_output);
+
 		Ok(())
 	}
 
 	/// Log with context at info level
 	pub fn Info(&self, message:impl Into<String>) {
 		let msg = self.sensitive_filter.Filter(&message.into());
+
 		if let Some(Context) = GetLogContext() {
 			dev_log!(
 				"air",
@@ -623,6 +708,7 @@ impl ContextLogger {
 	/// Log with context at debug level
 	pub fn Debug(&self, message:impl Into<String>) {
 		let msg = self.sensitive_filter.Filter(&message.into());
+
 		if let Some(Context) = GetLogContext() {
 			dev_log!(
 				"air",
@@ -641,6 +727,7 @@ impl ContextLogger {
 	/// Log with context at warn level
 	pub fn Warn(&self, message:impl Into<String>) {
 		let msg = self.sensitive_filter.Filter(&message.into());
+
 		if let Some(Context) = GetLogContext() {
 			dev_log!(
 				"air",
@@ -659,6 +746,7 @@ impl ContextLogger {
 	/// Log with context at error level
 	pub fn Error(&self, message:impl Into<String>) {
 		let msg = self.sensitive_filter.Filter(&message.into());
+
 		if let Some(Context) = GetLogContext() {
 			dev_log!(
 				"air",
@@ -684,16 +772,22 @@ pub fn GetLogger() -> &'static ContextLogger { LOGGER_INSTANCE.get_or_init(|| Co
 /// Initialize the global context logger
 pub fn InitializeLogger(json_output:bool, log_file_path:Option<String>) -> Result<()> {
 	let logger = ContextLogger::New(json_output, log_file_path);
+
 	logger.Initialize()?;
+
 	let _old = LOGGER_INSTANCE.set(logger);
+
 	Ok(())
 }
 
 /// Initialize the global context logger with rotation
 pub fn InitializeLoggerWithRotation(
 	json_output:bool,
+
 	log_file_path:Option<String>,
+
 	rotation_config:LogRotationConfig,
+
 	sensitive_config:Option<SensitiveDataConfig>,
 ) -> Result<()> {
 	let mut logger = ContextLogger::WithRotation(json_output, log_file_path, rotation_config)?;
@@ -703,6 +797,8 @@ pub fn InitializeLoggerWithRotation(
 	}
 
 	logger.Initialize()?;
+
 	let _old = LOGGER_INSTANCE.set(logger);
+
 	Ok(())
 }

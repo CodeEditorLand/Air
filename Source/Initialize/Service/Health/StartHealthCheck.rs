@@ -99,22 +99,28 @@ use crate::dev_log;
 /// - Implement health-based auto-recovery
 /// - Add health notification hooks
 pub async fn StartHealthCheck() -> Arc<HealthCheckManager> {
+
 	dev_log!("lifecycle", "[Health] Starting health check system...");
+
 	// Create health check manager
 	let health_manager = Arc::new(HealthCheckManager::new(None));
 
 	dev_log!("lifecycle", "[Health] Health check system initialized");
+
 	health_manager
 }
 
 #[cfg(test)]
 mod tests {
+
 	use super::*;
 
 	#[test]
 	#[ignore] // Async test
 	async fn test_start_health_check() {
+
 		let health_manager = StartHealthCheck().await;
+
 		assert_eq!(Arc::strong_count(&health_manager), 1);
 	}
 }

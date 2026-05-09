@@ -163,23 +163,41 @@
 //! - **ProtocolVersion**: Vine protocol version (1)
 
 pub mod ApplicationState;
+
 pub mod Authentication;
+
 pub mod CLI;
+
 pub mod Configuration;
+
 pub mod Daemon;
+
 pub mod DevLog;
+
 pub mod Downloader;
+
 pub mod HealthCheck;
+
 pub mod HTTP;
+
 pub mod Indexing;
+
 pub mod Logging;
+
 pub mod Metrics;
+
 pub mod Mountain;
+
 pub mod Plugins;
+
 pub mod Resilience;
+
 pub mod Security;
+
 pub mod Tracing;
+
 pub mod Updates;
+
 pub mod Vine;
 
 /// Air Daemon version information
@@ -320,6 +338,7 @@ impl From<String> for AirError {
 impl From<(crate::HealthCheck::HealthStatus, Option<String>)> for AirError {
 	fn from((status, message):(crate::HealthCheck::HealthStatus, Option<String>)) -> Self {
 		let msg = message.unwrap_or_else(|| format!("Health check failed: {:?}", status));
+
 		AirError::ServiceUnavailable(msg)
 	}
 }
@@ -335,6 +354,7 @@ pub type Result<T> = std::result::Result<T, AirError>;
 /// the Air library for validation, ID generation, timestamp handling,
 /// and common operations with proper error handling.
 pub mod Utility {
+
 	use super::*;
 
 	/// Generate a unique request ID
@@ -393,14 +413,18 @@ pub mod Utility {
 		match std::time::UNIX_EPOCH.checked_add(std::time::Duration::from_millis(Millis)) {
 			Some(Time) => {
 				use std::time::SystemTime;
+
 				match SystemTime::try_from(Time) {
 					Ok(SystemTime) => {
 						let DateTime:chrono::DateTime<chrono::Utc> = SystemTime.into();
+
 						DateTime.to_rfc3339()
 					},
+
 					Err(_) => "Invalid timestamp".to_string(),
 				}
 			},
+
 			None => "Invalid timestamp".to_string(),
 		}
 	}
@@ -438,6 +462,7 @@ pub mod Utility {
 
 		// Platform-specific checks
 		if cfg!(windows) {
+
 			// Additional Windows-specific checks could be added here
 		} else if Path.contains('\\') {
 			// On Unix, backslashes are unusual
@@ -592,6 +617,7 @@ pub mod Utility {
 
 		// Add jitter (±25%)
 		use std::time::SystemTime;
+
 		let Seed = SystemTime::now()
 			.duration_since(SystemTime::UNIX_EPOCH)
 			.unwrap_or_default()
@@ -617,8 +643,11 @@ pub mod Utility {
 	/// Formatted string (e.g., "1.5 MB", "256 B")
 	pub fn FormatBytes(Bytes:u64) -> String {
 		const KB:u64 = 1024;
+
 		const MB:u64 = KB * 1024;
+
 		const GB:u64 = MB * 1024;
+
 		const TB:u64 = GB * 1024;
 
 		if Bytes >= TB {
@@ -654,12 +683,15 @@ pub mod Utility {
 	/// - Decimal values like "1.5s"
 	pub fn ParseDurationToMillis(DurationStr:&str) -> Result<u64> {
 		let input = DurationStr.trim().to_lowercase();
+
 		let mut total_millis:u64 = 0;
+
 		let mut pos = 0;
 
 		while pos < input.len() {
 			// Extract the numeric part
 			let start = pos;
+
 			while pos < input.len()
 				&& (input.chars().nth(pos).unwrap().is_ascii_digit() || input.chars().nth(pos).unwrap() == '.')
 			{
@@ -674,12 +706,14 @@ pub mod Utility {
 			}
 
 			let num_str = &input[start..pos];
+
 			let num_value:f64 = num_str.parse().map_err(|_| {
 				AirError::Internal(format!("Invalid number '{}' in duration '{}'", num_str, DurationStr))
 			})?;
 
 			// Extract the unit part
 			let unit_start = pos;
+
 			while pos < input.len()
 				&& (match input.chars().nth(pos) {
 					Some(c) => c.is_ascii_alphabetic(),
@@ -696,11 +730,16 @@ pub mod Utility {
 			}
 
 			let unit = &input[unit_start..pos];
+
 			let multiplier = match unit {
 				"ms" => 1.0,
+
 				"s" => 1000.0,
+
 				"m" => 60_000.0,
+
 				"h" => 3_600_000.0,
+
 				_ => {
 					return Err(AirError::Internal(format!(
 						"Invalid duration unit '{}', expected one of: ms, s, m, h",
@@ -710,6 +749,7 @@ pub mod Utility {
 			};
 
 			let component_millis = (num_value * multiplier) as u64;
+
 			total_millis = total_millis.saturating_add(component_millis);
 		}
 

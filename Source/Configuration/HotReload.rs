@@ -171,9 +171,13 @@ pub struct ConfigHotReload {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfigChangeEvent {
 	pub timestamp:DateTime<Utc>,
+
 	pub old_config_hash:Option<String>,
+
 	pub new_config_hash:String,
+
 	pub changes:Vec<ConfigChange>,
+
 	pub success:bool,
 }
 
@@ -181,10 +185,13 @@ pub struct ConfigChangeEvent {
 pub enum ReloadRequest {
 	/// Manual reload request
 	Manual,
+
 	/// Signal-based reload (SIGHUP)
 	Signal,
+
 	/// File change detected
 	FileChange,
+
 	/// Periodic health check reload
 	Periodic,
 }
@@ -193,11 +200,17 @@ pub enum ReloadRequest {
 #[derive(Debug, Clone, Default)]
 pub struct ReloadStats {
 	total_attempts:u64,
+
 	successful_reloads:u64,
+
 	failed_reloads:u64,
+
 	validation_errors:u64,
+
 	parse_errors:u64,
+
 	rollback_attempts:u64,
+
 	last_error:Option<String>,
 }
 
@@ -205,9 +218,13 @@ pub struct ReloadStats {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfigChangeRecord {
 	pub timestamp:DateTime<Utc>,
+
 	pub changes:Vec<ConfigChange>,
+
 	pub validated:bool,
+
 	pub reason:String,
+
 	pub rollback_performed:bool,
 }
 
@@ -215,7 +232,9 @@ pub struct ConfigChangeRecord {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfigChange {
 	pub path:String,
+
 	pub old_value:serde_json::Value,
+
 	pub new_value:serde_json::Value,
 }
 
@@ -583,31 +602,50 @@ impl ConfigHotReload {
 	/// New ConfigHotReload instance with validation chain initialized
 	pub async fn New(config_path:PathBuf, initial_config:AirConfiguration) -> Result<Self> {
 		let (change_sender, _) = broadcast::channel(100);
+
 		let (reload_tx, reload_rx) = mpsc::channel(100);
 
 		let manager = Self {
 			active_config:Arc::new(RwLock::new(initial_config.clone())),
+
 			previous_config:Arc::new(RwLock::new(None)),
+
 			last_config_hash:Arc::new(RwLock::new(None)),
+
 			config_path,
+
 			watcher:None,
+
 			change_sender,
+
 			reload_tx,
+
 			change_history:Arc::new(RwLock::new(Vec::new())),
+
 			last_reload:Arc::new(RwLock::new(None)),
+
 			last_reload_duration:Arc::new(RwLock::new(None)),
+
 			enabled:Arc::new(RwLock::new(true)),
+
 			debounce_delay:Duration::from_millis(500),
+
 			last_change_time:Arc::new(RwLock::new(None)),
+
 			stats:Arc::new(RwLock::new(ReloadStats::default())),
+
 			validators:Arc::new(RwLock::new(Self::DefaultValidators())),
+
 			max_retries:3,
+
 			retry_delay:Duration::from_secs(1),
+
 			auto_rollback_enabled:Arc::new(RwLock::new(true)),
 		};
 
 		// Initialize last config hash
 		let hash = crate::Configuration::ConfigurationManager::ComputeHash(&initial_config)?;
+
 		*manager.last_config_hash.write().await = Some(hash);
 
 		// Start reload request processor
@@ -632,6 +670,7 @@ impl ConfigHotReload {
 	/// Enable file watching for configuration changes
 	pub async fn EnableFileWatching(&mut self) -> Result<()> {
 		dev_log!("config", "[HotReload] Enabling file watching for configuration changes");
+
 		let config_path = self.config_path.clone();
 
 		// Create watcher
@@ -660,6 +699,7 @@ impl ConfigHotReload {
 
 		// Start event processing task
 		let reload_tx = self.reload_tx.clone();
+
 		let config_path_clone = config_path.clone();
 
 		tokio::spawn(async move {
@@ -680,9 +720,11 @@ impl ConfigHotReload {
 		});
 
 		self.watcher = Some(Arc::new(RwLock::new(watcher)));
+
 		*self.enabled.write().await = true;
 
 		dev_log!("config", "[HotReload] File watching enabled for: {}", config_path.display());
+
 		Ok(())
 	}
 
@@ -695,13 +737,16 @@ impl ConfigHotReload {
 		}
 
 		dev_log!("config", "[HotReload] File watching disabled");
+
 		Ok(())
 	}
 
 	/// Start the reload request processor
 	fn StartReloadProcessor(&self, mut reload_rx:mpsc::Receiver<ReloadRequest>) {
 		let enabled = self.enabled.clone();
+
 		let debounce_delay = self.debounce_delay;
+
 		let last_change_time = self.last_change_time.clone();
 
 		tokio::spawn(async move {
@@ -750,6 +795,7 @@ impl ConfigHotReload {
 			"[HotReload] Reloading configuration from: {}",
 			self.config_path.display()
 		);
+
 		// Check if enabled
 		if !*self.enabled.read().await {
 			return Err(AirError::Configuration("Hot-reload is disabled".to_string()));
@@ -760,31 +806,40 @@ impl ConfigHotReload {
 		// Update statistics
 		{
 			let mut stats = self.stats.write().await;
+
 			stats.total_attempts += 1;
 		}
 
 		// Retry logic
 		let mut last_error = None;
+
 		for attempt in 0..=self.max_retries {
 			match self.AttemptReload().await {
 				Ok(()) => {
 					let duration = start_time.elapsed();
+
 					*self.last_reload_duration.write().await = Some(duration);
 
 					// Update success statistics
 					{
 						let mut stats = self.stats.write().await;
+
 						stats.successful_reloads += 1;
+
 						stats.last_error = None;
 					}
 
 					dev_log!("config", "[HotReload] Configuration reloaded successfully in {:?}", duration);
+
 					return Ok(());
 				},
+
 				Err(e) => {
 					last_error = Some(e.clone());
+
 					if attempt < self.max_retries {
 						let delay = self.retry_delay * 2_u32.pow(attempt);
+
 						dev_log!(
 							"config",
 							"warn: [HotReload] Reload attempt {} failed, retrying in {:?}: {}",
@@ -792,6 +847,7 @@ impl ConfigHotReload {
 							delay,
 							e
 						);
+
 						sleep(delay).await;
 					}
 				},
@@ -801,7 +857,9 @@ impl ConfigHotReload {
 		// All attempts failed
 		{
 			let mut stats = self.stats.write().await;
+
 			stats.failed_reloads += 1;
+
 			stats.last_error = last_error.as_ref().map(|e| e.to_string());
 		}
 
@@ -810,6 +868,7 @@ impl ConfigHotReload {
 		// Attempt rollback if enabled
 		if *self.auto_rollback_enabled.read().await {
 			dev_log!("config", "[HotReload] Attempting rollback due to reload failure");
+
 			if let Err(rollback_err) = self.Rollback().await {
 				dev_log!("config", "error: [HotReload] Rollback also failed: {}", rollback_err);
 			}
@@ -822,19 +881,27 @@ impl ConfigHotReload {
 	async fn AttemptReload(&self) -> Result<()> {
 		// Load new configuration
 		let content = fs::read_to_string(&self.config_path).await;
+
 		if let Err(e) = content {
 			let mut stats = self.stats.write().await;
+
 			stats.parse_errors += 1;
+
 			return Err(AirError::Configuration(format!("Failed to read config file: {}", e)));
 		}
+
 		let content = content.unwrap();
 
 		let new_config:std::result::Result<AirConfiguration, toml::de::Error> = toml::from_str(&content);
+
 		if let Err(e) = new_config {
 			let mut stats = self.stats.write().await;
+
 			stats.parse_errors += 1;
+
 			return Err(AirError::Configuration(format!("Failed to parse config file: {}", e)));
 		}
+
 		let new_config = new_config.unwrap();
 
 		// Validate new configuration
@@ -842,17 +909,20 @@ impl ConfigHotReload {
 
 		// Check for actual changes
 		let new_hash = crate::Configuration::ConfigurationManager::ComputeHash(&new_config)?;
+
 		let current_hash = self.last_config_hash.read().await.clone();
 
 		if let Some(ref hash) = current_hash {
 			if hash == &new_hash {
 				dev_log!("config", "[HotReload] Configuration unchanged, skipping reload");
+
 				return Ok(());
 			}
 		}
 
 		// Atomically swap configurations
 		let old_config = self.active_config.read().await.clone();
+
 		let old_hash = current_hash;
 
 		*self.active_config.write().await = new_config.clone();
@@ -865,28 +935,39 @@ impl ConfigHotReload {
 
 		let record = ConfigChangeRecord {
 			timestamp:Utc::now(),
+
 			changes:changes.clone(),
+
 			validated:true,
+
 			reason:"Reload".to_string(),
+
 			rollback_performed:false,
 		};
 
 		let mut history = self.change_history.write().await;
+
 		history.push(record);
 
 		// Limit history size
 		let history_len = history.len();
+
 		if history_len > 1000 {
 			history.drain(0..history_len - 1000);
 		}
+
 		drop(history);
 
 		// Send change notification
 		let event = ConfigChangeEvent {
 			timestamp:Utc::now(),
+
 			old_config_hash:old_hash,
+
 			new_config_hash:new_hash,
+
 			changes,
+
 			success:true,
 		};
 
@@ -904,6 +985,7 @@ impl ConfigHotReload {
 			.send(ReloadRequest::Manual)
 			.await
 			.map_err(|e| AirError::Configuration(format!("Failed to trigger reload: {}", e)))?;
+
 		Ok(())
 	}
 
@@ -913,15 +995,21 @@ impl ConfigHotReload {
 
 		// Sort validators by priority (higher first)
 		let mut sorted_validators:Vec<_> = validators.iter().collect();
+
 		sorted_validators.sort_by(|a, b| b.priority().cmp(&a.priority()));
 
 		for validator in sorted_validators {
 			let result = validator.validate(config);
+
 			if let Err(e) = result {
 				let mut stats = self.stats.write().await;
+
 				stats.validation_errors += 1;
+
 				stats.last_error = Some(format!("{}: {}", validator.name(), e));
+
 				dev_log!("config", "error: [HotReload] Validation failed ({}): {}", validator.name(), e);
+
 				return Err(AirError::Configuration(format!("{}: {}", validator.name(), e)));
 			}
 
@@ -933,13 +1021,16 @@ impl ConfigHotReload {
 			"[HotReload] Configuration validation passed ({} validators)",
 			validators.len()
 		);
+
 		Ok(())
 	}
 
 	/// Register a custom validator
 	pub async fn RegisterValidator(&self, validator:Box<dyn ConfigValidator>) {
 		let mut validators = self.validators.write().await;
+
 		validators.push(validator);
+
 		dev_log!("config", "[HotReload] Registered validator (total: {})", validators.len());
 	}
 
@@ -947,6 +1038,7 @@ impl ConfigHotReload {
 	pub async fn Rollback(&self) -> Result<()> {
 		let previous = {
 			let prev = self.previous_config.read().await.clone();
+
 			prev.ok_or_else(|| AirError::Configuration("No previous configuration to rollback to".to_string()))?
 		};
 
@@ -955,23 +1047,30 @@ impl ConfigHotReload {
 
 		// Perform rollback
 		let _old_config = self.active_config.read().await.clone();
+
 		let old_hash = self.last_config_hash.read().await.clone();
 
 		*self.active_config.write().await = previous.clone();
 		let new_hash = crate::Configuration::ConfigurationManager::ComputeHash(&previous)?;
+
 		*self.last_config_hash.write().await = Some(new_hash.clone());
 
 		// Record rollback
 		let record = ConfigChangeRecord {
 			timestamp:Utc::now(),
+
 			changes:vec![],
+
 			validated:true,
+
 			reason:"Rollback".to_string(),
+
 			rollback_performed:true,
 		};
 
 		{
 			let mut stats = self.stats.write().await;
+
 			stats.rollback_attempts += 1;
 		}
 
@@ -980,15 +1079,20 @@ impl ConfigHotReload {
 		// Send change notification
 		let event = ConfigChangeEvent {
 			timestamp:Utc::now(),
+
 			old_config_hash:old_hash,
+
 			new_config_hash:new_hash,
+
 			changes:vec![],
+
 			success:true,
 		};
 
 		let _ = self.change_sender.send(event);
 
 		dev_log!("config", "[HotReload] Configuration rolled back successfully");
+
 		Ok(())
 	}
 
@@ -1022,16 +1126,19 @@ impl ConfigHotReload {
 		self.Reload().await?;
 
 		dev_log!("config", "[HotReload] Configuration value updated: {} = {}", path, value);
+
 		Ok(())
 	}
 
 	/// Get configuration value by path
 	pub async fn GetValue(&self, path:&str) -> Result<serde_json::Value> {
 		let config = self.active_config.read().await;
+
 		let config_json = serde_json::to_value(&*config)
 			.map_err(|e| AirError::Configuration(format!("Serialization failed: {}", e)))?;
 
 		let mut current = config_json;
+
 		for key in path.split('.') {
 			current = current
 				.get(key)
@@ -1048,57 +1155,69 @@ impl ConfigHotReload {
 
 		match parts.as_slice() {
 			["grpc", "bind_address"] => config.gRPC.BindAddress = value.to_string(),
+
 			["grpc", "max_connections"] => {
 				config.gRPC.MaxConnections = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},
+
 			["grpc", "request_timeout_secs"] => {
 				config.gRPC.RequestTimeoutSecs = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},
+
 			["authentication", "enabled"] => {
 				config.Authentication.Enabled = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},
+
 			["authentication", "credentials_path"] => {
 				config.Authentication.CredentialsPath = value.to_string();
 			},
+
 			["updates", "enabled"] => {
 				config.Updates.Enabled = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},
+
 			["updates", "auto_download"] => {
 				config.Updates.AutoDownload = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},
+
 			["updates", "auto_install"] => {
 				config.Updates.AutoInstall = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},
+
 			["downloader", "enabled"] => {
 				config.Downloader.Enabled = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},
+
 			["indexing", "enabled"] => {
 				config.Indexing.Enabled = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},
+
 			["logging", "level"] => {
 				config.Logging.Level = value.to_lowercase();
 			},
+
 			["logging", "console_enabled"] => {
 				config.Logging.ConsoleEnabled = value
 					.parse()
 					.map_err(|_| AirError::Configuration(format!("Invalid value: {}", value)))?;
 			},
+
 			_ => {
 				return Err(AirError::Configuration(format!("Unknown configuration path: {}", path)));
 			},
@@ -1112,6 +1231,7 @@ impl ConfigHotReload {
 		let mut changes = Vec::new();
 
 		let old_json = serde_json::to_value(old).unwrap_or_default();
+
 		let new_json = serde_json::to_value(new).unwrap_or_default();
 
 		Self::DiffJson("", &old_json, &new_json, &mut changes);
@@ -1137,6 +1257,7 @@ impl ConfigHotReload {
 					}
 				}
 			},
+
 			(old_val, new_val) if old_val != new_val => {
 				changes.push(ConfigChange {
 					path:prefix.to_string(),
@@ -1144,6 +1265,7 @@ impl ConfigHotReload {
 					new_value:new_val.clone(),
 				});
 			},
+
 			_ => {},
 		}
 	}
@@ -1200,6 +1322,7 @@ impl ConfigHotReload {
 
 #[cfg(test)]
 mod tests {
+
 	use tempfile::NamedTempFile;
 
 	use super::*;
@@ -1207,12 +1330,15 @@ mod tests {
 	#[tokio::test]
 	async fn test_config_hot_reload_creation() {
 		let config = AirConfiguration::default();
+
 		let temp_file = NamedTempFile::new().unwrap();
+
 		let path = temp_file.path().to_path_buf();
 
 		let manager = ConfigHotReload::New(path, config).await.expect("Failed to create manager");
 
 		assert_eq!(manager.GetLastReload().await, None);
+
 		assert!(
 			!manager.GetChangeHistory(Some(10)).await.is_empty() || manager.GetChangeHistory(Some(10)).await.is_empty()
 		);
@@ -1221,43 +1347,53 @@ mod tests {
 	#[tokio::test]
 	async fn test_get_set_value() {
 		let config = AirConfiguration::default();
+
 		let temp_file = NamedTempFile::new().unwrap();
+
 		let path = temp_file.path().to_path_buf();
 
 		// Write initial config
 		let content = toml::to_string_pretty(&config).unwrap();
+
 		fs::write(&path, content).await.unwrap();
 
 		let manager = ConfigHotReload::New(path, config).await.expect("Failed to create manager");
 
 		// Test getting value
 		let value = manager.GetValue("grpc.bind_address").await.unwrap();
+
 		assert_eq!(value, "[::1]:50053");
 	}
 
 	#[tokio::test]
 	async fn test_validator_priority() {
 		let grpc = gRPCConfigValidator;
+
 		let auth = AuthConfigValidator;
+
 		let perf = PerformanceConfigValidator;
 
 		assert!(grpc.priority() > auth.priority());
+
 		assert!(auth.priority() > perf.priority());
 	}
 
 	#[tokio::test]
 	async fn test_compute_changes() {
 		let config = AirConfiguration::default();
+
 		let manager = ConfigHotReload::New(PathBuf::from("/tmp/test.toml"), config)
 			.await
 			.expect("Failed to create manager");
 
 		let mut new_config = AirConfiguration::default();
+
 		new_config.gRPC.BindAddress = "[::1]:50054".to_string();
 
 		let changes = manager.ComputeChanges(&AirConfiguration::default(), &new_config);
 
 		assert!(!changes.is_empty());
+
 		assert!(changes.iter().any(|c| c.path == "grpc.bind_address"));
 	}
 }

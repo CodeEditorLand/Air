@@ -150,16 +150,22 @@ impl Drop for SecureBytes {
 pub struct SecurityEvent {
 	/// Event timestamp
 	pub Timestamp:u64,
+
 	/// Event type
 	pub EventType:SecurityEventType,
+
 	/// Event severity
 	pub Severity:SecuritySeverity,
+
 	/// Source IP address (if applicable)
 	pub SourceIp:Option<String>,
+
 	/// Client ID (if applicable)
 	pub ClientId:Option<String>,
+
 	/// Event details
 	pub Details:String,
+
 	/// Additional metadata
 	pub Metadata:HashMap<String, String>,
 }
@@ -169,22 +175,31 @@ pub struct SecurityEvent {
 pub enum SecurityEventType {
 	/// Authentication attempt succeeded
 	AuthSuccess,
+
 	/// Authentication attempt failed
 	AuthFailure,
+
 	/// Rate limit violation
 	RateLimitViolation,
+
 	/// Key rotation performed
 	KeyRotation,
+
 	/// Configuration changed
 	ConfigChange,
+
 	/// Access denied
 	AccessDenied,
+
 	/// Encryption key generated
 	KeyGenerated,
+
 	/// Decryption failure
 	DecryptionFailure,
+
 	/// File integrity check failed
 	IntegrityCheckFailed,
+
 	/// Security policy violation
 	PolicyViolation,
 }
@@ -193,8 +208,11 @@ pub enum SecurityEventType {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum SecuritySeverity {
 	Informational,
+
 	Warning,
+
 	Error,
+
 	Critical,
 }
 
@@ -202,6 +220,7 @@ pub enum SecuritySeverity {
 pub struct SecurityAuditor {
 	/// Event history
 	events:Arc<RwLock<Vec<SecurityEvent>>>,
+
 	/// Event retention count
 	retention:usize,
 }
@@ -213,6 +232,7 @@ impl SecurityAuditor {
 	/// Log a security event
 	pub async fn LogEvent(&self, event:SecurityEvent) {
 		let mut events = self.events.write().await;
+
 		events.push(event.clone());
 
 		// Trim to retention limit
@@ -287,8 +307,11 @@ impl Default for RateLimitConfig {
 	fn default() -> Self {
 		Self {
 			requests_per_second_ip:100,
+
 			requests_per_second_client:50,
+
 			burst_capacity:200,
+
 			refill_interval_ms:100,
 		}
 	}
@@ -298,8 +321,11 @@ impl Default for RateLimitConfig {
 #[derive(Debug, Clone)]
 struct TokenBucket {
 	tokens:f64,
+
 	capacity:f64,
+
 	refill_rate:f64,
+
 	last_refill:std::time::Instant,
 }
 
@@ -310,15 +336,20 @@ impl TokenBucket {
 
 	fn refill(&mut self) {
 		let now = std::time::Instant::now();
+
 		let elapsed = now.duration_since(self.last_refill).as_secs_f64();
+
 		self.tokens = (self.tokens + elapsed * self.refill_rate).min(self.capacity);
+
 		self.last_refill = now;
 	}
 
 	fn try_consume(&mut self, tokens:f64) -> bool {
 		self.refill();
+
 		if self.tokens >= tokens {
 			self.tokens -= tokens;
+
 			true
 		} else {
 			false
@@ -329,8 +360,11 @@ impl TokenBucket {
 /// Rate limiter with per-IP and per-client tracking
 pub struct RateLimiter {
 	config:RateLimitConfig,
+
 	ip_buckets:Arc<RwLock<HashMap<String, TokenBucket>>>,
+
 	client_buckets:Arc<RwLock<HashMap<String, TokenBucket>>>,
+
 	cleanup_interval:std::time::Duration,
 }
 
@@ -341,8 +375,11 @@ impl RateLimiter {
 
 		Self {
 			config,
+
 			ip_buckets:Arc::new(RwLock::new(HashMap::new())),
+
 			client_buckets:Arc::new(RwLock::new(HashMap::new())),
+
 			cleanup_interval,
 		}
 	}
@@ -352,6 +389,7 @@ impl RateLimiter {
 		let mut buckets = self.ip_buckets.write().await;
 
 		let refill_rate = self.config.requests_per_second_ip as f64;
+
 		let bucket = buckets
 			.entry(ip.to_string())
 			.or_insert_with(|| TokenBucket::new(self.config.burst_capacity as f64, refill_rate));
@@ -364,6 +402,7 @@ impl RateLimiter {
 		let mut buckets = self.client_buckets.write().await;
 
 		let refill_rate = self.config.requests_per_second_client as f64;
+
 		let bucket = buckets
 			.entry(client_id.to_string())
 			.or_insert_with(|| TokenBucket::new(self.config.burst_capacity as f64, refill_rate));
@@ -374,6 +413,7 @@ impl RateLimiter {
 	/// Check both IP and client rate limits
 	pub async fn CheckRateLimit(&self, ip:&str, client_id:&str) -> Result<bool> {
 		let ip_allowed = self.CheckIpRateLimit(ip).await?;
+
 		let client_allowed = self.CheckClientRateLimit(client_id).await?;
 
 		Ok(ip_allowed && client_allowed)
@@ -386,13 +426,17 @@ impl RateLimiter {
 		if let Some(bucket) = buckets.get(ip) {
 			RateLimitStatus {
 				remaining_tokens:bucket.tokens as u32,
+
 				capacity:bucket.capacity as u32,
+
 				refill_rate:bucket.refill_rate as u32,
 			}
 		} else {
 			RateLimitStatus {
 				remaining_tokens:self.config.burst_capacity,
+
 				capacity:self.config.burst_capacity,
+
 				refill_rate:self.config.requests_per_second_ip,
 			}
 		}
@@ -405,13 +449,17 @@ impl RateLimiter {
 		if let Some(bucket) = buckets.get(client_id) {
 			RateLimitStatus {
 				remaining_tokens:bucket.tokens as u32,
+
 				capacity:bucket.capacity as u32,
+
 				refill_rate:bucket.refill_rate as u32,
 			}
 		} else {
 			RateLimitStatus {
 				remaining_tokens:self.config.burst_capacity,
+
 				capacity:self.config.burst_capacity,
+
 				refill_rate:self.config.requests_per_second_client,
 			}
 		}
@@ -422,9 +470,11 @@ impl RateLimiter {
 		let now = std::time::Instant::now();
 
 		let mut ip_buckets = self.ip_buckets.write().await;
+
 		ip_buckets.retain(|_, bucket| now.duration_since(bucket.last_refill) < self.cleanup_interval);
 
 		let mut client_buckets = self.client_buckets.write().await;
+
 		client_buckets.retain(|_, bucket| now.duration_since(bucket.last_refill) < self.cleanup_interval);
 
 		// Cleanup completed - stale buckets removed
@@ -433,7 +483,9 @@ impl RateLimiter {
 	/// Start background cleanup task
 	pub fn StartCleanupTask(&self) -> tokio::task::JoinHandle<()> {
 		let ip_buckets = self.ip_buckets.clone();
+
 		let client_buckets = self.client_buckets.clone();
+
 		let cleanup_interval = self.cleanup_interval;
 
 		tokio::spawn(async move {
@@ -458,8 +510,11 @@ impl Clone for RateLimiter {
 	fn clone(&self) -> Self {
 		Self {
 			config:self.config.clone(),
+
 			ip_buckets:self.ip_buckets.clone(),
+
 			client_buckets:self.client_buckets.clone(),
+
 			cleanup_interval:self.cleanup_interval,
 		}
 	}
@@ -469,7 +524,9 @@ impl Clone for RateLimiter {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RateLimitStatus {
 	pub remaining_tokens:u32,
+
 	pub capacity:u32,
+
 	pub refill_rate:u32,
 }
 
@@ -479,6 +536,7 @@ pub struct ChecksumVerifier;
 impl ChecksumVerifier {
 	/// Create a new ChecksumVerifier
 	pub fn New() -> Self { Self }
+
 	/// Calculate SHA-256 checksum of a file
 	pub async fn CalculateSha256(&self, file_path:&std::path::Path) -> Result<String> {
 		let content = tokio::fs::read(file_path)
@@ -486,7 +544,9 @@ impl ChecksumVerifier {
 			.map_err(|e| AirError::FileSystem(format!("Failed to read file: {}", e)))?;
 
 		let mut hasher = Sha256::new();
+
 		hasher.update(&content);
+
 		// sha2 0.11: see note in Indexing/Scan/ScanFile.rs - `hex::encode`
 		// replaces the removed `LowerHex` impl on the digest output.
 		let checksum = hex::encode(hasher.finalize());
@@ -500,6 +560,7 @@ impl ChecksumVerifier {
 
 		// Use constant-time comparison
 		let actual_bytes = actual.as_bytes();
+
 		let expected_bytes = expected_checksum.as_bytes();
 
 		let result = actual_bytes.ct_eq(expected_bytes);
@@ -510,7 +571,9 @@ impl ChecksumVerifier {
 	/// Calculate checksum from bytes
 	pub fn CalculateSha256Bytes(&self, data:&[u8]) -> String {
 		let mut hasher = Sha256::new();
+
 		hasher.update(data);
+
 		hex::encode(hasher.finalize())
 	}
 
@@ -521,6 +584,7 @@ impl ChecksumVerifier {
 			.map_err(|e| AirError::FileSystem(format!("Failed to read file: {}", e)))?;
 
 		let digest = md5::compute(&content);
+
 		Ok(format!("{:x}", digest))
 	}
 
@@ -529,6 +593,7 @@ impl ChecksumVerifier {
 		if a.len() != b.len() {
 			return false;
 		}
+
 		a.as_bytes().ct_eq(b.as_bytes()).into()
 	}
 }
@@ -552,9 +617,13 @@ pub struct SecureStorage {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EncryptedCredential {
 	pub cipher_text:String,
+
 	pub salt:String,
+
 	pub nonce:String,
+
 	pub key_version:u32,
+
 	pub created_at:u64,
 }
 
@@ -562,8 +631,11 @@ pub struct EncryptedCredential {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KeyRotationResult {
 	pub old_key_version:u32,
+
 	pub new_key_version:u32,
+
 	pub credentials_rotated:usize,
+
 	pub timestamp:u64,
 }
 
@@ -575,27 +647,39 @@ impl SecureStorage {
 		// Log key generation event
 		let event = SecurityEvent {
 			Timestamp:crate::Utility::CurrentTimestamp(),
+
 			EventType:SecurityEventType::KeyGenerated,
+
 			Severity:SecuritySeverity::Warning,
+
 			SourceIp:None,
+
 			ClientId:None,
+
 			Details:"Master key generated for secure storage".to_string(),
+
 			Metadata:{
 				let mut meta = HashMap::new();
+
 				meta.insert("key_version".to_string(), "1".to_string());
+
 				meta
 			},
 		};
 
 		let auditor_clone = auditor.clone();
+
 		tokio::spawn(async move {
 			auditor_clone.LogEvent(event).await;
 		});
 
 		Self {
 			credentials:Arc::new(RwLock::new(HashMap::new())),
+
 			master_key:key,
+
 			key_version:1,
+
 			auditor,
 		}
 	}
@@ -603,6 +687,7 @@ impl SecureStorage {
 	/// Generate a secure master key from password using PBKDF2
 	pub fn DeriveKeyFromPassword(password:&str, salt:Option<&[u8]>) -> (Vec<u8>, [u8; 16]) {
 		const N_ITERATIONS:u32 = 100_000;
+
 		const CREDENTIAL_LEN:usize = 32;
 
 		let mut key_salt = [0u8; 16];
@@ -615,10 +700,12 @@ impl SecureStorage {
 			}
 		} else {
 			let mut rng = rng();
+
 			rng.fill_bytes(&mut key_salt);
 		}
 
 		let mut key = vec![0u8; CREDENTIAL_LEN];
+
 		pbkdf2::derive(
 			pbkdf2::PBKDF2_HMAC_SHA256,
 			std::num::NonZeroU32::new(N_ITERATIONS).unwrap(),
@@ -633,38 +720,53 @@ impl SecureStorage {
 	/// Store a credential encrypted with AES-GCM
 	pub async fn Store(&self, key:&str, credential:&str) -> Result<()> {
 		let mut rng = rng();
+
 		let mut nonce = [0u8; 12];
+
 		rng.fill_bytes(&mut nonce);
 
 		// Generate a random salt for this credential
 		let mut salt = [0u8; 16];
+
 		rng.fill_bytes(&mut salt);
 
 		// Encrypt using AES-GCM
 		let cipher_text = self.EncryptCredential(credential, &nonce, &salt)?;
 
 		let salt_b64 = STANDARD.encode(&salt);
+
 		let nonce_b64 = STANDARD.encode(&nonce);
 
 		let encrypted = EncryptedCredential {
 			cipher_text,
+
 			salt:salt_b64,
+
 			nonce:nonce_b64,
+
 			key_version:self.key_version,
+
 			created_at:crate::Utility::CurrentTimestamp(),
 		};
 
 		let mut storage = self.credentials.write().await;
+
 		storage.insert(key.to_string(), encrypted);
 
 		// Log credential storage event
 		let event = SecurityEvent {
 			Timestamp:crate::Utility::CurrentTimestamp(),
+
 			EventType:SecurityEventType::ConfigChange,
+
 			Severity:SecuritySeverity::Informational,
+
 			SourceIp:None,
+
 			ClientId:None,
+
 			Details:format!("Credential stored for key: {}", key),
+
 			Metadata:HashMap::new(),
 		};
 
@@ -692,20 +794,28 @@ impl SecureStorage {
 				// Log credential retrieval event (without exposing the credential)
 				let event = SecurityEvent {
 					Timestamp:crate::Utility::CurrentTimestamp(),
+
 					EventType:SecurityEventType::AuthSuccess,
+
 					Severity:SecuritySeverity::Informational,
+
 					SourceIp:None,
+
 					ClientId:None,
+
 					Details:format!("Credential retrieved for key: {}", key),
+
 					Metadata:HashMap::new(),
 				};
 
 				// Drop read lock before logging
 				drop(storage);
+
 				self.auditor.LogEvent(event).await;
 
 				Ok(Some(credential))
 			},
+
 			None => Ok(None),
 		}
 	}
@@ -722,8 +832,11 @@ impl SecureStorage {
 
 		for (i, byte) in data.bytes().enumerate() {
 			let key_byte = subkey.as_slice()[i % subkey.len()];
+
 			let nonce_byte = nonce[i % nonce.len()];
+
 			let salt_byte = salt[i % salt.len()];
+
 			result.push(byte ^ key_byte ^ nonce_byte ^ salt_byte);
 		}
 
@@ -737,6 +850,7 @@ impl SecureStorage {
 
 		let encrypted_bytes = match standard_decode(cipher_text) {
 			Ok(bytes) => bytes,
+
 			Err(e) => return Err(AirError::Internal(format!("Failed to decode cipher text: {}", e))),
 		};
 
@@ -744,13 +858,17 @@ impl SecureStorage {
 
 		for (i, byte) in encrypted_bytes.iter().enumerate() {
 			let key_byte = subkey.as_slice()[i % subkey.len()];
+
 			let nonce_byte = nonce[i % nonce.len()];
+
 			let salt_byte = salt[i % salt.len()];
+
 			result.push(byte ^ key_byte ^ nonce_byte ^ salt_byte);
 		}
 
 		match String::from_utf8(result) {
 			Ok(s) => Ok(s),
+
 			Err(e) => Err(AirError::Internal(format!("Failed to decode decrypted data: {}", e))),
 		}
 	}
@@ -758,6 +876,7 @@ impl SecureStorage {
 	/// Derive a subkey from the master key using PBKDF2
 	fn DeriveSubkey(&self, salt:&[u8]) -> Result<SecureBytes> {
 		const N_ITERATIONS:u32 = 10_000;
+
 		const KEY_LEN:usize = 32;
 
 		let mut subkey = vec![0u8; KEY_LEN];
@@ -776,10 +895,12 @@ impl SecureStorage {
 	/// Rotate the master key and re-encrypt all credentials
 	pub async fn RotateMasterKey(&self, new_master_key:Vec<u8>) -> Result<KeyRotationResult> {
 		let old_key_version = self.key_version;
+
 		let credentials_rotated = 0;
 
 		// Get all current credentials
 		let mut credentials = self.credentials.write().await;
+
 		let credentials_to_rotate:Vec<(_, _)> = credentials.drain().collect();
 
 		// Rotate the master key
@@ -798,21 +919,32 @@ impl SecureStorage {
 		// Log key rotation event
 		let event = SecurityEvent {
 			Timestamp:crate::Utility::CurrentTimestamp(),
+
 			EventType:SecurityEventType::KeyRotation,
+
 			Severity:SecuritySeverity::Warning,
+
 			SourceIp:None,
+
 			ClientId:None,
+
 			Details:format!("Master key rotated from version {} to {}", old_key_version, old_key_version + 1),
+
 			Metadata:{
 				let mut meta = HashMap::new();
+
 				meta.insert("old_key_version".to_string(), old_key_version.to_string());
+
 				meta.insert("new_key_version".to_string(), (old_key_version + 1).to_string());
+
 				meta.insert("credentials_rotated".to_string(), credentials_to_rotate.len().to_string());
+
 				meta
 			},
 		};
 
 		drop(credentials);
+
 		self.auditor.LogEvent(event).await;
 
 		// Zeroize the new key since we can't actually use it in this simple
@@ -830,25 +962,36 @@ impl SecureStorage {
 	/// Clear all stored credentials
 	pub async fn ClearAll(&self) -> Result<()> {
 		let mut storage = self.credentials.write().await;
+
 		let count = storage.len();
+
 		storage.clear();
 
 		// Log clear event
 		let event = SecurityEvent {
 			Timestamp:crate::Utility::CurrentTimestamp(),
+
 			EventType:SecurityEventType::ConfigChange,
+
 			Severity:SecuritySeverity::Warning,
+
 			SourceIp:None,
+
 			ClientId:None,
+
 			Details:format!("All credentials cleared ({} credentials)", count),
+
 			Metadata:{
 				let mut meta = HashMap::new();
+
 				meta.insert("credential_count".to_string(), count.to_string());
+
 				meta
 			},
 		};
 
 		drop(storage);
+
 		self.auditor.LogEvent(event).await;
 
 		Ok(())
@@ -857,12 +1000,14 @@ impl SecureStorage {
 	/// Get the number of stored credentials
 	pub async fn CredentialCount(&self) -> usize {
 		let storage = self.credentials.read().await;
+
 		storage.len()
 	}
 
 	/// List all credential keys (without exposing credentials)
 	pub async fn ListCredentials(&self) -> Vec<String> {
 		let storage = self.credentials.read().await;
+
 		storage.keys().cloned().collect()
 	}
 }
@@ -871,8 +1016,11 @@ impl Clone for SecureStorage {
 	fn clone(&self) -> Self {
 		Self {
 			credentials:self.credentials.clone(),
+
 			master_key:self.master_key.clone(),
+
 			key_version:self.key_version,
+
 			auditor:self.auditor.clone(),
 		}
 	}
@@ -897,6 +1045,7 @@ fn zeroize(bytes:&mut SecureBytes) {
 	// consider using the `zeroize` crate which provides guarantees
 	// against compiler optimization removing the zeroization.
 	bytes.Data.zeroize();
+
 	// If bytes are shared (Arc count > 1), we can't zeroize here
 	// The Drop implementation will handle it when the last reference is dropped
 	dev_log!("security", "[Security] Zeroized secure bytes (immediate cleanup requested)");
@@ -904,33 +1053,40 @@ fn zeroize(bytes:&mut SecureBytes) {
 
 #[cfg(test)]
 mod tests {
+
 	use super::*;
 
 	#[tokio::test]
 	async fn test_rate_limiter() {
 		let config = RateLimitConfig::default();
+
 		let limiter = RateLimiter::New(config);
 
 		// Should allow requests within limit
 		for _ in 0..50 {
 			let allowed = limiter.CheckIpRateLimit("127.0.0.1").await.unwrap();
+
 			assert!(allowed);
 		}
 
 		// After burst, should eventually deny
 		let mut denied_count = 0;
+
 		for _ in 0..200 {
 			if !limiter.CheckIpRateLimit("127.0.0.1").await.unwrap() {
 				denied_count += 1;
 			}
 		}
+
 		assert!(denied_count > 0);
 	}
 
 	#[tokio::test]
 	async fn test_checksum_verification() {
 		let verifier = ChecksumVerifier::New();
+
 		let data = b"test data";
+
 		let checksum = verifier.CalculateSha256Bytes(data);
 
 		assert_eq!(checksum.len(), 64); // SHA-256 hex is 64 chars
@@ -940,10 +1096,13 @@ mod tests {
 	#[tokio::test]
 	async fn test_secure_storage() {
 		let master_key = vec![1u8; 32];
+
 		let auditor = SecurityAuditor::new(100);
+
 		let storage = SecureStorage::New(master_key, auditor);
 
 		storage.Store("test_key", "secret_value").await.unwrap();
+
 		let retrieved = storage.Retrieve("test_key").await.unwrap();
 
 		assert_eq!(retrieved, Some("secret_value".to_string()));
@@ -969,45 +1128,60 @@ mod tests {
 
 		let event = SecurityEvent {
 			Timestamp:crate::Utility::CurrentTimestamp(),
+
 			EventType:SecurityEventType::AuthSuccess,
+
 			Severity:SecuritySeverity::Informational,
+
 			SourceIp:Some("127.0.0.1".to_string()),
+
 			ClientId:Some("test_client".to_string()),
+
 			Details:"Test event".to_string(),
+
 			Metadata:HashMap::new(),
 		};
 
 		auditor.LogEvent(event).await;
 
 		let events = auditor.GetEvents(Some(SecurityEventType::AuthSuccess), None).await;
+
 		assert_eq!(events.len(), 1);
+
 		assert_eq!(events[0].EventType, SecurityEventType::AuthSuccess);
 	}
 
 	#[tokio::test]
 	async fn test_secure_bytes() {
 		let bytes1 = SecureBytes::from_str("secret_password");
+
 		let bytes2 = SecureBytes::from_str("secret_password");
+
 		let bytes3 = SecureBytes::from_str("different_password");
 
 		assert!(bytes1.ct_eq(&bytes2));
+
 		assert!(!bytes1.ct_eq(&bytes3));
 	}
 
 	#[tokio::test]
 	async fn test_rate_limit_combined() {
 		let config = RateLimitConfig::default();
+
 		let limiter = RateLimiter::New(config);
 
 		// Check combined rate limit
 		let allowed = limiter.CheckRateLimit("127.0.0.1", "client_1").await.unwrap();
+
 		assert!(allowed);
 
 		// Get status
 		let ip_status = limiter.GetIpStatus("127.0.0.1").await;
+
 		let client_status = limiter.GetClientStatus("client_1").await;
 
 		assert!(ip_status.remaining_tokens > 0);
+
 		assert!(client_status.remaining_tokens > 0);
 	}
 }

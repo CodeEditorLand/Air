@@ -162,8 +162,11 @@ struct RollbackHistory {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RollbackState {
 	version:String,
+
 	backup_path:PathBuf,
+
 	timestamp:chrono::DateTime<chrono::Utc>,
+
 	checksum:String,
 }
 
@@ -171,7 +174,9 @@ pub struct RollbackState {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum UpdateChannel {
 	Stable,
+
 	Insiders,
+
 	Preview,
 }
 
@@ -179,7 +184,9 @@ impl UpdateChannel {
 	fn as_str(&self) -> &'static str {
 		match self {
 			UpdateChannel::Stable => "stable",
+
 			UpdateChannel::Insiders => "insiders",
+
 			UpdateChannel::Preview => "preview",
 		}
 	}
@@ -189,7 +196,9 @@ impl UpdateChannel {
 #[derive(Debug, Clone)]
 struct PlatformConfig {
 	platform:String,
+
 	arch:String,
+
 	package_format:PackageFormat,
 }
 
@@ -198,9 +207,13 @@ struct PlatformConfig {
 #[allow(dead_code)]
 enum PackageFormat {
 	WindowsExe,
+
 	MacOsDmg,
+
 	LinuxAppImage,
+
 	LinuxDeb,
+
 	LinuxRpm,
 }
 
@@ -437,18 +450,21 @@ impl UpdateManager {
 
 		// Create staging directory for pre-installation verification
 		let staging_directory = cache_directory.join("staging");
+
 		tokio::fs::create_dir_all(&staging_directory)
 			.await
 			.map_err(|e| AirError::Configuration(format!("Failed to create staging directory: {}", e)))?;
 
 		// Create backup directory for rollback
 		let backup_directory = cache_directory.join("backups");
+
 		tokio::fs::create_dir_all(&backup_directory)
 			.await
 			.map_err(|e| AirError::Configuration(format!("Failed to create backup directory: {}", e)))?;
 
 		// Determine platform-specific configuration
 		let PlatformConfig = Self::detect_platform();
+
 		let PlatformConfigClone = PlatformConfig.clone();
 
 		// Determine update channel from configuration
@@ -462,10 +478,12 @@ impl UpdateManager {
 
 		// Load or create rollback history
 		let rollback_history_path = backup_directory.join("rollback_history.json");
+
 		let rollback_history = if rollback_history_path.exists() {
 			let content = tokio::fs::read_to_string(&rollback_history_path)
 				.await
 				.map_err(|e| AirError::FileSystem(format!("Failed to read rollback history: {}", e)))?;
+
 			serde_json::from_str(&content).unwrap_or_else(|_| RollbackHistory { versions:Vec::new(), max_versions:5 })
 		} else {
 			RollbackHistory { versions:Vec::new(), max_versions:5 }
@@ -473,6 +491,7 @@ impl UpdateManager {
 
 		let manager = Self {
 			AppState,
+
 			update_status:Arc::new(RwLock::new(UpdateStatus {
 				last_check:None,
 				update_available:false,
@@ -488,13 +507,21 @@ impl UpdateManager {
 				eta_seconds:None,
 				last_error:None,
 			})),
+
 			cache_directory,
+
 			staging_directory,
+
 			backup_directory,
+
 			download_sessions:Arc::new(RwLock::new(HashMap::new())),
+
 			rollback_history:Arc::new(Mutex::new(rollback_history)),
+
 			update_channel,
+
 			platform_config:PlatformConfigClone,
+
 			background_task:Arc::new(Mutex::new(None)),
 		};
 
@@ -539,9 +566,13 @@ impl UpdateManager {
 
 		let package_format = match (platform, arch) {
 			("windows", _) => PackageFormat::WindowsExe,
+
 			("macos", _) => PackageFormat::MacOsDmg,
+
 			("linux", "x64") => PackageFormat::LinuxAppImage,
+
 			("linux", "") => PackageFormat::LinuxAppImage,
+
 			_ => PackageFormat::LinuxAppImage,
 		};
 
@@ -559,10 +590,12 @@ impl UpdateManager {
 	/// Returns: Some(UpdateInfo) if an update is available, None otherwise
 	pub async fn CheckForUpdates(&self) -> Result<Option<UpdateInfo>> {
 		let config = &self.AppState.Configuration.Updates;
+
 		let start_time = std::time::Instant::now();
 
 		if !config.Enabled {
 			dev_log!("update", "[UpdateManager] Updates are disabled");
+
 			return Ok(None);
 		}
 
@@ -575,17 +608,23 @@ impl UpdateManager {
 		// Update status
 		{
 			let mut status = self.update_status.write().await;
+
 			status.last_check = Some(chrono::Utc::now());
+
 			status.last_error = None;
 		}
 
 		// Check update server with resilience patterns
 		let update_info = match self.FetchUpdateInfo().await {
 			Ok(info) => info,
+
 			Err(e) => {
 				dev_log!("update", "error: [UpdateManager] Failed to fetch update info: {}", e);
+
 				let mut status = self.update_status.write().await;
+
 				status.last_error = Some(e.to_string());
+
 				self.record_telemetry(
 					"check",
 					false,
@@ -594,6 +633,7 @@ impl UpdateManager {
 					Some(e.to_string()),
 				)
 				.await;
+
 				return Err(e);
 			},
 		};
@@ -602,6 +642,7 @@ impl UpdateManager {
 			// Verify minimum compatibility
 			if let Some(ref min_version) = info.min_compatible_version {
 				let current_version = env!("CARGO_PKG_VERSION");
+
 				if UpdateManager::CompareVersions(current_version, min_version) < 0 {
 					dev_log!(
 						"update",
@@ -609,8 +650,11 @@ impl UpdateManager {
 						min_version,
 						current_version
 					);
+
 					let mut status = self.update_status.write().await;
+
 					status.last_error = Some(format!("Update requires minimum version {}", min_version));
+
 					return Ok(None);
 				}
 			}
@@ -625,16 +669,22 @@ impl UpdateManager {
 			// Update status
 			{
 				let mut status = self.update_status.write().await;
+
 				status.update_available = true;
+
 				status.available_version = Some(info.version.clone());
+
 				status.update_size = Some(info.size);
+
 				status.release_notes = Some(info.release_notes.clone());
+
 				status.requires_restart = info.requires_restart;
 			}
 
 			// Notify Mountain (frontend) about available update
 			// This would typically be done via event bus or gRPC
 			dev_log!("update", "[UpdateManager] Notifying frontend about available update");
+
 			// Record telemetry
 			self.record_telemetry("check", true, start_time.elapsed().as_millis() as u64, None, None)
 				.await;
@@ -647,12 +697,17 @@ impl UpdateManager {
 			}
 		} else {
 			dev_log!("update", "[UpdateManager] No updates available");
+
 			// Update status
 			{
 				let mut status = self.update_status.write().await;
+
 				status.update_available = false;
+
 				status.available_version = None;
+
 				status.update_size = None;
+
 				status.release_notes = None;
 			}
 
@@ -681,6 +736,7 @@ impl UpdateManager {
 	/// Result<()> indicating success or failure
 	pub async fn DownloadUpdate(&self, update_info:&UpdateInfo) -> Result<()> {
 		let start_time = std::time::Instant::now();
+
 		let session_id = Uuid::new_v4().to_string();
 
 		dev_log!(
@@ -697,12 +753,15 @@ impl UpdateManager {
 		// Update status
 		{
 			let mut status = self.update_status.write().await;
+
 			status.installation_status = InstallationStatus::CheckingPrerequisites;
+
 			status.last_error = None;
 		}
 
 		// Create temp file path for download
 		let temp_path = self.cache_directory.join(format!("update-{}-temp.bin", update_info.version));
+
 		let final_path = self.cache_directory.join(format!("update-{}.bin", update_info.version));
 
 		// Check if there's an existing partial download to resume
@@ -710,11 +769,13 @@ impl UpdateManager {
 			let metadata = tokio::fs::metadata(&temp_path)
 				.await
 				.map_err(|e| AirError::FileSystem(format!("Failed to check temp file: {}", e)))?;
+
 			dev_log!(
 				"update",
 				"[UpdateManager] Found partial download, resuming from {} bytes",
 				metadata.len()
 			);
+
 			(metadata.len(), false)
 		} else {
 			(0, true)
@@ -723,6 +784,7 @@ impl UpdateManager {
 		// Create or open download session
 		{
 			let mut sessions = self.download_sessions.write().await;
+
 			sessions.insert(
 				session_id.clone(),
 				DownloadSession {
@@ -739,6 +801,7 @@ impl UpdateManager {
 
 		// Begin download
 		let dns_port = Mist::dns_port();
+
 		let client = crate::HTTP::Client::secured_client_with_timeout(dns_port, Duration::from_secs(300))
 			.map_err(|e| AirError::Network(format!("Failed to create HTTP client: {}", e)))?;
 
@@ -760,10 +823,14 @@ impl UpdateManager {
 				"error: [UpdateManager] Download failed with status: {}",
 				response.status()
 			);
+
 			let mut status = self.update_status.write().await;
+
 			status.installation_status =
 				InstallationStatus::Failed(format!("Download failed with status: {}", response.status()));
+
 			status.last_error = Some(format!("Download failed with status: {}", response.status()));
+
 			self.record_telemetry(
 				"download",
 				false,
@@ -772,21 +839,26 @@ impl UpdateManager {
 				Some("Download failed".to_string()),
 			)
 			.await;
+
 			return Err(AirError::Network(format!("Download failed with status: {}", response.status())));
 		}
 
 		let total_size = response.content_length().unwrap_or(update_info.size);
+
 		let initial_downloaded = if resume_from_start { 0 } else { downloaded_bytes };
 
 		// Update status to downloading
 		{
 			let mut status = self.update_status.write().await;
+
 			status.installation_status = InstallationStatus::Downloading;
+
 			status.download_progress = Some(((downloaded_bytes as f32 / total_size as f32) * 100.0).min(100.0));
 		}
 
 		// Progress tracking
 		let last_update = Arc::new(Mutex::new(std::time::Instant::now()));
+
 		let last_bytes = Arc::new(Mutex::new(downloaded_bytes));
 
 		// Open or create file
@@ -807,12 +879,14 @@ impl UpdateManager {
 		use futures_util::StreamExt;
 
 		let mut byte_stream = response.bytes_stream();
+
 		let mut downloaded = initial_downloaded;
 
 		while let Some(chunk_result) = byte_stream.next().await {
 			match chunk_result {
 				Ok(chunk) => {
 					let chunk_bytes:&[u8] = &chunk;
+
 					file.write_all(chunk_bytes)
 						.await
 						.map_err(|e| AirError::FileSystem(format!("Failed to write update file: {}", e)))?;
@@ -822,14 +896,18 @@ impl UpdateManager {
 					// Update progress every second
 					{
 						let mut last_update_guard = last_update.lock().await;
+
 						let mut last_bytes_guard = last_bytes.lock().await;
 
 						if last_update_guard.elapsed() >= Duration::from_secs(1) {
 							let bytes_this_second = downloaded - *last_bytes_guard;
+
 							let download_speed = bytes_this_second as f64;
 
 							let progress = ((downloaded as f32 / total_size as f32) * 100.0).min(100.0);
+
 							let remaining_bytes = total_size - downloaded;
+
 							let eta_seconds = if download_speed > 0.0 {
 								Some(remaining_bytes as u64 / (download_speed as u64).max(1))
 							} else {
@@ -838,8 +916,11 @@ impl UpdateManager {
 
 							{
 								let mut status = self.update_status.write().await;
+
 								status.download_progress = Some(progress);
+
 								status.download_speed = Some(download_speed);
+
 								status.eta_seconds = eta_seconds;
 							}
 
@@ -859,16 +940,22 @@ impl UpdateManager {
 					// Update session
 					{
 						let mut sessions = self.download_sessions.write().await;
+
 						if let Some(session) = sessions.get_mut(&session_id) {
 							session.downloaded_bytes = downloaded;
 						}
 					}
 				},
+
 				Err(e) => {
 					dev_log!("update", "error: [UpdateManager] Download error: {}", e);
+
 					let mut status = self.update_status.write().await;
+
 					status.installation_status = InstallationStatus::Failed(format!("Network error: {}", e));
+
 					status.last_error = Some(format!("Network error: {}", e));
+
 					self.record_telemetry(
 						"download",
 						false,
@@ -877,6 +964,7 @@ impl UpdateManager {
 						Some(e.to_string()),
 					)
 					.await;
+
 					return Err(AirError::Network(format!("Download error: {}", e)));
 				},
 			}
@@ -885,7 +973,9 @@ impl UpdateManager {
 		// Download complete
 		{
 			let mut status = self.update_status.write().await;
+
 			status.installation_status = InstallationStatus::Downloading;
+
 			status.download_progress = Some(100.0);
 		}
 
@@ -899,6 +989,7 @@ impl UpdateManager {
 		// Verify download integrity with all checksums
 		{
 			let mut status = self.update_status.write().await;
+
 			status.installation_status = InstallationStatus::VerifyingChecksums;
 		}
 
@@ -914,8 +1005,10 @@ impl UpdateManager {
 		if let Some(ref signature) = update_info.signature {
 			{
 				let mut status = self.update_status.write().await;
+
 				status.installation_status = InstallationStatus::VerifyingSignature;
 			}
+
 			self.VerifySignature(&temp_path, signature).await?;
 		}
 
@@ -929,6 +1022,7 @@ impl UpdateManager {
 		// Update session
 		{
 			let mut sessions = self.download_sessions.write().await;
+
 			if let Some(session) = sessions.get_mut(&session_id) {
 				session.complete = true;
 			}
@@ -937,7 +1031,9 @@ impl UpdateManager {
 		// Update status to completed
 		{
 			let mut status = self.update_status.write().await;
+
 			status.installation_status = InstallationStatus::Completed;
+
 			status.download_progress = Some(100.0);
 		}
 
@@ -976,6 +1072,7 @@ impl UpdateManager {
 	/// Result<()> indicating success or failure (with automatic rollback)
 	pub async fn ApplyUpdate(&self, update_info:&UpdateInfo) -> Result<()> {
 		let start_time = std::time::Instant::now();
+
 		let current_version = env!("CARGO_PKG_VERSION");
 
 		dev_log!(
@@ -990,6 +1087,7 @@ impl UpdateManager {
 		// Verify download exists
 		if !file_path.exists() {
 			dev_log!("update", "error: [UpdateManager] Update file not found: {:?}", file_path);
+
 			return Err(AirError::FileSystem(
 				"Update file not found. Please download first.".to_string(),
 			));
@@ -998,7 +1096,9 @@ impl UpdateManager {
 		// Update status to verifying
 		{
 			let mut status = self.update_status.write().await;
+
 			status.installation_status = InstallationStatus::VerifyingChecksums;
+
 			status.last_error = None;
 		}
 
@@ -1015,22 +1115,28 @@ impl UpdateManager {
 		if let Some(ref signature) = update_info.signature {
 			{
 				let mut status = self.update_status.write().await;
+
 				status.installation_status = InstallationStatus::VerifyingSignature;
 			}
+
 			self.VerifySignature(&file_path, signature).await?;
 		}
 
 		// Create backup before applying update
 		{
 			let mut status = self.update_status.write().await;
+
 			status.installation_status = InstallationStatus::CreatingBackup;
 		}
 
 		let backup_info = self.CreateBackup(current_version).await?;
+
 		dev_log!("update", "[UpdateManager] Backup created: {:?}", backup_info.backup_path);
+
 		// Update status to installing
 		{
 			let mut status = self.update_status.write().await;
+
 			status.installation_status = InstallationStatus::Installing;
 		}
 
@@ -1038,27 +1144,35 @@ impl UpdateManager {
 		let result = match self.platform_config.package_format {
 			#[cfg(target_os = "windows")]
 			PackageFormat::WindowsExe => self.ApplyWindowsUpdate(&file_path).await,
+
 			#[cfg(not(target_os = "windows"))]
 			PackageFormat::WindowsExe => Err(AirError::Internal("Windows update not available on this platform".to_string())),
+
 			PackageFormat::MacOsDmg => self.ApplyMacOsUpdate(&file_path).await,
+
 			#[cfg(all(target_os = "linux", feature = "appimage"))]
 			PackageFormat::LinuxAppImage => self.ApplyLinuxAppImageUpdate(&file_path).await,
+
 			#[cfg(not(all(target_os = "linux", feature = "appimage")))]
 			PackageFormat::LinuxAppImage => {
 				Err(AirError::Internal(
 					"Linux AppImage update not available on this platform".to_string(),
 				))
 			},
+
 			#[cfg(all(target_os = "linux", feature = "deb"))]
 			PackageFormat::LinuxDeb => self.ApplyLinuxDebUpdate(&file_path).await,
+
 			#[cfg(not(all(target_os = "linux", feature = "deb")))]
 			PackageFormat::LinuxDeb => {
 				Err(AirError::Internal(
 					"Linux DEB update not available on this platform".to_string(),
 				))
 			},
+
 			#[cfg(all(target_os = "linux", feature = "rpm"))]
 			PackageFormat::LinuxRpm => self.ApplyLinuxRpmUpdate(&file_path).await,
+
 			#[cfg(not(all(target_os = "linux", feature = "rpm")))]
 			PackageFormat::LinuxRpm => {
 				Err(AirError::Internal(
@@ -1073,21 +1187,26 @@ impl UpdateManager {
 				"error: [UpdateManager] Installation failed, initiating rollback: {}",
 				e
 			);
+
 			// Update status to rolling back
 			{
 				let mut status = self.update_status.write().await;
+
 				status.installation_status = InstallationStatus::RollingBack;
 			}
 
 			// Rollback to the backup
 			if let Err(rollback_err) = self.RollbackToBackup(&backup_info).await {
 				dev_log!("update", "error: [UpdateManager] Rollback also failed: {}", rollback_err);
+
 				// Critical error - both update and rollback failed
 				let mut status = self.update_status.write().await;
+
 				status.installation_status = InstallationStatus::Failed(format!(
 					"Installation failed and rollback failed: {} / {}",
 					e, rollback_err
 				));
+
 				status.last_error = Some(format!("Installation failed and rollback failed"));
 
 				self.record_telemetry(
@@ -1105,9 +1224,12 @@ impl UpdateManager {
 				)));
 			} else {
 				dev_log!("update", "[UpdateManager] Rollback successful");
+
 				let mut status = self.update_status.write().await;
+
 				status.installation_status =
 					InstallationStatus::Failed(format!("Installation failed, rollback successful: {}", e));
+
 				status.last_error = Some(e.to_string());
 
 				self.record_telemetry(
@@ -1126,6 +1248,7 @@ impl UpdateManager {
 		// Update successful - add to rollback history
 		{
 			let mut history = self.rollback_history.lock().await;
+
 			history.versions.insert(0, backup_info);
 
 			// Keep only max_versions
@@ -1139,10 +1262,14 @@ impl UpdateManager {
 
 		// Save rollback history
 		let history_path = self.backup_directory.join("rollback_history.json");
+
 		let history = self.rollback_history.lock().await;
+
 		let history_json = serde_json::to_string(&*history)
 			.map_err(|e| AirError::Internal(format!("Failed to serialize rollback history: {}", e)))?;
+
 		drop(history);
+
 		tokio::fs::write(&history_path, history_json)
 			.await
 			.map_err(|e| AirError::FileSystem(format!("Failed to save rollback history: {}", e)))?;
@@ -1150,7 +1277,9 @@ impl UpdateManager {
 		// Update current version in status
 		{
 			let mut status = self.update_status.write().await;
+
 			status.current_version = update_info.version.clone();
+
 			status.installation_status = InstallationStatus::Completed;
 		}
 
@@ -1190,21 +1319,29 @@ impl UpdateManager {
 		// Setup resilience patterns
 		let retry_policy = crate::Resilience::RetryPolicy {
 			MaxRetries:3,
+
 			InitialIntervalMs:1000,
+
 			MaxIntervalMs:16000,
+
 			BackoffMultiplier:2.0,
+
 			JitterFactor:0.1,
+
 			BudgetPerMinute:50,
+
 			ErrorClassification:std::collections::HashMap::new(),
 		};
 
 		let _retry_manager = crate::Resilience::RetryManager::new(retry_policy.clone());
+
 		let circuit_breaker = crate::Resilience::CircuitBreaker::new(
 			"updates".to_string(),
 			crate::Resilience::CircuitBreakerConfig::default(),
 		);
 
 		let current_version = env!("CARGO_PKG_VERSION");
+
 		let mut attempt = 0;
 
 		loop {
@@ -1212,6 +1349,7 @@ impl UpdateManager {
 			if circuit_breaker.GetState().await == crate::Resilience::CircuitState::Open {
 				if !circuit_breaker.AttemptRecovery().await {
 					dev_log!("update", "warn: [UpdateManager] Circuit breaker is open, skipping update check");
+
 					return Ok(None);
 				}
 			}
@@ -1227,19 +1365,24 @@ impl UpdateManager {
 			);
 
 			let dns_port = Mist::dns_port();
+
 			let client = crate::HTTP::Client::secured_client_with_timeout(dns_port, Duration::from_secs(30))
 				.map_err(|e| AirError::Network(format!("Failed to create HTTP client: {}", e)))?;
 
 			match client.get(&update_url).send().await {
 				Ok(response) => {
 					let status:reqwest::StatusCode = response.status();
+
 					match status {
 						reqwest::StatusCode::NO_CONTENT => {
 							// No update available (up to date)
 							circuit_breaker.RecordSuccess().await;
+
 							dev_log!("update", "[UpdateManager] Server reports no updates available");
+
 							return Ok(None);
 						},
+
 						status if status.is_success() => {
 							// Parse update information
 							match response.json::<UpdateInfo>().await {
@@ -1254,6 +1397,7 @@ impl UpdateManager {
 											current_version,
 											update_info.version
 										);
+
 										return Ok(Some(update_info));
 									} else {
 										dev_log!(
@@ -1261,18 +1405,25 @@ impl UpdateManager {
 											"[UpdateManager] Server returned same or older version: {}",
 											update_info.version
 										);
+
 										return Ok(None);
 									}
 								},
+
 								Err(e) => {
 									circuit_breaker.RecordFailure().await;
+
 									dev_log!("update", "error: [UpdateManager] Failed to parse update info: {}", e);
+
 									if attempt < retry_policy.MaxRetries {
 										attempt += 1;
+
 										let delay = Duration::from_millis(
 											retry_policy.InitialIntervalMs * 2_u32.pow(attempt as u32) as u64,
 										);
+
 										sleep(delay).await;
+
 										continue;
 									} else {
 										return Err(AirError::Network(format!(
@@ -1283,15 +1434,21 @@ impl UpdateManager {
 								},
 							}
 						},
+
 						status => {
 							circuit_breaker.RecordFailure().await;
+
 							dev_log!("update", "warn: [UpdateManager] Update server returned status: {}", status);
+
 							if attempt < retry_policy.MaxRetries {
 								attempt += 1;
+
 								let delay = Duration::from_millis(
 									retry_policy.InitialIntervalMs * 2_u32.pow(attempt as u32) as u64,
 								);
+
 								sleep(delay).await;
+
 								continue;
 							} else {
 								return Ok(None);
@@ -1299,14 +1456,20 @@ impl UpdateManager {
 						},
 					}
 				},
+
 				Err(e) => {
 					circuit_breaker.RecordFailure().await;
+
 					dev_log!("update", "warn: [UpdateManager] Failed to check for updates: {}", e);
+
 					if attempt < retry_policy.MaxRetries {
 						attempt += 1;
+
 						let delay =
 							Duration::from_millis(retry_policy.InitialIntervalMs * 2_u32.pow(attempt as u32) as u64);
+
 						sleep(delay).await;
+
 						continue;
 					} else {
 						return Ok(None);
@@ -1343,10 +1506,12 @@ impl UpdateManager {
 				expected_checksum,
 				actual_checksum
 			);
+
 			return Err(AirError::Network("Update checksum verification failed".to_string()));
 		}
 
 		dev_log!("update", "[UpdateManager] Checksum verified: {}", actual_checksum);
+
 		Ok(())
 	}
 
@@ -1369,15 +1534,20 @@ impl UpdateManager {
 
 		let actual_checksum = match algorithm.to_lowercase().as_str() {
 			"sha256" => self.CalculateSha256(&content),
+
 			"sha512" => self.CalculateSha512(&content),
+
 			"md5" => self.CalculateMd5(&content),
+
 			"crc32" => self.CalculateCrc32(&content),
+
 			_ => {
 				dev_log!(
 					"update",
 					"warn: [UpdateManager] Unknown checksum algorithm: {}, skipping",
 					algorithm
 				);
+
 				return Ok(());
 			},
 		};
@@ -1390,10 +1560,12 @@ impl UpdateManager {
 				expected_checksum,
 				actual_checksum
 			);
+
 			return Err(AirError::Network(format!("{} checksum verification failed", algorithm)));
 		}
 
 		dev_log!("update", "[UpdateManager] {} checksum verified: {}", algorithm, actual_checksum);
+
 		Ok(())
 	}
 
@@ -1422,6 +1594,7 @@ impl UpdateManager {
 		#[cfg(debug_assertions)]
 		{
 			dev_log!("update", "[UpdateManager] Development build: skipping signature verification");
+
 			return Ok(());
 		}
 
@@ -1433,14 +1606,17 @@ impl UpdateManager {
 				"update",
 				"warn: [UpdateManager] WARNING: Cryptographic signature verification is not yet implemented"
 			);
+
 			dev_log!(
 				"update",
 				"warn: [UpdateManager] Update packages should be cryptographically signed in production"
 			);
+
 			dev_log!(
 				"update",
 				"[UpdateManager] Proceeding with update without signature verification"
 			);
+
 			return Ok(());
 		}
 	}
@@ -1459,10 +1635,13 @@ impl UpdateManager {
 	/// Result<`RollbackState`> containing backup information
 	async fn CreateBackup(&self, version:&str) -> Result<RollbackState> {
 		let timestamp = chrono::Utc::now();
+
 		let backup_dir_name = format!("backup-{}-{}", version, timestamp.format("%Y%m%d_%H%M%S"));
+
 		let backup_path = self.backup_directory.join(&backup_dir_name);
 
 		dev_log!("update", "[UpdateManager] Creating backup: {}", backup_dir_name);
+
 		// Create backup directory
 		tokio::fs::create_dir_all(&backup_path)
 			.await
@@ -1474,6 +1653,7 @@ impl UpdateManager {
 
 		// Copy executable to backup
 		let backup_exe = backup_path.join(exe_path.file_name().unwrap_or_default());
+
 		tokio::fs::copy(&exe_path, &backup_exe)
 			.await
 			.map_err(|e| AirError::FileSystem(format!("Failed to backup executable: {}", e)))?;
@@ -1488,8 +1668,11 @@ impl UpdateManager {
 		for config_dir in config_dirs {
 			if config_dir.exists() {
 				let backup_config = backup_path.join("config");
+
 				let _ = tokio::fs::create_dir_all(&backup_config).await;
+
 				let _ = Self::copy_directory_recursive(&config_dir, &backup_config).await;
+
 				dev_log!("update", "[UpdateManager] Backed up config directory: {:?}", config_dir);
 			}
 		}
@@ -1503,8 +1686,11 @@ impl UpdateManager {
 		for data_dir in data_dirs {
 			if data_dir.exists() {
 				let backup_data = backup_path.join("data");
+
 				let _ = tokio::fs::create_dir_all(&backup_data).await;
+
 				let _ = Self::copy_directory_recursive(&data_dir, &backup_data).await;
+
 				dev_log!("update", "[UpdateManager] Backed up data directory: {:?}", data_dir);
 			}
 		}
@@ -1513,6 +1699,7 @@ impl UpdateManager {
 		let checksum = self.CalculateFileChecksum(&backup_path).await?;
 
 		dev_log!("update", "[UpdateManager] Backup created at: {:?}", backup_path);
+
 		Ok(RollbackState { version:version.to_string(), backup_path, timestamp, checksum })
 	}
 
@@ -1538,6 +1725,7 @@ impl UpdateManager {
 
 		// Verify backup integrity
 		let current_checksum = self.CalculateFileChecksum(&backup_info.backup_path).await?;
+
 		if current_checksum != backup_info.checksum {
 			return Err(AirError::Internal(format!(
 				"Backup integrity check failed: expected {}, got {}",
@@ -1562,42 +1750,52 @@ impl UpdateManager {
 			Ok(_) => {
 				dev_log!("update", "[UpdateManager] Executable restored from backup");
 			},
+
 			Err(e) => {
 				dev_log!("update", "error: [UpdateManager] Failed to restore executable: {}", e);
+
 				dev_log!("update", "warn: [UpdateManager] Rollback may require manual intervention");
 			},
 		}
 
 		// Restore configuration files
 		let backup_config = backup_info.backup_path.join("config");
+
 		if backup_config.exists() {
 			let config_dirs = vec![
 				dirs::config_dir().unwrap_or_default().join("Land"),
 				dirs::home_dir().unwrap_or_default().join(".config/land"),
 			];
+
 			for config_dir in config_dirs {
 				// Remove existing config and restore from backup
 				if config_dir.exists() {
 					let _ = tokio::fs::remove_dir_all(&config_dir).await;
 				}
+
 				let _ = Self::copy_directory_recursive(&backup_config, &config_dir).await;
+
 				dev_log!("update", "[UpdateManager] Restored config directory: {:?}", config_dir);
 			}
 		}
 
 		// Restore data directories
 		let backup_data = backup_info.backup_path.join("data");
+
 		if backup_data.exists() {
 			let data_dirs = vec![
 				dirs::data_local_dir().unwrap_or_default().join("Land"),
 				dirs::home_dir().unwrap_or_default().join(".local/share/land"),
 			];
+
 			for data_dir in data_dirs {
 				// Remove existing data and restore from backup
 				if data_dir.exists() {
 					let _ = tokio::fs::remove_dir_all(&data_dir).await;
 				}
+
 				let _ = Self::copy_directory_recursive(&backup_data, &data_dir).await;
+
 				dev_log!("update", "[UpdateManager] Restored data directory: {:?}", data_dir);
 			}
 		}
@@ -1607,6 +1805,7 @@ impl UpdateManager {
 			"[UpdateManager] Rollback to version {} completed",
 			backup_info.version
 		);
+
 		Ok(())
 	}
 
@@ -1631,6 +1830,7 @@ impl UpdateManager {
 			.ok_or_else(|| AirError::FileSystem(format!("No backup found for version {}", version)))?;
 
 		let info = backup_info.clone();
+
 		drop(history);
 
 		self.RollbackToBackup(&info).await
@@ -1641,6 +1841,7 @@ impl UpdateManager {
 	/// Returns list of versions that can be rolled back to
 	pub async fn GetAvailableRollbackVersions(&self) -> Vec<String> {
 		let history = self.rollback_history.lock().await;
+
 		history.versions.iter().map(|state| state.version.clone()).collect()
 	}
 
@@ -1664,6 +1865,7 @@ impl UpdateManager {
 			#[cfg(target_os = "windows")]
 			{
 				use std::os::windows::fs::MetadataExt;
+
 				let free_space = metadata.volume_serial_number() as u64; // This isn't correct, just placeholder
 				dev_log!(
 					"update",
@@ -1675,12 +1877,15 @@ impl UpdateManager {
 			#[cfg(not(target_os = "windows"))]
 			{
 				use std::os::unix::fs::MetadataExt;
+
 				let _device_id = metadata.dev();
 
 				// Get free space on Unix-like systems using statvfs
 				let cache_path = self.cache_directory.to_string_lossy();
+
 				let free_space = unsafe {
 					let mut stat:libc::statvfs = std::mem::zeroed();
+
 					if libc::statvfs(cache_path.as_ptr() as *const i8, &mut stat) == 0 {
 						stat.f_bavail as u64 * stat.f_bsize as u64
 					} else {
@@ -1745,6 +1950,7 @@ impl UpdateManager {
 		if let Some(info) = update_info {
 			if !info.checksum.is_empty() {
 				let actual_checksum = self.CalculateFileChecksum(&path).await?;
+
 				if actual_checksum != info.checksum {
 					return Err(AirError::Configuration(format!(
 						"Checksum verification failed: expected {}, got {}",
@@ -1777,6 +1983,7 @@ impl UpdateManager {
 	#[cfg(target_os = "windows")]
 	async fn ApplyWindowsUpdate(&self, file_path:&Path) -> Result<()> {
 		dev_log!("update", "[UpdateManager] Installing Windows update: {:?}", file_path);
+
 		// Windows-specific installation stub
 		// In production, this would:
 		// 1. Create a temporary updater process
@@ -1790,7 +1997,9 @@ impl UpdateManager {
 			"warn: [UpdateManager] Windows installation: update package ready at {:?}",
 			file_path
 		);
+
 		dev_log!("update", "[UpdateManager] Manual installation may be required");
+
 		Ok(())
 	}
 
@@ -1798,6 +2007,7 @@ impl UpdateManager {
 	#[cfg(target_os = "macos")]
 	async fn ApplyMacOsUpdate(&self, file_path:&Path) -> Result<()> {
 		dev_log!("update", "[UpdateManager] Installing macOS update: {:?}", file_path);
+
 		// macOS-specific installation stub
 		// In production, this would:
 		// 1. Verify the DMG signature
@@ -1812,7 +2022,9 @@ impl UpdateManager {
 			"warn: [UpdateManager] macOS installation: update package ready at {:?}",
 			file_path
 		);
+
 		dev_log!("update", "[UpdateManager] Manual installation may be required");
+
 		Ok(())
 	}
 
@@ -1820,6 +2032,7 @@ impl UpdateManager {
 	#[cfg(all(target_os = "linux", feature = "appimage"))]
 	async fn ApplyLinuxAppImageUpdate(&self, file_path:&Path) -> Result<()> {
 		dev_log!("update", "[UpdateManager] Installing Linux AppImage update: {:?}", file_path);
+
 		// Linux AppImage installation stub
 		// In production, this would:
 		// 1. Verify the AppImage signature
@@ -1832,7 +2045,9 @@ impl UpdateManager {
 			"warn: [UpdateManager] Linux AppImage installation: update package ready at {:?}",
 			file_path
 		);
+
 		dev_log!("update", "[UpdateManager] Manual installation may be required");
+
 		Ok(())
 	}
 
@@ -1840,6 +2055,7 @@ impl UpdateManager {
 	#[cfg(all(target_os = "linux", feature = "deb"))]
 	async fn ApplyLinuxDebUpdate(&self, file_path:&Path) -> Result<()> {
 		dev_log!("update", "[UpdateManager] Installing Linux DEB update: {:?}", file_path);
+
 		// Linux DEB installation stub
 		// In production, this would:
 		// 1. Verify the package signature
@@ -1851,7 +2067,9 @@ impl UpdateManager {
 			"warn: [UpdateManager] Linux DEB installation: update package ready at {:?}",
 			file_path
 		);
+
 		dev_log!("update", "[UpdateManager] Manual installation may be required");
+
 		Ok(())
 	}
 
@@ -1859,6 +2077,7 @@ impl UpdateManager {
 	#[cfg(all(target_os = "linux", feature = "rpm"))]
 	async fn ApplyLinuxRpmUpdate(&self, file_path:&Path) -> Result<()> {
 		dev_log!("update", "[UpdateManager] Installing Linux RPM update: {:?}", file_path);
+
 		// Linux RPM installation stub
 		// In production, this would:
 		// 1. Verify the package signature
@@ -1870,7 +2089,9 @@ impl UpdateManager {
 			"warn: [UpdateManager] Linux RPM installation: update package ready at {:?}",
 			file_path
 		);
+
 		dev_log!("update", "[UpdateManager] Manual installation may be required");
+
 		Ok(())
 	}
 
@@ -1889,15 +2110,22 @@ impl UpdateManager {
 	/// * `error_message` - Optional error message if failed
 	async fn record_telemetry(
 		&self,
+
 		operation:&str,
+
 		success:bool,
+
 		duration_ms:u64,
+
 		download_size:Option<u64>,
+
 		error_message:Option<String>,
 	) {
 		let telemetry = UpdateTelemetry {
 			event_id:Uuid::new_v4().to_string(),
+
 			current_version:env!("CARGO_PKG_VERSION").to_string(),
+
 			target_version:self
 				.update_status
 				.read()
@@ -1905,13 +2133,21 @@ impl UpdateManager {
 				.available_version
 				.clone()
 				.unwrap_or_else(|| "unknown".to_string()),
+
 			channel:self.update_channel.as_str().to_string(),
+
 			platform:format!("{}/{}", self.platform_config.platform, self.platform_config.arch),
+
 			operation:operation.to_string(),
+
 			success,
+
 			duration_ms,
+
 			download_size,
+
 			error_message,
+
 			timestamp:chrono::Utc::now(),
 		};
 
@@ -1953,27 +2189,34 @@ impl UpdateManager {
 		// `hybrid_array::Array`). `hex::encode` restores the old
 		// `format!("{:x}", …)` behaviour byte-for-byte.
 		let mut hasher = Sha256::new();
+
 		hasher.update(data);
+
 		hex::encode(hasher.finalize())
 	}
 
 	/// Calculate SHA512 checksum of a byte slice
 	fn CalculateSha512(&self, data:&[u8]) -> String {
 		use sha2::Sha512;
+
 		let mut hasher = Sha512::new();
+
 		hasher.update(data);
+
 		hex::encode(hasher.finalize())
 	}
 
 	/// Calculate MD5 checksum of a byte slice
 	fn CalculateMd5(&self, data:&[u8]) -> String {
 		let digest = md5::compute(data);
+
 		format!("{:x}", digest)
 	}
 
 	/// Calculate CRC32 checksum of a byte slice
 	fn CalculateCrc32(&self, data:&[u8]) -> String {
 		let crc = crc32fast::hash(data);
+
 		format!("{:08x}", crc)
 	}
 
@@ -2001,6 +2244,7 @@ impl UpdateManager {
 	/// i32 indicating comparison result
 	pub fn CompareVersions(v1:&str, v2:&str) -> i32 {
 		let v1_parts:Vec<u32> = v1.split('.').filter_map(|s| s.parse().ok()).collect();
+
 		let v2_parts:Vec<u32> = v2.split('.').filter_map(|s| s.parse().ok()).collect();
 
 		for (i, part) in v1_parts.iter().enumerate() {
@@ -2010,7 +2254,9 @@ impl UpdateManager {
 
 			match part.cmp(&v2_parts[i]) {
 				std::cmp::Ordering::Greater => return 1,
+
 				std::cmp::Ordering::Less => return -1,
+
 				std::cmp::Ordering::Equal => continue,
 			}
 		}
@@ -2023,6 +2269,7 @@ impl UpdateManager {
 	/// Returns a clone of the current update status
 	pub async fn GetStatus(&self) -> UpdateStatus {
 		let status = self.update_status.read().await;
+
 		status.clone()
 	}
 
@@ -2042,6 +2289,7 @@ impl UpdateManager {
 		// Set cancellation flag in all active sessions
 		{
 			let mut sessions = self.download_sessions.write().await;
+
 			for session in sessions.values_mut() {
 				session.cancelled = true;
 			}
@@ -2049,23 +2297,28 @@ impl UpdateManager {
 
 		// Clean up partial download files
 		let sessions = self.download_sessions.read().await;
+
 		for session in sessions.values() {
 			if session.temp_path.exists() {
 				if let Err(e) = tokio::fs::remove_file(&session.temp_path).await {
 					dev_log!("update", "warn: [UpdateManager] Failed to remove partial file: {}", e);
 				}
+
 				dev_log!("update", "[UpdateManager] Removed partial file: {:?}", session.temp_path);
 			}
 		}
+
 		drop(sessions);
 
 		// Clear all download sessions
 		{
 			let mut sessions = self.download_sessions.write().await;
+
 			sessions.clear();
 		}
 
 		dev_log!("update", "[UpdateManager] Download cancelled and cleaned up");
+
 		Ok(())
 	}
 
@@ -2091,6 +2344,7 @@ impl UpdateManager {
 			"[UpdateManager] Resuming download for version {}",
 			update_info.version
 		);
+
 		self.DownloadUpdate(update_info).await
 	}
 
@@ -2134,7 +2388,9 @@ impl UpdateManager {
 				.file_type()
 				.await
 				.map_err(|e| AirError::FileSystem(format!("Failed to get file type: {}", e)))?;
+
 			let src_path = entry.path();
+
 			let dst_path = dst.join(entry.file_name());
 
 			if file_type.is_file() {
@@ -2160,8 +2416,11 @@ impl UpdateManager {
 	/// * `update_info` - Update information to stage
 	pub async fn StageUpdate(&self, update_info:&UpdateInfo) -> Result<()> {
 		dev_log!("update", "[UpdateManager] Staging update for version {}", update_info.version);
+
 		let mut status = self.update_status.write().await;
+
 		status.installation_status = InstallationStatus::Staging;
+
 		drop(status);
 
 		let file_path = self.cache_directory.join(format!("update-{}.bin", update_info.version));
@@ -2172,12 +2431,14 @@ impl UpdateManager {
 
 		// Create version-specific staging directory
 		let stage_dir = self.staging_directory.join(&update_info.version);
+
 		tokio::fs::create_dir_all(&stage_dir)
 			.await
 			.map_err(|e| AirError::FileSystem(format!("Failed to create staging directory: {}", e)))?;
 
 		// Copy update package to staging
 		let staged_file = stage_dir.join("update.bin");
+
 		tokio::fs::copy(&file_path, &staged_file)
 			.await
 			.map_err(|e| AirError::FileSystem(format!("Failed to stage update package: {}", e)))?;
@@ -2186,6 +2447,7 @@ impl UpdateManager {
 		self.VerifyChecksum(&staged_file, &update_info.checksum).await?;
 
 		dev_log!("update", "[UpdateManager] Update staged successfully in: {:?}", stage_dir);
+
 		Ok(())
 	}
 
@@ -2195,11 +2457,13 @@ impl UpdateManager {
 	/// to free disk space
 	pub async fn CleanupOldUpdates(&self) -> Result<()> {
 		dev_log!("update", "[UpdateManager] Cleaning up old update files");
+
 		let mut entries = tokio::fs::read_dir(&self.cache_directory)
 			.await
 			.map_err(|e| AirError::FileSystem(format!("Failed to read cache directory: {}", e)))?;
 
 		let mut cleaned_count = 0;
+
 		let now = std::time::SystemTime::now();
 
 		while let Some(entry) = entries
@@ -2208,6 +2472,7 @@ impl UpdateManager {
 			.map_err(|e| AirError::FileSystem(format!("Failed to read directory entry: {}", e)))?
 		{
 			let path = entry.path();
+
 			let metadata = entry
 				.metadata()
 				.await
@@ -2222,6 +2487,7 @@ impl UpdateManager {
 			}
 
 			dev_log!("update", "[UpdateManager] Removing old update file: {:?}", path);
+
 			tokio::fs::remove_file(&path)
 				.await
 				.map_err(|e| AirError::FileSystem(format!("Failed to remove {}: {}", path.display(), e)))?;
@@ -2230,6 +2496,7 @@ impl UpdateManager {
 		}
 
 		dev_log!("update", "[UpdateManager] Cleaned up {} old update files", cleaned_count);
+
 		Ok(())
 	}
 
@@ -2254,9 +2521,11 @@ impl UpdateManager {
 
 		// Store the handle for later cancellation
 		let mut task_handle = self.background_task.lock().await;
+
 		*task_handle = Some(handle);
 
 		dev_log!("update", "[UpdateManager] Background update checking started");
+
 		Ok(())
 	}
 
@@ -2271,10 +2540,12 @@ impl UpdateManager {
 
 		if !config.Enabled {
 			dev_log!("update", "[UpdateManager] Background task: Updates are disabled");
+
 			return;
 		}
 
 		let check_interval = Duration::from_secs(config.CheckIntervalHours as u64 * 3600);
+
 		let mut interval = interval(check_interval);
 
 		dev_log!(
@@ -2287,6 +2558,7 @@ impl UpdateManager {
 			interval.tick().await;
 
 			dev_log!("update", "[UpdateManager] Background task: Checking for updates...");
+
 			// Check for updates
 			match self.CheckForUpdates().await {
 				Ok(Some(update_info)) => {
@@ -2296,9 +2568,11 @@ impl UpdateManager {
 						update_info.version
 					);
 				},
+
 				Ok(None) => {
 					dev_log!("update", "[UpdateManager] Background task: No updates available");
 				},
+
 				Err(e) => {
 					dev_log!("update", "error: [UpdateManager] Background task: Update check failed: {}", e);
 				},
@@ -2313,10 +2587,13 @@ impl UpdateManager {
 	/// - Aborts the stored JoinHandle to cancel the background task
 	pub async fn StopBackgroundTasks(&self) {
 		dev_log!("update", "[UpdateManager] Stopping background tasks");
+
 		// Cancel the stored task handle if it exists
 		let mut task_handle = self.background_task.lock().await;
+
 		if let Some(handle) = task_handle.take() {
 			handle.abort();
+
 			dev_log!("update", "[UpdateManager] Background task aborted");
 		} else {
 			dev_log!("update", "[UpdateManager] No background task to stop");
@@ -2332,7 +2609,9 @@ impl UpdateManager {
 	/// Formatted string (e.g., "1.5 MB", "500 KB")
 	fn format_size(&self, bytes:f64) -> String {
 		const KB:f64 = 1024.0;
+
 		const MB:f64 = KB * 1024.0;
+
 		const GB:f64 = MB * 1024.0;
 
 		if bytes >= GB {
@@ -2351,14 +2630,23 @@ impl Clone for UpdateManager {
 	fn clone(&self) -> Self {
 		Self {
 			AppState:self.AppState.clone(),
+
 			update_status:self.update_status.clone(),
+
 			cache_directory:self.cache_directory.clone(),
+
 			staging_directory:self.staging_directory.clone(),
+
 			backup_directory:self.backup_directory.clone(),
+
 			download_sessions:self.download_sessions.clone(),
+
 			rollback_history:self.rollback_history.clone(),
+
 			update_channel:self.update_channel,
+
 			platform_config:self.platform_config.clone(),
+
 			background_task:self.background_task.clone(),
 		}
 	}

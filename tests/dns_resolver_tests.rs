@@ -22,11 +22,13 @@ async fn test_land_dns_resolver_localhost() {
 
 	// Test that code.editor.land resolves to localhost
 	let lookup = resolver.lookup_ip("code.editor.land").await.expect("DNS lookup failed");
+
 	let resolved_ips:Vec<_> = lookup.iter().collect();
 
 	println!("Resolved IPs for code.editor.land: {:?}", resolved_ips);
 
 	assert!(!resolved_ips.is_empty(), "Should resolve to at least one IP");
+
 	assert!(
 		resolved_ips.iter().all(|ip| ip.is_loopback()),
 		"All resolved IPs for editor.land should be loopback addresses"
@@ -37,6 +39,7 @@ async fn test_land_dns_resolver_localhost() {
 async fn test_land_dns_resolver_wildcard() {
 	// Start DNS server
 	let port = Mist::start(15371).expect("Failed to start DNS server");
+
 	tokio::time::sleep(Duration::from_millis(200)).await;
 
 	let resolver = Mist::resolver::land_resolver(port);
@@ -54,11 +57,13 @@ async fn test_land_dns_resolver_wildcard() {
 			.lookup_ip(domain)
 			.await
 			.expect(&format!("DNS lookup failed for {}", domain));
+
 		let resolved_ips:Vec<_> = lookup.iter().collect();
 
 		println!("Resolved IPs for {}: {:?}", domain, resolved_ips);
 
 		assert!(!resolved_ips.is_empty(), "{} should resolve to at least one IP", domain);
+
 		assert!(
 			resolved_ips.iter().all(|ip| ip.is_loopback()),
 			"All IPs for {} should be loopback addresses",
@@ -74,6 +79,7 @@ async fn test_ip_validation_blocks_non_localhost_for_editor_land() {
 
 	// Start DNS server
 	let port = Mist::start(15372).expect("Failed to start DNS server");
+
 	tokio::time::sleep(Duration::from_millis(200)).await;
 
 	let resolver = Mist::resolver::land_resolver(port);
@@ -83,9 +89,11 @@ async fn test_ip_validation_blocks_non_localhost_for_editor_land() {
 
 	// Verify ALL returned IPs are loopback
 	let mut all_loopback = true;
+
 	for ip in lookup.iter() {
 		if !ip.is_loopback() {
 			all_loopback = false;
+
 			println!("SECURITY WARNING: editor.land resolved to non-loopback IP: {}", ip);
 		}
 	}
@@ -105,6 +113,7 @@ async fn test_ip_validation_allows_non_editor_land() {
 
 	// Start DNS server
 	let port = Mist::start(15373).expect("Failed to start DNS server");
+
 	tokio::time::sleep(Duration::from_millis(200)).await;
 
 	let resolver = Mist::resolver::land_resolver(port);
@@ -125,6 +134,7 @@ async fn test_resolver_handles_ipv6() {
 	// even though editor.land only has A records
 
 	let port = Mist::start(15374).expect("Failed to start DNS server");
+
 	tokio::time::sleep(Duration::from_millis(200)).await;
 
 	let resolver = Mist::resolver::land_resolver(port);
@@ -134,6 +144,7 @@ async fn test_resolver_handles_ipv6() {
 	let result = resolver.ipv6_lookup("code.editor.land").await;
 
 	println!("IPv6 lookup result: {:?}", result);
+
 	assert!(true, "Resolver handles IPv6 queries gracefully");
 }
 
@@ -143,19 +154,23 @@ async fn test_resolver_caching() {
 	// Hickory clients cache results by default
 
 	let port = Mist::start(15375).expect("Failed to start DNS server");
+
 	tokio::time::sleep(Duration::from_millis(200)).await;
 
 	let resolver = Mist::resolver::land_resolver(port);
 
 	// First query
 	let lookup1 = resolver.lookup_ip("code.editor.land").await.expect("DNS lookup failed");
+
 	let ips1:Vec<_> = lookup1.iter().collect();
 
 	// Second query (should be cached)
 	let lookup2 = resolver.lookup_ip("code.editor.land").await.expect("DNS lookup failed");
+
 	let ips2:Vec<_> = lookup2.iter().collect();
 
 	println!("First query IPs: {:?}", ips1);
+
 	println!("Second query IPs: {:?}", ips2);
 
 	assert_eq!(ips1.len(), ips2.len(), "Cached queries should return same number of IPs");
@@ -168,6 +183,7 @@ async fn test_resolver_concurrent_queries() {
 	// Test that the resolver can handle concurrent queries
 
 	let port = Mist::start(15376).expect("Failed to start DNS server");
+
 	tokio::time::sleep(Duration::from_millis(200)).await;
 
 	let resolver = Mist::resolver::land_resolver(port);
@@ -177,11 +193,13 @@ async fn test_resolver_concurrent_queries() {
 
 	for i in 0..5 {
 		let resolver_clone = resolver.clone();
+
 		let handle = tokio::spawn(async move {
 			let domain = format!("service{}.editor.land", i % 2); // Alternate between 2 domains
 			let lookup = resolver_clone.lookup_ip(&domain).await;
 			(domain, lookup)
 		});
+
 		handles.push(handle);
 	}
 
@@ -192,12 +210,16 @@ async fn test_resolver_concurrent_queries() {
 
 	for result in results {
 		assert!(result.is_ok(), "Concurrent query should complete");
+
 		let (domain, lookup_result) = result.unwrap();
+
 		match lookup_result {
 			Ok(lookup) => {
 				let ips:Vec<_> = lookup.iter().collect();
+
 				println!("Concurrent query {} resolved to: {:?}", domain, ips);
 			},
+
 			Err(e) => {
 				println!("Concurrent query {} failed: {:?}", domain, e);
 			},
@@ -212,6 +234,7 @@ async fn test_resolver_port_configuration() {
 	// Test resolver configuration with specific port
 
 	let port = Mist::start(15377).expect("Failed to start DNS server");
+
 	tokio::time::sleep(Duration::from_millis(200)).await;
 
 	// Create resolver with the same port
@@ -219,6 +242,7 @@ async fn test_resolver_port_configuration() {
 
 	// Verify resolver works
 	let lookup = resolver.lookup_ip("code.editor.land").await.expect("DNS lookup failed");
+
 	assert!(!lookup.iter().collect::<Vec<_>>().is_empty(), "Resolver should resolve domains");
 
 	println!("Resolver configured with port {}: OK", port);
@@ -247,6 +271,7 @@ async fn test_resolver_txt_records() {
 	// (if supported)
 
 	let port = Mist::start(15378).expect("Failed to start DNS server");
+
 	tokio::time::sleep(Duration::from_millis(200)).await;
 
 	let resolver = Mist::resolver::land_resolver(port);
@@ -267,6 +292,7 @@ async fn test_resolver_mx_records() {
 	// (if supported)
 
 	let port = Mist::start(15379).expect("Failed to start DNS server");
+
 	tokio::time::sleep(Duration::from_millis(200)).await;
 
 	let resolver = Mist::resolver::land_resolver(port);
@@ -285,6 +311,7 @@ async fn test_resolver_srv_records() {
 	// (if supported)
 
 	let port = Mist::start(15380).expect("Failed to start DNS server");
+
 	tokio::time::sleep(Duration::from_millis(200)).await;
 
 	let resolver = Mist::resolver::land_resolver(port);
@@ -302,18 +329,22 @@ async fn test_resolver_timeout_handling() {
 	// Test that the resolver handles timeouts appropriately
 
 	let port = Mist::start(15381).expect("Failed to start DNS server");
+
 	tokio::time::sleep(Duration::from_millis(200)).await;
 
 	let resolver = Mist::resolver::land_resolver(port);
 
 	// Query should complete quickly
 	let start = std::time::Instant::now();
+
 	let result = resolver.lookup_ip("code.editor.land").await;
+
 	let elapsed = start.elapsed();
 
 	println!("Query completed in {:?}", elapsed);
 
 	assert!(result.is_ok(), "Query should succeed");
+
 	assert!(elapsed < Duration::from_secs(5), "Query should complete in under 5 seconds");
 }
 
@@ -323,6 +354,7 @@ async fn test_resolver_reverse_dns() {
 	// (if supported)
 
 	let port = Mist::start(15382).expect("Failed to start DNS server");
+
 	tokio::time::sleep(Duration::from_millis(200)).await;
 
 	let resolver = Mist::resolver::land_resolver(port);
@@ -340,6 +372,7 @@ async fn test_resolver_multiple_domains_batch() {
 	// Test resolving multiple domains in sequence
 
 	let port = Mist::start(15383).expect("Failed to start DNS server");
+
 	tokio::time::sleep(Duration::from_millis(200)).await;
 
 	let resolver = Mist::resolver::land_resolver(port);
@@ -357,9 +390,11 @@ async fn test_resolver_multiple_domains_batch() {
 			.lookup_ip(domain)
 			.await
 			.expect(&format!("Failed to resolve {}", domain));
+
 		let ips:Vec<_> = lookup.iter().collect();
 
 		println!("Resolved {}: {:?}", domain, ips);
+
 		assert!(!ips.is_empty(), "{} should resolve to at least one IP", domain);
 	}
 

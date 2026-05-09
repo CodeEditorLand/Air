@@ -75,8 +75,11 @@ use crate::{
 /// Add a file to the index with its metadata and symbols
 pub fn AddFileToIndex(
 	index:&mut FileIndex,
+
 	file_path:PathBuf,
+
 	metadata:FileMetadata,
+
 	symbols:Vec<SymbolInfo>,
 ) -> Result<()> {
 	// Check if file already exists and update accordingly
@@ -132,6 +135,7 @@ pub fn RemoveFilesFromIndex(index:&mut FileIndex, file_paths:&[PathBuf]) -> Resu
 	for file_path in file_paths {
 		RemoveFileFromIndex(index, file_path)?;
 	}
+
 	Ok(())
 }
 
@@ -140,7 +144,9 @@ pub fn UpdateIndexMetadata(index:&mut FileIndex) -> Result<()> {
 	use crate::Indexing::State::CreateState::{CalculateIndexChecksum, GenerateIndexVersion};
 
 	index.last_updated = chrono::Utc::now();
+
 	index.index_version = GenerateIndexVersion();
+
 	index.index_checksum = CalculateIndexChecksum(index)?;
 
 	Ok(())
@@ -156,6 +162,7 @@ pub fn UpdateFileMetadata(index:&mut FileIndex, file_path:&PathBuf, metadata:Fil
 	}
 
 	index.files.insert(file_path.clone(), metadata);
+
 	Ok(())
 }
 
@@ -227,6 +234,7 @@ pub fn CleanupOrphanedEntries(index:&mut FileIndex) -> Result<u32> {
 
 	for token in orphaned_tokens {
 		index.content_index.remove(&token);
+
 		removed_count += 1;
 	}
 
@@ -240,6 +248,7 @@ pub fn CleanupOrphanedEntries(index:&mut FileIndex) -> Result<u32> {
 
 	for symbol in orphaned_symbols {
 		index.symbol_index.remove(&symbol);
+
 		removed_count += 1;
 	}
 
@@ -254,6 +263,7 @@ pub fn MergeIndexes(target:&mut FileIndex, source:FileIndex) -> Result<u32> {
 	for (path, metadata) in source.files {
 		if !target.files.contains_key(&path) {
 			target.files.insert(path.clone(), metadata);
+
 			merged_files += 1;
 		}
 	}
@@ -331,24 +341,28 @@ pub fn GetIndexSizeEstimate(index:&FileIndex) -> usize {
 	// File metadata
 	for (path, _metadata) in &index.files {
 		size += path.as_os_str().len();
+
 		size += std::mem::size_of::<FileMetadata>();
 	}
 
 	// Content index
 	for (token, files) in &index.content_index {
 		size += token.len();
+
 		size += files.len() * std::mem::size_of::<PathBuf>();
 	}
 
 	// Symbol index
 	for (symbol, locations) in &index.symbol_index {
 		size += symbol.len();
+
 		size += locations.len() * std::mem::size_of::<SymbolLocation>();
 	}
 
 	// File symbols
 	for (path, symbols) in &index.file_symbols {
 		size += path.as_os_str().len();
+
 		size += symbols.len() * std::mem::size_of::<SymbolInfo>();
 	}
 
@@ -358,5 +372,6 @@ pub fn GetIndexSizeEstimate(index:&FileIndex) -> usize {
 /// Check if periodic update is needed based on age
 pub fn NeedsUpdate(index:&FileIndex, max_age_minutes:u64) -> bool {
 	let age_minutes = (chrono::Utc::now() - index.last_updated).num_minutes().abs() as u64;
+
 	age_minutes >= max_age_minutes
 }

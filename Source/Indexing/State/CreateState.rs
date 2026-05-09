@@ -81,12 +81,16 @@ pub const MAX_FILE_SIZE_BYTES:u64 = 100 * 1024 * 1024;
 pub struct SymbolInfo {
 	/// Symbol name (function, class, variable, etc.)
 	pub name:String,
+
 	/// Symbol kind (function, class, struct, interface, etc.)
 	pub kind:SymbolKind,
+
 	/// Line number where symbol is defined
 	pub line:u32,
+
 	/// Column number
 	pub column:u32,
+
 	/// Full qualified path
 	pub full_path:String,
 }
@@ -95,30 +99,55 @@ pub struct SymbolInfo {
 #[derive(Debug, Clone, Serialize, Deserialize, Hash, Eq, PartialEq)]
 pub enum SymbolKind {
 	File = 0,
+
 	Module = 1,
+
 	Namespace = 2,
+
 	Package = 3,
+
 	Class = 4,
+
 	Method = 5,
+
 	Property = 6,
+
 	Field = 7,
+
 	Constructor = 8,
+
 	Enum = 9,
+
 	Interface = 10,
+
 	Function = 11,
+
 	Variable = 12,
+
 	Constant = 13,
+
 	String = 14,
+
 	Number = 15,
+
 	Boolean = 16,
+
 	Array = 17,
+
 	Object = 18,
+
 	Key = 19,
+
 	Null = 20,
+
 	EnumMember = 21,
+
 	Struct = 22,
+
 	Event = 23,
+
 	Operator = 24,
+
 	TypeParameter = 25,
 }
 
@@ -127,8 +156,10 @@ pub enum SymbolKind {
 pub struct SymbolLocation {
 	/// File containing the symbol
 	pub file_path:PathBuf,
+
 	/// Line number
 	pub line:u32,
+
 	/// Symbol information
 	pub symbol:SymbolInfo,
 }
@@ -138,26 +169,37 @@ pub struct SymbolLocation {
 pub struct FileMetadata {
 	/// File path
 	pub path:PathBuf,
+
 	/// File size in bytes
 	pub size:u64,
+
 	/// Last modification timestamp
 	pub modified:chrono::DateTime<chrono::Utc>,
+
 	/// MIME type
 	pub mime_type:String,
+
 	/// Detected programming language
 	pub language:Option<String>,
+
 	/// Line count for text files
 	pub line_count:Option<u32>,
+
 	/// SHA-256 checksum for change detection
 	pub checksum:String,
+
 	/// Whether file is a symbolic link
 	pub is_symlink:bool,
+
 	/// File permissions (format: "rwxrwxrwx")
 	pub permissions:String,
+
 	/// File encoding (UTF-8, ASCII, etc.)
 	pub encoding:Option<String>,
+
 	/// Last indexed timestamp
 	pub indexed_at:chrono::DateTime<chrono::Utc>,
+
 	/// Number of symbols extracted
 	pub symbol_count:u32,
 }
@@ -167,18 +209,24 @@ pub struct FileMetadata {
 pub struct FileIndex {
 	/// Indexed files with complete metadata
 	pub files:HashMap<PathBuf, FileMetadata>,
+
 	/// Content index for fast text search
 	/// Maps words/tokens to file paths where they appear
 	pub content_index:HashMap<String, Vec<PathBuf>>,
+
 	/// Symbol index for VSCode Outline View and Go to Symbol
 	/// Maps symbol names to their definitions
 	pub symbol_index:HashMap<String, Vec<SymbolLocation>>,
+
 	/// Reverse symbol index for cross-referencing
 	pub file_symbols:HashMap<PathBuf, Vec<SymbolInfo>>,
+
 	/// Last update timestamp for all indexes
 	pub last_updated:chrono::DateTime<chrono::Utc>,
+
 	/// Index version for corruption detection
 	pub index_version:String,
+
 	/// Index checksum for integrity verification
 	pub index_checksum:String,
 }
@@ -187,11 +235,17 @@ pub struct FileIndex {
 pub fn CreateNewIndex() -> FileIndex {
 	FileIndex {
 		files:HashMap::new(),
+
 		content_index:HashMap::new(),
+
 		symbol_index:HashMap::new(),
+
 		file_symbols:HashMap::new(),
+
 		last_updated:chrono::Utc::now(),
+
 		index_version:GenerateIndexVersion(),
+
 		index_checksum:String::new(),
 	}
 }
@@ -210,7 +264,9 @@ pub fn CalculateIndexChecksum(index:&FileIndex) -> Result<String> {
 	);
 
 	let mut hasher = Sha256::new();
+
 	hasher.update(checksum_input.as_bytes());
+
 	// sha2 0.11: digest output is `hybrid_array::Array` which has no
 	// `LowerHex` impl; `hex::encode` is the 1:1 replacement.
 	Ok(hex::encode(hasher.finalize()))
@@ -219,29 +275,50 @@ pub fn CalculateIndexChecksum(index:&FileIndex) -> Result<String> {
 /// Create file metadata from raw information
 pub fn CreateFileMetadata(
 	path:PathBuf,
+
 	size:u64,
+
 	modified:chrono::DateTime<chrono::Utc>,
+
 	mime_type:String,
+
 	language:Option<String>,
+
 	line_count:Option<u32>,
+
 	checksum:String,
+
 	is_symlink:bool,
+
 	permissions:String,
+
 	encoding:Option<String>,
+
 	symbol_count:u32,
 ) -> FileMetadata {
 	FileMetadata {
 		path,
+
 		size,
+
 		modified,
+
 		mime_type,
+
 		language,
+
 		line_count,
+
 		checksum,
+
 		is_symlink,
+
 		permissions,
+
 		encoding,
+
 		indexed_at:chrono::Utc::now(),
+
 		symbol_count,
 	}
 }
@@ -260,21 +337,32 @@ pub fn CreateSymbolLocation(file_path:PathBuf, line:u32, symbol:SymbolInfo) -> S
 #[cfg(unix)]
 pub fn GetPermissionsString(metadata:&std::fs::Metadata) -> String {
 	let mode = metadata.permissions().mode();
+
 	let mut perms = String::new();
+
 	// Read permission
 	perms.push(if mode & 0o400 != 0 { 'r' } else { '-' });
+
 	// Write permission
 	perms.push(if mode & 0o200 != 0 { 'w' } else { '-' });
+
 	// Execute permission
 	perms.push(if mode & 0o100 != 0 { 'x' } else { '-' });
+
 	// Group permissions
 	perms.push(if mode & 0o040 != 0 { 'r' } else { '-' });
+
 	perms.push(if mode & 0o020 != 0 { 'w' } else { '-' });
+
 	perms.push(if mode & 0o010 != 0 { 'x' } else { '-' });
+
 	// Other permissions
 	perms.push(if mode & 0o004 != 0 { 'r' } else { '-' });
+
 	perms.push(if mode & 0o002 != 0 { 'w' } else { '-' });
+
 	perms.push(if mode & 0o001 != 0 { 'x' } else { '-' });
+
 	perms
 }
 
@@ -290,12 +378,14 @@ pub fn ValidateFileSize(size:u64) -> Result<()> {
 			size, MAX_FILE_SIZE_BYTES
 		)));
 	}
+
 	Ok(())
 }
 
 /// Check if index size is within sane limits
 pub fn ValidateIndexSize(index:&FileIndex) -> Result<()> {
 	const MAX_INDEXED_FILES:usize = 1_000_000;
+
 	const MAX_SYMBOLS:usize = 10_000_000;
 
 	if index.files.len() > MAX_INDEXED_FILES {
@@ -307,6 +397,7 @@ pub fn ValidateIndexSize(index:&FileIndex) -> Result<()> {
 	}
 
 	let total_symbols:usize = index.file_symbols.values().map(|v| v.len()).sum();
+
 	if total_symbols > MAX_SYMBOLS {
 		return Err(AirError::Internal(format!(
 			"Index exceeds maximum symbol count: {} > {}",

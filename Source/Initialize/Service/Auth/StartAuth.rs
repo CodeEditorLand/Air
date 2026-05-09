@@ -58,7 +58,9 @@
 /// - Errors are fatal to boot as auth is critical
 
 use std::sync::Arc;
+
 use std::time::Duration;
+
 use crate::dev_log;
 
 use AirLibrary::{
@@ -103,21 +105,30 @@ use AirLibrary::{
 pub async fn StartAuth(
     app_state: Arc<ApplicationState>,
 ) -> Result<Arc<AuthenticationService>, String> {
+
     dev_log!("lifecycle", "[Auth] Starting authentication service...");    
+
     // Initialize auth service with timeout
     let auth_result = tokio::time::timeout(
         Duration::from_secs(10),
+
         AuthenticationService::new(app_state.clone())
     ).await;
     
     match auth_result {
+
         Ok(Ok(service)) => {
+
             dev_log!("lifecycle", "[Auth] Authentication service initialized successfully");            Ok(Arc::new(service))
         }
+
         Ok(Err(e)) => {
+
             dev_log!("lifecycle", "error: [Auth] Failed to initialize authentication service: {}", e);            Err(format!("Authentication service initialization failed: {}", e))
         }
+
         Err(_) => {
+
             dev_log!("lifecycle", "error: [Auth] Authentication service initialization timed out");            Err("Authentication service initialization timed out".to_string())
         }
     }
@@ -125,11 +136,13 @@ pub async fn StartAuth(
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
     
     #[test]
     #[ignore] // Requires actual app state
     async fn test_start_auth() {
+
         // This test requires proper application state setup
         // and is ignored for automated test runs.
     }

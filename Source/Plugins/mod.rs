@@ -99,13 +99,21 @@ use crate::{AirError, Result, dev_log};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginMetadata {
 	pub id:String,
+
 	pub name:String,
+
 	pub version:String,
+
 	pub description:String,
+
 	pub author:String,
+
 	pub MinAirVersion:String,
+
 	pub MaxAirVersion:Option<String>,
+
 	pub dependencies:Vec<PluginDependency>,
+
 	pub capabilities:Vec<String>,
 }
 
@@ -113,8 +121,11 @@ pub struct PluginMetadata {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginDependency {
 	pub PluginId:String,
+
 	pub MinVersion:String,
+
 	pub MaxVersion:Option<String>,
+
 	pub optional:bool,
 }
 
@@ -122,7 +133,9 @@ pub struct PluginDependency {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginCapability {
 	pub name:String,
+
 	pub description:String,
+
 	pub RequiredPermissions:Vec<String>,
 }
 
@@ -131,12 +144,16 @@ pub struct PluginCapability {
 pub enum PluginPermission {
 	/// Access filesystem
 	Filesystem { read:bool, write:bool, paths:Vec<String> },
+
 	/// Access network
 	Network { outbound:bool, inbound:bool, hosts:Vec<String> },
+
 	/// Access system resources
 	System { cpu:bool, memory:bool },
+
 	/// Access other plugins
 	InterPlugin { plugins:Vec<String>, actions:Vec<String> },
+
 	/// Custom permission
 	Custom(String),
 }
@@ -145,11 +162,17 @@ pub enum PluginPermission {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginSandboxConfig {
 	pub enabled:bool,
+
 	pub MaxMemoryMb:Option<u64>,
+
 	pub MaxCPUPercent:Option<f64>,
+
 	pub NetworkAllowed:bool,
+
 	pub FilesystemAllowed:bool,
+
 	pub AllowedPaths:Vec<String>,
+
 	pub TimeoutSecs:Option<u64>,
 }
 
@@ -157,11 +180,17 @@ impl Default for PluginSandboxConfig {
 	fn default() -> Self {
 		Self {
 			enabled:true,
+
 			MaxMemoryMb:Some(128),
+
 			MaxCPUPercent:Some(10.0),
+
 			NetworkAllowed:false,
+
 			FilesystemAllowed:false,
+
 			AllowedPaths:vec![],
+
 			TimeoutSecs:Some(30),
 		}
 	}
@@ -171,7 +200,9 @@ impl Default for PluginSandboxConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PluginValidationResult {
 	Valid,
+
 	Invalid(String),
+
 	Warning(String),
 }
 
@@ -225,10 +256,15 @@ pub trait Plugin: PluginHooks + Send + Sync {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginMessage {
 	pub id:String,
+
 	pub from:String,
+
 	pub to:String,
+
 	pub action:String,
+
 	pub data:serde_json::Value,
+
 	pub timestamp:DateTime<Utc>,
 }
 
@@ -243,18 +279,23 @@ impl PluginMessage {
 		if self.id.is_empty() {
 			return Err(crate::AirError::Plugin("Message ID cannot be empty".to_string()));
 		}
+
 		if self.from.is_empty() {
 			return Err(crate::AirError::Plugin("Message sender cannot be empty".to_string()));
 		}
+
 		if self.to.is_empty() {
 			return Err(crate::AirError::Plugin("Message recipient cannot be empty".to_string()));
 		}
+
 		if self.action.is_empty() {
 			return Err(crate::AirError::Plugin("Message action cannot be empty".to_string()));
 		}
+
 		if self.action.len() > 100 {
 			return Err(crate::AirError::Plugin("Message action too long".to_string()));
 		}
+
 		Ok(())
 	}
 }
@@ -268,14 +309,19 @@ impl PluginMessage {
 pub enum PluginState {
 	#[serde(rename = "unloaded")]
 	Unloaded,
+
 	#[serde(rename = "loaded")]
 	Loaded,
+
 	#[serde(rename = "starting")]
 	Starting,
+
 	#[serde(rename = "running")]
 	Running,
+
 	#[serde(rename = "stopping")]
 	Stopping,
+
 	#[serde(rename = "error")]
 	Error,
 }
@@ -283,21 +329,31 @@ pub enum PluginState {
 /// Plugin registry entry
 pub struct PluginRegistry {
 	pub plugin:Arc<Box<dyn Plugin>>,
+
 	pub state:PluginState,
+
 	pub StartedAt:Option<DateTime<Utc>>,
+
 	pub LoadedAt:Option<DateTime<Utc>>,
+
 	pub error:Option<String>,
+
 	pub sandbox:PluginSandboxConfig,
 }
 
 /// Main plugin manager
 pub struct PluginManager {
 	plugins:Arc<RwLock<HashMap<String, PluginRegistry>>>,
+
 	#[allow(dead_code)]
 	MessageQueue:Arc<RwLock<Vec<PluginMessage>>>,
+
 	AirVersion:String,
+
 	EnableSandbox:bool,
+
 	StartupTimeout:Duration,
+
 	OperationTimeout:Duration,
 }
 
@@ -306,10 +362,15 @@ impl PluginManager {
 	pub fn new(AirVersion:String) -> Self {
 		Self {
 			plugins:Arc::new(RwLock::new(HashMap::new())),
+
 			MessageQueue:Arc::new(RwLock::new(Vec::new())),
+
 			AirVersion,
+
 			EnableSandbox:true,
+
 			StartupTimeout:Duration::from_secs(30),
+
 			OperationTimeout:Duration::from_secs(60),
 		}
 	}
@@ -317,16 +378,24 @@ impl PluginManager {
 	/// Create a new plugin manager with custom configuration
 	pub fn with_config(
 		AirVersion:String,
+
 		EnableSandbox:bool,
+
 		StartupTimeoutSecs:u64,
+
 		OperationTimeoutSecs:u64,
 	) -> Self {
 		Self {
 			plugins:Arc::new(RwLock::new(HashMap::new())),
+
 			MessageQueue:Arc::new(RwLock::new(Vec::new())),
+
 			AirVersion,
+
 			EnableSandbox,
+
 			StartupTimeout:Duration::from_secs(StartupTimeoutSecs),
+
 			OperationTimeout:Duration::from_secs(OperationTimeoutSecs),
 		}
 	}
@@ -341,6 +410,7 @@ impl PluginManager {
 		// In production, this would scan the directory for plugin manifests
 		// For now, we return an empty list
 		dev_log!("extensions", "[PluginManager] Discovering plugins in directory: {}", directory);
+
 		Ok(Discovered)
 	}
 
@@ -349,6 +419,7 @@ impl PluginManager {
 		// In production, this would load and parse a plugin manifest
 		// For now, we return a mock plugin ID
 		dev_log!("extensions", "[PluginManager] Loading plugin from manifest: {}", path);
+
 		Ok("loaded_plugin".to_string())
 	}
 
@@ -362,6 +433,7 @@ impl PluginManager {
 			metadata.name,
 			metadata.version
 		);
+
 		// Validate plugin metadata
 		self.ValidatePluginMetadata(metadata)?;
 
@@ -403,6 +475,7 @@ impl PluginManager {
 
 		// Register in map
 		let mut plugins = self.plugins.write().await;
+
 		plugins.insert(
 			metadata.id.clone(),
 			PluginRegistry {
@@ -416,6 +489,7 @@ impl PluginManager {
 		);
 
 		dev_log!("extensions", "[PluginManager] Plugin registered: {}", metadata.name);
+
 		Ok(())
 	}
 
@@ -424,21 +498,27 @@ impl PluginManager {
 		if metadata.id.is_empty() {
 			return Err(crate::AirError::Plugin("Plugin ID cannot be empty".to_string()));
 		}
+
 		if metadata.id.len() > 100 {
 			return Err(crate::AirError::Plugin("Plugin ID too long (max 100 characters)".to_string()));
 		}
+
 		if !metadata.id.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
 			return Err(crate::AirError::Plugin("Plugin ID contains invalid characters".to_string()));
 		}
+
 		if metadata.name.is_empty() {
 			return Err(crate::AirError::Plugin("Plugin name cannot be empty".to_string()));
 		}
+
 		if metadata.version.is_empty() {
 			return Err(crate::AirError::Plugin("Plugin version cannot be empty".to_string()));
 		}
+
 		if metadata.author.is_empty() {
 			return Err(crate::AirError::Plugin("Plugin author cannot be empty".to_string()));
 		}
+
 		Ok(())
 	}
 
@@ -456,6 +536,7 @@ impl PluginManager {
 						plugin.metadata().id
 					);
 				},
+
 				PluginPermission::Network { .. } => {
 					dev_log!(
 						"extensions",
@@ -463,6 +544,7 @@ impl PluginManager {
 						plugin.metadata().id
 					);
 				},
+
 				_ => {},
 			}
 		}
@@ -509,6 +591,7 @@ impl PluginManager {
 					.ok_or_else(|| AirError::Plugin(format!("Required dependency not found: {}", dep.PluginId)))?;
 
 				let DepVersion = &DepPlugin.plugin.metadata().version;
+
 				if !self.version_satisfies(DepVersion, &dep.MinVersion) {
 					return Err(AirError::Plugin(format!(
 						"Dependency {} version {} does not satisfy requirement {}",
@@ -531,12 +614,14 @@ impl PluginManager {
 	/// Start a plugin
 	pub async fn start(&self, PluginId:&str) -> Result<()> {
 		let mut plugins = self.plugins.write().await;
+
 		let registry = plugins
 			.get_mut(PluginId)
 			.ok_or_else(|| AirError::Plugin(format!("Plugin not found: {}", PluginId)))?;
 
 		if registry.state == PluginState::Running {
 			dev_log!("extensions", "[PluginManager] Plugin {} already running", PluginId);
+
 			return Ok(());
 		}
 
@@ -548,6 +633,7 @@ impl PluginManager {
 		}
 
 		let plugin = registry.plugin.clone();
+
 		drop(plugins);
 
 		let StartResult = tokio::time::timeout(self.StartupTimeout, plugin.on_start()).await;
@@ -555,30 +641,45 @@ impl PluginManager {
 		match StartResult {
 			Ok(Ok(())) => {
 				let mut plugins = self.plugins.write().await;
+
 				if let Some(registry) = plugins.get_mut(PluginId) {
 					registry.state = PluginState::Running;
+
 					registry.StartedAt = Some(Utc::now());
+
 					registry.error = None;
 				}
+
 				dev_log!("extensions", "[PluginManager] Plugin started: {}", PluginId);
+
 				Ok(())
 			},
+
 			Ok(Err(e)) => {
 				let mut plugins = self.plugins.write().await;
+
 				if let Some(registry) = plugins.get_mut(PluginId) {
 					registry.state = PluginState::Error;
+
 					registry.error = Some(e.to_string());
 				}
+
 				dev_log!("extensions", "error: [PluginManager] Plugin start failed: {}: {}", PluginId, e);
+
 				Err(e)
 			},
+
 			Err(_) => {
 				let mut plugins = self.plugins.write().await;
+
 				if let Some(registry) = plugins.get_mut(PluginId) {
 					registry.state = PluginState::Error;
+
 					registry.error = Some(format!("Startup timeout after {:?}", self.StartupTimeout));
 				}
+
 				dev_log!("extensions", "error: [PluginManager] Plugin start timeout: {}", PluginId);
+
 				Err(AirError::Plugin(format!("Plugin {} startup timeout", PluginId)))
 			},
 		}
@@ -587,17 +688,21 @@ impl PluginManager {
 	/// Stop a plugin
 	pub async fn stop(&self, PluginId:&str) -> Result<()> {
 		let mut plugins = self.plugins.write().await;
+
 		let registry = plugins
 			.get_mut(PluginId)
 			.ok_or_else(|| AirError::Plugin(format!("Plugin not found: {}", PluginId)))?;
 
 		if registry.state != PluginState::Running {
 			dev_log!("extensions", "[PluginManager] Plugin {} not running", PluginId);
+
 			return Ok(());
 		}
 
 		registry.state = PluginState::Stopping;
+
 		let plugin = registry.plugin.clone();
+
 		drop(plugins);
 
 		let StopResult = tokio::time::timeout(self.OperationTimeout, plugin.on_stop()).await;
@@ -605,29 +710,43 @@ impl PluginManager {
 		match StopResult {
 			Ok(Ok(())) => {
 				let mut plugins = self.plugins.write().await;
+
 				if let Some(registry) = plugins.get_mut(PluginId) {
 					registry.state = PluginState::Loaded;
+
 					registry.StartedAt = None;
 				}
+
 				dev_log!("extensions", "[PluginManager] Plugin stopped: {}", PluginId);
+
 				Ok(())
 			},
+
 			Ok(Err(e)) => {
 				let mut plugins = self.plugins.write().await;
+
 				if let Some(registry) = plugins.get_mut(PluginId) {
 					registry.state = PluginState::Error;
+
 					registry.error = Some(e.to_string());
 				}
+
 				dev_log!("extensions", "error: [PluginManager] Plugin stop failed: {}: {}", PluginId, e);
+
 				Err(e)
 			},
+
 			Err(_) => {
 				let mut plugins = self.plugins.write().await;
+
 				if let Some(registry) = plugins.get_mut(PluginId) {
 					registry.state = PluginState::Error;
+
 					registry.error = Some(format!("Stop timeout after {:?}", self.OperationTimeout));
 				}
+
 				dev_log!("extensions", "error: [PluginManager] Plugin stop timeout: {}", PluginId);
+
 				Err(AirError::Plugin(format!("Plugin {} stop timeout", PluginId)))
 			},
 		}
@@ -638,6 +757,7 @@ impl PluginManager {
 		let PluginIds:Vec<String> = self.plugins.read().await.keys().cloned().collect();
 
 		dev_log!("extensions", "[PluginManager] Starting {} plugins", PluginIds.len());
+
 		for PluginId in PluginIds {
 			if let Err(e) = self.start(&PluginId).await {
 				dev_log!("extensions", "warn: [PluginManager] Failed to start plugin {}: {}", PluginId, e);
@@ -652,6 +772,7 @@ impl PluginManager {
 		let PluginIds:Vec<String> = self.plugins.read().await.keys().cloned().collect();
 
 		dev_log!("extensions", "[PluginManager] Stopping {} plugins", PluginIds.len());
+
 		// Stop in reverse order to respect dependencies
 		for plugin_id in PluginIds.into_iter().rev() {
 			if let Err(e) = self.stop(&plugin_id).await {
@@ -665,16 +786,19 @@ impl PluginManager {
 	/// Load a plugin
 	pub async fn load(&self, plugin_id:&str) -> Result<()> {
 		let mut plugins = self.plugins.write().await;
+
 		let registry = plugins
 			.get_mut(plugin_id)
 			.ok_or_else(|| AirError::Plugin(format!("Plugin not found: {}", plugin_id)))?;
 
 		if registry.state != PluginState::Unloaded {
 			dev_log!("extensions", "[PluginManager] Plugin {} already loaded", plugin_id);
+
 			return Ok(());
 		}
 
 		let plugin = registry.plugin.clone();
+
 		drop(plugins);
 
 		let LoadResult = tokio::time::timeout(self.StartupTimeout, plugin.on_load()).await;
@@ -682,30 +806,45 @@ impl PluginManager {
 		match LoadResult {
 			Ok(Ok(())) => {
 				let mut plugins = self.plugins.write().await;
+
 				if let Some(registry) = plugins.get_mut(plugin_id) {
 					registry.state = PluginState::Loaded;
+
 					registry.LoadedAt = Some(Utc::now());
+
 					registry.error = None;
 				}
+
 				dev_log!("extensions", "[PluginManager] Plugin loaded: {}", plugin_id);
+
 				Ok(())
 			},
+
 			Ok(Err(e)) => {
 				let mut plugins = self.plugins.write().await;
+
 				if let Some(registry) = plugins.get_mut(plugin_id) {
 					registry.state = PluginState::Error;
+
 					registry.error = Some(e.to_string());
 				}
+
 				dev_log!("extensions", "error: [PluginManager] Plugin load failed: {}: {}", plugin_id, e);
+
 				Err(e)
 			},
+
 			Err(_) => {
 				let mut plugins = self.plugins.write().await;
+
 				if let Some(registry) = plugins.get_mut(plugin_id) {
 					registry.state = PluginState::Error;
+
 					registry.error = Some(format!("Load timeout after {:?}", self.StartupTimeout));
 				}
+
 				dev_log!("extensions", "error: [PluginManager] Plugin load timeout: {}", plugin_id);
+
 				Err(AirError::Plugin(format!("Plugin {} load timeout", plugin_id)))
 			},
 		}
@@ -717,11 +856,13 @@ impl PluginManager {
 		self.stop(plugin_id).await?;
 
 		let mut plugins = self.plugins.write().await;
+
 		let registry = plugins
 			.get(plugin_id)
 			.ok_or_else(|| AirError::Plugin(format!("Plugin not found: {}", plugin_id)))?;
 
 		let plugin = registry.plugin.clone();
+
 		plugins.remove(plugin_id);
 
 		let UnloadResult = tokio::time::timeout(self.OperationTimeout, plugin.on_unload()).await;
@@ -729,16 +870,21 @@ impl PluginManager {
 		match UnloadResult {
 			Ok(Ok(())) => {
 				dev_log!("extensions", "[PluginManager] Plugin unloaded: {}", plugin_id);
+
 				Ok(())
 			},
+
 			Ok(Err(e)) => {
 				// Plugin is removed from registry even if unload fails
 				dev_log!("extensions", "error: [PluginManager] Plugin unload error: {}: {}", plugin_id, e);
+
 				Err(e)
 			},
+
 			Err(_) => {
 				// Plugin is removed from registry even if timeout occurs
 				dev_log!("extensions", "warn: [PluginManager] Plugin unload timeout: {}", plugin_id);
+
 				Err(AirError::Plugin(format!("Plugin {} unload timeout", plugin_id)))
 			},
 		}
@@ -775,6 +921,7 @@ impl PluginManager {
 		}
 
 		let plugin = target.plugin.clone();
+
 		drop(plugins);
 
 		// Send message with timeout
@@ -786,8 +933,11 @@ impl PluginManager {
 	/// Check inter-plugin communication permission
 	fn check_inter_plugin_permission(
 		&self,
+
 		_sender:&PluginRegistry,
+
 		_target:&PluginRegistry,
+
 		_message:&PluginMessage,
 	) -> bool {
 		// In production, this would check if sender has permission to communicate with
@@ -798,10 +948,12 @@ impl PluginManager {
 	/// Get plugin list with details
 	pub async fn list_plugins(&self) -> Result<Vec<PluginInfo>> {
 		let plugins = self.plugins.read().await;
+
 		let mut result = Vec::new();
 
 		for (id, registry) in plugins.iter() {
 			let metadata = registry.plugin.metadata().clone();
+
 			result.push(PluginInfo {
 				id:id.clone(),
 				metadata,
@@ -817,6 +969,7 @@ impl PluginManager {
 	/// Get plugin state
 	pub async fn get_plugin_state(&self, plugin_id:&str) -> Result<serde_json::Value> {
 		let plugins = self.plugins.read().await;
+
 		let registry = plugins
 			.get(plugin_id)
 			.ok_or_else(|| AirError::Plugin(format!("Plugin not found: {}", plugin_id)))?;
@@ -827,6 +980,7 @@ impl PluginManager {
 	/// Get plugin permissions
 	pub async fn get_plugin_permissions(&self, plugin_id:&str) -> Result<Vec<PluginPermission>> {
 		let plugins = self.plugins.read().await;
+
 		let registry = plugins
 			.get(plugin_id)
 			.ok_or_else(|| AirError::Plugin(format!("Plugin not found: {}", plugin_id)))?;
@@ -837,10 +991,12 @@ impl PluginManager {
 	/// Validate all plugins
 	pub async fn validate_all_plugins(&self) -> Vec<(String, PluginValidationResult)> {
 		let plugins = self.plugins.read().await;
+
 		let mut results = vec![];
 
 		for (id, registry) in plugins.iter() {
 			let result = self.validate_plugin(registry.plugin.as_ref().as_ref());
+
 			results.push((id.clone(), result));
 		}
 
@@ -867,11 +1023,14 @@ impl PluginManager {
 	/// Get dependency graph
 	pub async fn get_dependency_graph(&self) -> Result<serde_json::Value> {
 		let plugins = self.plugins.read().await;
+
 		let mut graph = serde_json::Map::new();
 
 		for (id, registry) in plugins.iter() {
 			let metadata = registry.plugin.metadata();
+
 			let dependencies:Vec<String> = metadata.dependencies.iter().map(|d| d.PluginId.clone()).collect();
+
 			graph.insert(id.clone(), serde_json::json!(dependencies));
 		}
 
@@ -884,6 +1043,7 @@ impl PluginManager {
 
 		// Topological sort based on dependencies
 		let mut visited = std::collections::HashSet::new();
+
 		let mut order = vec![];
 
 		for plugin_id in plugins.keys() {
@@ -896,9 +1056,13 @@ impl PluginManager {
 	/// Visit plugin for load order (helper function)
 	fn VisitPluginForLoadOrder(
 		&self,
+
 		plugin_id:&str,
+
 		visited:&mut std::collections::HashSet<String>,
+
 		order:&mut Vec<String>,
+
 		plugins:&HashMap<String, PluginRegistry>,
 	) -> Result<()> {
 		if visited.contains(plugin_id) {
@@ -909,6 +1073,7 @@ impl PluginManager {
 
 		if let Some(registry) = plugins.get(plugin_id) {
 			let metadata = registry.plugin.metadata();
+
 			for dep in &metadata.dependencies {
 				if !dep.optional {
 					self.VisitPluginForLoadOrder(&dep.PluginId, visited, order, plugins)?;
@@ -917,12 +1082,14 @@ impl PluginManager {
 		}
 
 		order.push(plugin_id.to_string());
+
 		Ok(())
 	}
 
 	/// Simple version satisfaction check (X.Y.Z format)
 	fn version_satisfies(&self, actual:&str, required:&str) -> bool {
 		let ActualParts:Vec<&str> = actual.split('.').collect();
+
 		let RequiredParts:Vec<&str> = required.split('.').collect();
 
 		for (i, required_part) in RequiredParts.iter().enumerate() {
@@ -943,9 +1110,13 @@ impl PluginManager {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginInfo {
 	pub id:String,
+
 	pub metadata:PluginMetadata,
+
 	pub state:PluginState,
+
 	pub UptimeSecs:u64,
+
 	pub error:Option<String>,
 }
 
@@ -958,16 +1129,22 @@ pub struct PluginInfo {
 pub enum PluginEvent {
 	/// Plugin was loaded
 	Loaded { plugin_id:String },
+
 	/// Plugin was started
 	Started { plugin_id:String },
+
 	/// Plugin was stopped
 	Stopped { plugin_id:String },
+
 	/// Plugin was unloaded
 	Unloaded { plugin_id:String },
+
 	/// Plugin encountered an error
 	Error { plugin_id:String, error:String },
+
 	/// Plugin sent a message
 	Message { from:String, to:String, action:String },
+
 	/// Configuration changed
 	ConfigChanged { old:serde_json::Value, new:serde_json::Value },
 }
@@ -991,12 +1168,14 @@ impl PluginEventBus {
 	/// Register an event handler
 	pub async fn register_handler(&self, handler:Box<dyn PluginEventHandler>) {
 		let mut handlers = self.handlers.write().await;
+
 		handlers.push(handler);
 	}
 
 	/// Emit an event to all handlers
 	pub async fn emit(&self, event:PluginEvent) {
 		let handlers = self.handlers.read().await;
+
 		for handler in handlers.iter() {
 			if let Err(e) = handler.Event(&event).await {
 				dev_log!("extensions", "error: [PluginEventBus] Event handler error: {}", e);
@@ -1017,8 +1196,11 @@ impl Default for PluginEventBus {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginDiscoveryResult {
 	pub plugin_id:String,
+
 	pub ManifestPath:String,
+
 	pub metadata:PluginMetadata,
+
 	pub enabled:bool,
 }
 
@@ -1026,7 +1208,9 @@ pub struct PluginDiscoveryResult {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginManifest {
 	pub plugin:PluginMetadata,
+
 	pub main:String,
+
 	pub sandbox:Option<PluginSandboxConfig>,
 }
 
@@ -1058,6 +1242,7 @@ impl PluginLoader {
 				Ok(mut discovered) => {
 					results.append(&mut discovered);
 				},
+
 				Err(e) => {
 					dev_log!(
 						"extensions",
@@ -1079,6 +1264,7 @@ impl PluginLoader {
 		// In production, this would scan the directory for plugin manifests
 		// For now, we return an empty list
 		dev_log!("extensions", "[PluginLoader] Discovering plugins in: {}", path);
+
 		Ok(Results)
 	}
 
@@ -1105,8 +1291,11 @@ impl Default for PluginLoader {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ApiVersion {
 	pub major:u32,
+
 	pub minor:u32,
+
 	pub patch:u32,
+
 	pub PreRelease:Option<String>,
 }
 
@@ -1117,6 +1306,7 @@ impl ApiVersion {
 	/// Parse version from string
 	pub fn parse(version:&str) -> Result<Self> {
 		let parts:Vec<&str> = version.split('.').collect();
+
 		if parts.len() < 3 {
 			return Err(crate::AirError::Plugin("Invalid version format".to_string()));
 		}
@@ -1154,6 +1344,7 @@ impl ApiVersion {
 /// API version manager
 pub struct ApiVersionManager {
 	CurrentVersion:ApiVersion,
+
 	CompatibleVersions:Vec<ApiVersion>,
 }
 
@@ -1161,6 +1352,7 @@ impl ApiVersionManager {
 	/// Create a new API version manager
 	pub fn new() -> Self {
 		let current = ApiVersion::current();
+
 		Self { CurrentVersion:current.clone(), CompatibleVersions:vec![current] }
 	}
 
@@ -1198,25 +1390,30 @@ impl PluginSandboxManager {
 	/// Create a sandbox for a plugin
 	pub async fn create_sandbox(&self, plugin_id:String, config:PluginSandboxConfig) -> Result<()> {
 		let mut sandboxes = self.sandboxes.write().await;
+
 		sandboxes.insert(plugin_id, config);
+
 		Ok(())
 	}
 
 	/// Get sandbox configuration
 	pub async fn get_sandbox(&self, plugin_id:&str) -> Option<PluginSandboxConfig> {
 		let sandboxes = self.sandboxes.read().await;
+
 		sandboxes.get(plugin_id).cloned()
 	}
 
 	/// Remove a sandbox
 	pub async fn remove_sandbox(&self, plugin_id:&str) {
 		let mut sandboxes = self.sandboxes.write().await;
+
 		sandboxes.remove(plugin_id);
 	}
 
 	/// Check if a plugin is running in a sandbox
 	pub async fn is_sandboxed(&self, plugin_id:&str) -> bool {
 		let sandboxes = self.sandboxes.read().await;
+
 		sandboxes.get(plugin_id).map_or(false, |s| s.enabled)
 	}
 }
@@ -1227,6 +1424,7 @@ impl Default for PluginSandboxManager {
 
 #[cfg(test)]
 mod tests {
+
 	use super::*;
 
 	struct TestPlugin;
@@ -1257,44 +1455,55 @@ mod tests {
 	#[tokio::test]
 	async fn test_plugin_manager_creation() {
 		let manager = PluginManager::new("0.1.0".to_string());
+
 		let plugins = manager.list_plugins().await.unwrap();
+
 		assert!(plugins.is_empty());
 	}
 
 	#[tokio::test]
 	async fn test_plugin_registration() {
 		let manager = PluginManager::new("0.1.0".to_string());
+
 		let plugin = Arc::new(Box::new(TestPlugin) as Box<dyn Plugin>);
 
 		let result = manager.register(plugin.clone()).await;
+
 		assert!(result.is_ok());
 
 		let plugins = manager.list_plugins().await.unwrap();
+
 		assert_eq!(plugins.len(), 1);
+
 		assert_eq!(plugins[0].id, "test");
 	}
 
 	#[tokio::test]
 	async fn test_plugin_lifecycle() {
 		let manager = PluginManager::new("0.1.0".to_string());
+
 		let plugin = Arc::new(Box::new(TestPlugin) as Box<dyn Plugin>);
 
 		manager.register(plugin.clone()).await.unwrap();
 
 		// Start the plugin
 		let result = manager.start("test").await;
+
 		assert!(result.is_ok());
 
 		// Check state
 		let plugins = manager.list_plugins().await.unwrap();
+
 		assert_eq!(plugins[0].state, PluginState::Running);
 
 		// Stop the plugin
 		let result = manager.stop("test").await;
+
 		assert!(result.is_ok());
 
 		// Check state
 		let plugins = manager.list_plugins().await.unwrap();
+
 		assert_eq!(plugins[0].state, PluginState::Loaded);
 	}
 
@@ -1303,8 +1512,11 @@ mod tests {
 		let manager = PluginManager::new("1.0.0".to_string());
 
 		assert!(manager.version_satisfies("1.0.0", "0.1.0"));
+
 		assert!(manager.version_satisfies("1.2.0", "1.0.0"));
+
 		assert!(manager.version_satisfies("1.0.5", "1.0.0"));
+
 		assert!(!manager.version_satisfies("0.9.0", "1.0.0"));
 	}
 
@@ -1323,19 +1535,26 @@ mod tests {
 	#[tokio::test]
 	async fn test_api_version_compatibility() {
 		let v1 = ApiVersion { major:1, minor:0, patch:0, PreRelease:None };
+
 		let v2 = ApiVersion { major:1, minor:1, patch:0, PreRelease:None };
+
 		let v3 = ApiVersion { major:2, minor:0, patch:0, PreRelease:None };
 
 		assert!(v1.IsCompatible(&v2));
+
 		assert!(!v1.IsCompatible(&v3));
 	}
 
 	#[tokio::test]
 	async fn test_sandbox_config_default() {
 		let config = PluginSandboxConfig::default();
+
 		assert!(config.enabled);
+
 		assert_eq!(config.MaxMemoryMb, Some(128));
+
 		assert!(!config.NetworkAllowed);
+
 		assert!(!config.FilesystemAllowed);
 	}
 
@@ -1345,14 +1564,20 @@ mod tests {
 
 		// Directly reference TestPlugin to avoid trait bound issues
 		let result = manager.validate_plugin(&TestPlugin);
+
 		assert!(matches!(result, PluginValidationResult::Valid));
 
 		// Verify the TestPlugin metadata can be accessed
 		let metadata = test_metadata();
+
 		assert_eq!(metadata.id, "test");
+
 		assert_eq!(metadata.name, "Test Plugin");
+
 		assert_eq!(metadata.version, "1.0.0");
+
 		assert_eq!(metadata.author, "Test");
+
 		assert_eq!(metadata.description, "A test plugin");
 	}
 }

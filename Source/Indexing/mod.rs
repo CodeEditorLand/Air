@@ -64,11 +64,17 @@
 
 // Modules - file-based (no inline definitions)
 pub mod State;
+
 pub mod Scan;
+
 pub mod Process;
+
 pub mod Language;
+
 pub mod Store;
+
 pub mod Watch;
+
 pub mod Background;
 
 // Import types and functions needed for the FileIndexer implementation
@@ -106,12 +112,16 @@ const MAX_PARALLEL_INDEXING:usize = 10;
 pub struct IndexResult {
 	/// Number of files successfully indexed
 	pub files_indexed:u32,
+
 	/// Total size of indexed files in bytes
 	pub total_size:u64,
+
 	/// Time taken in seconds
 	pub duration_seconds:f64,
+
 	/// Number of symbols extracted
 	pub symbols_extracted:u32,
+
 	/// Number of files with errors
 	pub files_with_errors:u32,
 }
@@ -120,10 +130,15 @@ pub struct IndexResult {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct IndexStatistics {
 	pub file_count:u32,
+
 	pub total_size:u64,
+
 	pub total_symbols:u32,
+
 	pub language_counts:HashMap<String, u32>,
+
 	pub last_updated:chrono::DateTime<chrono::Utc>,
+
 	pub index_version:String,
 }
 
@@ -178,10 +193,15 @@ impl FileIndexer {
 
 		let indexer = Self {
 			AppState:AppState.clone(),
+
 			file_index:Arc::new(RwLock::new(file_index)),
+
 			index_directory:index_directory.clone(),
+
 			file_watcher:Arc::new(Mutex::new(None)),
+
 			indexing_semaphore:Arc::new(tokio::sync::Semaphore::new(MAX_PARALLEL_INDEXING)),
+
 			corruption_detected:Arc::new(Mutex::new(false)),
 		};
 
@@ -200,6 +220,7 @@ impl FileIndexer {
 			"[FileIndexer] Initialized with index directory: {}",
 			index_directory.display()
 		);
+
 		Ok(indexer)
 	}
 
@@ -209,6 +230,7 @@ impl FileIndexer {
 
 		// Prevent path traversal attacks
 		let path_str = expanded.to_string_lossy();
+
 		if path_str.contains("..") {
 			return Err(AirError::FileSystem("Path contains invalid traversal sequence".to_string()));
 		}
@@ -225,6 +247,7 @@ impl FileIndexer {
 
 		// Verify all indexed files exist
 		let mut missing_files = 0;
+
 		for file_path in index.files.keys() {
 			if !file_path.exists() {
 				missing_files += 1;
@@ -236,6 +259,7 @@ impl FileIndexer {
 		}
 
 		dev_log!("indexing", "[FileIndexer] Index integrity verified successfully");
+
 		Ok(())
 	}
 
@@ -244,6 +268,7 @@ impl FileIndexer {
 		let start_time = std::time::Instant::now();
 
 		dev_log!("indexing", "[FileIndexer] Starting directory index: {}", path);
+
 		let config = &self.AppState.Configuration.Indexing;
 
 		// Scan directory
@@ -253,12 +278,16 @@ impl FileIndexer {
 		// Index files in parallel
 		// Variables cloned for use in async task
 		let _index_arc = self.file_index.clone();
+
 		let semaphore = self.indexing_semaphore.clone();
+
 		let config_clone = config.clone();
+
 		let mut index_tasks = Vec::new();
 
 		for file_path in files_to_index {
 			let permit = semaphore.clone().acquire_owned().await.unwrap();
+
 			let config_for_task = config_clone.clone();
 
 			let task = tokio::spawn(async move {
@@ -271,10 +300,15 @@ impl FileIndexer {
 
 		// Collect results
 		let mut index = self.file_index.write().await;
+
 		let mut indexed_paths = std::collections::HashSet::new();
+
 		let mut files_indexed = 0u32;
+
 		let mut total_size = 0u64;
+
 		let mut symbols_extracted = 0u32;
+
 		let mut files_with_errors = 0u32;
 
 		for task in index_tasks {
@@ -283,6 +317,7 @@ impl FileIndexer {
 					let file_path = metadata.path.clone();
 
 					index.files.insert(file_path.clone(), metadata.clone());
+
 					indexed_paths.insert(file_path.clone());
 
 					// Index content for search
@@ -297,6 +332,7 @@ impl FileIndexer {
 
 					// Index symbols
 					index.file_symbols.insert(file_path.clone(), symbols.clone());
+
 					symbols_extracted += symbols.len() as u32;
 
 					// Update symbol index
@@ -309,13 +345,17 @@ impl FileIndexer {
 					}
 
 					files_indexed += 1;
+
 					total_size += metadata.size;
 				},
+
 				Ok(Err(_)) => {
 					files_with_errors += 1;
 				},
+
 				Err(e) => {
 					dev_log!("indexing", "error: [FileIndexer] Indexing task failed: {}", e);
+
 					files_with_errors += 1;
 				},
 			}
@@ -354,24 +394,31 @@ impl FileIndexer {
 	/// Search files with multiple modes
 	pub async fn SearchFiles(
 		&self,
+
 		query:SearchQuery,
+
 		path:Option<String>,
+
 		language:Option<String>,
 	) -> Result<PaginatedSearchResults> {
 		let index = self.file_index.read().await;
+
 		QueryIndexSearch(&index, query, path, language).await
 	}
 
 	/// Search symbols across all files (for VSCode Go to Symbol)
 	pub async fn SearchSymbols(&self, query:&str, max_results:u32) -> Result<Vec<SymbolInfo>> {
 		let index = self.file_index.read().await;
+
 		let query_lower = query.to_lowercase();
+
 		let mut results = Vec::new();
 
 		for (symbol_name, locations) in &index.symbol_index {
 			if symbol_name.to_lowercase().contains(&query_lower) {
 				for loc in locations.iter().take(max_results as usize) {
 					results.push(loc.symbol.clone());
+
 					if results.len() >= max_results as usize {
 						break;
 					}
@@ -385,12 +432,14 @@ impl FileIndexer {
 	/// Get symbols for a specific file (for VSCode Outline View)
 	pub async fn GetFileSymbols(&self, file_path:&PathBuf) -> Result<Vec<SymbolInfo>> {
 		let index = self.file_index.read().await;
+
 		Ok(index.file_symbols.get(file_path).cloned().unwrap_or_default())
 	}
 
 	/// Get file information
 	pub async fn GetFileInfo(&self, path:String) -> Result<Option<FileMetadata>> {
 		let file_path = Self::ValidateAndExpandPath(&path)?;
+
 		let index = self.file_index.read().await;
 
 		Ok(index.files.get(&file_path).cloned())
@@ -401,7 +450,9 @@ impl FileIndexer {
 		let index = self.file_index.read().await;
 
 		let mut language_counts:HashMap<String, u32> = HashMap::new();
+
 		let total_size = index.files.values().map(|m| m.size).sum();
+
 		let total_symbols = index.files.values().map(|m| m.symbol_count).sum();
 
 		for metadata in index.files.values() {
@@ -423,17 +474,20 @@ impl FileIndexer {
 	/// Recover corrupted index
 	pub async fn recover_from_corruption(&self) -> Result<()> {
 		dev_log!("indexing", "[FileIndexer] Recovering from corrupted index...");
+
 		// Backup corrupted index
 		BackupCorruptedIndex(&self.index_directory).await?;
 
 		// Create new index
 		let new_index = CreateNewIndex();
+
 		*self.file_index.write().await = new_index;
 
 		// Clear corruption flag
 		*self.corruption_detected.lock().await = false;
 
 		dev_log!("indexing", "[FileIndexer] Index recovery completed");
+
 		Ok(())
 	}
 }
@@ -442,10 +496,15 @@ impl Clone for FileIndexer {
 	fn clone(&self) -> Self {
 		Self {
 			AppState:self.AppState.clone(),
+
 			file_index:self.file_index.clone(),
+
 			index_directory:self.index_directory.clone(),
+
 			file_watcher:self.file_watcher.clone(),
+
 			indexing_semaphore:self.indexing_semaphore.clone(),
+
 			corruption_detected:self.corruption_detected.clone(),
 		}
 	}

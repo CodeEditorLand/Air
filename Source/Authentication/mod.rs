@@ -34,6 +34,7 @@ pub struct AuthenticationService {
 
 	/// Cryptographic keys
 	CryptoKeys:Arc<Mutex<CryptoKeys>>,
+
 	/// AEAD algorithm for encryption/decryption
 	AeadAlgo:&'static aead::Algorithm,
 }
@@ -42,11 +43,17 @@ pub struct AuthenticationService {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuthSession {
 	pub SessionId:String,
+
 	pub UserId:String,
+
 	pub Provider:String,
+
 	pub Token:String,
+
 	pub CreatedAt:DateTime<Utc>,
+
 	pub ExpiresAt:DateTime<Utc>,
+
 	pub IsValid:bool,
 }
 
@@ -54,6 +61,7 @@ pub struct AuthSession {
 #[derive(Debug, Serialize, Deserialize)]
 struct CredentialsStore {
 	Credentials:HashMap<String, UserCredentials>,
+
 	FilePath:String,
 }
 
@@ -61,9 +69,13 @@ struct CredentialsStore {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserCredentials {
 	pub UserId:String,
+
 	pub Provider:String,
+
 	pub EncryptedPassword:String,
+
 	pub LastUsed:DateTime<Utc>,
+
 	pub IsValid:bool,
 }
 
@@ -71,6 +83,7 @@ pub struct UserCredentials {
 #[derive(Debug)]
 struct CryptoKeys {
 	SigningKey:ring::signature::Ed25519KeyPair,
+
 	EncryptionKey:[u8; 32],
 }
 
@@ -87,13 +100,18 @@ impl AuthenticationService {
 
 		// Generate cryptographic keys
 		let CryptoKeys = Self::GenerateCryptoKeys()?;
+
 		let AeadAlgo = &aead::AES_256_GCM;
 
 		let Service = Self {
 			AppState,
+
 			Sessions:Arc::new(RwLock::new(HashMap::new())),
+
 			Credentials:Arc::new(Mutex::new(CredentialsStore)),
+
 			CryptoKeys:Arc::new(Mutex::new(CryptoKeys)),
+
 			AeadAlgo,
 		};
 
@@ -122,20 +140,28 @@ impl AuthenticationService {
 
 		// Create session
 		let SessionId = Utility::GenerateRequestId();
+
 		let Session = AuthSession {
 			SessionId,
+
 			UserId:Username.clone(),
+
 			Provider:Provider.clone(),
+
 			Token:Token.clone(),
+
 			CreatedAt:chrono::Utc::now(),
+
 			ExpiresAt:chrono::Utc::now()
 				+ chrono::Duration::hours(self.AppState.Configuration.Authentication.TokenExpirationHours as i64),
+
 			IsValid:true,
 		};
 
 		// Store session
 		{
 			let mut Sessions = self.Sessions.write().await;
+
 			Sessions.insert(Session.SessionId.clone(), Session);
 		}
 
@@ -211,7 +237,9 @@ impl AuthenticationService {
 			.map_err(|e| AirError::Authentication(format!("Failed to create AEAD key: {:?}", e)))?;
 
 		let LessSafe = aead::LessSafeKey::new(UnboundKey);
+
 		let mut NonceBytes = [0u8; 12];
+
 		ring::rand::SystemRandom::new()
 			.fill(&mut NonceBytes)
 			.map_err(|e| AirError::Authentication(format!("Failed to generate nonce: {:?}", e)))?;
@@ -219,6 +247,7 @@ impl AuthenticationService {
 		let Nonce = aead::Nonce::assume_unique_for_key(NonceBytes);
 
 		let mut InOut = Password.as_bytes().to_vec();
+
 		// Reserve space for tag
 		InOut.extend_from_slice(&[0u8; 16]); // AES_256_GCM tag length is 16 bytes
 
@@ -228,7 +257,9 @@ impl AuthenticationService {
 
 		// Store nonce + ciphertext
 		let mut Out = Vec::with_capacity(NonceBytes.len() + InOut.len());
+
 		Out.extend_from_slice(&NonceBytes);
+
 		Out.extend_from_slice(&InOut);
 
 		Ok(URL_SAFE.encode(&Out))
@@ -249,15 +280,18 @@ impl AuthenticationService {
 		let (NonceBytes, CipherBytes) = Data.split_at(12);
 
 		let mut NonceArr = [0u8; 12];
+
 		NonceArr.copy_from_slice(&NonceBytes[0..12]);
 
 		let UnboundKey = aead::UnboundKey::new(&aead::AES_256_GCM, &CryptoKeys.EncryptionKey)
 			.map_err(|e| AirError::Authentication(format!("Failed to create AEAD key: {:?}", e)))?;
 
 		let LessSafe = aead::LessSafeKey::new(UnboundKey);
+
 		let Nonce = aead::Nonce::assume_unique_for_key(NonceArr);
 
 		let mut CipherVec = CipherBytes.to_vec();
+
 		let Plain = LessSafe
 			.open_in_place(Nonce, aead::Aad::empty(), &mut CipherVec)
 			.map_err(|e| AirError::Authentication(format!("Decryption failed: {:?}", e)))?;
@@ -308,6 +342,7 @@ impl AuthenticationService {
 	fn GenerateCryptoKeys() -> Result<CryptoKeys> {
 		// Generate signing key
 		let Rng = ring::rand::SystemRandom::new();
+
 		let Pkcs8Bytes = ring::signature::Ed25519KeyPair::generate_pkcs8(&Rng)
 			.map_err(|e| AirError::Authentication(format!("Failed to generate signing key: {}", e)))?;
 
@@ -316,6 +351,7 @@ impl AuthenticationService {
 
 		// Generate encryption key
 		let mut EncryptionKey = [0u8; 32];
+
 		ring::rand::SystemRandom::new()
 			.fill(&mut EncryptionKey)
 			.map_err(|e| AirError::Authentication(format!("Failed to generate encryption key: {}", e)))
@@ -355,6 +391,7 @@ impl AuthenticationService {
 	/// Clean up expired sessions
 	async fn CleanupExpiredSessions(&self) {
 		let Now = Utc::now();
+
 		let mut Sessions = self.Sessions.write().await;
 
 		Sessions.retain(|_, Session| Session.ExpiresAt > Now && Session.IsValid);
@@ -365,6 +402,7 @@ impl AuthenticationService {
 	/// Save credentials periodically
 	async fn SaveCredentialsPeriodically(&self) -> Result<()> {
 		let CredentialsStore = self.Credentials.lock().await;
+
 		self.SaveCredentialsStore(&CredentialsStore).await
 	}
 
@@ -379,9 +417,13 @@ impl Clone for AuthenticationService {
 	fn clone(&self) -> Self {
 		Self {
 			AppState:self.AppState.clone(),
+
 			Sessions:self.Sessions.clone(),
+
 			Credentials:self.Credentials.clone(),
+
 			CryptoKeys:self.CryptoKeys.clone(),
+
 			AeadAlgo:self.AeadAlgo,
 		}
 	}

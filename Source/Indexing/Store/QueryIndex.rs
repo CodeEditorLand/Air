@@ -79,16 +79,22 @@ pub const MAX_SEARCH_RESULTS_DEFAULT:u32 = 100;
 pub struct SearchQuery {
 	/// Search text
 	pub query:String,
+
 	/// Query mode (regex, literal, fuzzy)
 	pub mode:SearchMode,
+
 	/// Case sensitive search
 	pub case_sensitive:bool,
+
 	/// Exact word match
 	pub whole_word:bool,
+
 	/// Regex pattern (only for regex mode)
 	pub regex:Option<Regex>,
+
 	/// Maximum results per page
 	pub max_results:u32,
+
 	/// Page number for pagination
 	pub page:u32,
 }
@@ -98,10 +104,13 @@ pub struct SearchQuery {
 pub enum SearchMode {
 	/// Literal text search
 	Literal,
+
 	/// Regular expression search
 	Regex,
+
 	/// Fuzzy search with typo tolerance
 	Fuzzy,
+
 	/// Exact match
 	Exact,
 }
@@ -111,12 +120,16 @@ pub enum SearchMode {
 pub struct SearchResult {
 	/// File path
 	pub path:String,
+
 	/// File name
 	pub file_name:String,
+
 	/// Matched lines with context
 	pub matches:Vec<SearchMatch>,
+
 	/// Relevance score (higher = more relevant)
 	pub relevance:f64,
+
 	/// Matched language (if applicable)
 	pub language:Option<String>,
 }
@@ -126,14 +139,19 @@ pub struct SearchResult {
 pub struct SearchMatch {
 	/// Line number (1-indexed)
 	pub line_number:u32,
+
 	/// Line content
 	pub line_content:String,
+
 	/// Match start position
 	pub match_start:usize,
+
 	/// Match end position
 	pub match_end:usize,
+
 	/// Lines before match for context
 	pub context_before:Vec<String>,
+
 	/// Lines after match for context
 	pub context_after:Vec<String>,
 }
@@ -143,18 +161,23 @@ pub struct SearchMatch {
 pub struct PaginatedSearchResults {
 	/// Current page of results
 	pub results:Vec<SearchResult>,
+
 	/// Total number of results (across all pages)
 	pub total_count:u32,
+
 	/// Current page number (0-indexed)
 	pub page:u32,
+
 	/// Number of pages
 	pub total_pages:u32,
+
 	/// Results per page
 	pub page_size:u32,
 }
 
 impl IntoIterator for PaginatedSearchResults {
 	type Item = SearchResult;
+
 	type IntoIter = std::vec::IntoIter<SearchResult>;
 
 	fn into_iter(self) -> Self::IntoIter { self.results.into_iter() }
@@ -162,6 +185,7 @@ impl IntoIterator for PaginatedSearchResults {
 
 impl<'a> IntoIterator for &'a PaginatedSearchResults {
 	type Item = &'a SearchResult;
+
 	type IntoIter = std::slice::Iter<'a, SearchResult>;
 
 	fn into_iter(self) -> Self::IntoIter { self.results.iter() }
@@ -180,8 +204,11 @@ impl<'a> IntoIterator for &'a PaginatedSearchResults {
 /// - Language filtering
 pub async fn QueryIndexSearch(
 	index:&FileIndex,
+
 	query:SearchQuery,
+
 	path_filter:Option<String>,
+
 	language_filter:Option<String>,
 ) -> Result<PaginatedSearchResults> {
 	dev_log!(
@@ -190,12 +217,15 @@ pub async fn QueryIndexSearch(
 		query.query,
 		query.mode
 	);
+
 	// Sanitize search query
 	let sanitized_query = SanitizeSearchQuery(&query.query)?;
 
 	// Build search parameters
 	let case_sensitive = query.case_sensitive;
+
 	let whole_word = query.whole_word;
+
 	let max_results = if query.max_results == 0 {
 		MAX_SEARCH_RESULTS_DEFAULT
 	} else {
@@ -218,6 +248,7 @@ pub async fn QueryIndexSearch(
 			)
 			.await;
 		},
+
 		SearchMode::Regex => {
 			if let Some(regex) = &query.regex {
 				QueryIndexRegex(
@@ -242,6 +273,7 @@ pub async fn QueryIndexSearch(
 				}
 			}
 		},
+
 		SearchMode::Fuzzy => {
 			QueryIndexFuzzy(
 				&sanitized_query,
@@ -253,6 +285,7 @@ pub async fn QueryIndexSearch(
 			)
 			.await;
 		},
+
 		SearchMode::Exact => {
 			QueryIndexExact(
 				&sanitized_query,
@@ -271,12 +304,16 @@ pub async fn QueryIndexSearch(
 
 	// Calculate pagination
 	let total_count = all_results.len() as u32;
+
 	let total_pages = if max_results == 0 { 0 } else { total_count.div_ceil(max_results) };
+
 	let page = query.page.min(total_pages.saturating_sub(1));
 
 	// Extract current page
 	let start = (page * max_results) as usize;
+
 	let end = ((page + 1) * max_results).min(total_count) as usize;
+
 	let page_results = all_results[start..end].to_vec();
 
 	dev_log!(
@@ -308,11 +345,17 @@ pub fn SanitizeSearchQuery(query:&str) -> Result<String> {
 /// Literal search (default mode)
 async fn QueryIndexLiteral(
 	query:&str,
+
 	case_sensitive:bool,
+
 	whole_word:bool,
+
 	path_filter:Option<&str>,
+
 	language_filter:Option<&str>,
+
 	index:&FileIndex,
+
 	results:&mut Vec<SearchResult>,
 ) {
 	let search_query = if case_sensitive { query.to_string() } else { query.to_lowercase() };
@@ -362,9 +405,13 @@ async fn QueryIndexLiteral(
 /// Regex search mode
 async fn QueryIndexRegex(
 	regex:&Regex,
+
 	path_filter:Option<&str>,
+
 	language_filter:Option<&str>,
+
 	index:&FileIndex,
+
 	results:&mut Vec<SearchResult>,
 ) {
 	for (file_path, metadata) in &index.files {
@@ -397,10 +444,15 @@ async fn QueryIndexRegex(
 /// Fuzzy search with typo tolerance using Levenshtein distance
 async fn QueryIndexFuzzy(
 	query:&str,
+
 	case_sensitive:bool,
+
 	path_filter:Option<&str>,
+
 	language_filter:Option<&str>,
+
 	index:&FileIndex,
+
 	results:&mut Vec<SearchResult>,
 ) {
 	let query_lower = query.to_lowercase();
@@ -416,6 +468,7 @@ async fn QueryIndexFuzzy(
 
 		if let Ok(content) = tokio::fs::read_to_string(file_path).await {
 			const MAX_FUZZY_DISTANCE:usize = 2;
+
 			let matches = FindFuzzyMatches(&content, &query_lower, case_sensitive, MAX_FUZZY_DISTANCE);
 
 			if !matches.is_empty() {
@@ -436,10 +489,15 @@ async fn QueryIndexFuzzy(
 /// Exact match search (whole word, case-sensitive)
 async fn QueryIndexExact(
 	query:&str,
+
 	_case_sensitive:bool,
+
 	path_filter:Option<&str>,
+
 	language_filter:Option<&str>,
+
 	index:&FileIndex,
+
 	results:&mut Vec<SearchResult>,
 ) {
 	for (file_path, metadata) in &index.files {
@@ -472,9 +530,13 @@ async fn QueryIndexExact(
 /// Find matches in a single file with context
 async fn FindMatchesInFile(
 	file_path:&PathBuf,
+
 	query:&str,
+
 	case_sensitive:bool,
+
 	whole_word:bool,
+
 	index:&FileIndex,
 ) -> Result<SearchResult> {
 	let content = tokio::fs::read_to_string(file_path)
@@ -487,6 +549,7 @@ async fn FindMatchesInFile(
 		.ok_or_else(|| AirError::Internal("File metadata not found in index".to_string()))?;
 
 	let matches = FindMatchesWithContext(&content, query, case_sensitive, whole_word);
+
 	let relevance = CalculateRelevance(&matches, metadata);
 
 	Ok(SearchResult {
@@ -501,6 +564,7 @@ async fn FindMatchesInFile(
 /// Find matches in content with surrounding context
 fn FindMatchesWithContext(content:&str, query:&str, case_sensitive:bool, whole_word:bool) -> Vec<SearchMatch> {
 	let mut matches = Vec::new();
+
 	let lines:Vec<&str> = content.lines().collect();
 
 	let search_in = |line:&str| -> Option<(usize, usize)> {
@@ -523,6 +587,7 @@ fn FindMatchesWithContext(content:&str, query:&str, case_sensitive:bool, whole_w
 		if let Some((match_start, match_end)) = search_in(line) {
 			// Get context lines (2 before, 2 after)
 			let context_start = line_idx.saturating_sub(2);
+
 			let context_end = (line_idx + 3).min(lines.len());
 
 			let context_before = lines[context_start..line_idx].iter().map(|s| s.to_string()).collect();
@@ -559,6 +624,7 @@ fn FindWholeWordMatch(line:&str, word:&str) -> Option<usize> {
 
 		// Check word boundary after
 		let match_end = actual_pos + word.len();
+
 		let valid_after =
 			match_end == line.len() || line.chars().nth(match_end).map_or(true, |c| !c.is_alphanumeric() && c != '_');
 
@@ -575,6 +641,7 @@ fn FindWholeWordMatch(line:&str, word:&str) -> Option<usize> {
 /// Find regex matches in content
 fn FindRegexMatches(content:&str, regex:&Regex) -> Vec<SearchMatch> {
 	let mut matches = Vec::new();
+
 	let lines:Vec<&str> = content.lines().collect();
 
 	for (line_idx, line) in lines.iter().enumerate() {
@@ -598,10 +665,12 @@ fn FindRegexMatches(content:&str, regex:&Regex) -> Vec<SearchMatch> {
 /// Find fuzzy matches using Levenshtein distance algorithm
 fn FindFuzzyMatches(content:&str, query:&str, case_sensitive:bool, max_distance:usize) -> Vec<SearchMatch> {
 	let mut matches = Vec::new();
+
 	let lines:Vec<&str> = content.lines().collect();
 
 	for (line_idx, line) in lines.iter().enumerate() {
 		let line_number = line_idx as u32 + 1;
+
 		let line_to_search = if case_sensitive { line.to_string() } else { line.to_lowercase() };
 
 		// Calculate Levenshtein distance for fuzzy matching
@@ -631,8 +700,11 @@ fn FindExactMatches(content:&str, query:&str) -> Vec<SearchMatch> { FindMatchesW
 /// Calculate Levenshtein distance between two strings
 fn CalculateLevenshteinDistance(s1:&str, s2:&str) -> usize {
 	let s1_chars:Vec<char> = s1.chars().collect();
+
 	let s2_chars:Vec<char> = s2.chars().collect();
+
 	let len1 = s1_chars.len();
+
 	let len2 = s2_chars.len();
 
 	// Create a 2D matrix to store distances
@@ -642,6 +714,7 @@ fn CalculateLevenshteinDistance(s1:&str, s2:&str) -> usize {
 	for i in 0..=len1 {
 		dp[i][0] = i;
 	}
+
 	for j in 0..=len2 {
 		dp[0][j] = j;
 	}
@@ -670,6 +743,7 @@ fn CalculateLevenshteinDistance(s1:&str, s2:&str) -> usize {
 /// Calculate relevance score for search results
 fn CalculateRelevance(matches:&[SearchMatch], metadata:&FileMetadata) -> f64 {
 	let match_count = matches.len();
+
 	let line_count = metadata.line_count.unwrap_or(1) as f64;
 
 	// Base relevance: ratio of matching lines to total lines
@@ -682,6 +756,7 @@ fn CalculateRelevance(matches:&[SearchMatch], metadata:&FileMetadata) -> f64 {
 
 	// Bonus for recently modified files
 	let days_old = (chrono::Utc::now() - metadata.modified).num_days() as f64;
+
 	relevance += 1.0 / (days_old + 1.0).max(1.0);
 
 	relevance.min(10.0).max(0.0)
@@ -690,8 +765,11 @@ fn CalculateRelevance(matches:&[SearchMatch], metadata:&FileMetadata) -> f64 {
 /// Check if file matches filters
 pub fn MatchesFilters(
 	file_path:&PathBuf,
+
 	metadata:&FileMetadata,
+
 	path_filter:Option<&str>,
+
 	language_filter:Option<&str>,
 ) -> bool {
 	// Check path filter

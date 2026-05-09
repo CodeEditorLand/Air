@@ -69,6 +69,7 @@ use crate::{AirError, Indexing::State::CreateState::FileIndex, Result, dev_log};
 /// Save index to disk with atomic write
 pub async fn SaveIndex(index_directory:&Path, index:&FileIndex) -> Result<()> {
 	let index_file = index_directory.join("file_index.json");
+
 	let temp_file = index_directory.join("file_index.json.tmp");
 
 	let content = serde_json::to_string_pretty(index)
@@ -120,7 +121,9 @@ pub async fn LoadIndex(index_directory:&Path) -> Result<FileIndex> {
 
 	// Verify index checksum
 	use crate::Indexing::State::CreateState::CalculateIndexChecksum;
+
 	let expected_checksum = CalculateIndexChecksum(&index)?;
+
 	if index.index_checksum != expected_checksum {
 		return Err(AirError::Serialization(format!(
 			"Index checksum mismatch: expected {}, got {}",
@@ -140,16 +143,20 @@ pub async fn LoadOrCreateIndex(index_directory:&Path) -> Result<FileIndex> {
 		match LoadIndex(index_directory).await {
 			Ok(index) => {
 				dev_log!("indexing", "[StoreEntry] Loaded index with {} files", index.files.len());
+
 				Ok(index)
 			},
+
 			Err(e) => {
 				dev_log!(
 					"indexing",
 					"warn: [StoreEntry] Failed to load index (may be corrupted): {}. Creating new index.",
 					e
 				);
+
 				// Backup corrupted index
 				BackupCorruptedIndex(index_directory).await?;
+
 				Ok(CreateNewIndex())
 			},
 		}
@@ -162,6 +169,7 @@ pub async fn LoadOrCreateIndex(index_directory:&Path) -> Result<FileIndex> {
 /// Create a new empty index
 fn CreateNewIndex() -> FileIndex {
 	use crate::Indexing::State::CreateState::CreateNewIndex as StateCreateNewIndex;
+
 	StateCreateNewIndex()
 }
 
@@ -170,12 +178,14 @@ pub async fn EnsureIndexDirectory(index_directory:&Path) -> Result<()> {
 	tokio::fs::create_dir_all(index_directory).await.map_err(|e| {
 		AirError::Configuration(format!("Failed to create index directory {}: {}", index_directory.display(), e))
 	})?;
+
 	Ok(())
 }
 
 /// Backup corrupted index before creating new one
 pub async fn BackupCorruptedIndex(index_directory:&Path) -> Result<()> {
 	let index_file = index_directory.join("file_index.json");
+
 	let backup_file = index_directory.join(format!("file_index.corrupted.{}.json", chrono::Utc::now().timestamp()));
 
 	if !index_file.exists() {
@@ -192,6 +202,7 @@ pub async fn BackupCorruptedIndex(index_directory:&Path) -> Result<()> {
 		"[StoreEntry] Backed up corrupted index to: {}",
 		backup_file.display()
 	);
+
 	Ok(())
 }
 
@@ -209,11 +220,15 @@ pub async fn LoadIndexWithRecovery(index_directory:&Path, max_retries:usize) -> 
 						attempt + 1
 					);
 				}
+
 				return Ok(index);
 			},
+
 			Err(e) => {
 				last_error = Some(e);
+
 				dev_log!("indexing", "warn: [StoreEntry] Load attempt {} failed", attempt + 1);
+
 				// Wait before retry
 				if attempt < max_retries - 1 {
 					tokio::time::sleep(tokio::time::Duration::from_millis(100 * (attempt + 1) as u64)).await;
@@ -239,6 +254,7 @@ pub async fn IndexFileExists(index_directory:&Path) -> Result<bool> {
 	// Try to read metadata to verify accessibility
 	match tokio::fs::metadata(&index_file).await {
 		Ok(_) => Ok(true),
+
 		Err(_) => Ok(false),
 	}
 }
@@ -288,8 +304,10 @@ pub async fn CleanupOldBackups(index_directory:&Path, keep_count:usize) -> Resul
 		match tokio::fs::remove_file(path).await {
 			Ok(_) => {
 				dev_log!("indexing", "[StoreEntry] Removed old backup: {}", path.display());
+
 				removed_count += 1;
 			},
+
 			Err(e) => {
 				dev_log!(
 					"indexing",

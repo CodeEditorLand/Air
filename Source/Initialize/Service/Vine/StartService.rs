@@ -58,7 +58,9 @@
 /// - Graceful shutdown preserves data integrity
 
 use std::time::Duration;
+
 use crate::dev_log;
+
 use tonic::transport::Server as TonicServer;
 
 use AirLibrary::Vine::Generated::air_service_server::AirServiceServer;
@@ -70,8 +72,10 @@ use super::super::super::Build::BuildServer::BuiltServer;
 /// Contains the server join handle for monitoring and the shutdown channel
 /// sender for signaling graceful termination.
 pub struct StartedService {
+
     /// Join handle for the server task
     pub server_handle: tokio::task::JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>>,
+
     /// Sender for shutdown signal
     pub shutdown_tx: tokio::sync::oneshot::Sender<()>,
 }
@@ -113,13 +117,18 @@ pub struct StartedService {
 //! - Implement connection pooling optimizations
 
 pub fn StartService(built: BuiltServer) -> StartedService {
+
     let BuiltServer {
+
         service,
+
         shutdown_tx,
+
         bind_addr,
     } = built;
     
     dev_log!("lifecycle", "[Vine] Starting gRPC server on {}", bind_addr);
+
     // Spawn the tonic gRPC server with panic handling
     let server_handle: tokio::task::JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>> = 
         tokio::spawn(async move {
@@ -156,6 +165,7 @@ pub fn StartService(built: BuiltServer) -> StartedService {
     
     // Check if server started successfully
     if server_handle.is_finished() {
+
         dev_log!("lifecycle", "error: [Vine] gRPC server failed to start");    }
     
     StartedService { server_handle, shutdown_tx }
@@ -180,10 +190,14 @@ pub fn StartService(built: BuiltServer) -> StartedService {
 
 pub async fn WaitForShutdown(
     started: StartedService,
+
     timeout_secs: u64,
 ) -> Result<(), String> {
+
     let StartedService { 
+
         mut server_handle, 
+
         shutdown_tx, 
     } = started;
     
@@ -193,18 +207,27 @@ pub async fn WaitForShutdown(
     // Await the server task to finish with timeout
     match tokio::time::timeout(
         Duration::from_secs(timeout_secs),
+
         server_handle
     ).await {
+
         Ok(Ok(Ok(_))) => {
+
             dev_log!("lifecycle", "[Vine] gRPC server stopped normally");            Ok(())
         }
+
         Ok(Ok(Err(e))) => {
+
             dev_log!("lifecycle", "error: [Vine] gRPC server stopped with error: {}", e);            Err(format!("Server stopped with error: {}", e))
         }
+
         Ok(Err(e)) => {
+
             dev_log!("lifecycle", "error: [Vine] gRPC server task panicked: {:?}", e);            Err("Server task panicked".to_string())
         }
+
         Err(_) => {
+
             dev_log!("lifecycle", "error: [Vine] gRPC server shutdown timed out");            Err("Server shutdown timed out".to_string())
         }
     }
@@ -212,12 +235,14 @@ pub async fn WaitForShutdown(
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
     
     #[test]
     #[ignore] // Requires full service setup
     #[tokio::test]
     async fn test_start_service() {
+
         // This test requires proper built server setup
         // and is ignored for automated test runs.
     }

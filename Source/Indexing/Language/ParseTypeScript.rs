@@ -70,10 +70,12 @@ use crate::Indexing::State::CreateState::{SymbolInfo, SymbolKind};
 /// Extract TypeScript/JavaScript symbols (class, interface, function, etc.)
 pub fn ExtractTypeScriptSymbols(content:&str, file_path:&PathBuf) -> Vec<SymbolInfo> {
 	let mut symbols = Vec::new();
+
 	let lines:Vec<&str> = content.lines().collect();
 
 	for (line_idx, line) in lines.iter().enumerate() {
 		let line_content = line.trim();
+
 		let line_num = line_idx as u32 + 1;
 
 		// Skip comments

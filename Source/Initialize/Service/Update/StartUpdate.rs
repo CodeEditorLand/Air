@@ -58,7 +58,9 @@
 //! - Failed updates preserve previous version
 
 use std::sync::Arc;
+
 use std::time::Duration;
+
 use crate::dev_log;
 
 use AirLibrary::{
@@ -103,21 +105,30 @@ use AirLibrary::{
 pub async fn StartUpdate(
     app_state: Arc<ApplicationState>,
 ) -> Result<Arc<UpdateManager>, String> {
+
     dev_log!("lifecycle", "[Update] Starting update manager...");    
+
     // Initialize update manager with timeout
     let update_result = tokio::time::timeout(
         Duration::from_secs(10),
+
         UpdateManager::new(app_state.clone())
     ).await;
     
     match update_result {
+
         Ok(Ok(manager)) => {
+
             dev_log!("lifecycle", "[Update] Update manager initialized successfully");            Ok(Arc::new(manager))
         }
+
         Ok(Err(e)) => {
+
             dev_log!("lifecycle", "error: [Update] Failed to initialize update manager: {}", e);            Err(format!("Update manager initialization failed: {}", e))
         }
+
         Err(_) => {
+
             dev_log!("lifecycle", "error: [Update] Update manager initialization timed out");            Err("Update manager initialization timed out".to_string())
         }
     }
@@ -125,11 +136,13 @@ pub async fn StartUpdate(
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
     
     #[test]
     #[ignore] // Requires actual app state
     async fn test_start_update() {
+
         // This test requires proper application state setup
         // and is ignored for automated test runs.
     }

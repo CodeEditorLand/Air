@@ -89,9 +89,11 @@ use crate::dev_log;
 /// ```
 pub async fn WaitForShutdownSignal() {
 	dev_log!("lifecycle", "[Shutdown] Waiting for termination signal...");
+
 	let CtrlC = async {
 		match tokio::signal::ctrl_c().await {
 			Ok(()) => dev_log!("lifecycle", "[Shutdown] Received Ctrl+C signal"),
+
 			Err(Error) => dev_log!("lifecycle", "error: [Shutdown] Failed to install Ctrl+C handler: {}", Error),
 		}
 	};
@@ -101,8 +103,10 @@ pub async fn WaitForShutdownSignal() {
 		match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
 			Ok(mut Signal) => {
 				Signal.recv().await;
+
 				dev_log!("lifecycle", "[Shutdown] Received SIGTERM signal");
 			},
+
 			Err(Error) => dev_log!("lifecycle", "error: [Shutdown] Failed to install signal handler: {}", Error),
 		}
 	};
@@ -111,7 +115,9 @@ pub async fn WaitForShutdownSignal() {
 	let Terminate = std::future::pending::<()>();
 
 	tokio::select! {
+
 		_ = CtrlC => {},
+
 		_ = Terminate => {},
 	}
 
@@ -120,12 +126,14 @@ pub async fn WaitForShutdownSignal() {
 
 #[cfg(test)]
 mod tests {
+
 	use super::*;
 
 	#[test]
 	#[ignore] // Requires manual signal sending
 	#[tokio::test]
 	async fn TestWaitForShutdownSignal() {
+
 		// This test requires manual signal sending
 		// and is ignored for automated test runs.
 	}

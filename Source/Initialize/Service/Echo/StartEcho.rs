@@ -71,7 +71,9 @@
 /// - Provides basic connectivity verification
 /// - Can be extended with actual echo endpoints in the future
 pub async fn StartEcho() -> Result<(), String> {
+
 	dev_log!("lifecycle", "[Echo] Starting Echo scheduler service...");
+
 	// Echo service initialization
 	// The Echo service provides simple request/response functionality
 	// for testing gRPC connectivity and basic request handling.
@@ -79,19 +81,25 @@ pub async fn StartEcho() -> Result<(), String> {
 	// confirms the service can start successfully.
 
 	dev_log!("lifecycle", "[Echo] Echo scheduler service initialized successfully");
+
 	dev_log!("lifecycle", "[Echo] Ready to handle echo requests for connectivity testing");
+
 	Ok(())
 }
 
 #[cfg(test)]
 mod tests {
+
 	use crate::dev_log;
+
 	use super::*;
 
 	#[test]
 	#[ignore] // Async test, requires tokio runtime
 	async fn test_start_echo() {
+
 		let result = StartEcho().await;
+
 		assert!(result.is_err() || result.is_ok()); // Should not panic
 	}
 }

@@ -85,7 +85,9 @@ use crate::{
 /// Update index for a single file
 pub async fn UpdateSingleFile(
 	index:&mut FileIndex,
+
 	file_path:&PathBuf,
+
 	config:&IndexingConfig,
 ) -> Result<Option<FileMetadata>> {
 	let start_time = Instant::now();
@@ -94,7 +96,9 @@ pub async fn UpdateSingleFile(
 	if !file_path.exists() {
 		// File was deleted, remove from index
 		crate::Indexing::State::UpdateState::RemoveFileFromIndex(index, file_path)?;
+
 		dev_log!("indexing", "[UpdateIndex] Removed deleted file: {}", file_path.display());
+
 		return Ok(None);
 	}
 
@@ -115,8 +119,10 @@ pub async fn UpdateSingleFile(
 			let checksum = crate::Indexing::Scan::ScanFile::CalculateChecksum(
 				&tokio::fs::read(file_path).await.unwrap_or_default(),
 			);
+
 			old_metadata.checksum != checksum
 		},
+
 		None => {
 			// File not in index, needs to be added
 			true
@@ -125,6 +131,7 @@ pub async fn UpdateSingleFile(
 
 	if !needs_update {
 		dev_log!("indexing", "file unchanged: {}", file_path.display());
+
 		return Ok(index.files.get(file_path).cloned());
 	}
 
@@ -135,12 +142,14 @@ pub async fn UpdateSingleFile(
 
 	// Update the index
 	crate::Indexing::State::UpdateState::RemoveFileFromIndex(index, file_path)?;
+
 	crate::Indexing::State::UpdateState::AddFileToIndex(index, file_path.clone(), metadata.clone(), symbols)?;
 
 	// Update index metadata
 	UpdateIndexMetadata(index)?;
 
 	let elapsed = start_time.elapsed();
+
 	dev_log!(
 		"indexing",
 		"updated {} in {}ms ({} symbols)",
@@ -188,24 +197,33 @@ pub async fn UpdateFileContent(index:&mut FileIndex, file_path:&PathBuf, metadat
 /// Update multiple files in batch
 pub async fn UpdateFilesBatch(
 	index:&mut FileIndex,
+
 	file_paths:Vec<PathBuf>,
+
 	config:&IndexingConfig,
 ) -> Result<UpdateBatchResult> {
 	let start_time = Instant::now();
+
 	let mut updated_count = 0u32;
+
 	let mut removed_count = 0u32;
+
 	let mut error_count = 0u32;
+
 	let mut total_size = 0u64;
 
 	for file_path in file_paths {
 		match UpdateSingleFile(index, &file_path, config).await {
 			Ok(Some(metadata)) => {
 				updated_count += 1;
+
 				total_size += metadata.size;
 			},
+
 			Ok(None) => {
 				removed_count += 1;
 			},
+
 			Err(e) => {
 				dev_log!(
 					"indexing",
@@ -213,6 +231,7 @@ pub async fn UpdateFilesBatch(
 					file_path.display(),
 					e
 				);
+
 				error_count += 1;
 			},
 		}
@@ -234,19 +253,28 @@ pub async fn UpdateFilesBatch(
 #[derive(Debug, Clone)]
 pub struct UpdateBatchResult {
 	pub updated_count:u32,
+
 	pub removed_count:u32,
+
 	pub error_count:u32,
+
 	pub total_size:u64,
+
 	pub duration_seconds:f64,
 }
 
 /// Debounced file update to prevent excessive re-indexing
 pub struct DebouncedUpdate {
 	file_path:PathBuf,
+
 	last_seen:Instant,
+
 	index:*const RwLock<FileIndex>,
+
 	config:IndexingConfig,
+
 	duration:Duration,
+
 	pending:bool,
 }
 
@@ -256,16 +284,22 @@ impl DebouncedUpdate {
 	pub fn new(file_path:PathBuf, index:&RwLock<FileIndex>, config:&IndexingConfig, duration:Duration) -> Self {
 		Self {
 			file_path,
+
 			last_seen:Instant::now(),
+
 			index:index as *const RwLock<FileIndex>,
+
 			config:config.clone(),
+
 			duration,
+
 			pending:false,
 		}
 	}
 
 	pub async fn trigger(&mut self) {
 		self.last_seen = Instant::now();
+
 		self.pending = true;
 	}
 
@@ -279,6 +313,7 @@ impl DebouncedUpdate {
 
 			// This is unsafe but we're in a controlled context
 			let index_ref = unsafe { &*self.index };
+
 			let mut index = index_ref.write().await;
 
 			match UpdateSingleFile(&mut index, &self.file_path, &self.config).await {
@@ -288,10 +323,13 @@ impl DebouncedUpdate {
 						"[UpdateIndex] Debounced update completed: {}",
 						self.file_path.display()
 					);
+
 					return Ok(true);
 				},
+
 				Err(e) => {
 					dev_log!("indexing", "warn: [UpdateIndex] Debounced update failed: {}", e);
+
 					return Err(e);
 				},
 			}
@@ -306,33 +344,42 @@ impl DebouncedUpdate {
 /// Update index for changed files from file watcher
 pub async fn ProcessWatcherEvent(
 	index:&mut FileIndex,
+
 	event:notify::Event,
+
 	config:&IndexingConfig,
 ) -> Result<WatcherEventResult> {
 	let mut updated = 0u32;
+
 	let mut removed = 0u32;
 
 	for file_path in event.paths {
 		match event.kind {
 			notify::EventKind::Create(notify::event::CreateKind::File) => {
 				dev_log!("indexing", "[UpdateIndex] File created: {}", file_path.display());
+
 				if UpdateSingleFile(index, &file_path, config).await.is_ok() {
 					updated += 1;
 				}
 			},
+
 			notify::EventKind::Modify(notify::event::ModifyKind::Data(_))
 			| notify::EventKind::Modify(notify::event::ModifyKind::Name(notify::event::RenameMode::Both)) => {
 				dev_log!("indexing", "[UpdateIndex] File modified: {}", file_path.display());
+
 				if UpdateSingleFile(index, &file_path, config).await.is_ok() {
 					updated += 1;
 				}
 			},
+
 			notify::EventKind::Remove(notify::event::RemoveKind::File) => {
 				dev_log!("indexing", "[UpdateIndex] File removed: {}", file_path.display());
+
 				if super::super::State::UpdateState::RemoveFileFromIndex(index, &file_path).is_ok() {
 					removed += 1;
 				}
 			},
+
 			_ => {},
 		}
 	}
@@ -347,12 +394,14 @@ pub async fn ProcessWatcherEvent(
 #[derive(Debug, Clone)]
 pub struct WatcherEventResult {
 	pub updated:u32,
+
 	pub removed:u32,
 }
 
 /// Remove files from index that no longer exist
 pub async fn CleanupRemovedFiles(index:&mut FileIndex) -> Result<u32> {
 	let mut paths_to_remove = Vec::new();
+
 	let all_paths:Vec<_> = index.files.keys().cloned().collect();
 
 	for path in all_paths {
@@ -369,22 +418,29 @@ pub async fn CleanupRemovedFiles(index:&mut FileIndex) -> Result<u32> {
 	super::super::State::UpdateState::UpdateIndexMetadata(index)?;
 
 	dev_log!("indexing", "[UpdateIndex] Cleaned up {} removed files", paths_to_remove.len());
+
 	Ok(paths_to_remove.len() as u32)
 }
 
 /// Rebuild index from scratch (full reindex)
 pub async fn RebuildIndex(
 	index:&mut FileIndex,
+
 	directories:Vec<String>,
+
 	patterns:Vec<String>,
+
 	config:&IndexingConfig,
 ) -> Result<UpdateBatchResult> {
 	let start_time = Instant::now();
 
 	// Clear current index
 	index.files.clear();
+
 	index.content_index.clear();
+
 	index.symbol_index.clear();
+
 	index.file_symbols.clear();
 
 	// Scan directories
@@ -393,13 +449,17 @@ pub async fn RebuildIndex(
 
 	// Index all files
 	let semaphore = Arc::new(Semaphore::new(config.MaxParallelIndexing as usize));
+
 	let index_arc = Arc::new(RwLock::new(index.clone()));
+
 	let mut tasks = Vec::new();
 
 	for file_path in files_to_index {
 		let permit = semaphore.clone().acquire_owned().await.unwrap();
+
 		// Variables cloned for use in async task
 		let _index_ref = index_arc.clone();
+
 		let config_clone = config.clone();
 
 		let task = tokio::spawn(async move {
@@ -412,19 +472,25 @@ pub async fn RebuildIndex(
 	}
 
 	let mut updated_count = 0u32;
+
 	let mut total_size = 0u64;
 
 	for task in tasks {
 		match task.await {
 			Ok(Ok((metadata, symbols))) => {
 				let file_size = metadata.size;
+
 				super::super::State::UpdateState::AddFileToIndex(index, metadata.path.clone(), metadata, symbols)?;
+
 				updated_count += 1;
+
 				total_size += file_size;
 			},
+
 			Ok(Err(e)) => {
 				dev_log!("indexing", "warn: [UpdateIndex] Rebuild task failed: {}", e);
 			},
+
 			Err(e) => {
 				dev_log!("indexing", "warn: [UpdateIndex] Rebuild task join failed: {}", e);
 			},
@@ -446,14 +512,18 @@ pub async fn RebuildIndex(
 /// Validate index consistency and repair if needed
 pub async fn ValidateAndRepairIndex(index:&mut FileIndex) -> Result<RepairResult> {
 	let start_time = Instant::now();
+
 	let mut repaired_files = 0u32;
+
 	let removed_orphans;
 
 	// Validate index consistency
 	match super::super::State::UpdateState::ValidateIndexConsistency(index) {
 		Ok(()) => {},
+
 		Err(e) => {
 			dev_log!("indexing", "warn: [UpdateIndex] Index validation failed: {}", e);
+
 			repaired_files += 1;
 		},
 	}
@@ -475,6 +545,8 @@ pub async fn ValidateAndRepairIndex(index:&mut FileIndex) -> Result<RepairResult
 #[derive(Debug, Clone)]
 pub struct RepairResult {
 	pub repaired_files:u32,
+
 	pub removed_orphans:u32,
+
 	pub duration_seconds:f64,
 }

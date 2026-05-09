@@ -437,52 +437,86 @@ impl Default for AirConfiguration {
 	fn default() -> Self {
 		Self {
 			SchemaVersion:default_schema_version(),
+
 			Profile:default_profile(),
+
 			gRPC:gRPCConfig {
 				BindAddress:default_grpc_bind_address(),
+
 				MaxConnections:default_grpc_max_connections(),
+
 				RequestTimeoutSecs:default_grpc_request_timeout(),
 			},
+
 			Authentication:AuthConfig {
 				Enabled:default_auth_enabled(),
+
 				CredentialsPath:default_auth_credentials_path(),
+
 				TokenExpirationHours:default_auth_token_expiration(),
+
 				MaxSessions:default_auth_max_sessions(),
 			},
+
 			Updates:UpdateConfig {
 				Enabled:default_update_enabled(),
+
 				CheckIntervalHours:default_update_check_interval(),
+
 				UpdateServerUrl:default_update_server_url(),
+
 				AutoDownload:default_update_auto_download(),
+
 				AutoInstall:default_update_auto_install(),
+
 				Channel:default_update_channel(),
 			},
+
 			Downloader:DownloadConfig {
 				Enabled:default_download_enabled(),
+
 				MaxConcurrentDownloads:default_download_max_concurrent(),
+
 				DownloadTimeoutSecs:default_download_timeout(),
+
 				MaxRetries:default_download_max_retries(),
+
 				CacheDirectory:default_download_cache_dir(),
 			},
+
 			Indexing:IndexingConfig {
 				Enabled:default_indexing_enabled(),
+
 				MaxFileSizeMb:default_indexing_max_file_size(),
+
 				FileTypes:default_indexing_file_types(),
+
 				UpdateIntervalMinutes:default_indexing_update_interval(),
+
 				IndexDirectory:default_indexing_directory(),
+
 				MaxParallelIndexing:default_max_parallel_indexing(),
 			},
+
 			Logging:LoggingConfig {
 				Level:default_logging_level(),
+
 				FilePath:default_logging_file_path(),
+
 				ConsoleEnabled:default_logging_console_enabled(),
+
 				MaxFileSizeMb:default_logging_max_file_size(),
+
 				MaxFiles:default_logging_max_files(),
 			},
+
 			Performance:PerformanceConfig {
 				MemoryLimitMb:default_perf_memory_limit(),
+
 				CPULimitPercent:default_perf_cpu_limit(),
+
 				DiskLimitMb:default_perf_disk_limit(),
+
 				BackgroundTaskIntervalSecs:default_perf_task_interval(),
 			},
 		}
@@ -698,6 +732,7 @@ impl ConfigurationManager {
 	/// Returns a new ConfigurationManager instance
 	pub fn New(ConfigPath:Option<String>) -> Result<Self> {
 		let path = ConfigPath.map(PathBuf::from);
+
 		let BackupDir = path
 			.as_ref()
 			.and_then(|p| p.parent())
@@ -715,6 +750,7 @@ impl ConfigurationManager {
 	/// * `EnvPrefix` - Prefix for environment variable overrides
 	pub fn NewWithSettings(ConfigPath:Option<String>, EnableBackup:bool, EnvPrefix:String) -> Result<Self> {
 		let path = ConfigPath.map(PathBuf::from);
+
 		let BackupDir = if EnableBackup {
 			path.as_ref()
 				.and_then(|p| p.parent())
@@ -745,6 +781,7 @@ impl ConfigurationManager {
 
 		if ConfigPath.exists() {
 			dev_log!("config", "Loading configuration from: {}", ConfigPath.display());
+
 			config = self.LoadFromFile(&ConfigPath).await?;
 		} else {
 			dev_log!("config", "No configuration file found, using defaults");
@@ -760,6 +797,7 @@ impl ConfigurationManager {
 		self.ValidateConfiguration(&config)?;
 
 		dev_log!("config", "Configuration loaded successfully (profile: {})", config.Profile);
+
 		Ok(config)
 	}
 
@@ -783,6 +821,7 @@ impl ConfigurationManager {
 
 		// Type validation is done by serde automatically
 		dev_log!("config", "Configuration file parsed successfully");
+
 		Ok(config)
 	}
 
@@ -818,6 +857,7 @@ impl ConfigurationManager {
 
 		// Atomic write: write to temp file, then rename
 		let TempPath = ConfigPath.with_extension("tmp");
+
 		let content = toml::to_string_pretty(config)
 			.map_err(|e| AirError::Configuration(format!("Failed to serialize config: {}", e)))?;
 
@@ -831,6 +871,7 @@ impl ConfigurationManager {
 		})?;
 
 		dev_log!("config", "Configuration saved to: {}", ConfigPath.display());
+
 		Ok(())
 	}
 
@@ -871,6 +912,7 @@ impl ConfigurationManager {
 		self.ValidatePerformanceConfig(&config.Performance)?;
 
 		dev_log!("config", "All configuration validation checks passed");
+
 		Ok(())
 	}
 
@@ -884,6 +926,7 @@ impl ConfigurationManager {
 		}
 
 		let parts:Vec<&str> = version.split('.').collect();
+
 		if parts.len() != 3 {
 			return Err(AirError::Configuration(format!(
 				"Invalid schema version '{}': must have 3 parts (X.Y.Z)",
@@ -1185,6 +1228,7 @@ impl ConfigurationManager {
 	fn ValidateLoggingConfig(&self, logging:&LoggingConfig) -> Result<()> {
 		// Validate log level
 		let ValidLevels = ["trace", "debug", "info", "warn", "error"];
+
 		if !ValidLevels.contains(&logging.Level.as_str()) {
 			return Err(AirError::Configuration(format!(
 				"Invalid log level '{}': must be one of: {}",
@@ -1340,6 +1384,7 @@ impl ConfigurationManager {
 		// Check for IPv4 or hostname format: host:port
 		if addr.contains(':') {
 			let parts:Vec<&str> = addr.split(':').collect();
+
 			if parts.len() != 2 {
 				return false;
 			}
@@ -1373,6 +1418,7 @@ impl ConfigurationManager {
 		}
 
 		dev_log!("config", "Schema validation passed");
+
 		Ok(())
 	}
 
@@ -1390,6 +1436,7 @@ impl ConfigurationManager {
 		// gRPC overrides
 		if let Ok(val) = env::var(&format!("{}GRPC_BIND_ADDRESS", self.EnvPrefix)) {
 			config.gRPC.BindAddress = val;
+
 			override_count += 1;
 		}
 
@@ -1397,6 +1444,7 @@ impl ConfigurationManager {
 			config.gRPC.MaxConnections = val
 				.parse()
 				.map_err(|e| AirError::Configuration(format!("Invalid GRPC_MAX_CONNECTIONS value: {}", e)))?;
+
 			override_count += 1;
 		}
 
@@ -1405,11 +1453,13 @@ impl ConfigurationManager {
 			config.Authentication.Enabled = val
 				.parse()
 				.map_err(|e| AirError::Configuration(format!("Invalid AUTH_ENABLED value: {}", e)))?;
+
 			override_count += 1;
 		}
 
 		if let Ok(val) = env::var(&format!("{}AUTH_CREDENTIALS_PATH", self.EnvPrefix)) {
 			config.Authentication.CredentialsPath = val;
+
 			override_count += 1;
 		}
 
@@ -1418,6 +1468,7 @@ impl ConfigurationManager {
 			config.Updates.Enabled = val
 				.parse()
 				.map_err(|e| AirError::Configuration(format!("Invalid UPDATE_ENABLED value: {}", e)))?;
+
 			override_count += 1;
 		}
 
@@ -1425,12 +1476,14 @@ impl ConfigurationManager {
 			config.Updates.AutoDownload = val
 				.parse()
 				.map_err(|e| AirError::Configuration(format!("Invalid UPDATE_AUTO_DOWNLOAD value: {}", e)))?;
+
 			override_count += 1;
 		}
 
 		// Logging overrides
 		if let Ok(val) = env::var(&format!("{}LOGGING_LEVEL", self.EnvPrefix)) {
 			config.Logging.Level = val.to_lowercase();
+
 			override_count += 1;
 		}
 
@@ -1458,11 +1511,13 @@ impl ConfigurationManager {
 
 		// Generate backup filename with timestamp
 		let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S");
+
 		let backup_filename = format!(
 			"{}_config_{}.toml.bak",
 			config_path.file_stem().and_then(|s| s.to_str()).unwrap_or("config"),
 			timestamp
 		);
+
 		let backup_path = backup_dir.join(&backup_filename);
 
 		// Copy current config to backup
@@ -1471,6 +1526,7 @@ impl ConfigurationManager {
 		})?;
 
 		dev_log!("config", "Configuration backed up to: {}", backup_path.display());
+
 		Ok(())
 	}
 
@@ -1522,6 +1578,7 @@ impl ConfigurationManager {
 		})?;
 
 		dev_log!("config", "Configuration rolled back from: {}", backup_path.display());
+
 		Ok(backup_path)
 	}
 
@@ -1558,25 +1615,36 @@ impl ConfigurationManager {
 	/// Configuration with profile-appropriate defaults
 	pub fn GetProfileDefaults(profile:&str) -> AirConfiguration {
 		let mut config = AirConfiguration::default();
+
 		config.Profile = profile.to_string();
 
 		match profile {
 			"prod" => {
 				config.Logging.Level = "warn".to_string();
+
 				config.Logging.ConsoleEnabled = false;
+
 				config.Performance.MemoryLimitMb = 1024;
+
 				config.Performance.CPULimitPercent = 80;
 			},
+
 			"staging" => {
 				config.Logging.Level = "info".to_string();
+
 				config.Performance.MemoryLimitMb = 768;
+
 				config.Performance.CPULimitPercent = 70;
 			},
+
 			"dev" | _ => {
 				// Dev defaults are already set
 				config.Logging.Level = "debug".to_string();
+
 				config.Logging.ConsoleEnabled = true;
+
 				config.Performance.MemoryLimitMb = 512;
+
 				config.Performance.CPULimitPercent = 50;
 			},
 		}
@@ -1627,7 +1695,9 @@ impl ConfigurationManager {
 			.map_err(|e| AirError::Configuration(format!("Failed to serialize config: {}", e)))?;
 
 		let mut hasher = sha2::Sha256::new();
+
 		hasher.update(config_str.as_bytes());
+
 		let hash = hasher.finalize();
 
 		Ok(hex::encode(hash))
@@ -1668,30 +1738,38 @@ impl ConfigurationManager {
 	/// Returns a mapping of configuration paths to environment variable names
 	pub fn GetEnvironmentMappings(&self) -> HashMap<String, String> {
 		let prefix = &self.EnvPrefix;
+
 		let mut mappings = HashMap::new();
 
 		mappings.insert("grpc.bind_address".to_string(), format!("{}GRPC_BIND_ADDRESS", prefix));
+
 		mappings.insert("grpc.max_connections".to_string(), format!("{}GRPC_MAX_CONNECTIONS", prefix));
+
 		mappings.insert(
 			"grpc.request_timeout_secs".to_string(),
 			format!("{}GRPC_REQUEST_TIMEOUT_SECS", prefix),
 		);
 
 		mappings.insert("authentication.enabled".to_string(), format!("{}AUTH_ENABLED", prefix));
+
 		mappings.insert(
 			"authentication.credentials_path".to_string(),
 			format!("{}AUTH_CREDENTIALS_PATH", prefix),
 		);
+
 		mappings.insert(
 			"authentication.token_expiration_hours".to_string(),
 			format!("{}AUTH_TOKEN_EXPIRATION_HOURS", prefix),
 		);
 
 		mappings.insert("updates.enabled".to_string(), format!("{}UPDATE_ENABLED", prefix));
+
 		mappings.insert("updates.auto_download".to_string(), format!("{}UPDATE_AUTO_DOWNLOAD", prefix));
+
 		mappings.insert("updates.auto_install".to_string(), format!("{}UPDATE_AUTO_INSTALL", prefix));
 
 		mappings.insert("logging.level".to_string(), format!("{}LOGGING_LEVEL", prefix));
+
 		mappings.insert(
 			"logging.console_enabled".to_string(),
 			format!("{}LOGGING_CONSOLE_ENABLED", prefix),
@@ -1703,93 +1781,129 @@ impl ConfigurationManager {
 
 #[cfg(test)]
 mod tests {
+
 	use super::*;
 
 	#[test]
 	fn test_default_configuration() {
 		let config = AirConfiguration::default();
+
 		assert_eq!(config.SchemaVersion, "1.0.0");
+
 		assert_eq!(config.Profile, "dev");
+
 		assert!(config.Authentication.Enabled);
+
 		assert!(config.Logging.ConsoleEnabled);
 	}
 
 	#[test]
 	fn test_profile_defaults() {
 		let DevConfig = ConfigurationManager::GetProfileDefaults("dev");
+
 		assert_eq!(DevConfig.Profile, "dev");
+
 		assert_eq!(DevConfig.Logging.Level, "debug");
 
 		let ProdConfig = ConfigurationManager::GetProfileDefaults("prod");
+
 		assert_eq!(ProdConfig.Profile, "prod");
+
 		assert_eq!(ProdConfig.Logging.Level, "warn");
+
 		assert!(!ProdConfig.Logging.ConsoleEnabled);
 	}
 
 	#[test]
 	fn test_path_expansion() {
 		let Home = dirs::home_dir().expect("Cannot determine home directory");
+
 		let Expanded = ConfigurationManager::ExpandPath("~/test").unwrap();
+
 		assert_eq!(Expanded, Home.join("test"));
 
 		let Absolute = ConfigurationManager::ExpandPath("/tmp/test").unwrap();
+
 		assert_eq!(Absolute, PathBuf::from("/tmp/test"));
 	}
 
 	#[test]
 	fn test_address_validation() {
 		assert!(ConfigurationManager::IsValidAddress("[::1]:50053"));
+
 		assert!(ConfigurationManager::IsValidAddress("127.0.0.1:50053"));
+
 		assert!(ConfigurationManager::IsValidAddress("localhost:50053"));
+
 		assert!(!ConfigurationManager::IsValidAddress("invalid"));
 	}
 
 	#[test]
 	fn test_url_validation() {
 		assert!(ConfigurationManager::IsValidUrl("https://example.com"));
+
 		assert!(ConfigurationManager::IsValidUrl("https://updates.editor.land"));
+
 		assert!(!ConfigurationManager::IsValidUrl("not-a-url"));
+
 		assert!(!ConfigurationManager::IsValidUrl("http://insecure.com"));
 	}
 
 	#[test]
 	fn test_path_validation() {
 		let manager = ConfigurationManager::New(None).unwrap();
+
 		assert!(manager.ValidatePath("~/config").is_ok());
+
 		assert!(manager.ValidatePath("/tmp/config").is_ok());
+
 		assert!(manager.ValidatePath("../escaped").is_err());
+
 		assert!(manager.ValidatePath("").is_err());
 	}
 
 	#[tokio::test]
 	async fn test_export_import_json() {
 		let config = AirConfiguration::default();
+
 		let json_str = ConfigurationManager::ExportToJson(&config).unwrap();
 
 		let imported = ConfigurationManager::ImportFromJson(&json_str).unwrap();
+
 		assert_eq!(imported.SchemaVersion, config.SchemaVersion);
+
 		assert_eq!(imported.Profile, config.Profile);
+
 		assert_eq!(imported.gRPC.BindAddress, config.gRPC.BindAddress);
 	}
 
 	#[test]
 	fn test_compute_hash() {
 		let config = AirConfiguration::default();
+
 		let hash1 = ConfigurationManager::ComputeHash(&config).unwrap();
+
 		let hash2 = ConfigurationManager::ComputeHash(&config).unwrap();
+
 		assert_eq!(hash1, hash2);
 
 		let mut modified = config;
+
 		modified.gRPC.BindAddress = "[::1]:50054".to_string();
+
 		let hash3 = ConfigurationManager::ComputeHash(&modified).unwrap();
+
 		assert_ne!(hash1, hash3);
 	}
 
 	#[test]
 	fn test_generate_schema() {
 		let schema = generate_schema();
+
 		assert!(schema.is_object());
+
 		assert!(schema.get("$schema").is_some());
+
 		assert!(schema.get("properties").is_some());
 	}
 }

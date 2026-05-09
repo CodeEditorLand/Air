@@ -57,7 +57,9 @@
 //! - Temporary errors are retried automatically
 
 use std::sync::Arc;
+
 use std::time::Duration;
+
 use crate::dev_log;
 
 use AirLibrary::{
@@ -105,21 +107,30 @@ use AirLibrary::{
 pub async fn StartIndex(
     app_state: Arc<ApplicationState>,
 ) -> Result<Arc<FileIndexer>, String> {
+
     dev_log!("lifecycle", "[Index] Starting file indexer...");    
+
     // Initialize file indexer with timeout
     let indexer_result = tokio::time::timeout(
         Duration::from_secs(10),
+
         FileIndexer::new(app_state.clone())
     ).await;
     
     match indexer_result {
+
         Ok(Ok(indexer)) => {
+
             dev_log!("lifecycle", "[Index] File indexer initialized successfully");            Ok(Arc::new(indexer))
         }
+
         Ok(Err(e)) => {
+
             dev_log!("lifecycle", "error: [Index] Failed to initialize file indexer: {}", e);            Err(format!("File indexer initialization failed: {}", e))
         }
+
         Err(_) => {
+
             dev_log!("lifecycle", "error: [Index] File indexer initialization timed out");            Err("File indexer initialization timed out".to_string())
         }
     }
@@ -127,11 +138,13 @@ pub async fn StartIndex(
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
     
     #[test]
     #[ignore] // Requires actual app state
     async fn test_start_index() {
+
         // This test requires proper application state setup
         // and is ignored for automated test runs.
     }

@@ -101,7 +101,9 @@ use crate::{
 /// - Symbol extraction for code files
 pub async fn IndexFileInternal(
 	file_path:&PathBuf,
+
 	config:&IndexingConfig,
+
 	_patterns:&[String],
 ) -> Result<(FileMetadata, Vec<SymbolInfo>)> {
 	let start_time = Instant::now();
@@ -119,6 +121,7 @@ pub async fn IndexFileInternal(
 
 	// Check if file size exceeds limit
 	let file_size = metadata.len();
+
 	if file_size > config.MaxFileSizeMb as u64 * 1024 * 1024 {
 		return Err(AirError::FileSystem(format!(
 			"File size {} exceeds limit {} MB",
@@ -220,8 +223,11 @@ pub fn CalculateChecksum(content:&[u8]) -> String {
 	// byte output is the drop-in replacement - same lowercase hex string,
 	// same length. `hex` is already a workspace dependency of Air.
 	use sha2::{Digest, Sha256};
+
 	let mut hasher = Sha256::new();
+
 	hasher.update(content);
+
 	hex::encode(hasher.finalize())
 }
 
@@ -229,22 +235,34 @@ pub fn CalculateChecksum(content:&[u8]) -> String {
 #[cfg(unix)]
 pub fn GetPermissionsString(metadata:&std::fs::Metadata) -> String {
 	use std::os::unix::fs::PermissionsExt;
+
 	let mode = metadata.permissions().mode();
+
 	let mut perms = String::new();
+
 	// Read permission
 	perms.push(if mode & 0o400 != 0 { 'r' } else { '-' });
+
 	// Write permission
 	perms.push(if mode & 0o200 != 0 { 'w' } else { '-' });
+
 	// Execute permission
 	perms.push(if mode & 0o100 != 0 { 'x' } else { '-' });
+
 	// Group permissions
 	perms.push(if mode & 0o040 != 0 { 'r' } else { '-' });
+
 	perms.push(if mode & 0o020 != 0 { 'w' } else { '-' });
+
 	perms.push(if mode & 0o010 != 0 { 'x' } else { '-' });
+
 	// Other permissions
 	perms.push(if mode & 0o004 != 0 { 'r' } else { '-' });
+
 	perms.push(if mode & 0o002 != 0 { 'w' } else { '-' });
+
 	perms.push(if mode & 0o001 != 0 { 'x' } else { '-' });
+
 	perms
 }
 

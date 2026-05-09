@@ -139,12 +139,15 @@ pub fn secured_client_with_timeout(dns_port:u16, timeout:Duration) -> Result<req
 
 #[cfg(test)]
 mod tests {
+
 	use super::*;
 
 	#[test]
 	fn test_secured_client_creation() {
 		let port = 15353;
+
 		let result = secured_client(port);
+
 		// Should succeed even if DNS server isn't running (client creation doesn't
 		// require DNS)
 		assert!(result.is_ok(), "Client creation should succeed");
@@ -153,7 +156,9 @@ mod tests {
 	#[test]
 	fn test_secured_client_builder_creation() {
 		let port = 15354;
+
 		let result = secured_client_builder(port);
+
 		assert!(result.is_ok(), "ClientBuilder creation should succeed");
 	}
 }
