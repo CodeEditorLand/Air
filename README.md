@@ -84,7 +84,39 @@ seamless background updates and persistent state management.
 
 ---
 
-## Deep Dive & Component Breakdown 🔬
+## Project Structure&#x2001;🗺️
+
+```
+Air/
+├── Source/
+│   ├── Binary.rs                # Library entry point for the Air binary.
+│   ├── Library.rs               # Module declarations and crate-level exports.
+│   ├── Binary/                  # Daemon process lifecycle (startup, shutdown, monitoring).
+│   ├── Daemon/                  # Singleton enforcement, PID locking, platform-native integration.
+│   ├── Initialize/              # Configuration, port binding, gRPC server construction, per-service startup.
+│   ├── CLI/                     # Command-line interface for daemon interaction and diagnostics.
+│   ├── Vine/                    # gRPC protocol implementation (generated proto, server, errors).
+│   ├── Mountain/                # gRPC client for communication back to Mountain.
+│   ├── ApplicationState/        # Central coordination (connections, service states, telemetry, resources).
+│   ├── Configuration/           # TOML config loading with schema validation, env overrides, hot reload.
+│   ├── DevLog.rs                # Developer-facing logging and trace ID generation.
+│   ├── Updates/                 # Version checking, download, verification, staged install, rollback.
+│   ├── Downloader/              # Parallel downloads, chunk transfers, rate limiting, resume capability.
+│   ├── Authentication/          # Token management, credential storage, AEAD encryption, key rotation.
+│   ├── Indexing/                # File index, symbol extraction, scanning, persistent storage, FS watch.
+│   ├── HealthCheck/             # Multi-level health monitoring (alive, responsive, functional).
+│   ├── Plugins/                 # Extensible plugin system with sandboxing and lifecycle management.
+│   ├── Logging/                 # Structured JSON logging with trace ID propagation and rotation.
+│   ├── Metrics/                 # Prometheus-compatible metrics (latency, success rate, resource usage).
+│   ├── Resilience/              # Retry with backoff, circuit breaker, bulkhead, timeout management.
+│   ├── Security/                # Checksum verification, AES-GCM credential storage, audit subsystem.
+│   ├── Tracing/                 # Distributed tracing with sampling, span events, context propagation.
+│   └── HTTP/                    # Secure HTTP client with custom DNS, TLS, timeout management.
+```
+
+---
+
+## Deep Dive & Component Breakdown🔬
 
 The `Air` daemon is organized into three layers: the binary entry point, the
 `Vine` `gRPC` communication layer, and the service modules that perform actual
