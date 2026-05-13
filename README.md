@@ -1,7 +1,7 @@
 <table>
 	<tr>
 		<td align="left" valign="middle">
-			<h3 align="left">Air&#x2001;🪁</h3>
+			<h3 align="left">&#x2001;🪁</h3>
 		</td>
 		<td align="left" valign="middle">
 			<h3 align="left">&#x2001;+&#x2001;</h3>
@@ -19,7 +19,7 @@
 		</td>
 		<td align="left" valign="middle">
 			<h3 align="left">
-				<a href="https://Editor.Land" target="_blank">Land&#x2001;🏞️</a>
+				<a href="https://Editor.Land" target="_blank">&#x2001;🏞️</a>
 			</h3>
 		</td>
 	</tr>
@@ -27,9 +27,9 @@
 
 ---
 
-# **Air**&#x2001;🪁
+# 🪁
 
-The Native Background Daemon for `Land`&#x2001;🏞️.
+The Native Background Daemon for `Land`🏞️.
 
 > **`VS Code` cold-starts slowly because everything initializes fresh each
 > launch. Updates require a full restart that kills open terminals and
@@ -44,13 +44,13 @@ update. The main window never blocks waiting for a download."_
 
 📖 **[Rust API Documentation](https://Rust.Documentation.Editor.Land/Air/)**
 
-Welcome to **Air**&#x2001;🪁, the lightweight, persistent daemon that powers the
-background capabilities of the **Land**&#x2001;🏞️ Code Editor. While `Mountain`
-handles the core application logic and UI, **Air** operates as a specialized
-sidecar process dedicated to heavy lifting, network operations, and system
-maintenance. It ensures that the main editor remains responsive by offloading
-resource-intensive tasks such as updates, large downloads, and cryptographic
-signing.
+Welcome to **Air**🪁, the lightweight, persistent daemon that powers the
+background capabilities of the **Land**🏞️ Code Editor. While `Mountain` handles
+the core application logic and UI, **Air** operates as a specialized sidecar
+process dedicated to heavy lifting, network operations, and system maintenance.
+It ensures that the main editor remains responsive by offloading
+resource-intensive tasks such as updates, large downloads, cryptographic
+signing, and file indexing.
 
 **Air** acts as the silent partner to `Mountain`, providing a robust server
 environment that persists even when the main editor window is closed, enabling
@@ -58,7 +58,7 @@ seamless background updates and persistent state management.
 
 ---
 
-## Key Features&#x2001;🔐
+## Key Features 🔐
 
 - **Native Sidecar Architecture:** Runs as a standalone process alongside
   `Mountain`, communicating via high-performance IPC (`gRPC`/`Vine`) to handle
@@ -66,38 +66,123 @@ seamless background updates and persistent state management.
 - **Dedicated Update Management:** Takes full ownership of the update lifecycle
     - downloading, verifying, and applying patches for `Land` - without user
       interruption or restart prompts.
+- **File Indexing and Search:** Builds and maintains a comprehensive file index
+  with symbol extraction, content analysis, and fast fuzzy search across the
+  entire workspace.
 - **Isolated Authentication & Signing:** Manages sensitive cryptographic
   operations, including binary signing and secure login flows, keeping security
   logic isolated from the main application view.
 - **Background Downloader:** Implements a resilient download manager for
   extensions, language servers, and dependencies, capable of pausing, resuming,
   and handling network interruptions gracefully.
+- **Health Monitoring:** Provides multi-level health checks with automatic
+  recovery actions, performance tracking, and degradation alerts across all
+  daemon services.
 - **Resource Offloading:** The designated handler for any "heavy" task that
   doesn't require the main application loop - effectively decoupling
   infrastructure maintenance from the user experience.
 
 ---
 
-## Deep Dive & Component Breakdown&#x2001;🔬
+## Deep Dive & Component Breakdown 🔬
 
-To understand how `Air`'s internal components interact to provide background
-daemon functionality, see the following source files:
+The `Air` daemon is organized into three layers: the binary entry point, the
+`Vine` `gRPC` communication layer, and the service modules that perform actual
+work. The source structure is documented below with each module's
+responsibility.
 
-- **[`Source/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/)** -
-  Main daemon implementation.
-- **[`Source/Updates/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Updates/)** -
-  Update lifecycle management.
-- **[`Source/Downloader/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Downloader/)** -
-  Resilient download manager.
-- **[`Source/Authentication/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Authentication/)** -
-  Authentication and cryptographic signing.
+### Binary and Lifecycle
 
-The source files explain the `gRPC` server implementation, task delegation from
-`Mountain`, and progress event emission patterns.
+[`Source/Binary/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Binary/)
+orchestrates the daemon process, including startup, shutdown signal handling,
+and runtime monitoring.
+[`Source/Daemon/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Daemon/)
+manages daemon lifecycle with singleton enforcement, `PID` file locking, and
+platform-native service integration for graceful shutdown coordination with
+`Mountain`.
+[`Source/Initialize/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Initialize/)
+contains all initialization routines for configuration, port binding, `gRPC`
+server construction, and per-service startup including `auth`, `download`,
+`echo`, `health` check, `indexing`, `state`, `update`, and `Vine` services.
+[`Source/CLI/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/CLI/)
+provides the command-line interface for interacting with a running daemon
+instance, including command parsing, routing, and diagnostics.
+
+### Communication Layer
+
+[`Source/Vine/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Vine/)
+implements the gRPC protocol for communication between Mountain and Air. It
+contains the generated protobuf code under `Generated/`, the server
+implementation under `Server/`, and error handling types.
+[`Source/Mountain/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Mountain/)
+provides the gRPC client that Air uses to communicate back to Mountain for
+status queries, health checks, and configuration operations.
+
+### State and Configuration
+
+[`Source/ApplicationState/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/ApplicationState/)
+acts as the central coordination point, tracking all active client connections,
+service states, request telemetry, and system resources with thread-safe async
+data structures.
+[`Source/Configuration/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Configuration/)
+handles configuration loading from TOML files with schema validation,
+environment variable overrides, and hot reload support without service restart.
+[`Source/DevLog.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/DevLog.rs)
+provides developer-facing logging utilities and trace ID generation.
+
+### Core Service Modules
+
+[`Source/Updates/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Updates/)
+manages the full update lifecycle: version availability checking, secure
+download with cryptographic signature verification, multi-checksum integrity
+validation, staged installation with atomic application, automatic rollback on
+failure, and platform-specific package handling.
+[`Source/Downloader/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Downloader/)
+provides a resilient download service for extensions, dependencies, and packages
+with parallel download support, chunk-based transfer, token-bucket rate
+limiting, and resume capability after network interruption.
+[`Source/Authentication/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Authentication/)
+handles user authentication, token management, and cryptographic operations
+including secure credential storage with AEAD encryption and key rotation.
+[`Source/Indexing/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/)
+builds and maintains a comprehensive file index with symbol extraction for Rust
+and TypeScript, content analysis, file scanning with permission checks, state
+management, persistent storage with backup and recovery, and real-time
+filesystem watching with debounced event processing.
+[`Source/HealthCheck/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/HealthCheck/)
+provides multi-level health monitoring (Alive, Responsive, Functional) across
+all daemon services with automatic recovery actions, performance indicator
+tracking, and degradation alerting.
+[`Source/Plugins/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Plugins/)
+implements a extensible plugin system with discovery, dynamic loading,
+sandboxing, lifecycle management, and inter-plugin communication via message
+passing.
+
+### Infrastructure Modules
+
+[`Source/Logging/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Logging/)
+provides structured JSON logging with request and trace ID propagation, context
+tracking, log rotation by size and time, and sensitive data filtering.
+[`Source/Metrics/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Metrics/)
+exposes Prometheus-compatible metrics including request latency histograms,
+success/failure rates, resource usage counters, and overflow-protected
+aggregation.
+[`Source/Resilience/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Resilience/)
+implements retry with exponential backoff and jitter, circuit breaker for fault
+isolation, bulkhead for resource isolation, and timeout management.
+[`Source/Security/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Security/)
+provides checksum verification, encrypted credential storage with AES-GCM, key
+rotation, rate limiting, and a security audit subsystem.
+[`Source/Tracing/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Tracing/)
+implements distributed tracing with sampling configuration, span event
+publishing, trace propagation contexts, and trace metadata management.
+[`Source/HTTP/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/HTTP/)
+provides a secure HTTP client with custom DNS resolution, TLS configuration, and
+timeout management.
 
 ---
 
-## System Architecture Diagram&#x2001;🏗️
+## System Architecture Diagram 🏗️
 
 ```mermaid
 graph LR
@@ -139,7 +224,7 @@ graph LR
 
 ---
 
-## `Air`&#x2001;🪁 in the `Land`&#x2001;🏞️ Ecosystem
+## `Air`🪁 in the `Land`🏞️ Ecosystem
 
 | Component           | Role & Key Responsibilities                                                                     |
 | :------------------ | :---------------------------------------------------------------------------------------------- |
@@ -148,6 +233,8 @@ graph LR
 | **Update Delegate** | Sole authority for modifying installation files of the parent application.                      |
 | **Signer**          | Handles cryptographic signing of artifacts and secure token storage for user login.             |
 | **Traffic Manager** | Proxy/downloader that keeps large network operations off the main renderer process.             |
+| **File Indexer**    | Maintains a persistent file index with symbol extraction and fast search across the workspace.  |
+| **Health Monitor**  | Periodically checks all service health with automatic recovery and degradation tracking.        |
 
 ### Port Allocation
 
@@ -158,9 +245,9 @@ graph LR
 
 ---
 
-## Getting Started&#x2001;🚀
+## Getting Started 🚀
 
-### Installation&#x2001;📥
+### Installation 📥
 
 To add `Air` to your project workspace:
 
@@ -169,7 +256,7 @@ To add `Air` to your project workspace:
 Air = { git = "https://github.com/CodeEditorLand/Air.git", branch = "Current" }
 ```
 
-### Usage Pattern&#x2001;🚀
+### Usage Pattern 🚀
 
 **Air** is typically spawned automatically by `Mountain` during startup.
 
@@ -184,11 +271,8 @@ Air = { git = "https://github.com/CodeEditorLand/Air.git", branch = "Current" }
 
 ---
 
-## See Also&#x2001;🔗
+## See Also 🔗
 
-- [Air Documentation](https://editor.land/Doc/air)
-- [Architecture Overview](https://editor.land/Doc/architecture)
-- [Why `Rust`](https://editor.land/Doc/why-rust)
 - [`Mountain`](https://github.com/CodeEditorLand/Mountain)
 - [`Vine`](https://github.com/CodeEditorLand/Vine)
 - [`Echo`](https://github.com/CodeEditorLand/Echo)
@@ -196,7 +280,7 @@ Air = { git = "https://github.com/CodeEditorLand/Air.git", branch = "Current" }
 
 ---
 
-## License&#x2001;⚖️
+## License ⚖️
 
 This project is released into the public domain under the **Creative Commons CC0
 Universal** license. You are free to use, modify, distribute, and build upon
@@ -205,20 +289,20 @@ see the [`LICENSE`](https://github.com/CodeEditorLand/Air/tree/Current/) file.
 
 ---
 
-## Changelog&#x2001;📜
+## Changelog 📜
 
 See [`CHANGELOG.md`](https://github.com/CodeEditorLand/Air/tree/Current/) for a
-history of changes specific to **Air**&#x2001;🪁.
+history of changes specific to **Air**🪁.
 
 ---
 
-## Funding \& Acknowledgements&#x2001;🙏🏻
+## Funding \& Acknowledgements 🙏🏻
 
-**Air**&#x2001;🪁 is a core element of the **Land**&#x2001;🏞️ ecosystem. This
-project is funded through [NGI0 Commons Fund](https://NLnet.NL/commonsfund), a
-fund established by [NLnet](https://NLnet.NL) with financial support from the
-European Commission's [Next Generation Internet](https://ngi.eu) program. Learn
-more at the [NLnet project page](https://NLnet.NL/project/Land).
+**Air**🪁 is a core element of the **Land**🏞️ ecosystem. This project is funded
+through [NGI0 Commons Fund](https://NLnet.NL/commonsfund), a fund established by
+[NLnet](https://NLnet.NL) with financial support from the European Commission's
+[Next Generation Internet](https://ngi.eu) program. Learn more at the
+[NLnet project page](https://NLnet.NL/project/Land).
 
 The project is operated by PlayForm, based in Sofia, Bulgaria.
 
@@ -262,8 +346,7 @@ Commons Fund grant.
 
 ---
 
-**Project Maintainers**: Source Open
-([Source/Open@Editor.Land](mailto:Source/Open@Editor.Land)) |
+**Project Maintainers**: Source Open (Source/Open@Editor.Land) |
 [GitHub Repository](https://github.com/CodeEditorLand/Air) |
 [Report an Issue](https://github.com/CodeEditorLand/Air/issues) |
 [Security Policy](https://github.com/CodeEditorLand/Air/security/policy)
