@@ -254,7 +254,7 @@ pub trait ConfigValidator: Send + Sync {
 // Configuration Validators
 // =============================================================================
 
-/// Validator for GRPC configuration
+/// Validator for gRPC configuration
 pub struct gRPCConfigValidator;
 
 impl ConfigValidator for gRPCConfigValidator {
