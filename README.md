@@ -27,9 +27,9 @@
 
 ---
 
-# 🪁
+# &#x2001;🪁
 
-The Native Background Daemon for `Land`🏞️.
+The Native Background Daemon for `Land`&#x2001;🏞️.
 
 > **`VS Code` cold-starts slowly because everything initializes fresh each
 > launch. Updates require a full restart that kills open terminals and
@@ -42,13 +42,13 @@ update. The main window never blocks waiting for a download."_
 [<img src="https://editor.land/Image/Rust.svg" width="14" alt="Rust" />](https://www.rust-lang.org/)&#x2001;[![Crates.io](https://img.shields.io/crates/v/Air.svg)](https://crates.io/crates/Air)
 [![Rust Version](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
 
-📖 **[Rust API Documentation](https://Rust.Documentation.Editor.Land/Air/)**
+**[Rust API Documentation](https://Rust.Documentation.Editor.Land/Air/)**&#x2001;📖
 
-Welcome to **Air**🪁, the lightweight, persistent daemon that powers the
-background capabilities of the **Land**🏞️ Code Editor. While `Mountain` handles
-the core application logic and UI, **Air** operates as a specialized sidecar
-process dedicated to heavy lifting, network operations, and system maintenance.
-It ensures that the main editor remains responsive by offloading
+Welcome to **Air**, the lightweight, persistent daemon that powers the&#x2001;🪁
+background capabilities of the **Land**&#x2001;🏞️ Code Editor. While `Mountain`
+handles the core application logic and UI, **Air** operates as a specialized
+sidecar process dedicated to heavy lifting, network operations, and system
+maintenance. It ensures that the main editor remains responsive by offloading
 resource-intensive tasks such as updates, large downloads, cryptographic
 signing, and file indexing.
 
@@ -58,7 +58,7 @@ seamless background updates and persistent state management.
 
 ---
 
-## Key Features 🔐
+## Key Features&#x2001;🔐
 
 - **Native Sidecar Architecture:** Runs as a standalone process alongside
   `Mountain`, communicating via high-performance IPC (`gRPC`/`Vine`) to handle
@@ -116,7 +116,7 @@ Air/
 
 ---
 
-## Deep Dive & Component Breakdown🔬
+## Deep Dive & Component Breakdown&#x2001;🔬
 
 The `Air` daemon is organized into three layers: the binary entry point, the
 `Vine` `gRPC` communication layer, and the service modules that perform actual
@@ -214,7 +214,7 @@ timeout management.
 
 ---
 
-## System Architecture Diagram 🏗️
+## System Architecture Diagram&#x2001;🏗️
 
 ```mermaid
 graph LR
@@ -225,18 +225,18 @@ graph LR
     subgraph "Land Runtime Ecosystem"
         direction TB
 
-        subgraph "⛰️ Mountain - Main App"
-            UI["🖼️ User Interface"]:::mountain
-            CoreLogic["⚙️ Core Logic"]:::mountain
-            IPC_Client["📡 IPC Client"]:::mountain
+        subgraph "Mountain - Main App&#x2001;⛰️"
+            UI["User Interface&#x2001;🖼️"]:::mountain
+            CoreLogic["Core Logic&#x2001;⚙️"]:::mountain
+            IPC_Client["IPC Client&#x2001;📡"]:::mountain
             CoreLogic -- delegates heavy tasks --> IPC_Client
         end
 
-        subgraph "🪁 Air - Daemon Sidecar (port 50053)"
-            IPC_Server["📡 gRPC Server"]:::air
-            UpdateMgr["🔄 Update Manager"]:::air
+        subgraph "Air - Daemon Sidecar (port 50053)&#x2001;🪁"
+            IPC_Server["gRPC Server&#x2001;📡"]:::air
+            UpdateMgr["Update Manager&#x2001;🔄"]:::air
             Downloader["⏬ Resilient Downloader"]:::air
-            AuthService["🔐 Signer & Auth"]:::air
+            AuthService["Signer & Auth&#x2001;🔐"]:::air
 
             IPC_Server -- routes --> UpdateMgr
             IPC_Server -- routes --> Downloader
@@ -247,7 +247,7 @@ graph LR
     end
 
     subgraph "External World"
-        Cloud["☁️ Update Servers / Registry"]:::external
+        Cloud["Update Servers / Registry&#x2001;☁️"]:::external
     end
 
     UpdateMgr -- fetches --> Cloud
@@ -256,7 +256,7 @@ graph LR
 
 ---
 
-## `Air`🪁 in the `Land`🏞️ Ecosystem
+## `Air` in the `Land`&#x2001;🏞️ Ecosystem&#x2001;🪁
 
 | Component           | Role & Key Responsibilities                                                                     |
 | :------------------ | :---------------------------------------------------------------------------------------------- |
@@ -277,9 +277,9 @@ graph LR
 
 ---
 
-## Getting Started 🚀
+## Getting Started&#x2001;🚀
 
-### Installation 📥
+### Installation&#x2001;📥
 
 To add `Air` to your project workspace:
 
@@ -288,7 +288,7 @@ To add `Air` to your project workspace:
 Air = { git = "https://github.com/CodeEditorLand/Air.git", branch = "Current" }
 ```
 
-### Usage Pattern 🚀
+### Usage Pattern&#x2001;🚀
 
 **Air** is typically spawned automatically by `Mountain` during startup.
 
@@ -303,7 +303,7 @@ Air = { git = "https://github.com/CodeEditorLand/Air.git", branch = "Current" }
 
 ---
 
-## See Also 🔗
+## See Also&#x2001;🔗
 
 - [`Mountain`](https://github.com/CodeEditorLand/Mountain)
 - [`Vine`](https://github.com/CodeEditorLand/Vine)
@@ -312,7 +312,7 @@ Air = { git = "https://github.com/CodeEditorLand/Air.git", branch = "Current" }
 
 ---
 
-## License ⚖️
+## License&#x2001;⚖️
 
 This project is released into the public domain under the **Creative Commons CC0
 Universal** license. You are free to use, modify, distribute, and build upon
@@ -321,17 +321,17 @@ see the [`LICENSE`](https://github.com/CodeEditorLand/Air/tree/Current/) file.
 
 ---
 
-## Changelog 📜
+## Changelog&#x2001;📜
 
 See [`CHANGELOG.md`](https://github.com/CodeEditorLand/Air/tree/Current/) for a
-history of changes specific to **Air**🪁.
+history of changes specific to **Air**&#x2001;🪁.
 
 ---
 
-## Funding \& Acknowledgements 🙏🏻
+## Funding & Acknowledgements&#x2001;🙏🏻
 
-**Air**🪁 is a core element of the **Land**🏞️ ecosystem. This project is funded
-through [NGI0 Commons Fund](https://NLnet.NL/commonsfund), a fund established by
+**Air** is a core element of the **Land**&#x2001;🏞️ ecosystem.&#x2001;🪁 through
+[NGI0 Commons Fund](https://NLnet.NL/commonsfund), a fund established by
 [NLnet](https://NLnet.NL) with financial support from the European Commission's
 [Next Generation Internet](https://ngi.eu) program. Learn more at the
 [NLnet project page](https://NLnet.NL/project/Land).
