@@ -20,12 +20,37 @@ background downloads, keeping the main editor process responsive.
 
 ---
 
-## Overview
+---
 
-Air is a standalone Rust binary that operates as a persistent sidecar managed by
-Mountain. It listens for task delegation via gRPC on port 50053 and handles all
-background work that would degrade editor responsiveness if run in the main
-process.
+```mermaid
+graph TB
+    subgraph Air["Air Daemon"]
+        GRPC["gRPC Server<br/>(tonic, port 50053)"]
+        UM["Update Manager<br/>check / verify / apply"]
+        DL["Downloader<br/>resilient pause/resume"]
+        AS["Auth Service<br/>crypto / signing"]
+        IX["Indexer<br/>file content / search"]
+        HC["Health Check<br/>watchdog / metrics"]
+        HTTP["HTTP Client<br/>reqwest"]
+        MIST["Mist DNS<br/>local resolver"]
+        CFG["Configuration<br/>hot-reload"]
+
+        GRPC --> UM
+        GRPC --> DL
+        GRPC --> AS
+        GRPC --> IX
+        GRPC --> HC
+        DL --> HTTP
+        AS --> HTTP
+        UM --> HTTP
+        HTTP --> MIST
+        GRPC -.-> CFG
+    end
+
+    MOUNTAIN["Mountain<br/>ProcessManagement"] -->|"gRPC: PerformAction"| GRPC
+```
+
+## Overview
 
 | Attribute    | Value                                            |
 | ------------ | ------------------------------------------------ |
