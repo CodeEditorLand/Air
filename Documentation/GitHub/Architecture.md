@@ -1,9 +1,12 @@
-# Air: Background Daemon
+# Air: Background Daemon 🪁
 
-This document describes the Air background daemon, a persistent Rust sidecar
-process that runs alongside Mountain. Air handles resource-intensive operations
-including update management, file indexing, cryptographic operations, and
-background downloads, keeping the main editor process responsive.
+This document describes the `Air` background daemon:
+
+- A persistent `Rust` sidecar process that runs alongside `Mountain`
+- Handles resource-intensive operations to keep the main editor process
+  responsive
+- Operations include: update management, file indexing, cryptographic
+  operations, and background downloads
 
 ---
 
@@ -50,22 +53,22 @@ graph TB
     MOUNTAIN["Mountain<br/>ProcessManagement"] -->|"gRPC: PerformAction"| GRPC
 ```
 
-## Overview
+## Overview 📋
 
-| Attribute    | Value                                            |
-| ------------ | ------------------------------------------------ |
-| Language     | Rust (edition 2024)                              |
-| Crate type   | Binary                                           |
-| IPC          | gRPC (tonic) on port 50053                       |
-| Dependencies | tokio, tonic, prost, reqwest, ring, Common, Mist |
-| Managed by   | Mountain ProcessManagement                       |
+| Attribute    | Value                                                          |
+| ------------ | -------------------------------------------------------------- |
+| Language     | `Rust` (edition 2024)                                          |
+| Crate type   | Binary                                                         |
+| IPC          | `gRPC` (`tonic`) on port 50053                                 |
+| Dependencies | `tokio`, `tonic`, `prost`, `reqwest`, `ring`, `Common`, `Mist` |
+| Managed by   | `Mountain` `ProcessManagement`                                 |
 
 ---
 
-## Architecture
+## Architecture 🏗️
 
-Air is structured around a central gRPC server that receives task delegation
-from Mountain. Internal modules handle distinct responsibilities.
+`Air` is structured around a central `gRPC` server that receives task delegation
+from `Mountain`. Internal modules handle distinct responsibilities.
 
 ```
                     +------------------------------------------+
@@ -100,19 +103,19 @@ from Mountain. Internal modules handle distinct responsibilities.
 
 ---
 
-## Module Map
+## Module Map 🗺️
 
 | Path                      | Purpose                                                                        |
 | ------------------------- | ------------------------------------------------------------------------------ |
-| `Source/Binary/Binary.rs` | Binary entry point; bootstraps Tokio runtime, starts daemon                    |
-| `Source/Initialize/`      | Startup sequence: config loading, gRPC binding, state initialization           |
-| `Source/Vine/`            | gRPC server implementation using tonic; routes incoming calls                  |
+| `Source/Binary/Binary.rs` | Binary entry point; bootstraps `Tokio` runtime, starts daemon                  |
+| `Source/Initialize/`      | Startup sequence: config loading, `gRPC` binding, state initialization         |
+| `Source/Vine/`            | `gRPC` server implementation using `tonic`; routes incoming calls              |
 | `Source/Updates/`         | Update lifecycle: check for updates, download, verify signature, apply patches |
 | `Source/Downloader/`      | Resilient download manager with pause, resume, retry, and progress reporting   |
 | `Source/Authentication/`  | Cryptographic signing of binaries, secure token storage                        |
-| `Source/HTTP/Client.rs`   | HTTP client configured to use Mist local DNS resolver                          |
+| `Source/HTTP/Client.rs`   | HTTP client configured to use `Mist` local DNS resolver                        |
 | `Source/HealthCheck/`     | Self-monitoring and watchdog for process health                                |
-| `Source/Metrics/`         | Telemetry collection and reporting to Mountain                                 |
+| `Source/Metrics/`         | Telemetry collection and reporting to `Mountain`                               |
 | `Source/Logging/`         | Structured tracing output via the `tracing` crate                              |
 | `Source/Indexing/`        | File content indexing for workspace search                                     |
 | `Source/CLI/`             | Command-line argument parsing for daemon startup options                       |
@@ -122,7 +125,7 @@ from Mountain. Internal modules handle distinct responsibilities.
 | `Source/Library.rs`       | Library root exposing the public API for integration tests                     |
 | `Source/Daemon/`          | Daemon lifecycle management (start, stop, restart)                             |
 
-### gRPC Service Definition (Vine/Air.proto)
+### gRPC Service Definition (Vine/Air.proto) 📜
 
 ```protobuf
 service BackgroundServices {
@@ -143,9 +146,9 @@ service BackgroundServices {
 
 ---
 
-## Services
+## Services 🔌
 
-### Update Manager
+### Update Manager 🔄
 
 The update manager owns the full lifecycle of application updates:
 
@@ -157,7 +160,7 @@ The update manager owns the full lifecycle of application updates:
 | Apply    | `ApplyUpdate`    | Replace running binary on next restart         |
 | Rollback | `RollbackUpdate` | Restore previous version on failure            |
 
-### Download Manager
+### Download Manager 📥
 
 The resilient download manager handles extension downloads, language server
 binaries, and dependency fetching:
@@ -166,11 +169,11 @@ binaries, and dependency fetching:
 | ---------- | ----------------------------------------------------- |
 | Resume     | HTTP Range headers for partial download resume        |
 | Retry      | Exponential backoff with configurable max attempts    |
-| Progress   | Streaming progress reporting to Mountain via gRPC     |
+| Progress   | Streaming progress reporting to `Mountain` via `gRPC` |
 | Bandwidth  | Configurable rate limiting per download               |
 | Concurrent | Parallel download queue with configurable concurrency |
 
-### Indexing Service
+### Indexing Service 🔍
 
 File indexing builds and maintains a searchable content index of the workspace:
 
@@ -181,7 +184,7 @@ File indexing builds and maintains a searchable content index of the workspace:
 4. Incremental indexing on file system change events
 5. Index persistence across daemon restarts
 
-### Authentication Service
+### Authentication Service 🔐
 
 Manages sensitive cryptographic operations:
 
@@ -192,9 +195,9 @@ Manages sensitive cryptographic operations:
 
 ---
 
-## Data Flow
+## Data Flow 📊
 
-### Update Check Flow
+### Update Check Flow 🔄
 
 ```
 Mountain triggers update check
@@ -218,7 +221,7 @@ Air returns update metadata to Mountain
 Mountain displays update notification to user
 ```
 
-### Download with Progress Flow
+### Download with Progress Flow 📥
 
 ```
 Mountain calls PerformAction(StartDownload { url, target })
@@ -239,7 +242,7 @@ Download Manager returns ActionResponse { success, filePath }
 
 ---
 
-## Startup Sequence
+## Startup Sequence 🚀
 
 ```
 1. Mountain spawns Air binary via ProcessManagement
@@ -270,15 +273,15 @@ Download Manager returns ActionResponse { success, filePath }
 
 ---
 
-## Configuration
+## Configuration ⚙️
 
-Air reads configuration from environment variables and supports hot-reload via
+`Air` reads configuration from environment variables and supports hot-reload via
 file watching:
 
 | Variable                   | Default            | Description                           |
 | -------------------------- | ------------------ | ------------------------------------- |
-| `VINE_PORT`                | `50053`            | gRPC server port                      |
-| `MIST_PORT`                | `5380`             | Mist DNS server port                  |
+| `VINE_PORT`                | `50053`            | `gRPC` server port                    |
+| `MIST_PORT`                | `5380`             | `Mist` DNS server port                |
 | `DATA_DIR`                 | `~/.land/data/air` | Data directory for caches and indexes |
 | `LOG_LEVEL`                | `info`             | Tracing log level                     |
 | `MAX_CONCURRENT_DOWNLOADS` | `3`                | Parallel download limit               |
@@ -286,17 +289,18 @@ file watching:
 
 ---
 
-## Related Documentation
+## Related Documentation 📚
 
-- [Common](../Common/Documentation/GitHub/Architecture.md) - Abstract core
-  traits
-- [Mountain](../Mountain/Documentation/GitHub/Architecture.md) - Main backend
-  application
-- [Mist](../Mist/Documentation/GitHub/Architecture.md) - DNS isolation server
-- [InterComponentProtocol](../../../Documentation/GitHub/InterComponentProtocol.md) -
-  gRPC protocol specification
-- [BuildPipeline](../../../Documentation/GitHub/BuildPipeline.md) - Build
-  pipeline
+- [Common](https://github.com/CodeEditorLand/Common/tree/Current/Documentation/GitHub/Architecture.md) -
+  Abstract core traits
+- [Mountain](https://github.com/CodeEditorLand/Mountain/tree/Current/Documentation/GitHub/Architecture.md) -
+  Main backend application
+- [Mist](https://github.com/CodeEditorLand/Mist/tree/Current/Documentation/GitHub/Architecture.md) -
+  DNS isolation server
+- [InterComponentProtocol](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/InterComponentProtocol.md) -
+  `gRPC` protocol specification
+- [BuildPipeline](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/BuildPipeline.md) -
+  Build pipeline
 
 ---
 
