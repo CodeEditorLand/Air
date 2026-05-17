@@ -1,9 +1,9 @@
 //! HTTP Client Module with DNS Override
 //!
 //! This module provides a secured HTTP client that uses the local DNS server
-//! for all DNS resolution. This ensures that all `*.editor.land` queries go
-//! through the local Hickory DNS server, which resolves them to `127.x.x.x`
-//! addresses as a defense-in-depth measure.
+//! for all DNS resolution. This ensures that all `*.land.playform.cloud`
+//! queries go through the local Hickory DNS server, which resolves them to
+//! `127.x.x.x` addresses as a defense-in-depth measure.
 
 use std::{sync::Arc, time::Duration};
 
@@ -56,8 +56,8 @@ pub fn secured_client_builder(dns_port:u16) -> Result<reqwest::ClientBuilder> {
 ///
 /// This client uses the local DNS server (running on the specified port)
 /// for all DNS resolution. This is a security measure to ensure that all
-/// `*.editor.land` queries go through the local Hickory DNS server, which
-/// validates that they only resolve to `127.x.x.x` addresses.
+/// `*.land.playform.cloud` queries go through the local Hickory DNS server,
+/// which validates that they only resolve to `127.x.x.x` addresses.
 ///
 /// # Parameters
 ///
@@ -80,7 +80,7 @@ pub fn secured_client_builder(dns_port:u16) -> Result<reqwest::ClientBuilder> {
 /// 	let client = secured_client(dns_port)?;
 ///
 /// 	// All HTTP requests will use the local DNS server
-/// 	let response = client.get("https://code.editor.land").send().await?;
+/// 	let response = client.get("https://code.land.playform.cloud").send().await?;
 /// 	Ok(())
 /// }
 /// ```
@@ -89,7 +89,7 @@ pub fn secured_client_builder(dns_port:u16) -> Result<reqwest::ClientBuilder> {
 ///
 /// The DNS override ensures:
 /// - All DNS queries go through the local DNS server
-/// - `*.editor.land` domains resolve only to `127.x.x.x` addresses
+/// - `*.land.playform.cloud` domains resolve only to `127.x.x.x` addresses
 /// - Protection against DNS spoofing and cache poisoning
 /// - Defense-in-depth security for the local network
 pub fn secured_client(dns_port:u16) -> Result<reqwest::Client> {

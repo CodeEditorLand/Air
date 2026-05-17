@@ -221,7 +221,7 @@ pub struct UpdateConfig {
 	/// Update server URL
 	/// Validation: Must be a valid HTTPS URL
 	/// Security: HTTPS required for security
-	/// Default: <https://updates.editor.land>
+	/// Default: <https://updates.land.playform.cloud>
 	#[serde(default = "default_update_server_url")]
 	pub UpdateServerUrl:String,
 
@@ -245,7 +245,7 @@ fn default_update_enabled() -> bool { true }
 
 fn default_update_check_interval() -> u32 { 6 }
 
-fn default_update_server_url() -> String { "https://updates.editor.land".to_string() }
+fn default_update_server_url() -> String { "https://updates.land.playform.cloud".to_string() }
 
 fn default_update_auto_download() -> bool { true }
 
@@ -1842,7 +1842,7 @@ mod tests {
 	fn test_url_validation() {
 		assert!(ConfigurationManager::IsValidUrl("https://example.com"));
 
-		assert!(ConfigurationManager::IsValidUrl("https://updates.editor.land"));
+		assert!(ConfigurationManager::IsValidUrl("https://updates.land.playform.cloud"));
 
 		assert!(!ConfigurationManager::IsValidUrl("not-a-url"));
 
