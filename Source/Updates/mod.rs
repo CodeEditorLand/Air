@@ -1661,7 +1661,7 @@ impl UpdateManager {
 		// Backup additional components
 		// Configuration files
 		let config_dirs = vec![
-			dirs::config_dir().unwrap_or_default().join("Land"),
+			dirs::config_dir().unwrap_or_default().join("FIDDEE"),
 			dirs::home_dir().unwrap_or_default().join(".config/land"),
 		];
 
@@ -1679,7 +1679,7 @@ impl UpdateManager {
 
 		// Data directories
 		let data_dirs = vec![
-			dirs::data_local_dir().unwrap_or_default().join("Land"),
+			dirs::data_local_dir().unwrap_or_default().join("FIDDEE"),
 			dirs::home_dir().unwrap_or_default().join(".local/share/land"),
 		];
 
@@ -1763,7 +1763,7 @@ impl UpdateManager {
 
 		if backup_config.exists() {
 			let config_dirs = vec![
-				dirs::config_dir().unwrap_or_default().join("Land"),
+				dirs::config_dir().unwrap_or_default().join("FIDDEE"),
 				dirs::home_dir().unwrap_or_default().join(".config/land"),
 			];
 
@@ -1784,7 +1784,7 @@ impl UpdateManager {
 
 		if backup_data.exists() {
 			let data_dirs = vec![
-				dirs::data_local_dir().unwrap_or_default().join("Land"),
+				dirs::data_local_dir().unwrap_or_default().join("FIDDEE"),
 				dirs::home_dir().unwrap_or_default().join(".local/share/land"),
 			];
 
