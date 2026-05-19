@@ -219,39 +219,50 @@ timeout management.
 ```mermaid
 graph LR
     classDef mountain fill:#f0d0ff,stroke:#9b59b6,stroke-width:2px,color:#2c0050;
-    classDef air      fill:#9cf,stroke:#2471a3,stroke-width:2px,color:#001040;
-    classDef external fill:#ebebeb,stroke:#888,stroke-dasharray:5 5,color:#333;
+    classDef air      fill:#e0f4ff,stroke:#2471a3,stroke-width:2px,color:#001040;
+    classDef external fill:#ebebeb,stroke:#888,stroke-width:1px,stroke-dasharray:5 5,color:#333;
+    classDef infra    fill:#fff3c0,stroke:#f39c12,stroke-width:1px,stroke-dasharray:5 5,color:#5a3e00;
 
-    subgraph "Land Runtime Ecosystem"
+    subgraph MOUNTAIN["Mountain ⛰️ - Main Application"]
+        MountainIPC["Source/Air/ - gRPC client\n(delegates heavy tasks)"]:::mountain
+    end
+
+    subgraph AIR["Air 🪁 - Persistent Background Daemon (:50053)"]
         direction TB
-
-        subgraph "Mountain - Main App&#x2001;⛰️"
-            UI["User Interface&#x2001;🖼️"]:::mountain
-            CoreLogic["Core Logic&#x2001;⚙️"]:::mountain
-            IPC_Client["IPC Client&#x2001;📡"]:::mountain
-            CoreLogic -- delegates heavy tasks --> IPC_Client
+        subgraph COMM["Vine/ - gRPC Transport"]
+            VineServer["Vine/Server/ - gRPC server\n(Generated/ prost bindings)"]:::air
+            MountainClient["Mountain/ - gRPC client\n(Air → Mountain callbacks)"]:::air
+        end
+        subgraph CORE["Core Services"]
+            Updates["Updates/ - version check\ndownload · verify · staged install · rollback"]:::air
+            Downloader["Downloader/ - parallel chunks\nrate-limit · resume · retry"]:::air
+            Auth["Authentication/ - token mgmt\nAEAD encrypt · key rotation"]:::air
+            Indexing["Indexing/ - file index\nsymbol extract · FS watch · search"]:::air
+        end
+        subgraph INFRA["Infrastructure"]
+            Health["HealthCheck/ - Alive/Responsive/Functional\nauto-recovery"]:::infra
+            Resilience["Resilience/ - retry backoff\ncircuit breaker · bulkhead"]:::infra
+            Metrics["Metrics/ - Prometheus-compatible\nlatency · success rate"]:::infra
+            Security["Security/ - AES-GCM\nchecksum · audit"]:::infra
+            Daemon["Daemon/ - PID lock\nsingleton enforce"]:::air
         end
 
-        subgraph "Air - Daemon Sidecar (port 50053)&#x2001;🪁"
-            IPC_Server["gRPC Server&#x2001;📡"]:::air
-            UpdateMgr["Update Manager&#x2001;🔄"]:::air
-            Downloader["⏬ Resilient Downloader"]:::air
-            AuthService["Signer & Auth&#x2001;🔐"]:::air
-
-            IPC_Server -- routes --> UpdateMgr
-            IPC_Server -- routes --> Downloader
-            IPC_Server -- routes --> AuthService
-        end
-
-        IPC_Client -- Vine gRPC --> IPC_Server
+        VineServer --> Updates
+        VineServer --> Downloader
+        VineServer --> Auth
+        VineServer --> Indexing
+        Updates --> Resilience
+        Downloader --> Resilience
     end
 
-    subgraph "External World"
-        Cloud["Update Servers / Registry&#x2001;☁️"]:::external
+    subgraph EXTERNAL["External ☁️"]
+        UpdateSrv["Update servers / extension registry"]:::external
     end
 
-    UpdateMgr -- fetches --> Cloud
-    Downloader -- downloads --> Cloud
+    MountainIPC -- gRPC :50053 --> VineServer
+    MountainClient -- progress events --> MountainIPC
+    Updates -- fetches --> UpdateSrv
+    Downloader -- downloads --> UpdateSrv
 ```
 
 ---
