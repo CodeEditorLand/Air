@@ -82,6 +82,7 @@
 //! - Filesystem and network access restrictions
 
 pub mod ApiVersion;
+pub use ApiVersion::{ApiVersion, ApiVersionManager};
 
 pub mod EventBus;
 
@@ -1284,97 +1285,6 @@ impl PluginLoader {
 }
 
 impl Default for PluginLoader {
-	fn default() -> Self { Self::new() }
-}
-
-// =============================================================================
-// API Version Management
-// =============================================================================
-
-/// API version information
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct ApiVersion {
-	pub major:u32,
-
-	pub minor:u32,
-
-	pub patch:u32,
-
-	pub PreRelease:Option<String>,
-}
-
-impl ApiVersion {
-	/// Get the current API version
-	pub fn current() -> Self { Self { major:1, minor:0, patch:0, PreRelease:None } }
-
-	/// Parse version from string
-	pub fn parse(version:&str) -> Result<Self> {
-		let parts:Vec<&str> = version.split('.').collect();
-
-		if parts.len() < 3 {
-			return Err(crate::AirError::Plugin("Invalid version format".to_string()));
-		}
-
-		Ok(Self {
-			major:parts[0]
-				.parse()
-				.map_err(|_| crate::AirError::Plugin("Invalid major version".to_string()))?,
-			minor:parts[1]
-				.parse()
-				.map_err(|_| crate::AirError::Plugin("Invalid minor version".to_string()))?,
-			patch:parts[2]
-				.parse()
-				.map_err(|_| crate::AirError::Plugin("Invalid patch version".to_string()))?,
-			PreRelease:if parts.len() > 3 { Some(parts[3].to_string()) } else { None },
-		})
-	}
-
-	/// Check if this version is compatible with another
-	pub fn IsCompatible(&self, other:&ApiVersion) -> bool {
-		// Same major version means compatible
-		if self.major != other.major {
-			return false;
-		}
-
-		// If minor version is higher, it might have breaking changes
-		if other.minor < self.minor {
-			return false;
-		}
-
-		true
-	}
-}
-
-/// API version manager
-pub struct ApiVersionManager {
-	CurrentVersion:ApiVersion,
-
-	CompatibleVersions:Vec<ApiVersion>,
-}
-
-impl ApiVersionManager {
-	/// Create a new API version manager
-	pub fn new() -> Self {
-		let current = ApiVersion::current();
-
-		Self { CurrentVersion:current.clone(), CompatibleVersions:vec![current] }
-	}
-
-	/// Get the current API version
-	pub fn current(&self) -> &ApiVersion { &self.CurrentVersion }
-
-	/// Check if a version is compatible
-	pub fn IsCompatible(&self, version:&ApiVersion) -> bool { self.CurrentVersion.IsCompatible(version) }
-
-	/// Register a compatible API version
-	pub fn register_compatible(&mut self, version:ApiVersion) {
-		if self.IsCompatible(&version) && !self.CompatibleVersions.contains(&version) {
-			self.CompatibleVersions.push(version);
-		}
-	}
-}
-
-impl Default for ApiVersionManager {
 	fn default() -> Self { Self::new() }
 }
 

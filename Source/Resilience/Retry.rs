@@ -113,6 +113,7 @@ pub struct RetryEvent {
 
 /// Applies `RetryPolicy`: computes delays, tracks budgets per service,
 /// classifies errors, and publishes `RetryEvent`s.
+#[derive(Debug)]
 pub struct RetryManager {
 	Policy:RetryPolicy,
 	Budgets:Arc<Mutex<HashMap<String, RetryBudget>>>,

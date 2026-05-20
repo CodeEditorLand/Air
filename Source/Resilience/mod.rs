@@ -133,6 +133,7 @@ pub struct CircuitEvent {
 
 /// Circuit breaker for fault isolation with state consistency validation and
 /// event publishing
+#[derive(Debug)]
 pub struct CircuitBreaker {
 	Name:String,
 
@@ -570,6 +571,7 @@ pub struct BulkheadStatistics {
 }
 
 /// Bulkhead semaphore for resource isolation with metrics and panic recovery
+#[derive(Debug)]
 pub struct BulkheadExecutor {
 	name:String,
 
@@ -778,9 +780,8 @@ impl Clone for BulkheadExecutor {
 	}
 }
 
-/// Timeout manager for cascading deadlines with validation
-#[derive(Debug, Clone)]
 /// Resilience orchestrator combining all patterns
+#[derive(Debug)]
 pub struct ResilienceOrchestrator {
 	retry_manager:Arc<RetryManager>,
 
