@@ -67,6 +67,10 @@
 //! - Avoid including request payloads in resilience events
 //! - Sanitize service names before publishing to telemetry
 
+pub mod Timeout;
+
+pub use Timeout::TimeoutManager;
+
 use std::{
 	collections::HashMap,
 	sync::Arc,
@@ -1045,108 +1049,6 @@ impl Clone for BulkheadExecutor {
 
 /// Timeout manager for cascading deadlines with validation
 #[derive(Debug, Clone)]
-pub struct TimeoutManager {
-	global_deadline:Option<Instant>,
-
-	operation_timeout:Duration,
-}
-
-impl TimeoutManager {
-	/// Create a new timeout manager
-	pub fn new(operation_timeout:Duration) -> Self { Self { global_deadline:None, operation_timeout } }
-
-	/// Create with global deadline
-	pub fn with_deadline(global_deadline:Instant, operation_timeout:Duration) -> Self {
-		Self { global_deadline:Some(global_deadline), operation_timeout }
-	}
-
-	/// Validate timeout configuration
-	pub fn ValidateTimeout(timeout:Duration) -> Result<(), String> {
-		if timeout.is_zero() {
-			return Err("Timeout must be greater than 0".to_string());
-		}
-
-		if timeout.as_secs() > 3600 {
-			return Err("Timeout cannot exceed 1 hour".to_string());
-		}
-
-		Ok(())
-	}
-
-	/// Validate timeout as Result for error handling
-	pub fn ValidateTimeoutResult(timeout:Duration) -> Result<Duration, String> {
-		if timeout.is_zero() {
-			return Err("Timeout must be greater than 0".to_string());
-		}
-
-		if timeout.as_secs() > 3600 {
-			return Err("Timeout cannot exceed 1 hour".to_string());
-		}
-
-		Ok(timeout)
-	}
-
-	/// Get remaining time until deadline
-	pub fn remaining(&self) -> Option<Duration> {
-		self.global_deadline.map(|deadline| {
-			deadline
-				.checked_duration_since(Instant::now())
-				.unwrap_or(Duration::from_secs(0))
-		})
-	}
-
-	/// Get remaining time with panic recovery
-	pub fn Remaining(&self) -> Option<Duration> {
-		std::panic::catch_unwind(|| self.remaining()).unwrap_or_else(|e| {
-			dev_log!("resilience", "error: [TimeoutManager] Panic in Remaining: {:?}", e);
-			None
-		})
-	}
-
-	/// Get effective timeout (minimum of operation timeout and remaining time)
-	pub fn effective_timeout(&self) -> Duration {
-		match self.remaining() {
-			Some(remaining) => self.operation_timeout.min(remaining),
-
-			None => self.operation_timeout,
-		}
-	}
-
-	/// Get effective timeout with validation
-	pub fn EffectiveTimeout(&self) -> Duration {
-		std::panic::catch_unwind(|| {
-			let timeout = self.effective_timeout();
-
-			match Self::ValidateTimeoutResult(timeout) {
-				Ok(valid_timeout) => valid_timeout,
-
-				Err(_) => Duration::from_secs(30),
-			}
-		})
-		.unwrap_or_else(|e| {
-			dev_log!("resilience", "error: [TimeoutManager] Panic in EffectiveTimeout: {:?}", e);
-			Duration::from_secs(30)
-		})
-	}
-
-	/// Check if deadline has been exceeded
-	pub fn is_exceeded(&self) -> bool { self.global_deadline.map_or(false, |deadline| Instant::now() >= deadline) }
-
-	/// Check if deadline has been exceeded with panic recovery
-	pub fn IsExceeded(&self) -> bool {
-		std::panic::catch_unwind(|| self.is_exceeded()).unwrap_or_else(|e| {
-			dev_log!("resilience", "error: [TimeoutManager] Panic in IsExceeded: {:?}", e);
-			true // Fail safe: assume exceeded
-		})
-	}
-
-	/// Get the global deadline
-	pub fn GetGlobalDeadline(&self) -> Option<Instant> { self.global_deadline }
-
-	/// Get the operation timeout
-	pub fn GetOperationTimeout(&self) -> Duration { self.operation_timeout }
-}
-
 /// Resilience orchestrator combining all patterns
 pub struct ResilienceOrchestrator {
 	retry_manager:Arc<RetryManager>,
