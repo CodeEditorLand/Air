@@ -67,6 +67,10 @@
 //! - Avoid including request payloads in resilience events
 //! - Sanitize service names before publishing to telemetry
 
+pub mod Retry;
+
+pub use Retry::{ErrorClass, RetryEvent, RetryManager, RetryPolicy};
+
 pub mod Timeout;
 
 pub use Timeout::TimeoutManager;
@@ -82,28 +86,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::dev_log;
 
-/// Error classification for adaptive retry policies
+// ErrorClass, RetryPolicy, RetryBudget, RetryManager, RetryEvent → see Retry.rs
+
+/// Circuit breaker states
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum ErrorClass {
-	/// Transient errors (network timeouts, temporary failures)
-	Transient,
-
-	/// Non-retryable errors (authentication, invalid requests)
-	NonRetryable,
-
-	/// Rate limit errors (429 Too Many Requests)
-	RateLimited,
-
-	/// Server errors (500-599)
-	ServerError,
-
-	/// Unknown error classification
-	Unknown,
-}
-
-/// Retry policy configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RetryPolicy {
+pub enum CircuitState {
 	/// Maximum number of retry attempts
 	pub MaxRetries:u32,
 
