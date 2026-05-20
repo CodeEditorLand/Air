@@ -82,7 +82,6 @@
 //! - Filesystem and network access restrictions
 
 pub mod ApiVersion;
-pub use ApiVersion::{ApiVersion, ApiVersionManager};
 
 pub mod EventBus;
 
@@ -1448,11 +1447,11 @@ mod tests {
 
 	#[tokio::test]
 	async fn test_api_version_compatibility() {
-		let v1 = ApiVersion { major:1, minor:0, patch:0, PreRelease:None };
+		let v1 = ApiVersion::ApiVersion { major:1, minor:0, patch:0, PreRelease:None };
 
-		let v2 = ApiVersion { major:1, minor:1, patch:0, PreRelease:None };
+		let v2 = ApiVersion::ApiVersion { major:1, minor:1, patch:0, PreRelease:None };
 
-		let v3 = ApiVersion { major:2, minor:0, patch:0, PreRelease:None };
+		let v3 = ApiVersion::ApiVersion { major:2, minor:0, patch:0, PreRelease:None };
 
 		assert!(v1.IsCompatible(&v2));
 
