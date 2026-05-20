@@ -69,6 +69,14 @@
 //! - Update signatures: Ed25519 or PGP signature verification
 //! - Update package format: Custom package format for cross-platform support
 
+pub mod ChecksumUtil;
+
+pub mod PlatformDetect;
+
+pub mod Types;
+
+pub mod VersionCompare;
+
 use std::{
 	collections::HashMap,
 	path::{Path, PathBuf},

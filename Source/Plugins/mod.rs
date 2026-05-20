@@ -81,6 +81,10 @@
 //! - Plugin authentication and signing to prevent malicious plugins
 //! - Filesystem and network access restrictions
 
+pub mod ApiVersion;
+
+pub mod EventBus;
+
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use async_trait::async_trait;

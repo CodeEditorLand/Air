@@ -100,6 +100,10 @@
 //! - Pre-fetching and caching of frequently accessed resources
 //! - Download deduplication across the ecosystem
 
+pub mod RateLimit;
+
+pub mod Types;
+
 use std::{
 	collections::{HashMap, VecDeque},
 	path::{Path, PathBuf},

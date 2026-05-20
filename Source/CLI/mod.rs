@@ -68,6 +68,10 @@
 //! - Sensitive information is masked in logs and error messages
 //! - Timeouts prevent hanging on unresponsive daemon
 
+pub mod CommandTypes;
+
+pub mod ResponseTypes;
+
 use std::{collections::HashMap, time::Duration};
 
 use serde::{Deserialize, Serialize};
