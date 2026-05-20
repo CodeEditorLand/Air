@@ -50,11 +50,7 @@ impl PluginEventBus {
 		let handlers = self.handlers.read().await;
 		for handler in handlers.iter() {
 			if let Err(Error) = handler.Event(&event).await {
-				dev_log!(
-					"extensions",
-					"error: [PluginEventBus] Event handler error: {}",
-					Error
-				);
+				dev_log!("extensions", "error: [PluginEventBus] Event handler error: {}", Error);
 			}
 		}
 	}

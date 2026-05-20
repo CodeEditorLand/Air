@@ -131,14 +131,14 @@ impl RetryManager {
 
 	pub fn GetEventTransmitter(&self) -> broadcast::Sender<RetryEvent> { (*self.EventTx).clone() }
 
-	/// Exponential backoff with jitter: `base * multiplier^(attempt-1) + jitter`.
+	/// Exponential backoff with jitter: `base * multiplier^(attempt-1) +
+	/// jitter`.
 	pub fn CalculateRetryDelay(&self, Attempt:u32) -> Duration {
 		if Attempt == 0 {
 			return Duration::from_millis(0);
 		}
-		let BaseDelay = (self.Policy.InitialIntervalMs as f64
-			* self.Policy.BackoffMultiplier.powi(Attempt as i32 - 1))
-		.min(self.Policy.MaxIntervalMs as f64) as u64;
+		let BaseDelay = (self.Policy.InitialIntervalMs as f64 * self.Policy.BackoffMultiplier.powi(Attempt as i32 - 1))
+			.min(self.Policy.MaxIntervalMs as f64) as u64;
 		let Jitter = (BaseDelay as f64 * self.Policy.JitterFactor) as u64;
 		let RandomJitter = (rand::random::<f64>() * Jitter as f64) as u64;
 		Duration::from_millis(BaseDelay + RandomJitter)

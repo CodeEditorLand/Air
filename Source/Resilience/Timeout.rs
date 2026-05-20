@@ -6,9 +6,10 @@
 //! deadline. `effective_timeout()` returns the minimum of the two so every
 //! nested operation respects both the local and cascade budgets.
 //!
-//! All public methods have panic-safe variants (`Remaining`, `EffectiveTimeout`,
-//! `IsExceeded`) that catch panics via `catch_unwind` and return conservative
-//! fallback values so a transient panic never propagates into the caller.
+//! All public methods have panic-safe variants (`Remaining`,
+//! `EffectiveTimeout`, `IsExceeded`) that catch panics via `catch_unwind` and
+//! return conservative fallback values so a transient panic never propagates
+//! into the caller.
 
 use std::time::{Duration, Instant};
 
@@ -22,9 +23,7 @@ pub struct TimeoutManager {
 
 impl TimeoutManager {
 	/// Create with an operation-scoped timeout and no global deadline.
-	pub fn new(operation_timeout:Duration) -> Self {
-		Self { global_deadline:None, operation_timeout }
-	}
+	pub fn new(operation_timeout:Duration) -> Self { Self { global_deadline:None, operation_timeout } }
 
 	/// Create with both a global deadline and an operation timeout.
 	pub fn with_deadline(global_deadline:Instant, operation_timeout:Duration) -> Self {
@@ -94,9 +93,7 @@ impl TimeoutManager {
 	}
 
 	/// `true` when the global deadline has passed.
-	pub fn is_exceeded(&self) -> bool {
-		self.global_deadline.map_or(false, |deadline| Instant::now() >= deadline)
-	}
+	pub fn is_exceeded(&self) -> bool { self.global_deadline.map_or(false, |deadline| Instant::now() >= deadline) }
 
 	/// Panic-safe `is_exceeded()`. Returns `true` on panic (fail-safe).
 	pub fn IsExceeded(&self) -> bool {

@@ -44,8 +44,9 @@ impl TokenBucket {
 		}
 	}
 
-	/// Consume up to `bytes` tokens immediately. Returns how many were consumed.
-	/// Does not block - the caller decides what to do with remaining deficit.
+	/// Consume up to `bytes` tokens immediately. Returns how many were
+	/// consumed. Does not block - the caller decides what to do with remaining
+	/// deficit.
 	pub fn try_consume(&mut self, bytes:u64) -> u64 {
 		self.refill();
 		let bytes = bytes as f64;

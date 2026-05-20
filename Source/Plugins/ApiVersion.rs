@@ -47,9 +47,7 @@ impl ApiVersion {
 	}
 
 	/// `true` when `other` is compatible: same major, minor ≥ self.minor.
-	pub fn IsCompatible(&self, other:&ApiVersion) -> bool {
-		self.major == other.major && other.minor >= self.minor
-	}
+	pub fn IsCompatible(&self, other:&ApiVersion) -> bool { self.major == other.major && other.minor >= self.minor }
 }
 
 /// Tracks the current host API version and a set of compatible peer versions.
@@ -66,9 +64,7 @@ impl ApiVersionManager {
 
 	pub fn current(&self) -> &ApiVersion { &self.CurrentVersion }
 
-	pub fn IsCompatible(&self, version:&ApiVersion) -> bool {
-		self.CurrentVersion.IsCompatible(version)
-	}
+	pub fn IsCompatible(&self, version:&ApiVersion) -> bool { self.CurrentVersion.IsCompatible(version) }
 
 	/// Register `version` as compatible if it passes the compatibility check.
 	pub fn register_compatible(&mut self, version:ApiVersion) {

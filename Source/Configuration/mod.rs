@@ -90,14 +90,13 @@ pub mod HotReload;
 
 pub mod Schema;
 
-pub use Schema::generate_schema;
-
 use std::{
 	collections::HashMap,
 	env,
 	path::{Path, PathBuf},
 };
 
+pub use Schema::generate_schema;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value as JsonValue, json};
 use sha2::Digest;

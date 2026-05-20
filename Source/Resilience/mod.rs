@@ -73,14 +73,13 @@ pub use Retry::{ErrorClass, RetryEvent, RetryManager, RetryPolicy};
 
 pub mod Timeout;
 
-pub use Timeout::TimeoutManager;
-
 use std::{
 	collections::HashMap,
 	sync::Arc,
 	time::{Duration, Instant},
 };
 
+pub use Timeout::TimeoutManager;
 use tokio::sync::{Mutex, RwLock, broadcast};
 use serde::{Deserialize, Serialize};
 

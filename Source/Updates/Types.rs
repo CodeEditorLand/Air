@@ -8,8 +8,7 @@
 //! shape of the update domain legible without reading the 2600-line
 //! implementation.
 
-use std::collections::HashMap;
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 

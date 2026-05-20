@@ -6,11 +6,7 @@
 //! These structs are the data contract between `DownloadManager` methods,
 //! IPC callers (Cocoon VSIX installs, Mountain status queries), and tests.
 
-use std::{
-	path::PathBuf,
-	sync::Arc,
-	time::Duration,
-};
+use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use serde::{Deserialize, Serialize};
 
