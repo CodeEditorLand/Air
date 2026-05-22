@@ -98,7 +98,6 @@ use std::{
 
 pub use Schema::generate_schema;
 use serde::{Deserialize, Serialize};
-use serde_json::Value as JsonValue;
 use sha2::Digest;
 
 use crate::{AirError, DefaultConfigFile, Result, dev_log};
