@@ -80,7 +80,7 @@ use std::{
 };
 
 pub use Timeout::TimeoutManager;
-use tokio::sync::{Mutex, RwLock, broadcast};
+use tokio::sync::{RwLock, broadcast};
 use serde::{Deserialize, Serialize};
 
 use crate::dev_log;
