@@ -289,6 +289,7 @@ pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, B
 			"grpc",
 			"warn: Certificate verification disabled - this is NOT secure for production!"
 		); // For development/testing, consider using a custom verifier
+
 		// For now, this is a placeholder - verification is always enabled
 	}
 

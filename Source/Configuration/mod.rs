@@ -1501,6 +1501,7 @@ impl ConfigurationManager {
 				.ok_or_else(|| AirError::Configuration("Cannot determine home directory".to_string()))?;
 
 			let rest = &path[1..]; // Remove ~
+
 			if rest.starts_with('/') || rest.starts_with('\\') {
 				Ok(home.join(&rest[1..]))
 			} else {

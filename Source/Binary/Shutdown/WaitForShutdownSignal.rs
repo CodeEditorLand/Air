@@ -87,10 +87,13 @@ use crate::dev_log;
 /// # }
 /// ```
 pub async fn WaitForShutdownSignal() {
+
 	dev_log!("lifecycle", "[Shutdown] Waiting for termination signal...");
 
 	let CtrlC = async {
+
 		match tokio::signal::ctrl_c().await {
+
 			Ok(()) => dev_log!("lifecycle", "[Shutdown] Received Ctrl+C signal"),
 
 			Err(Error) => dev_log!("lifecycle", "error: [Shutdown] Failed to install Ctrl+C handler: {}", Error),
@@ -99,8 +102,11 @@ pub async fn WaitForShutdownSignal() {
 
 	#[cfg(unix)]
 	let Terminate = async {
+
 		match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
+
 			Ok(mut Signal) => {
+
 				Signal.recv().await;
 
 				dev_log!("lifecycle", "[Shutdown] Received SIGTERM signal");

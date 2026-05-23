@@ -1090,6 +1090,7 @@ mod tests {
 		let checksum = verifier.CalculateSha256Bytes(data);
 
 		assert_eq!(checksum.len(), 64); // SHA-256 hex is 64 chars
+
 		assert!(!checksum.is_empty());
 	}
 

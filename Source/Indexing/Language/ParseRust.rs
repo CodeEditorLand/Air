@@ -97,6 +97,7 @@ fn ExtractRustSymbolsFromLine(line_content:&str, line_num:u32, line:&str, file_p
 	// Struct
 	if let Some(rest) = line_content.strip_prefix("struct ") {
 		let name = rest.split_whitespace().next().unwrap_or("").trim_end_matches('{');
+
 		if !name.is_empty() {
 			if let Some(col) = line.find("struct") {
 				symbols.push(SymbolInfo {
@@ -113,6 +114,7 @@ fn ExtractRustSymbolsFromLine(line_content:&str, line_num:u32, line:&str, file_p
 	// impl
 	if let Some(rest) = line_content.strip_prefix("impl ") {
 		let name = rest.split_whitespace().next().unwrap_or("").trim_end_matches('{');
+
 		if !name.is_empty() {
 			if let Some(col) = line.find("impl") {
 				symbols.push(SymbolInfo {
@@ -129,6 +131,7 @@ fn ExtractRustSymbolsFromLine(line_content:&str, line_num:u32, line:&str, file_p
 	// Function
 	if let Some(rest) = line_content.strip_prefix("fn ") {
 		let name = rest.split(|c| c == '(' || c == '<' || c == ':').next().unwrap_or("").trim();
+
 		if !name.is_empty() {
 			if let Some(col) = line.find("fn") {
 				symbols.push(SymbolInfo {
@@ -145,6 +148,7 @@ fn ExtractRustSymbolsFromLine(line_content:&str, line_num:u32, line:&str, file_p
 	// Module
 	if let Some(rest) = line_content.strip_prefix("mod ") {
 		let name = rest.split_whitespace().next().unwrap_or("").trim_end_matches('{');
+
 		if !name.is_empty() {
 			if let Some(col) = line.find("mod") {
 				symbols.push(SymbolInfo {
@@ -161,6 +165,7 @@ fn ExtractRustSymbolsFromLine(line_content:&str, line_num:u32, line:&str, file_p
 	// Enum
 	if let Some(rest) = line_content.strip_prefix("enum ") {
 		let name = rest.split_whitespace().next().unwrap_or("").trim_end_matches('{');
+
 		if !name.is_empty() {
 			if let Some(col) = line.find("enum") {
 				symbols.push(SymbolInfo {
@@ -177,6 +182,7 @@ fn ExtractRustSymbolsFromLine(line_content:&str, line_num:u32, line:&str, file_p
 	// Trait
 	if let Some(rest) = line_content.strip_prefix("trait ") {
 		let name = rest.split_whitespace().next().unwrap_or("").trim_end_matches('{');
+
 		if !name.is_empty() {
 			if let Some(col) = line.find("trait") {
 				symbols.push(SymbolInfo {
@@ -193,6 +199,7 @@ fn ExtractRustSymbolsFromLine(line_content:&str, line_num:u32, line:&str, file_p
 	// Type alias
 	if let Some(rest) = line_content.strip_prefix("type ") {
 		let name = rest.split('=').next().unwrap_or("").trim().trim_end_matches(';');
+
 		if !name.is_empty() {
 			if let Some(col) = line.find("type") {
 				symbols.push(SymbolInfo {
@@ -210,6 +217,7 @@ fn ExtractRustSymbolsFromLine(line_content:&str, line_num:u32, line:&str, file_p
 	if line_content.starts_with("const ") && !line_content.contains('=') {
 		if let Some(rest) = line_content.strip_prefix("const ") {
 			let name = rest.split(|c| c == ':' || c == '=').next().unwrap_or("").trim();
+
 			if !name.is_empty() {
 				if let Some(col) = line.find("const") {
 					symbols.push(SymbolInfo {
@@ -228,6 +236,7 @@ fn ExtractRustSymbolsFromLine(line_content:&str, line_num:u32, line:&str, file_p
 	if line_content.starts_with("static ") {
 		if let Some(rest) = line_content.strip_prefix("static ") {
 			let name = rest.split(|c| c == ':' || c == '=').next().unwrap_or("").trim();
+
 			if !name.is_empty() {
 				if let Some(col) = line.find("static") {
 					symbols.push(SymbolInfo {
@@ -248,23 +257,27 @@ fn ExtractRustSymbolsFromLine(line_content:&str, line_num:u32, line:&str, file_p
 /// Check if a line contains a Rust struct definition
 pub fn IsRustStruct(line:&str) -> bool {
 	let trimmed = line.trim();
+
 	let after_keywords = trimmed
 		.strip_prefix("pub ")
 		.or_else(|| trimmed.strip_prefix("unsafe "))
 		.or_else(|| trimmed.strip_prefix("pub(crate) "))
 		.unwrap_or(trimmed);
+
 	after_keywords.starts_with("struct ")
 }
 
 /// Check if a line contains a Rust function definition
 pub fn IsRustFunction(line:&str) -> bool {
 	let trimmed = line.trim();
+
 	let after_keywords = trimmed
 		.strip_prefix("pub ")
 		.or_else(|| trimmed.strip_prefix("pub(crate) "))
 		.or_else(|| trimmed.strip_prefix("unsafe "))
 		.or_else(|| trimmed.strip_prefix("async "))
 		.unwrap_or(trimmed);
+
 	after_keywords.starts_with("fn ")
 }
 
@@ -272,16 +285,19 @@ pub fn IsRustFunction(line:&str) -> bool {
 pub fn IsRustImpl(line:&str) -> bool {
 	// Handle variations: impl, pub impl, unsafe impl
 	let trimmed = line.trim();
+
 	let after_keywords = trimmed
 		.strip_prefix("pub ")
 		.or_else(|| trimmed.strip_prefix("unsafe "))
 		.unwrap_or(trimmed);
+
 	after_keywords.starts_with("impl ")
 }
 
 /// Extract Rust visibility modifier if present
 pub fn ExtractVisibilityModifier(line:&str) -> Option<&str> {
 	let trimmed = line.trim();
+
 	if trimmed.starts_with("pub ") {
 		Some("pub")
 	} else if trimmed.starts_with("pub(crate) ") {
@@ -291,7 +307,9 @@ pub fn ExtractVisibilityModifier(line:&str) -> Option<&str> {
 	} else if trimmed.starts_with("pub(in ") {
 		// Extract the path part
 		let rest = trimmed.strip_prefix("pub(in ").unwrap_or("");
+
 		let path = rest.split(')').next().unwrap_or("");
+
 		if !path.is_empty() {
 			Some(&trimmed[0..trimmed.find(')').unwrap_or(trimmed.len()) + 1])
 		} else {

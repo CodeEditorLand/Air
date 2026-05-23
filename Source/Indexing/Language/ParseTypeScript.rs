@@ -97,6 +97,7 @@ fn ExtractTypeScriptSymbolsFromLine(line_content:&str, line_num:u32, line:&str, 
 	// Class
 	if let Some(rest) = line_content.strip_prefix("class ") {
 		let name = rest.split(|c| c == '{' || c == '<' || c == ' ').next().unwrap_or("").trim();
+
 		if !name.is_empty() {
 			if let Some(col) = line.find("class") {
 				symbols.push(SymbolInfo {
@@ -113,6 +114,7 @@ fn ExtractTypeScriptSymbolsFromLine(line_content:&str, line_num:u32, line:&str, 
 	// Interface
 	if let Some(rest) = line_content.strip_prefix("interface ") {
 		let name = rest.split(|c| c == '{' || c == '<' || c == ' ').next().unwrap_or("").trim();
+
 		if !name.is_empty() {
 			if let Some(col) = line.find("interface") {
 				symbols.push(SymbolInfo {
@@ -130,6 +132,7 @@ fn ExtractTypeScriptSymbolsFromLine(line_content:&str, line_num:u32, line:&str, 
 	if let Some(rest) = line_content.strip_prefix("type ") {
 		// Handle type aliases which may end with = or {
 		let name = rest.split(|c| c == '=' || c == '{' || c == ';').next().unwrap_or("").trim();
+
 		if !name.is_empty() {
 			if let Some(col) = line.find("type") {
 				symbols.push(SymbolInfo {
@@ -146,6 +149,7 @@ fn ExtractTypeScriptSymbolsFromLine(line_content:&str, line_num:u32, line:&str, 
 	// Enum
 	if let Some(rest) = line_content.strip_prefix("enum ") {
 		let name = rest.split(|c| c == '{' || c == ';').next().unwrap_or("").trim();
+
 		if !name.is_empty() {
 			if let Some(col) = line.find("enum") {
 				symbols.push(SymbolInfo {
@@ -162,6 +166,7 @@ fn ExtractTypeScriptSymbolsFromLine(line_content:&str, line_num:u32, line:&str, 
 	// Function declaration
 	if let Some(rest) = line_content.strip_prefix("function ") {
 		let name = rest.split('(').next().unwrap_or("").trim();
+
 		if !name.is_empty() {
 			// Check for arrow functions: const name = () => {}
 			if !name.contains("=") {
@@ -182,12 +187,15 @@ fn ExtractTypeScriptSymbolsFromLine(line_content:&str, line_num:u32, line:&str, 
 	if line_content.contains("=>") {
 		if let Some(col) = line.find("=>") {
 			let before_arrow = &line[..col];
+
 			// Try to extract function name
 			let name_part = before_arrow.split('=').next().unwrap_or("").trim();
 
 			let func_name = if name_part.contains("(") || name_part.contains("<") {
 				let mut parts = name_part.split(|c| c == '(' || c == '<' || c == ':');
+
 				let name = parts.next().unwrap_or("").trim();
+
 				name
 			} else {
 				name_part
@@ -210,6 +218,7 @@ fn ExtractTypeScriptSymbolsFromLine(line_content:&str, line_num:u32, line:&str, 
 	for kw in &["const ", "let ", "var "] {
 		if let Some(rest) = line_content.strip_prefix(kw) {
 			let name = rest.split(|c| c == '=' || c == ':' || c == ';').next().unwrap_or("").trim();
+
 			// Check if it's a function assignment: const myFunc = () => {}
 			let _is_function_assignment = !line_content.contains("=>")
 				&& !line_content.contains("function")
@@ -239,6 +248,7 @@ fn ExtractTypeScriptSymbolsFromLine(line_content:&str, line_num:u32, line:&str, 
 	// Namespace
 	if let Some(rest) = line_content.strip_prefix("namespace ") {
 		let name = rest.split(|c| c == '{' || c == ';').next().unwrap_or("").trim();
+
 		if !name.is_empty() {
 			if let Some(col) = line.find("namespace") {
 				symbols.push(SymbolInfo {
@@ -258,40 +268,47 @@ fn ExtractTypeScriptSymbolsFromLine(line_content:&str, line_num:u32, line:&str, 
 /// Check if a line contains a TypeScript/JavaScript class definition
 pub fn IsTypeScriptClass(line:&str) -> bool {
 	let trimmed = line.trim();
+
 	let after_keywords = trimmed
 		.strip_prefix("export ")
 		.or_else(|| trimmed.strip_prefix("default "))
 		.or_else(|| trimmed.strip_prefix("declare "))
 		.unwrap_or(trimmed);
+
 	after_keywords.starts_with("class ") && !after_keywords.contains(" extends ")
 }
 
 /// Check if a line contains a TypeScript/JavaScript interface definition
 pub fn IsTypeScriptInterface(line:&str) -> bool {
 	let trimmed = line.trim();
+
 	let after_keywords = trimmed
 		.strip_prefix("export ")
 		.or_else(|| trimmed.strip_prefix("default "))
 		.or_else(|| trimmed.strip_prefix("declare "))
 		.unwrap_or(trimmed);
+
 	after_keywords.starts_with("interface ")
 }
 
 /// Check if a line contains a TypeScript/JavaScript function definition
 pub fn IsTypeScriptFunction(line:&str) -> bool {
 	let trimmed = line.trim();
+
 	let after_keywords = trimmed
 		.strip_prefix("export ")
 		.or_else(|| trimmed.strip_prefix("default "))
 		.or_else(|| trimmed.strip_prefix("declare "))
 		.or_else(|| trimmed.strip_prefix("async "))
 		.unwrap_or(trimmed);
+
 	after_keywords.starts_with("function ")
 }
 
 /// Extract TypeScript/JavaScript export modifier if present
 pub fn ExtractExportModifier(line:&str) -> Option<&str> {
 	let trimmed = line.trim();
+
 	if trimmed.starts_with("export ") {
 		Some("export")
 	} else if trimmed.starts_with("export default ") {
@@ -315,11 +332,14 @@ pub fn ExtractExportModifier(line:&str) -> Option<&str> {
 pub fn ExtractTypeAnnotation(line:&str) -> Option<String> {
 	if let Some(colon_idx) = line.find(':') {
 		let rest = &line[colon_idx + 1..];
+
 		// Find the end of the type annotation (before =, {, ;, or <)
 		let end_idx = rest
 			.find(|c| c == '=' || c == '{' || c == ';' || c == ',')
 			.unwrap_or(rest.len());
+
 		let type_str = rest[..end_idx].trim();
+
 		if !type_str.is_empty() { Some(type_str.to_string()) } else { None }
 	} else {
 		None
@@ -329,17 +349,21 @@ pub fn ExtractTypeAnnotation(line:&str) -> Option<String> {
 /// Parse TypeScript/JavaScript generic parameters
 pub fn ExtractGenericParameters(line:&str) -> Vec<String> {
 	let mut generics = Vec::new();
+
 	if let Some(start) = line.find('<') {
 		if let Some(end) = line.rfind('>') {
 			let content = &line[start + 1..end];
+
 			// Split by comma and trim
 			for part in content.split(',') {
 				let trimmed = part.trim();
+
 				if !trimmed.is_empty() {
 					generics.push(trimmed.to_string());
 				}
 			}
 		}
 	}
+
 	generics
 }

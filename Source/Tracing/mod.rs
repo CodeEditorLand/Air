@@ -105,8 +105,10 @@ pub struct SamplingConfig {
 impl Default for SamplingConfig {
 	fn default() -> Self {
 		Self {
-			sample_rate:0.1,          // 10% sampling
+			sample_rate:0.1, // 10% sampling
+
 			critical_sample_rate:1.0, // 100% for critical
+
 			max_spans_per_trace:1000,
 
 			trace_ttl_ms:3600000, // 1 hour

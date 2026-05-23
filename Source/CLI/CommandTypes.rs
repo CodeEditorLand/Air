@@ -1,5 +1,3 @@
-#![allow(unused_variables, dead_code, unused_imports)]
-
 //! CLI command enum hierarchy for the Air daemon CLI.
 //!
 //! `Command` is the top-level dispatch value produced by `CliParser::parse`.
@@ -11,12 +9,19 @@
 #[derive(Debug, Clone)]
 pub enum Command {
 	Status { service:Option<String>, verbose:bool, json:bool },
+
 	Restart { service:Option<String>, force:bool },
+
 	Config(ConfigCommand),
+
 	Metrics { json:bool, service:Option<String> },
+
 	Logs { service:Option<String>, tail:Option<usize>, filter:Option<String>, follow:bool },
+
 	Debug(DebugCommand),
+
 	Help { command:Option<String> },
+
 	Version,
 }
 
@@ -24,9 +29,13 @@ pub enum Command {
 #[derive(Debug, Clone)]
 pub enum ConfigCommand {
 	Get { key:String },
+
 	Set { key:String, value:String },
+
 	Reload { validate:bool },
+
 	Show { json:bool },
+
 	Validate { path:Option<String> },
 }
 
@@ -34,8 +43,11 @@ pub enum ConfigCommand {
 #[derive(Debug, Clone)]
 pub enum DebugCommand {
 	DumpState { service:Option<String>, json:bool },
+
 	DumpConnections { format:Option<String> },
+
 	HealthCheck { verbose:bool, service:Option<String> },
+
 	Diagnostics { level:DiagnosticLevel },
 }
 
@@ -43,7 +55,9 @@ pub enum DebugCommand {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DiagnosticLevel {
 	Basic,
+
 	Extended,
+
 	Full,
 }
 
@@ -51,6 +65,7 @@ pub enum DiagnosticLevel {
 #[derive(Debug, Clone)]
 pub enum ValidationResult {
 	Valid,
+
 	Invalid(String),
 }
 
@@ -58,5 +73,6 @@ pub enum ValidationResult {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PermissionLevel {
 	User,
+
 	Admin,
 }

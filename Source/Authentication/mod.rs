@@ -228,7 +228,6 @@ impl AuthenticationService {
 	}
 
 	/// Encrypt password
-	#[allow(dead_code)]
 	async fn EncryptPassword(&self, Password:&str) -> Result<String> {
 		let CryptoKeys = self.CryptoKeys.lock().await;
 

@@ -134,6 +134,7 @@ pub async fn HandleFileEvent(event:notify::Event, index_arc:&RwLock<FileIndex>, 
 		notify::EventKind::Create(notify::event::CreateKind::Folder) => {
 			for path in event.paths {
 				dev_log!("indexing", "[WatchFile] Directory created: {}", path.display()); // Directories themselves don't need indexing, just their
+
 				// contents
 			}
 		},
@@ -141,6 +142,7 @@ pub async fn HandleFileEvent(event:notify::Event, index_arc:&RwLock<FileIndex>, 
 		notify::EventKind::Remove(notify::event::RemoveKind::Folder) => {
 			for path in event.paths {
 				dev_log!("indexing", "[WatchFile] Directory removed: {}", path.display()); // Remove all files from this directory
+
 				let mut index = index_arc.write().await;
 
 				let mut paths_to_remove = Vec::new();
@@ -335,7 +337,6 @@ impl FileChangeType {
 /// File change information for debouncing
 #[derive(Debug, Clone)]
 struct FileChangeInfo {
-	#[allow(dead_code)]
 	path:PathBuf,
 
 	change_type:FileChangeType,

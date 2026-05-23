@@ -1,5 +1,3 @@
-#![allow(unused_variables, dead_code, unused_imports)]
-
 //! JSON Schema generation for Air configuration validation.
 //!
 //! `generate_schema()` returns a Draft-07 JSON Schema object describing every

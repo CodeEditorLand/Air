@@ -816,36 +816,42 @@ impl HealthCheckManager {
 	/// Restart authentication service
 	async fn RestartAuthenticationService(&self) -> Result<()> {
 		dev_log!("lifecycle", "warn: [HealthCheck] Recovery: Restarting authentication service"); // In production, this would signal the authentication service to restart
+
 		Ok(())
 	}
 
 	/// Restart updates service
 	async fn RestartUpdatesService(&self) -> Result<()> {
 		dev_log!("lifecycle", "warn: [HealthCheck] Recovery: Restarting updates service"); // In production, this would signal the updates service to restart
+
 		Ok(())
 	}
 
 	/// Restart downloader service
 	async fn RestartDownloaderService(&self) -> Result<()> {
 		dev_log!("lifecycle", "warn: [HealthCheck] Recovery: Restarting downloader service"); // In production, this would signal the downloader service to restart
+
 		Ok(())
 	}
 
 	/// Restart indexing service
 	async fn RestartIndexingService(&self) -> Result<()> {
 		dev_log!("lifecycle", "warn: [HealthCheck] Recovery: Restarting indexing service"); // In production, this would signal the indexing service to restart
+
 		Ok(())
 	}
 
 	/// Restart gRPC service
 	async fn RestartgRPCService(&self) -> Result<()> {
 		dev_log!("lifecycle", "warn: [HealthCheck] Recovery: Restarting gRPC server"); // In production, this would gracefully restart the gRPC server
+
 		Ok(())
 	}
 
 	/// Reset connections service
 	async fn ResetConnectionsService(&self) -> Result<()> {
 		dev_log!("lifecycle", "warn: [HealthCheck] Recovery: Resetting connections service"); // In production, this would reset connection pools and re-establish connections
+
 		Ok(())
 	}
 

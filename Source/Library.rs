@@ -1,5 +1,13 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals)]
+#![allow(
+	non_snake_case,
+	non_camel_case_types,
+	non_upper_case_globals,
+	dead_code,
+	unused_imports,
+	unused_variables,
+	unused_assignments
+)]
 
 //! # Air: Background Daemon for Code Editor Land
 //!
@@ -624,6 +632,7 @@ pub mod Utility {
 			.subsec_nanos() as u64;
 
 		let JitterRange = (CappedDelay / 4).max(1); // 25% of delay, at least 1ms
+
 		let Jitter = (Seed % (2 * JitterRange)) as i64 - JitterRange as i64;
 
 		// Apply jitter (ensure non-negative)

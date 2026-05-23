@@ -88,7 +88,6 @@ use serde::{Deserialize, Serialize};
 use crate::{AirError, Result, dev_log};
 
 /// Overflow-protected metric update helper
-#[allow(dead_code)]
 struct MetricGuard {
 	current:u64,
 
@@ -96,11 +95,9 @@ struct MetricGuard {
 }
 
 impl MetricGuard {
-	#[allow(dead_code)]
 	fn new(current:u64, max:u64) -> Self { Self { current, max } }
 
 	/// Increment with overflow protection
-	#[allow(dead_code)]
 	fn increment(&mut self) -> bool {
 		if self.current < self.max.saturating_sub(1) {
 			self.current += 1;

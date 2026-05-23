@@ -349,7 +349,6 @@ pub struct PluginRegistry {
 pub struct PluginManager {
 	plugins:Arc<RwLock<HashMap<String, PluginRegistry>>>,
 
-	#[allow(dead_code)]
 	MessageQueue:Arc<RwLock<Vec<PluginMessage>>>,
 
 	AirVersion:String,

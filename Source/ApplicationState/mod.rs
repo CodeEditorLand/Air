@@ -704,6 +704,7 @@ impl ApplicationState {
 
 		// Update average response time using exponential moving average
 		let Alpha = 0.1; // Smoothing factor
+
 		Metrics.AverageResponseTime = Alpha * (ResponseTime as f64) + (1.0 - Alpha) * Metrics.AverageResponseTime;
 
 		Metrics.LastUpdated = Utility::CurrentTimestamp();

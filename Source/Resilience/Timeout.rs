@@ -1,5 +1,3 @@
-#![allow(unused_variables, dead_code, unused_imports)]
-
 //! Timeout management with cascading deadlines.
 //!
 //! `TimeoutManager` tracks a per-operation timeout and an optional global
@@ -18,6 +16,7 @@ use crate::dev_log;
 /// Timeout manager with optional cascading global deadline.
 pub struct TimeoutManager {
 	global_deadline:Option<Instant>,
+
 	operation_timeout:Duration,
 }
 
@@ -35,9 +34,11 @@ impl TimeoutManager {
 		if timeout.is_zero() {
 			return Err("Timeout must be greater than 0".to_string());
 		}
+
 		if timeout.as_secs() > 3600 {
 			return Err("Timeout cannot exceed 1 hour".to_string());
 		}
+
 		Ok(())
 	}
 
@@ -46,9 +47,11 @@ impl TimeoutManager {
 		if timeout.is_zero() {
 			return Err("Timeout must be greater than 0".to_string());
 		}
+
 		if timeout.as_secs() > 3600 {
 			return Err("Timeout cannot exceed 1 hour".to_string());
 		}
+
 		Ok(timeout)
 	}
 
@@ -73,6 +76,7 @@ impl TimeoutManager {
 	pub fn effective_timeout(&self) -> Duration {
 		match self.remaining() {
 			Some(remaining) => self.operation_timeout.min(remaining),
+
 			None => self.operation_timeout,
 		}
 	}

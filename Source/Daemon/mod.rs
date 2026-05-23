@@ -384,11 +384,13 @@ impl DaemonManager {
 		// Verify checksum if present
 		if parts.len() >= 3 && parts[1].starts_with("CHECKSUM:") {
 			let StoredChecksum = &parts[1][9..]; // Remove "CHECKSUM:" prefix
+
 			let CurrentChecksum = self.PidChecksum.lock().await;
 
 			if let Some(ref cksum) = *CurrentChecksum {
 				if cksum != StoredChecksum {
 					dev_log!("daemon", "warn: [Daemon] PID file checksum mismatch, file may be corrupted"); // Don't automatically delete - could be a different daemon instance
+
 					return Ok(true);
 				}
 			}
@@ -525,6 +527,7 @@ impl DaemonManager {
 
 				Err(e) => {
 					dev_log!("daemon", "error: [Daemon] Failed to remove PID file: {}", e); // Don't fail entire operation if PID file cleanup fails
+
 					return Err(AirError::FileSystem(format!("Failed to remove PID file: {}", e)));
 				},
 			}

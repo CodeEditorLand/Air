@@ -332,7 +332,6 @@ impl TokenBucket {
 
 	/// Try to consume the specified number of tokens (bytes)
 	/// Returns number of tokens actually consumed
-	#[allow(dead_code)]
 	fn try_consume(&mut self, bytes:u64) -> u64 {
 		self.refill();
 
@@ -419,6 +418,7 @@ impl Default for DownloadConfig {
 			MaxFileSize:None,
 
 			ChunkSize:8 * 1024 * 1024, // 8MB chunks
+
 			MaxRetries:5,
 
 			TimeoutSecs:300,
@@ -2015,7 +2015,6 @@ struct ChunkInfo {
 
 	end:u64,
 
-	#[allow(dead_code)]
 	downloaded:u64,
 
 	temp_path:PathBuf,
@@ -2023,7 +2022,6 @@ struct ChunkInfo {
 
 /// Parallel download result
 #[derive(Debug)]
-#[allow(dead_code)]
 struct ParallelDownloadResult {
 	chunks:Vec<ChunkInfo>,
 
@@ -2104,6 +2102,7 @@ impl DownloadManager {
 
 		// For small files, use normal download
 		let chunk_threshold = 50 * 1024 * 1024; // 50MB
+
 		if total_size < chunk_threshold {
 			dev_log!(
 				"update",

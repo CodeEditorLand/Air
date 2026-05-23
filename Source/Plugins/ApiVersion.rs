@@ -1,5 +1,3 @@
-#![allow(unused_variables, dead_code, unused_imports)]
-
 //! API version compatibility management for the plugin system.
 //!
 //! `ApiVersion` represents a semver triple with an optional pre-release tag.
@@ -17,8 +15,11 @@ use crate::Result;
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ApiVersion {
 	pub major:u32,
+
 	pub minor:u32,
+
 	pub patch:u32,
+
 	pub PreRelease:Option<String>,
 }
 
@@ -29,9 +30,11 @@ impl ApiVersion {
 	/// Parse from `"major.minor.patch"` or `"major.minor.patch.pre"`.
 	pub fn parse(version:&str) -> Result<Self> {
 		let parts:Vec<&str> = version.split('.').collect();
+
 		if parts.len() < 3 {
 			return Err(crate::AirError::Plugin("Invalid version format".to_string()));
 		}
+
 		Ok(Self {
 			major:parts[0]
 				.parse()
@@ -53,12 +56,14 @@ impl ApiVersion {
 /// Tracks the current host API version and a set of compatible peer versions.
 pub struct ApiVersionManager {
 	CurrentVersion:ApiVersion,
+
 	CompatibleVersions:Vec<ApiVersion>,
 }
 
 impl ApiVersionManager {
 	pub fn new() -> Self {
 		let current = ApiVersion::current();
+
 		Self { CompatibleVersions:vec![current.clone()], CurrentVersion:current }
 	}
 

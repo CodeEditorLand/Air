@@ -1469,7 +1469,6 @@ async fn attempt_daemon_connection() -> Result<(), String> {
 /// - Implement metric filtering via query parameters
 /// - Add histogram quantiles (p50, p95, p99)
 /// - Support both Prometheus and OpenMetrics formats
-#[allow(dead_code)]
 fn HandleMetricsRequest() -> String {
 	// Defensive: Use a timeout to prevent metrics export from blocking
 	let _timeout_duration = std::time::Duration::from_millis(100);

@@ -132,22 +132,18 @@ pub struct UpdateManager {
 #[derive(Debug, Clone)]
 struct DownloadSession {
 	/// Session unique identifier
-	#[allow(dead_code)]
 	session_id:String,
 
 	/// Original update URL
-	#[allow(dead_code)]
 	download_url:String,
 
 	/// Current file path
-	#[allow(dead_code)]
 	temp_path:PathBuf,
 
 	/// Bytes downloaded so far
 	downloaded_bytes:u64,
 
 	/// Total file size
-	#[allow(dead_code)]
 	total_bytes:u64,
 
 	/// Whether download is complete
@@ -212,7 +208,6 @@ struct PlatformConfig {
 
 /// Supported package formats by platform
 #[derive(Debug, Clone, Copy)]
-#[allow(dead_code)]
 enum PackageFormat {
 	WindowsExe,
 
@@ -756,6 +751,7 @@ impl UpdateManager {
 
 		// Check prerequisites: disk space
 		let required_space = update_info.size * 2; // Need space for download + staging
+
 		self.ValidateDiskSpace(required_space).await?;
 
 		// Update status
@@ -1875,6 +1871,7 @@ impl UpdateManager {
 				use std::os::windows::fs::MetadataExt;
 
 				let free_space = metadata.volume_serial_number() as u64; // This isn't correct, just placeholder
+
 				dev_log!(
 					"update",
 					"warn: [UpdateManager] Disk space validation not fully implemented on Windows"
@@ -2175,6 +2172,7 @@ impl UpdateManager {
 		{
 			if let Ok(telemetry_json) = serde_json::to_string(&telemetry) {
 				dev_log!("update", "[UpdateManager] Telemetry data: {}", telemetry_json); // In development, we log telemetry data
+
 			// In a production implementation, this would send to an
 			// analytics endpoint
 			} else {

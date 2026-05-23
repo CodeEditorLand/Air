@@ -1,5 +1,3 @@
-#![allow(unused_variables, dead_code, unused_imports)]
-
 //! Plugin event bus: publish/subscribe channel for plugin lifecycle events.
 //!
 //! Handlers register via `register_handler` and receive every subsequent
@@ -18,11 +16,17 @@ use crate::{Result, dev_log};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PluginEvent {
 	Loaded { plugin_id:String },
+
 	Started { plugin_id:String },
+
 	Stopped { plugin_id:String },
+
 	Unloaded { plugin_id:String },
+
 	Error { plugin_id:String, error:String },
+
 	Message { from:String, to:String, action:String },
+
 	ConfigChanged { old:serde_json::Value, new:serde_json::Value },
 }
 
@@ -48,6 +52,7 @@ impl PluginEventBus {
 	/// and do not prevent delivery to subsequent handlers.
 	pub async fn emit(&self, event:PluginEvent) {
 		let handlers = self.handlers.read().await;
+
 		for handler in handlers.iter() {
 			if let Err(Error) = handler.Event(&event).await {
 				dev_log!("extensions", "error: [PluginEventBus] Event handler error: {}", Error);

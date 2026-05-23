@@ -1,5 +1,3 @@
-#![allow(unused_variables, dead_code, unused_imports)]
-
 //! Compile-time platform/architecture detection for update packaging.
 //!
 //! `detect_platform()` returns a `PlatformInfo` describing the current OS,
@@ -11,7 +9,9 @@
 #[derive(Debug, Clone)]
 pub struct PlatformInfo {
 	pub platform:&'static str,
+
 	pub arch:&'static str,
+
 	pub package_format:PackageFormat,
 }
 
@@ -19,9 +19,13 @@ pub struct PlatformInfo {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PackageFormat {
 	WindowsExe,
+
 	MacOsDmg,
+
 	LinuxAppImage,
+
 	LinuxDeb,
+
 	LinuxRpm,
 }
 
@@ -29,9 +33,13 @@ impl PackageFormat {
 	pub fn extension(&self) -> &'static str {
 		match self {
 			PackageFormat::WindowsExe => "exe",
+
 			PackageFormat::MacOsDmg => "dmg",
+
 			PackageFormat::LinuxAppImage => "AppImage",
+
 			PackageFormat::LinuxDeb => "deb",
+
 			PackageFormat::LinuxRpm => "rpm",
 		}
 	}
@@ -61,8 +69,11 @@ pub fn detect_platform() -> PlatformInfo {
 
 	let package_format = match (platform, arch) {
 		("windows", _) => PackageFormat::WindowsExe,
+
 		("macos", _) => PackageFormat::MacOsDmg,
+
 		("linux", _) => PackageFormat::LinuxAppImage,
+
 		_ => PackageFormat::LinuxAppImage,
 	};
 
