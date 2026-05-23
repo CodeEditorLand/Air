@@ -162,7 +162,6 @@
 //! - **50054**: Reserved for future use (e.g., SideCar service)
 //! - **50055**: Reserved for future metrics endpoints
 
-#![allow(non_snake_case)]
 
 use std::{env, net::SocketAddr, sync::Arc, time::Duration};
 

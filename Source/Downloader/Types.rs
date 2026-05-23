@@ -1,4 +1,4 @@
-#![allow(non_snake_case, unused_variables, dead_code, unused_imports)]
+#![allow(unused_variables, dead_code, unused_imports)]
 
 //! Value types for the download lifecycle: state, priority, queue entries,
 //! results, statistics, and per-download configuration.

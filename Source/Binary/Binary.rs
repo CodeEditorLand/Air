@@ -137,7 +137,6 @@
 //! - [ ] Add dependency health checks before service start
 
 // Allow non_snake_case for consistency with Air codebase patterns
-#![allow(non_snake_case)]
 
 // ============================================================================
 // IMPORTS
