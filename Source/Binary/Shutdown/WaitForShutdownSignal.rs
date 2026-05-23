@@ -51,7 +51,6 @@
 //! - Async signal handling is safe with tokio
 //! - No mutable state shared across threads
 
-#![allow(non_camel_case_types, non_upper_case_globals)]
 
 use crate::dev_log;
 

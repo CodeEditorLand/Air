@@ -61,7 +61,6 @@
 //! - Each monitor task runs independently
 //! - Arc ensures thread-safe state sharing
 
-#![allow(non_camel_case_types, non_upper_case_globals)]
 
 use std::{sync::Arc, time::Duration};
 
