@@ -111,11 +111,8 @@ use crate::dev_log;
 /// - Add port conflict detection before binding
 /// - Add wildcard binding for all interfaces
 pub fn SelectPort(bind_address:Option<String>) -> Result<SocketAddr, String> {
-
 	match bind_address {
-
 		Some(addr) => {
-
 			// Custom address from command-line
 			let parsed = addr
 				.parse::<SocketAddr>()
@@ -127,7 +124,6 @@ pub fn SelectPort(bind_address:Option<String>) -> Result<SocketAddr, String> {
 		},
 
 		None => {
-
 			// Use default address
 			let parsed = DefaultBindAddress
 				.parse::<SocketAddr>()
@@ -155,14 +151,11 @@ pub fn SelectPort(bind_address:Option<String>) -> Result<SocketAddr, String> {
 /// Port 0 is valid for OS-assigned ports but not for configuration.
 /// Ports 1-1023 require root/admin privileges.
 pub fn ValidatePort(port:u16) -> Result<(), String> {
-
 	if port == 0 {
-
 		return Err("Port cannot be 0 for explicit configuration".to_string());
 	}
 
 	if port == 50052 {
-
 		return Err("Port 50052 is reserved for Cocoon (NodeJS host)".to_string());
 	}
 
@@ -176,7 +169,6 @@ mod tests {
 
 	#[test]
 	fn test_select_port_default() {
-
 		let addr = SelectPort(None).unwrap();
 
 		assert_eq!(addr.port(), 50053);
@@ -184,7 +176,6 @@ mod tests {
 
 	#[test]
 	fn test_select_port_custom() {
-
 		let custom = "127.0.0.1:54321".to_string();
 
 		let addr = SelectPort(Some(custom)).unwrap();
@@ -196,7 +187,6 @@ mod tests {
 
 	#[test]
 	fn test_select_port_invalid() {
-
 		let invalid = "not-an-address".to_string();
 
 		assert!(SelectPort(Some(invalid)).is_err());
@@ -204,19 +194,16 @@ mod tests {
 
 	#[test]
 	fn test_validate_port_zero() {
-
 		assert!(ValidatePort(0).is_err());
 	}
 
 	#[test]
 	fn test_validate_port_cocoon_reserved() {
-
 		assert!(ValidatePort(50052).is_err());
 	}
 
 	#[test]
 	fn test_validate_port_valid() {
-
 		assert!(ValidatePort(50053).is_ok());
 
 		assert!(ValidatePort(54321).is_ok());

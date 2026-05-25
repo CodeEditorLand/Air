@@ -74,8 +74,8 @@ async fn test_land_dns_resolver_wildcard() {
 
 #[tokio::test]
 async fn test_ip_validation_blocks_non_localhost_for_editor_land() {
-	// This test verifies the security feature that ensures land.playform.cloud domains
-	// only resolve to loopback addresses (127.x.x.x)
+	// This test verifies the security feature that ensures land.playform.cloud
+	// domains only resolve to loopback addresses (127.x.x.x)
 
 	// Start DNS server
 	let port = Mist::start(15372).expect("Failed to start DNS server");

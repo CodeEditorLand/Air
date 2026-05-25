@@ -100,25 +100,19 @@
 use crate::dev_log;
 
 pub fn ConfigureLog() {
-
 	// Validate environment variables
 	let json_output = match std::env::var("AIR_LOG_JSON") {
-
 		Ok(val) if !val.is_empty() => {
-
 			let normalized = val.to_lowercase();
 
 			if normalized != "true" && normalized != "false" {
-
 				eprintln!(
 					"Warning: Invalid AIR_LOG_JSON value '{}', expected 'true' or 'false'. Using default: false",
-
 					val
 				);
 
 				false
 			} else {
-
 				normalized == "true"
 			}
 		},
@@ -143,7 +137,6 @@ pub fn ConfigureLog() {
 				} else {
 					eprintln!(
 						"Warning: Log file directory does not exist: {}. Logging to stdout only.",
-
 						parent.display()
 					);
 					None
@@ -158,11 +151,8 @@ pub fn ConfigureLog() {
 	let log_result = Logging::initialize_logger(json_output, log_file_path.clone());
 
 	match log_result {
-
 		Ok(_) => {
-
 			let log_info = match &log_file_path {
-
 				Some(path) => format!("file: {}", path),
 
 				None => "stdout/stderr".to_string(),
@@ -172,7 +162,6 @@ pub fn ConfigureLog() {
 		},
 
 		Err(e) => {
-
 			// Fallback: ensure we can at least log errors to stderr
 			eprintln!("[ERROR] Failed to initialize structured logging: {}", e);
 
@@ -188,14 +177,12 @@ mod tests {
 
 	#[test]
 	fn test_configure_log_default() {
-
 		// Should not panic with default settings
 		ConfigureLog();
 	}
 
 	#[test]
 	fn test_invalid_json_value() {
-
 		std::env::set_var("AIR_LOG_JSON", "invalid");
 
 		// Should handle gracefully and use default
