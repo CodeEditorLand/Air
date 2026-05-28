@@ -1,9 +1,9 @@
 //! # Air::Client::AirServiceProvider
 //!
 //! High-level façade over [`crate::Client::AirClient::AirClient`]. Each
-//! method generates a request id via [`GenerateRequestID::Fn`], issues the
-//! gRPC call, and returns [`crate::AirError`] on failure. Compared with
-//! the raw `AirClient` surface, this layer:
+//! method generates a request id via [`crate::Utility::GenerateRequestId`],
+//! issues the gRPC call, and returns [`crate::AirError`] on failure.
+//! Compared with the raw `AirClient` surface, this layer:
 //!
 //! - hides request-id plumbing from callers,
 //! - returns ergonomic shapes (`CheckForUpdates` collapses `update_available ==
@@ -20,7 +20,7 @@
 //! - Updates: [`CheckForUpdates`], [`DownloadUpdate`], [`ApplyUpdate`]
 //! - Downloads: [`DownloadFile`], [`DownloadStream`]
 //! - Indexing: [`IndexFiles`], [`SearchFiles`], [`GetFileInfo`]
-//! - Status / monitoring: [`GetStatus`], [`HealthCheck`], [`GetMetrics`]
+//! - Status / monitoring: [`GetStatus`], [`GetMetrics`]
 //! - Resources: [`GetResourceUsage`], [`SetResourceLimits`]
 //! - Configuration: [`GetConfiguration`], [`UpdateConfiguration`]
 //!
@@ -33,10 +33,6 @@
 // --- Authentication ---
 
 pub mod Authenticate;
-
-// --- Updates ---
-
-pub mod ApplyUpdate;
 
 pub mod CheckForUpdates;
 
@@ -62,8 +58,6 @@ pub mod GetMetrics;
 
 pub mod GetStatus;
 
-pub mod HealthCheck;
-
 // --- Resource management ---
 
 pub mod GetResourceUsage;
@@ -75,6 +69,10 @@ pub mod SetResourceLimits;
 pub mod GetConfiguration;
 
 pub mod UpdateConfiguration;
+
+// --- ApplyUpdate ---
+
+pub mod ApplyUpdate;
 
 // --- Provider core ---
 
