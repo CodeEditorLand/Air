@@ -7,10 +7,7 @@ use std::collections::HashMap;
 
 use crate::{
 	AirError,
-	Client::{
-		AirClient::FileInfo,
-		AirServiceProvider::{AirServiceProvider},
-	},
+	Client::{AirClient::FileInfo, AirServiceProvider::AirServiceProvider},
 	dev_log,
 };
 

@@ -7,10 +7,7 @@ use std::collections::HashMap;
 
 use crate::{
 	AirError,
-	Client::{
-		AirClient::DownloadStream as DownloadStreamDTO,
-		AirServiceProvider::{AirServiceProvider},
-	},
+	Client::{AirClient::DownloadStream as DownloadStreamDTO, AirServiceProvider::AirServiceProvider},
 	dev_log,
 };
 

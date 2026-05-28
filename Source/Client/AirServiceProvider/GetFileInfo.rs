@@ -3,10 +3,7 @@
 
 use crate::{
 	AirError,
-	Client::{
-		AirClient::ExtendedFileInfo,
-		AirServiceProvider::{AirServiceProvider},
-	},
+	Client::{AirClient::ExtendedFileInfo, AirServiceProvider::AirServiceProvider},
 	dev_log,
 };
 

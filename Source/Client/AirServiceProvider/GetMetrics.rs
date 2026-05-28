@@ -4,10 +4,7 @@
 
 use crate::{
 	AirError,
-	Client::{
-		AirClient::AirMetrics,
-		AirServiceProvider::{AirServiceProvider},
-	},
+	Client::{AirClient::AirMetrics, AirServiceProvider::AirServiceProvider},
 	dev_log,
 };
 

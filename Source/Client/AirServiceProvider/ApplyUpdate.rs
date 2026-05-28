@@ -2,11 +2,7 @@
 //! previously downloaded update. Wraps
 //! [`crate::Client::AirClient::AirClient::ApplyUpdate`].
 
-use crate::{
-	AirError,
-	Client::AirServiceProvider::{AirServiceProvider},
-	dev_log,
-};
+use crate::{AirError, Client::AirServiceProvider::AirServiceProvider, dev_log};
 
 impl AirServiceProvider {
 	/// Applies the update package at `update_path` and tags it with

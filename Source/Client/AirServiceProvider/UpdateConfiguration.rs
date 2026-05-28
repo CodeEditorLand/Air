@@ -4,11 +4,7 @@
 
 use std::collections::HashMap;
 
-use crate::{
-	AirError,
-	Client::AirServiceProvider::{AirServiceProvider},
-	dev_log,
-};
+use crate::{AirError, Client::AirServiceProvider::AirServiceProvider, dev_log};
 
 impl AirServiceProvider {
 	/// Writes the key/value pairs in `updates` to the named

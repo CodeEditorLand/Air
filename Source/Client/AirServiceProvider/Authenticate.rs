@@ -3,11 +3,7 @@
 //! [`crate::Client::AirClient::AirClient::Authenticate`], and surfaces
 //! the returned session token.
 
-use crate::{
-	AirError,
-	Client::AirServiceProvider::{AirServiceProvider},
-	dev_log,
-};
+use crate::{AirError, Client::AirServiceProvider::AirServiceProvider, dev_log};
 
 impl AirServiceProvider {
 	/// Authenticates a user against the named provider (`"github"`,

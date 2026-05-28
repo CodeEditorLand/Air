@@ -3,10 +3,7 @@
 
 use crate::{
 	AirError,
-	Client::{
-		AirClient::ResourceUsage,
-		AirServiceProvider::{AirServiceProvider},
-	},
+	Client::{AirClient::ResourceUsage, AirServiceProvider::AirServiceProvider},
 	dev_log,
 };
 
