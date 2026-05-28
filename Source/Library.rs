@@ -196,8 +196,6 @@ pub mod Logging;
 
 pub mod Metrics;
 
-pub mod Mountain;
-
 pub mod Resilience;
 
 pub mod Security;
