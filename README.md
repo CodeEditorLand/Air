@@ -105,7 +105,6 @@ Air/
 │   ├── Authentication/          # Token management, credential storage, AEAD encryption, key rotation.
 │   ├── Indexing/                # File index, symbol extraction, scanning, persistent storage, FS watch.
 │   ├── HealthCheck/             # Multi-level health monitoring (alive, responsive, functional).
-│   ├── Plugins/                 # Extensible plugin system with sandboxing and lifecycle management.
 │   ├── Logging/                 # Structured JSON logging with trace ID propagation and rotation.
 │   ├── Metrics/                 # Prometheus-compatible metrics (latency, success rate, resource usage).
 │   ├── Resilience/              # Retry with backoff, circuit breaker, bulkhead, timeout management.
@@ -146,9 +145,6 @@ instance, including command parsing, routing, and diagnostics.
 implements the gRPC protocol for communication between Mountain and Air. It
 contains the generated protobuf code under `Generated/`, the server
 implementation under `Server/`, and error handling types.
-[`Source/Mountain/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Mountain/)
-provides the gRPC client that Air uses to communicate back to Mountain for
-status queries, health checks, and configuration operations.
 
 ### State and Configuration
 
@@ -185,10 +181,6 @@ filesystem watching with debounced event processing.
 provides multi-level health monitoring (Alive, Responsive, Functional) across
 all daemon services with automatic recovery actions, performance indicator
 tracking, and degradation alerting.
-[`Source/Plugins/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Plugins/)
-implements a extensible plugin system with discovery, dynamic loading,
-sandboxing, lifecycle management, and inter-plugin communication via message
-passing.
 
 ### Infrastructure Modules
 
@@ -224,14 +216,14 @@ graph LR
     classDef infra    fill:#fff3c0,stroke:#f39c12,stroke-width:1px,stroke-dasharray:5 5,color:#5a3e00;
 
     subgraph MOUNTAIN["Mountain ⛰️ - Main Application"]
-        MountainIPC["Source/Air/ - gRPC client\n(delegates heavy tasks)"]:::mountain
+        MountainIPC["Mountain gRPC client\n(delegates heavy tasks)"]:::mountain
     end
 
     subgraph AIR["Air 🪁 - Persistent Background Daemon (:50053)"]
         direction TB
         subgraph COMM["Vine/ - gRPC Transport"]
             VineServer["Vine/Server/ - gRPC server\n(Generated/ prost bindings)"]:::air
-            MountainClient["Mountain/ - gRPC client\n(Air → Mountain callbacks)"]:::air
+            MountainClient["Mountain gRPC client\n(Air → Mountain callbacks)"]:::air
         end
         subgraph CORE["Core Services"]
             Updates["Updates/ - version check\ndownload · verify · staged install · rollback"]:::air
