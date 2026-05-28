@@ -65,7 +65,9 @@ impl AirCompat {
 	/// Maps the old `Transport(String)` variant onto the canonical
 	/// `RPCError(String)`. Use [`VineError::TonicTransportError`] directly
 	/// for `tonic::transport::Error` sources.
-	pub fn Transport(Message:impl Into<String>) -> VineError { VineError::RPCError(format!("transport: {}", Message.into())) }
+	pub fn Transport(Message:impl Into<String>) -> VineError {
+		VineError::RPCError(format!("transport: {}", Message.into()))
+	}
 
 	/// Maps the old `Serialization(String)` variant onto the canonical
 	/// `RPCError(String)`. Use [`VineError::SerializationError`] directly for
@@ -75,7 +77,9 @@ impl AirCompat {
 	}
 
 	/// Same shape as the canonical variant.
-	pub fn ClientNotConnected(Identifier:impl Into<String>) -> VineError { VineError::ClientNotConnected(Identifier.into()) }
+	pub fn ClientNotConnected(Identifier:impl Into<String>) -> VineError {
+		VineError::ClientNotConnected(Identifier.into())
+	}
 
 	/// Maps the old `Timeout(String)` variant onto the canonical
 	/// `RequestTimeout` structured variant. Caller passes a descriptive
@@ -90,11 +94,15 @@ impl AirCompat {
 
 	/// Maps the old `Authentication(String)` variant onto a canonical
 	/// `RPCError` with an `auth:` prefix so log greps still hit.
-	pub fn Authentication(Message:impl Into<String>) -> VineError { VineError::RPCError(format!("auth: {}", Message.into())) }
+	pub fn Authentication(Message:impl Into<String>) -> VineError {
+		VineError::RPCError(format!("auth: {}", Message.into()))
+	}
 
 	/// Maps the old `Authorization(String)` variant onto a canonical
 	/// `RPCError` with an `authz:` prefix.
-	pub fn Authorization(Message:impl Into<String>) -> VineError { VineError::RPCError(format!("authz: {}", Message.into())) }
+	pub fn Authorization(Message:impl Into<String>) -> VineError {
+		VineError::RPCError(format!("authz: {}", Message.into()))
+	}
 
 	/// Maps the old `Internal(String)` variant onto the canonical
 	/// `InvalidState(String)`.

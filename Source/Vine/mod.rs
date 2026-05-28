@@ -16,11 +16,11 @@
 //!   service definitions (UpdateService, IndexingService, DownloaderService,
 //!   AuthenticationService) live here, not in the cross-cutting Vine crate.
 //! - [`Server`] - Air's gRPC server implementation
-//!   (`Server::AirVinegRPCService`), wiring Air's `ApplicationState` into
-//!   the generated service traits.
-//! - [`Error`] - re-exports the canonical `VineError` from the Vine crate
-//!   and exposes `Error::AirCompat` constructors for migration of legacy
-//!   call sites that used Air's pre-2026-05-28 variant names.
+//!   (`Server::AirVinegRPCService`), wiring Air's `ApplicationState` into the
+//!   generated service traits.
+//! - [`Error`] - re-exports the canonical `VineError` from the Vine crate and
+//!   exposes `Error::AirCompat` constructors for migration of legacy call sites
+//!   that used Air's pre-2026-05-28 variant names.
 //!
 //! ## Imported from the Vine crate
 //!
@@ -29,9 +29,9 @@
 //! VineHost, IPCProvider};` without spelling out the workspace path:
 //!
 //! - `VineError` / `Result` - canonical error / result types
-//! - `VineHost` / `ApplicationStateAccess` / `IPCProvider` - embedder seam
-//!   (Air will implement these on its `ApplicationState` in a later slice
-//!   so the server-side handler tree can be hosted against Air's runtime)
+//! - `VineHost` / `ApplicationStateAccess` / `IPCProvider` - embedder seam (Air
+//!   will implement these on its `ApplicationState` in a later slice so the
+//!   server-side handler tree can be hosted against Air's runtime)
 //! - `ProtocolVersion` / `DefaultRequestTimeoutMs` / `DefaultAirAddress` -
 //!   canonical constants
 //!
