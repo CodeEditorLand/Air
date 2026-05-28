@@ -53,6 +53,46 @@ pub mod ResourceUsage;
 
 pub mod UpdateInfo;
 
+// --- Per-domain method impls (each declares its own `impl AirClient` block) ---
+
+// Authentication
+pub mod Authenticate;
+
+// Updates
+pub mod ApplyUpdate;
+
+pub mod CheckForUpdates;
+
+pub mod DownloadUpdate;
+
+// Downloads
+pub mod DownloadFile;
+
+pub mod DownloadStreamRpc;
+
+// Indexing
+pub mod GetFileInfo;
+
+pub mod IndexFiles;
+
+pub mod SearchFiles;
+
+// Status + monitoring
+pub mod GetMetrics;
+
+pub mod GetResourceUsage;
+
+pub mod GetStatus;
+
+pub mod HealthCheck;
+
+pub mod SetResourceLimits;
+
+// Configuration
+pub mod GetConfiguration;
+
+pub mod UpdateConfiguration;
+
 // --- Client core ---
 
 use std::sync::Arc;
