@@ -1,16 +1,13 @@
 //! # Air::Client::AirClient
 //!
-//! gRPC client wrapper for the Air daemon service. Mountain reaches Air
+//! gRPC client wrapper for the Air daemon service. Callers reach Air
 //! through this façade for update management, authentication, file
-//! indexing, and system monitoring. Synthesised from
-//! `Mountain/Source/Air/AirClient.rs` per
-//! `.hermes/plan/AirClient-Synthesis-Audit.md`. Mountain's copy stays as
-//! source of truth until Phase 3 migration; this module receives the
-//! canonical impl one slice at a time.
+//! indexing, and system monitoring.
 //!
-//! ## Atomized DTOs (one wire-shape per file)
+//! ## Layout
 //!
-//! Pure data DTOs (zero coupling to runtime types) - **ported**:
+//! Per-message DTOs live one-per-file under this module; each declares a
+//! single `pub struct Struct` to match the file name:
 //!
 //! - [`AirMetrics`] - daemon resource snapshot
 //! - [`AirStatus`] - daemon uptime / request totals
@@ -21,38 +18,18 @@
 //! - [`IndexInfo`] - indexing-progress snapshot
 //! - [`ResourceUsage`] - process resource counts
 //! - [`UpdateInfo`] - available-update metadata
-//!
-//! Streaming wrapper (uses `tonic::codec::Streaming` +
-//! `crate::Vine::Generated::air::DownloadStreamResponse`) - **ported**:
-//!
 //! - [`DownloadStream`] - wraps `tonic::Streaming` to yield
 //!   [`DownloadStreamChunk::Struct`] items via `.next().await`.
 //!
-//! ## Client foundation - **ported in this slice**
+//! ## Client core
 //!
 //! - [`AirClient`] struct - thread-safe gRPC client over `Arc<Mutex<…>>`
-//! - [`AirClient::new`] - async connect with parsed `Endpoint`
+//! - [`AirClient::new`] - async connect with parsed tonic `Endpoint`
 //! - [`AirClient::is_connected`] / [`AirClient::address`] accessors
 //! - [`Debug`] impl
 //! - [`IntoRequestExt`] - blanket helper to wrap any value as
 //!   `tonic::Request<T>` with one method call
-//! - [`DEFAULT_AIR_SERVER_ADDRESS`] constant (`"[::1]:50053"`, matches
-//!   `crate::Vine::DefaultAirAddress`)
-//!
-//! ## Pending in follow-up slices
-//!
-//! Each domain method on `AirClient` is ~30-60 LOC of pattern:
-//! `client.lock().await.<rpc>(request).await.map_err(...)`. They port
-//! one-or-two at a time:
-//!
-//! - `authenticate` / `validate_token` (Authentication ops)
-//! - `check_for_update` / `apply_update` (Update ops)
-//! - `download_file` / `download_file_streaming` (Downloader ops)
-//! - `index_files` / `search_files` / `get_file_info` (Indexing ops)
-//! - `get_metrics` / `get_status` (Monitoring ops)
-//!
-//! Until those land, Mountain's `Source/Air/AirClient.rs` keeps providing
-//! the methods.
+//! - [`DEFAULT_AIR_SERVER_ADDRESS`] constant (`"[::1]:50053"`)
 
 // --- DTO submodules ---
 
@@ -76,7 +53,7 @@ pub mod ResourceUsage;
 
 pub mod UpdateInfo;
 
-// --- Client foundation ---
+// --- Client core ---
 
 use std::sync::Arc;
 
@@ -87,7 +64,7 @@ use crate::{AirError, Vine::Generated::air::air_service_client::AirServiceClient
 
 /// Default gRPC server address for the Air daemon.
 ///
-/// Port allocation (canonical, mirrors `crate::Vine::DefaultAirAddress`):
+/// Port allocation:
 ///
 /// - `50051` - Mountain Vine server
 /// - `50052` - Cocoon Vine server
@@ -120,9 +97,9 @@ impl AirClient {
 	///
 	/// # Errors
 	///
-	/// - `AirError::Network` if the address parses as a tonic `Endpoint` but
-	///   the underlying connection attempt fails.
-	/// - `AirError::Validation` if the address string is malformed.
+	/// - [`AirError::Network`] if the address parses as a tonic `Endpoint`
+	///   but the underlying connection attempt fails.
+	/// - [`AirError::Validation`] if the address string is malformed.
 	pub async fn new(address:&str) -> Result<Self, AirError> {
 		dev_log!("grpc", "[AirClient] Connecting to Air daemon at: {}", address);
 
@@ -152,11 +129,9 @@ impl AirClient {
 	pub fn address(&self) -> &str { &self.address }
 
 	/// Borrow the underlying tonic client for issuing RPCs. Returns
-	/// `None` when the client is disconnected.
-	///
-	/// Domain methods on `AirClient` (added one slice at a time per
-	/// `.hermes/plan/AirClient-Synthesis-Audit.md`) call this and then
-	/// `.lock().await` to obtain the mutex guard before issuing the RPC.
+	/// `None` when the client is disconnected. Per-domain method impls
+	/// call this and then `.lock().await` to obtain the mutex guard
+	/// before issuing the RPC.
 	pub(crate) fn Client(&self) -> Option<&Arc<Mutex<AirServiceClient<Channel>>>> { self.client.as_ref() }
 }
 
@@ -170,13 +145,12 @@ impl std::fmt::Debug for AirClient {
 
 /// Helper trait for converting any value into a `tonic::Request<T>`.
 ///
-/// Implemented for every `T` via the blanket impl below. Used by the
-/// domain-method ports to write `payload.into_request()` instead of
+/// Implemented for every `T` via the blanket impl below. Per-domain method
+/// impls use `payload.into_request()` instead of
 /// `tonic::Request::new(payload)`.
 pub trait IntoRequestExt {
 	fn into_request(self) -> tonic::Request<Self>
-	where
-		Self: Sized, {
+	where Self: Sized {
 		tonic::Request::new(self)
 	}
 }
