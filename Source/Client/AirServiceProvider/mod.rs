@@ -6,8 +6,8 @@
 //! the raw `AirClient` surface, this layer:
 //!
 //! - hides request-id plumbing from callers,
-//! - returns ergonomic shapes (`CheckForUpdates` collapses
-//!   `update_available == false` into `Ok(None)`),
+//! - returns ergonomic shapes (`CheckForUpdates` collapses `update_available ==
+//!   false` into `Ok(None)`),
 //! - keeps a shared `Arc<AirClient>` so all callers reuse the same gRPC
 //!   channel.
 //!

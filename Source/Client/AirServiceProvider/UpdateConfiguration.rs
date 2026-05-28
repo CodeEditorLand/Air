@@ -14,13 +14,7 @@ impl AirServiceProvider {
 	/// Writes the key/value pairs in `updates` to the named
 	/// configuration section. Keys not in `updates` are left
 	/// untouched.
-	pub async fn UpdateConfiguration(
-		&self,
-
-		section:String,
-
-		updates:HashMap<String, String>,
-	) -> Result<(), AirError> {
+	pub async fn UpdateConfiguration(&self, section:String, updates:HashMap<String, String>) -> Result<(), AirError> {
 		let RequestID = GenerateRequestID::Fn();
 
 		dev_log!(

@@ -1,11 +1,7 @@
 //! `AirServiceProvider::HealthCheck` - liveness probe for the Air daemon.
 //! Wraps [`crate::Client::AirClient::AirClient::HealthCheck`].
 
-use crate::{
-	AirError,
-	Client::AirServiceProvider::AirServiceProvider,
-	dev_log,
-};
+use crate::{AirError, Client::AirServiceProvider::AirServiceProvider, dev_log};
 
 impl AirServiceProvider {
 	/// Returns `true` when the daemon reports healthy. The gRPC call

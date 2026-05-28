@@ -13,15 +13,7 @@ impl AirServiceProvider {
 	/// Authenticates a user against the named provider (`"github"`,
 	/// `"gitlab"`, `"microsoft"`, …) and returns the session token on
 	/// success.
-	pub async fn Authenticate(
-		&self,
-
-		username:String,
-
-		password:String,
-
-		provider:String,
-	) -> Result<String, AirError> {
+	pub async fn Authenticate(&self, username:String, password:String, provider:String) -> Result<String, AirError> {
 		let RequestID = GenerateRequestID::Fn();
 
 		dev_log!("grpc", "[AirServiceProvider] Authenticate (request_id: {})", RequestID);
