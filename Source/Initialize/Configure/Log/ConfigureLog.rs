@@ -139,6 +139,7 @@ pub fn ConfigureLog() {
 						"Warning: Log file directory does not exist: {}. Logging to stdout only.",
 						parent.display()
 					);
+
 					None
 				}
 			} else {

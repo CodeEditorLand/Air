@@ -50,21 +50,25 @@ impl AirClient {
 						.get("memory_usage_mb")
 						.and_then(|S| S.parse::<f64>().ok())
 						.unwrap_or(0.0),
+
 					cpu_usage_percent:Response
 						.metrics
 						.get("cpu_usage_percent")
 						.and_then(|S| S.parse::<f64>().ok())
 						.unwrap_or(0.0),
+
 					network_usage_mbps:Response
 						.metrics
 						.get("network_usage_mbps")
 						.and_then(|S| S.parse::<f64>().ok())
 						.unwrap_or(0.0),
+
 					disk_usage_mb:Response
 						.metrics
 						.get("disk_usage_mb")
 						.and_then(|S| S.parse::<f64>().ok())
 						.unwrap_or(0.0),
+
 					average_response_time:Response
 						.metrics
 						.get("average_response_time")

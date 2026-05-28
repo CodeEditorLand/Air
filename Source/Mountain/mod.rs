@@ -484,6 +484,7 @@ impl MountainClient {
 
 			let _client_config = create_tls_client_config(tls_config).map_err(|e| {
 				dev_log!("grpc", "error: Failed to create TLS client configuration: {}", e);
+
 				format!("TLS configuration error: {}", e)
 			})?;
 

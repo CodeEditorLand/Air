@@ -1100,6 +1100,7 @@ impl AirService for AirVinegRPCService {
 
 				tokio::spawn(async move {
 					tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+
 					dev_log!(
 						"grpc",
 						"[AirVinegRPCService] Initiating graceful shutdown for update version {}",
@@ -1113,11 +1114,13 @@ impl AirService for AirVinegRPCService {
 							"error: [AirVinegRPCService] Failed to initiate graceful shutdown: {}",
 							e
 						);
+
 						// Implement rollback if update fails
 						dev_log!(
 							"grpc",
 							"warn: [AirVinegRPCService] Rollback initiated due to graceful shutdown failure"
 						);
+
 						if let Err(rollback_error) = self_clone.perform_rollback(&version).await {
 							dev_log!("grpc", "error: [AirVinegRPCService] Rollback failed: {}", rollback_error);
 						} else {
@@ -1321,17 +1324,20 @@ impl AirService for AirVinegRPCService {
 					"warn: [AirVinegRPCService] Client disconnected before streaming started [ID: {}]",
 					download_request_id
 				);
+
 				return;
 			}
 
 			// Create HTTP client with connection pooling hints
 			let dns_port = Mist::dns_port();
+
 			let client_builder_result = crate::HTTP::Client::secured_client_builder(dns_port);
 
 			let client_builder = match client_builder_result {
 				Ok(builder) => builder,
 				Err(e) => {
 					let error = format!("Failed to create HTTP client builder: {}", e);
+
 					let _ = tx
 						.send(Ok(DownloadStreamResponse {
 							request_id:download_request_id.clone(),
@@ -1342,6 +1348,7 @@ impl AirService for AirVinegRPCService {
 							error:error.clone(),
 						}))
 						.await;
+
 					AppState
 						.UpdateRequestStatus(
 							&download_request_id,
@@ -1350,6 +1357,7 @@ impl AirService for AirVinegRPCService {
 						)
 						.await
 						.ok();
+
 					return;
 				},
 			};
@@ -1362,6 +1370,7 @@ impl AirService for AirVinegRPCService {
 
 			if client_result.is_err() {
 				let error = client_result.unwrap_err().to_string();
+
 				let _ = tx
 					.send(Ok(DownloadStreamResponse {
 						request_id:download_request_id.clone(),
@@ -1372,6 +1381,7 @@ impl AirService for AirVinegRPCService {
 						error:error.clone(),
 					}))
 					.await;
+
 				AppState
 					.UpdateRequestStatus(
 						&download_request_id,
@@ -1380,6 +1390,7 @@ impl AirService for AirVinegRPCService {
 					)
 					.await
 					.ok();
+
 				return;
 			}
 
@@ -1387,7 +1398,9 @@ impl AirService for AirVinegRPCService {
 				Ok(client) => client,
 				Err(e) => {
 					let error = format!("Failed to create HTTP client: {}", e);
+
 					let _ = tx.send(Err(Status::internal(error.clone())));
+
 					AppState
 						.UpdateRequestStatus(
 							&download_request_id,
@@ -1396,18 +1409,21 @@ impl AirService for AirVinegRPCService {
 						)
 						.await
 						.ok();
+
 					return;
 				},
 			};
 
 			// Start streaming download
 			let mut total_size:Option<u64> = None;
+
 			let mut total_downloaded:u64 = 0;
 
 			match client
 				.get(&url)
 				.headers({
 					let mut map = reqwest::header::HeaderMap::new();
+
 					for (key, value) in headers {
 						if let (Ok(header_name), Ok(header_value)) = (
 							reqwest::header::HeaderName::from_bytes(key.as_bytes()),
@@ -1416,6 +1432,7 @@ impl AirService for AirVinegRPCService {
 							map.insert(header_name, header_value);
 						}
 					}
+
 					map
 				})
 				.send()
@@ -1424,6 +1441,7 @@ impl AirService for AirVinegRPCService {
 				Ok(response) => {
 					if !response.status().is_success() {
 						let error = format!("Download failed with status: {}", response.status());
+
 						let _ = tx
 							.send(Ok(DownloadStreamResponse {
 								request_id:download_request_id.clone(),
@@ -1434,6 +1452,7 @@ impl AirService for AirVinegRPCService {
 								error:error.clone(),
 							}))
 							.await;
+
 						AppState
 							.UpdateRequestStatus(
 								&download_request_id,
@@ -1442,16 +1461,21 @@ impl AirService for AirVinegRPCService {
 							)
 							.await
 							.ok();
+
 						return;
 					}
 
 					total_size = Some(response.content_length().unwrap_or(0));
+
 					let response_tx = tx.clone();
+
 					let response_id = download_request_id.clone();
 
 					// Stream chunks to client
 					let mut stream = response.bytes_stream();
+
 					let mut buffer = Vec::with_capacity(chunk_size);
+
 					let mut last_progress:f32 = 0.0;
 
 					while let Some(chunk_result) = TokioStreamExt::next(&mut stream).await {
@@ -1461,6 +1485,7 @@ impl AirService for AirVinegRPCService {
 								"[AirVinegRPCService] Download cancelled by client [ID: {}]",
 								download_request_id
 							);
+
 							AppState
 								.UpdateRequestStatus(
 									&download_request_id,
@@ -1469,12 +1494,14 @@ impl AirService for AirVinegRPCService {
 								)
 								.await
 								.ok();
+
 							return;
 						}
 
 						match chunk_result {
 							Ok(chunk) => {
 								buffer.extend_from_slice(&chunk);
+
 								total_downloaded += chunk.len() as u64;
 
 								// Send chunk when buffer reaches target size
@@ -1499,6 +1526,7 @@ impl AirService for AirVinegRPCService {
 											)
 											.await
 											.ok();
+
 										last_progress = progress;
 									}
 
@@ -1519,6 +1547,7 @@ impl AirService for AirVinegRPCService {
 											"warn: [AirVinegRPCService] Client disconnected during streaming [ID: {}]",
 											download_request_id
 										);
+
 										AppState
 											.UpdateRequestStatus(
 												&download_request_id,
@@ -1529,6 +1558,7 @@ impl AirService for AirVinegRPCService {
 											)
 											.await
 											.ok();
+
 										return;
 									}
 
@@ -1545,6 +1575,7 @@ impl AirService for AirVinegRPCService {
 							},
 							Err(e) => {
 								let error = format!("Download error: {}", e);
+
 								dev_log!(
 									"grpc",
 									"error: [AirVinegRPCService] Stream download failed [ID: {}]: {}",
@@ -1571,6 +1602,7 @@ impl AirService for AirVinegRPCService {
 									)
 									.await
 									.ok();
+
 								return;
 							},
 						}
@@ -1597,6 +1629,7 @@ impl AirService for AirVinegRPCService {
 								"warn: [AirVinegRPCService] Client disconnected while sending final chunk [ID: {}]",
 								download_request_id
 							);
+
 							return;
 						}
 					}
@@ -1631,6 +1664,7 @@ impl AirService for AirVinegRPCService {
 				},
 				Err(e) => {
 					let error = format!("Failed to start streaming download: {}", e);
+
 					dev_log!(
 						"grpc",
 						"error: [AirVinegRPCService] Stream download error [ID: {}]: {}",
@@ -1826,6 +1860,7 @@ impl AirService for AirVinegRPCService {
 				// Calculate checksum lazily or on-demand
 				let checksum = calculate_file_checksum(path).await.unwrap_or_else(|e| {
 					dev_log!("grpc", "warn: [AirVinegRPCService] Failed to calculate checksum: {}", e);
+
 					String::new()
 				});
 

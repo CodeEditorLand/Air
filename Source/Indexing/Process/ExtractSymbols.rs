@@ -221,16 +221,19 @@ pub fn FindSymbolsMatching<'a>(
 					return false;
 				}
 			}
+
 			if let Some(k) = kind {
 				if s.kind != *k {
 					return false;
 				}
 			}
+
 			if let Some((start, end)) = line_range {
 				if s.line < start || s.line > end {
 					return false;
 				}
 			}
+
 			true
 		})
 		.collect()

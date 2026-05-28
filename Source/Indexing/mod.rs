@@ -292,6 +292,7 @@ impl FileIndexer {
 
 			let task = tokio::spawn(async move {
 				let _permit = permit;
+
 				IndexFileInternal(&file_path, &config_for_task, &[]).await
 			});
 

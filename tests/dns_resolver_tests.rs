@@ -196,7 +196,9 @@ async fn test_resolver_concurrent_queries() {
 
 		let handle = tokio::spawn(async move {
 			let domain = format!("service{}.land.playform.cloud", i % 2); // Alternate between 2 domains
+
 			let lookup = resolver_clone.lookup_ip(&domain).await;
+
 			(domain, lookup)
 		});
 

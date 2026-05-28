@@ -142,13 +142,17 @@ pub async fn StartFileWatcher(context:&BackgroundIndexerContext, paths:Vec<PathB
 						"indexing",
 						"warn: [StartWatcher] Skipping file event - index marked as corrupted"
 					);
+
 					return;
 				}
 
 				let index = index.clone();
+
 				// Variables cloned for use in async task
 				let _index = index.clone();
+
 				let debounced_handler = debounced_handler.clone();
+
 				let _config_clone = config.clone();
 
 				tokio::spawn(async move {
@@ -209,17 +213,22 @@ pub async fn StartFileWatcher(context:&BackgroundIndexerContext, paths:Vec<PathB
 pub fn StartDebounceProcessor(context:Arc<BackgroundIndexerContext>) -> JoinHandle<()> {
 	tokio::spawn(async move {
 		dev_log!("indexing", "[StartWatcher] Debounce processor started");
+
 		let interval = Duration::from_millis(100); // Process every 100ms
+
 		// Debounce age cutoff
 		let debounce_cutoff = Duration::from_millis(500);
 
 		loop {
 			tokio::time::sleep(interval).await;
+
 			{
 				// Check corruption flag
 				if *context.corruption_detected.lock().await {
 					dev_log!("indexing", "warn: [StartWatcher] Index corrupted, pausing debounce processing");
+
 					tokio::time::sleep(Duration::from_secs(5)).await;
+
 					continue;
 				}
 

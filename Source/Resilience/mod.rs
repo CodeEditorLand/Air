@@ -301,6 +301,7 @@ impl CircuitBreaker {
 				"error: [CircuitBreaker] State validation failed after transition: {}",
 				e
 			);
+
 			e
 		})?;
 

@@ -78,7 +78,9 @@ impl AirCompat {
 	pub fn Timeout(Message:impl Into<String>) -> VineError {
 		VineError::RequestTimeout {
 			SideCarIdentifier:"unknown".to_string(),
+
 			MethodName:Message.into(),
+
 			TimeoutMilliseconds:0,
 		}
 	}

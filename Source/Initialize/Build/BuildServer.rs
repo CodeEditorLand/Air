@@ -138,6 +138,7 @@ pub fn BuildServer(
 	let service = AirVinegRPCService::new(app_state, auth_service, update_manager, download_manager, file_indexer)
 		.map_err(|e| {
 			dev_log!("lifecycle", "error: [Build] Failed to create Vine gRPC service: {}", e);
+
 			format!("Vine service creation failed: {}", e)
 		})?;
 

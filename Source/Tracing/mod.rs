@@ -263,6 +263,7 @@ impl TraceGenerator {
 	pub fn generate_trace_id() -> String {
 		std::panic::catch_unwind(|| uuid::Uuid::new_v4().to_string()).unwrap_or_else(|e| {
 			dev_log!("air", "error: [Tracing] Panic in generate_trace_id, using fallback: {:?}", e);
+
 			format!("{:x}", rand::random::<u64>())
 		})
 	}
@@ -271,6 +272,7 @@ impl TraceGenerator {
 	pub fn generate_span_id() -> String {
 		std::panic::catch_unwind(|| uuid::Uuid::new_v4().to_string()).unwrap_or_else(|e| {
 			dev_log!("air", "error: [Tracing] Panic in generate_span_id, using fallback: {:?}", e);
+
 			format!("{:x}", rand::random::<u64>())
 		})
 	}

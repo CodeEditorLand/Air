@@ -473,6 +473,7 @@ impl PluginManager {
 					metadata.name,
 					e
 				);
+
 				e
 			})?;
 

@@ -339,6 +339,7 @@ impl HealthCheckManager {
 				"connections" => self.CheckConnectionsService().await,
 				_ => {
 					dev_log!("lifecycle", "warn: [HealthCheck] Unknown service: {}", ServiceName);
+
 					return (HealthStatus::Unhealthy, Some(format!("Unknown service: {}", ServiceName)));
 				},
 			}
@@ -346,6 +347,7 @@ impl HealthCheckManager {
 		.await
 		.map_err(|_| {
 			dev_log!("lifecycle", "warn: [HealthCheck] Timeout checking service: {}", ServiceName);
+
 			(
 				HealthStatus::Unhealthy,
 				Some(format!("Health check timeout for service: {}", ServiceName)),
@@ -783,6 +785,7 @@ impl HealthCheckManager {
 						"warn: [HealthCheck] No specific recovery action for {}",
 						ServiceName
 					);
+
 					Ok(())
 				},
 			}

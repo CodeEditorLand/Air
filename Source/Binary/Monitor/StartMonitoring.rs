@@ -127,6 +127,7 @@ pub async fn StartMonitoring(
 	// Start connection monitoring background task
 	let ConnectionMonitorHandle = tokio::spawn({
 		let AppState = AppState.clone();
+
 		let HealthManager = HealthManager.clone();
 
 		async move {
@@ -153,6 +154,7 @@ pub async fn StartMonitoring(
 
 				// Record metrics
 				let MetricsCollector = Metrics::GetMetrics();
+
 				MetricsCollector.UpdateResourceMetrics(
 					Resources.MemoryUsageMb.saturating_mul(1024).saturating_mul(1024), // Convert MB to bytes
 					Resources.CPUUsagePercent,
@@ -161,6 +163,7 @@ pub async fn StartMonitoring(
 				);
 
 				dev_log!("lifecycle", "[ConnectionMonitor] Active threads (tasks): {}", ActiveThreads);
+
 				// Clean up stale connections (5 minute timeout)
 				if let Err(Error) = AppState.CleanupStaleConnections(300).await {
 					dev_log!(
@@ -175,8 +178,10 @@ pub async fn StartMonitoring(
 					Ok(_) => {},
 					Err(Error) => {
 						dev_log!("lifecycle", "warn: [ConnectionMonitor] Health check failed: {}", Error);
+
 						// Record metrics for failed health check
 						let MetricsCollector = Metrics::GetMetrics();
+
 						MetricsCollector.RecordRequestFailure("health_check_failed", 0.0);
 					},
 				}
@@ -205,6 +210,7 @@ pub async fn StartMonitoring(
 
 				// Perform comprehensive health checks
 				let Services = ["authentication", "updates", "downloader", "indexing", "grpc"];
+
 				for Service in Services.iter() {
 					if let Err(Error) = HealthManager.CheckService(Service).await {
 						dev_log!(
@@ -218,6 +224,7 @@ pub async fn StartMonitoring(
 
 				// Log overall health status
 				let OverallHealth = HealthManager.GetOverallHealth().await;
+
 				dev_log!("lifecycle", "[HealthMonitor] Overall health: {:?}", OverallHealth);
 			}
 		}

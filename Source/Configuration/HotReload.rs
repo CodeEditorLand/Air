@@ -757,13 +757,16 @@ impl ConfigHotReload {
 
 				// Debounce: wait before processing the request
 				let now = Instant::now();
+
 				{
 					let mut last_change = last_change_time.write().await;
+
 					if let Some(last) = *last_change {
 						if now.duration_since(last) < debounce_delay {
 							continue; // Skip, too soon since last change
 						}
 					}
+
 					*last_change = Some(now);
 				}
 

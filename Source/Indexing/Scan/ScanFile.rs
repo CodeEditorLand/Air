@@ -201,9 +201,11 @@ pub async fn IndexFileInternal(
 pub async fn ValidateFileAccess(file_path:&PathBuf) -> bool {
 	tokio::task::spawn_blocking({
 		let file_path = file_path.to_path_buf();
+
 		move || {
 			// Try to read file metadata
 			let can_access = std::fs::metadata(&file_path).is_ok();
+
 			if can_access {
 				// Try to open file for reading
 				std::fs::File::open(&file_path).is_ok()
@@ -315,9 +317,11 @@ pub fn FileModifiedSince(file_path:&PathBuf, last_indexed:chrono::DateTime<chron
 pub async fn GetFileSize(file_path:&PathBuf) -> Result<u64> {
 	tokio::task::spawn_blocking({
 		let file_path = file_path.to_path_buf();
+
 		move || {
 			let metadata = std::fs::metadata(&file_path)
 				.map_err(|e| AirError::FileSystem(format!("Failed to get file metadata: {}", e)))?;
+
 			Ok(metadata.len())
 		}
 	})

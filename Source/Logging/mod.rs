@@ -402,7 +402,9 @@ impl LogManager {
 		// Sort by modification time (newest first)
 		log_files.sort_by(|a, b| {
 			let a_time = a.metadata().and_then(|m| m.modified()).unwrap_or(UNIX_EPOCH);
+
 			let b_time = b.metadata().and_then(|m| m.modified()).unwrap_or(UNIX_EPOCH);
+
 			b_time.cmp(&a_time)
 		});
 

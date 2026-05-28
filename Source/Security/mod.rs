@@ -497,9 +497,11 @@ impl RateLimiter {
 				let now = std::time::Instant::now();
 
 				let mut buckets = ip_buckets.write().await;
+
 				buckets.retain(|_, bucket| now.duration_since(bucket.last_refill) < cleanup_interval);
 
 				let mut buckets = client_buckets.write().await;
+
 				buckets.retain(|_, bucket| now.duration_since(bucket.last_refill) < cleanup_interval);
 			}
 		})

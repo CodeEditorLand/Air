@@ -1732,6 +1732,7 @@ impl DownloadManager {
 						download_id_clone,
 						e
 					); // Update download status to failed
+
 					let _ = manager
 						.UpdateDownloadStatus(&download_id_clone, DownloadState::Failed, None, Some(e.to_string()))
 						.await;
@@ -1790,9 +1791,11 @@ impl DownloadManager {
 				download.status,
 				DownloadState::Completed | DownloadState::Failed | DownloadState::Cancelled
 			);
+
 			if is_final {
 				cleaned_count += 1;
 			}
+
 			!is_final
 		});
 
@@ -2181,11 +2184,14 @@ impl DownloadManager {
 				// Update progress
 				{
 					let mut downloaded = downloaded_tracker.write().await;
+
 					let mut completed = completed_tracker.write().await;
+
 					*downloaded += chunk_clone.end - chunk_clone.start + 1;
 					*completed += 1;
 
 					let progress = (*downloaded as f32 / total_size as f32) * 100.0;
+
 					dev_log!(
 						"update",
 						"Chunk {} completed ({}/{}) - Progress: {:.1}%",
@@ -2222,6 +2228,7 @@ impl DownloadManager {
 		// Clean up temporary directory
 		tokio::fs::remove_dir_all(&temp_dir).await.map_err(|e| {
 			dev_log!("update", "warn: [DownloadManager] Failed to clean up temp directory: {}", e);
+
 			AirError::FileSystem(e.to_string())
 		})?;
 

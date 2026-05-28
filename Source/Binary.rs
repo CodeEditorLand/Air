@@ -315,6 +315,7 @@ fn InitializeLogging() {
 						"Warning: Log file directory does not exist: {}. Logging to stdout only.",
 						parent.display()
 					);
+
 					None
 				}
 			} else {
@@ -1965,6 +1966,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 				.serve_with_shutdown(bind_addr, async {
 					// Wait for shutdown signal from main
 					let _ = shutdown_rx.await;
+
 					dev_log!("lifecycle", "[Vine] Shutdown signal received, stopping server...");
 				});
 
@@ -1973,10 +1975,12 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 			match server.await {
 				Ok(_) => {
 					dev_log!("lifecycle", "[Vine] gRPC server stopped cleanly");
+
 					Ok(())
 				},
 				Err(e) => {
 					dev_log!("grpc", "error: [Vine] gRPC server error: {}", e);
+
 					Err(e.into())
 				},
 			}
@@ -2002,9 +2006,12 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	// Start connection monitoring background task
 	let connection_monitor_handle:tokio::task::JoinHandle<()> = tokio::spawn({
 		let AppState = AppState.clone();
+
 		let health_manager = health_manager.clone();
+
 		async move {
 			let mut interval = interval(Duration::from_secs(60)); // Check every minute
+
 			loop {
 				interval.tick().await;
 
@@ -2018,6 +2025,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
 				// Record metrics
 				let metrics_collector = Metrics::GetMetrics();
+
 				metrics_collector.UpdateResourceMetrics(
 					(resources.MemoryUsageMb * 1024.0 * 1024.0) as u64, // Convert MB to bytes
 					resources.CPUUsagePercent,
@@ -2042,6 +2050,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
 						// Record metrics for failed health check
 						let metrics_collector = Metrics::GetMetrics();
+
 						metrics_collector.RecordRequestFailure("health_check_failed", 0.0);
 					},
 				}
@@ -2065,13 +2074,16 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	// Start health monitoring background task
 	let health_monitor_handle:tokio::task::JoinHandle<()> = tokio::spawn({
 		let health_manager = health_manager.clone();
+
 		async move {
 			let mut interval = interval(Duration::from_secs(30)); // Check every 30 seconds
+
 			loop {
 				interval.tick().await;
 
 				// Perform comprehensive health checks
 				let services = ["authentication", "updates", "downloader", "indexing", "grpc"];
+
 				for service in services.iter() {
 					if let Err(e) = health_manager.CheckService(service).await {
 						dev_log!("lifecycle", "warn: [HealthMonitor] Health check failed for {}: {}", service, e);
@@ -2080,6 +2092,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
 				// Log overall health status
 				let overall_health = health_manager.GetOverallHealth().await;
+
 				dev_log!("lifecycle", "[HealthMonitor] Overall health: {:?}", overall_health);
 			}
 		}

@@ -539,6 +539,7 @@ impl ApplicationState {
 				*RemovedByType.entry(format!("{:?}", Connection.ConnectionType)).or_insert(0) += 1;
 
 				RemovedCount += 1;
+
 				false
 			} else {
 				true

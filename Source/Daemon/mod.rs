@@ -316,12 +316,14 @@ impl DaemonManager {
 		fs::rename(&TempDir, &self.PidFilePath).map_err(|e| {
 			// Rollback: clean up temp file on failure
 			let _ = fs::remove_file(&TempDir);
+
 			AirError::FileSystem(format!("Failed to rename PID file: {}", e))
 		})?;
 
 		#[cfg(not(unix))]
 		fs::rename(&TempDir, &self.PidFilePath).map_err(|e| {
 			let _ = fs::remove_file(&TempDir);
+
 			AirError::FileSystem(format!("Failed to rename PID file: {}", e))
 		})?;
 
@@ -378,6 +380,7 @@ impl DaemonManager {
 
 		let pid:u32 = parts[0].trim().parse().map_err(|e| {
 			dev_log!("daemon", "warn: [Daemon] Invalid PID in file: {}", e);
+
 			AirError::FileSystem("Invalid PID file content".to_string())
 		})?;
 
@@ -484,6 +487,7 @@ impl DaemonManager {
 		let content = fs::read_to_string(&self.PidFilePath)
 			.map_err(|e| {
 				dev_log!("daemon", "warn: [Daemon] Cannot verify stale PID file: {}", e);
+
 				return false;
 			})
 			.ok();
@@ -866,12 +870,14 @@ WantedBy=multi-user.target
 		#[cfg(unix)]
 		fs::rename(&TempPath, &ServiceFilePath).map_err(|e| {
 			let _ = fs::remove_file(&TempPath);
+
 			AirError::FileSystem(format!("Failed to rename service file: {}", e))
 		})?;
 
 		#[cfg(not(unix))]
 		fs::rename(&TempPath, &ServiceFilePath).map_err(|e| {
 			let _ = fs::remove_file(&TempPath);
+
 			AirError::FileSystem(format!("Failed to rename service file: {}", e))
 		})?;
 
@@ -919,12 +925,14 @@ WantedBy=multi-user.target
 		#[cfg(unix)]
 		fs::rename(&TempPath, &ServiceFilePath).map_err(|e| {
 			let _ = fs::remove_file(&TempPath);
+
 			AirError::FileSystem(format!("Failed to rename plist file: {}", e))
 		})?;
 
 		#[cfg(not(unix))]
 		fs::rename(&TempPath, &ServiceFilePath).map_err(|e| {
 			let _ = fs::remove_file(&TempPath);
+
 			AirError::FileSystem(format!("Failed to rename plist file: {}", e))
 		})?;
 
@@ -983,6 +991,7 @@ WantedBy=multi-user.target
 		// Atomic rename
 		fs::rename(&TempPath, &ServiceFilePath).map_err(|e| {
 			let _ = fs::remove_file(&TempPath);
+
 			AirError::FileSystem(format!("Failed to rename service file: {}", e))
 		})?;
 

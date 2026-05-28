@@ -144,14 +144,17 @@ pub fn StartService(built: BuiltServer) -> StartedService {
                 .serve_with_shutdown(bind_addr, async {
                     // Wait for shutdown signal
                     shutdown_rx.await;
+
                     dev_log!("lifecycle", "[Vine] Shutdown signal received, stopping server...");                });
 
             dev_log!("lifecycle", "[Vine] gRPC server listening on {}", bind_addr);
+
             // Run the server
             match server.await {
                 Ok(_) => {
                     dev_log!("lifecycle", "[Vine] gRPC server stopped cleanly");                    Ok(())
                 }
+
                 Err(e) => {
                     dev_log!("lifecycle", "error: [Vine] gRPC server error: {}", e);                    Err(e.into())
                 }

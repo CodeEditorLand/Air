@@ -265,9 +265,11 @@ pub async fn ScanAndRemoveDeleted(index:&mut FileIndex, directory_path:&Path) ->
 async fn CheckDirectoryPermissions(path:&Path) -> Result<()> {
 	tokio::task::spawn_blocking({
 		let path = path.to_path_buf();
+
 		move || {
 			std::fs::read_dir(&path)
 				.map_err(|e| AirError::FileSystem(format!("Cannot read directory {}: {}", path.display(), e)))?;
+
 			Ok(())
 		}
 	})
@@ -355,6 +357,7 @@ pub async fn ScanDirectoriesParallel(
 
 		let task = tokio::spawn(async move {
 			let _permit = permit;
+
 			ScanDirectory(&directory, patterns_clone, &config_clone, max_parallel).await
 		});
 

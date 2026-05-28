@@ -68,6 +68,7 @@ impl TimeoutManager {
 	pub fn Remaining(&self) -> Option<Duration> {
 		std::panic::catch_unwind(|| self.remaining()).unwrap_or_else(|e| {
 			dev_log!("resilience", "error: [TimeoutManager] Panic in Remaining: {:?}", e);
+
 			None
 		})
 	}
@@ -85,6 +86,7 @@ impl TimeoutManager {
 	pub fn EffectiveTimeout(&self) -> Duration {
 		std::panic::catch_unwind(|| {
 			let timeout = self.effective_timeout();
+
 			match Self::ValidateTimeoutResult(timeout) {
 				Ok(valid_timeout) => valid_timeout,
 				Err(_) => Duration::from_secs(30),
@@ -92,6 +94,7 @@ impl TimeoutManager {
 		})
 		.unwrap_or_else(|e| {
 			dev_log!("resilience", "error: [TimeoutManager] Panic in EffectiveTimeout: {:?}", e);
+
 			Duration::from_secs(30)
 		})
 	}
@@ -103,6 +106,7 @@ impl TimeoutManager {
 	pub fn IsExceeded(&self) -> bool {
 		std::panic::catch_unwind(|| self.is_exceeded()).unwrap_or_else(|e| {
 			dev_log!("resilience", "error: [TimeoutManager] Panic in IsExceeded: {:?}", e);
+
 			true
 		})
 	}

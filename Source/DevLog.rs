@@ -218,13 +218,17 @@ fn GetTraceId() -> &'static str {
 			collections::hash_map::DefaultHasher,
 			hash::{Hash, Hasher},
 		};
+
 		let mut H = DefaultHasher::new();
+
 		std::process::id().hash(&mut H);
+
 		SystemTime::now()
 			.duration_since(UNIX_EPOCH)
 			.unwrap_or_default()
 			.as_nanos()
 			.hash(&mut H);
+
 		format!("{:032x}", H.finish() as u128)
 	})
 }
@@ -293,9 +297,12 @@ pub fn EmitOTLPSpan(Name:&str, StartNano:u64, EndNano:u64, Attributes:&[(&str, &
 		let Ok(mut Stream) = TcpStream::connect_timeout(&"127.0.0.1:4318".parse().unwrap(), Duration::from_millis(200))
 		else {
 			OTLP_AVAILABLE.store(false, Ordering::Relaxed);
+
 			return;
 		};
+
 		let _ = Stream.set_write_timeout(Some(Duration::from_millis(200)));
+
 		let _ = Stream.set_read_timeout(Some(Duration::from_millis(200)));
 
 		let HttpReq = format!(
@@ -303,14 +310,19 @@ pub fn EmitOTLPSpan(Name:&str, StartNano:u64, EndNano:u64, Attributes:&[(&str, &
 			 {}\r\nConnection: close\r\n\r\n",
 			Payload.len()
 		);
+
 		if Stream.write_all(HttpReq.as_bytes()).is_err() {
 			return;
 		}
+
 		if Stream.write_all(Payload.as_bytes()).is_err() {
 			return;
 		}
+
 		let mut Buf = [0u8; 32];
+
 		let _ = Stream.read(&mut Buf);
+
 		if !(Buf.starts_with(b"HTTP/1.1 2") || Buf.starts_with(b"HTTP/1.0 2")) {
 			OTLP_AVAILABLE.store(false, Ordering::Relaxed);
 		}
