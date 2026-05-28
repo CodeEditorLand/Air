@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 use crate::{
 	AirError,
-	Client::AirServiceProvider::{AirServiceProvider, GenerateRequestID},
+	Client::AirServiceProvider::{AirServiceProvider},
 	dev_log,
 };
 
@@ -14,7 +14,7 @@ impl AirServiceProvider {
 	/// Reads a configuration section as a key/value map. Common
 	/// sections: `"grpc"`, `"authentication"`, `"updates"`.
 	pub async fn GetConfiguration(&self, section:String) -> Result<HashMap<String, String>, AirError> {
-		let RequestID = GenerateRequestID::Fn();
+		let RequestID = crate::Utility::GenerateRequestId();
 
 		dev_log!(
 			"grpc",

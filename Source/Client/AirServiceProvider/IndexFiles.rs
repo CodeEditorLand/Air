@@ -6,7 +6,7 @@ use crate::{
 	AirError,
 	Client::{
 		AirClient::IndexInfo,
-		AirServiceProvider::{AirServiceProvider, GenerateRequestID},
+		AirServiceProvider::{AirServiceProvider},
 	},
 	dev_log,
 };
@@ -26,7 +26,7 @@ impl AirServiceProvider {
 
 		max_depth:u32,
 	) -> Result<IndexInfo::Struct, AirError> {
-		let RequestID = GenerateRequestID::Fn();
+		let RequestID = crate::Utility::GenerateRequestId();
 
 		dev_log!(
 			"grpc",

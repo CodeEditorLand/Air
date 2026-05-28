@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 use crate::{
 	AirError,
-	Client::AirServiceProvider::{AirServiceProvider, GenerateRequestID},
+	Client::AirServiceProvider::{AirServiceProvider},
 	dev_log,
 };
 
@@ -15,7 +15,7 @@ impl AirServiceProvider {
 	/// configuration section. Keys not in `updates` are left
 	/// untouched.
 	pub async fn UpdateConfiguration(&self, section:String, updates:HashMap<String, String>) -> Result<(), AirError> {
-		let RequestID = GenerateRequestID::Fn();
+		let RequestID = crate::Utility::GenerateRequestId();
 
 		dev_log!(
 			"grpc",

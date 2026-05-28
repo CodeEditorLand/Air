@@ -5,7 +5,7 @@ use crate::{
 	AirError,
 	Client::{
 		AirClient::ExtendedFileInfo,
-		AirServiceProvider::{AirServiceProvider, GenerateRequestID},
+		AirServiceProvider::{AirServiceProvider},
 	},
 	dev_log,
 };
@@ -14,7 +14,7 @@ impl AirServiceProvider {
 	/// Returns metadata for the file at `path` (size, mime type,
 	/// checksum, modified time).
 	pub async fn GetFileInfo(&self, path:String) -> Result<ExtendedFileInfo::Struct, AirError> {
-		let RequestID = GenerateRequestID::Fn();
+		let RequestID = crate::Utility::GenerateRequestId();
 
 		dev_log!(
 			"grpc",

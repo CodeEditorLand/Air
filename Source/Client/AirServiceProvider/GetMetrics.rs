@@ -6,7 +6,7 @@ use crate::{
 	AirError,
 	Client::{
 		AirClient::AirMetrics,
-		AirServiceProvider::{AirServiceProvider, GenerateRequestID},
+		AirServiceProvider::{AirServiceProvider},
 	},
 	dev_log,
 };
@@ -16,7 +16,7 @@ impl AirServiceProvider {
 	/// counters; common values are `"performance"`, `"resources"`,
 	/// `"requests"`.
 	pub async fn GetMetrics(&self, metric_type:Option<String>) -> Result<AirMetrics::Struct, AirError> {
-		let RequestID = GenerateRequestID::Fn();
+		let RequestID = crate::Utility::GenerateRequestId();
 
 		dev_log!("grpc", "[AirServiceProvider] GetMetrics (request_id: {})", RequestID);
 

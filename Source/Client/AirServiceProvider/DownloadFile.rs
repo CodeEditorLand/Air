@@ -9,7 +9,7 @@ use crate::{
 	AirError,
 	Client::{
 		AirClient::FileInfo,
-		AirServiceProvider::{AirServiceProvider, GenerateRequestID},
+		AirServiceProvider::{AirServiceProvider},
 	},
 	dev_log,
 };
@@ -27,7 +27,7 @@ impl AirServiceProvider {
 
 		checksum:String,
 	) -> Result<FileInfo::Struct, AirError> {
-		let RequestID = GenerateRequestID::Fn();
+		let RequestID = crate::Utility::GenerateRequestId();
 
 		dev_log!("grpc", "[AirServiceProvider] DownloadFile (request_id: {})", RequestID);
 

@@ -5,7 +5,7 @@ use crate::{
 	AirError,
 	Client::{
 		AirClient::FileResult,
-		AirServiceProvider::{AirServiceProvider, GenerateRequestID},
+		AirServiceProvider::{AirServiceProvider},
 	},
 	dev_log,
 };
@@ -22,7 +22,7 @@ impl AirServiceProvider {
 
 		max_results:u32,
 	) -> Result<Vec<FileResult::Struct>, AirError> {
-		let RequestID = GenerateRequestID::Fn();
+		let RequestID = crate::Utility::GenerateRequestId();
 
 		dev_log!(
 			"grpc",

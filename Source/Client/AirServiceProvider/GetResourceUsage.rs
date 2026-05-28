@@ -5,7 +5,7 @@ use crate::{
 	AirError,
 	Client::{
 		AirClient::ResourceUsage,
-		AirServiceProvider::{AirServiceProvider, GenerateRequestID},
+		AirServiceProvider::{AirServiceProvider},
 	},
 	dev_log,
 };
@@ -13,7 +13,7 @@ use crate::{
 impl AirServiceProvider {
 	/// Returns the daemon's current resource-usage snapshot.
 	pub async fn GetResourceUsage(&self) -> Result<ResourceUsage::Struct, AirError> {
-		let RequestID = GenerateRequestID::Fn();
+		let RequestID = crate::Utility::GenerateRequestId();
 
 		dev_log!("grpc", "[AirServiceProvider] GetResourceUsage (request_id: {})", RequestID);
 

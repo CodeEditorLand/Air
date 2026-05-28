@@ -4,7 +4,7 @@
 
 use crate::{
 	AirError,
-	Client::AirServiceProvider::{AirServiceProvider, GenerateRequestID},
+	Client::AirServiceProvider::{AirServiceProvider},
 	dev_log,
 };
 
@@ -12,7 +12,7 @@ impl AirServiceProvider {
 	/// Applies the update package at `update_path` and tags it with
 	/// `version` for the daemon's bookkeeping.
 	pub async fn ApplyUpdate(&self, version:String, update_path:String) -> Result<(), AirError> {
-		let RequestID = GenerateRequestID::Fn();
+		let RequestID = crate::Utility::GenerateRequestId();
 
 		dev_log!("grpc", "[AirServiceProvider] ApplyUpdate (request_id: {})", RequestID);
 

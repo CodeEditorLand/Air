@@ -5,7 +5,7 @@
 
 use crate::{
 	AirError,
-	Client::AirServiceProvider::{AirServiceProvider, GenerateRequestID},
+	Client::AirServiceProvider::{AirServiceProvider},
 	dev_log,
 };
 
@@ -14,7 +14,7 @@ impl AirServiceProvider {
 	/// `"gitlab"`, `"microsoft"`, …) and returns the session token on
 	/// success.
 	pub async fn Authenticate(&self, username:String, password:String, provider:String) -> Result<String, AirError> {
-		let RequestID = GenerateRequestID::Fn();
+		let RequestID = crate::Utility::GenerateRequestId();
 
 		dev_log!("grpc", "[AirServiceProvider] Authenticate (request_id: {})", RequestID);
 

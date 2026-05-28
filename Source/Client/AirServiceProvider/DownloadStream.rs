@@ -9,7 +9,7 @@ use crate::{
 	AirError,
 	Client::{
 		AirClient::DownloadStream as DownloadStreamDTO,
-		AirServiceProvider::{AirServiceProvider, GenerateRequestID},
+		AirServiceProvider::{AirServiceProvider},
 	},
 	dev_log,
 };
@@ -25,7 +25,7 @@ impl AirServiceProvider {
 
 		headers:HashMap<String, String>,
 	) -> Result<DownloadStreamDTO::Struct, AirError> {
-		let RequestID = GenerateRequestID::Fn();
+		let RequestID = crate::Utility::GenerateRequestId();
 
 		dev_log!(
 			"grpc",

@@ -6,7 +6,7 @@ use crate::{
 	AirError,
 	Client::{
 		AirClient::AirStatus,
-		AirServiceProvider::{AirServiceProvider, GenerateRequestID},
+		AirServiceProvider::{AirServiceProvider},
 	},
 	dev_log,
 };
@@ -14,7 +14,7 @@ use crate::{
 impl AirServiceProvider {
 	/// Fetches the daemon's runtime status snapshot.
 	pub async fn GetStatus(&self) -> Result<AirStatus::Struct, AirError> {
-		let RequestID = GenerateRequestID::Fn();
+		let RequestID = crate::Utility::GenerateRequestId();
 
 		dev_log!("grpc", "[AirServiceProvider] GetStatus (request_id: {})", RequestID);
 

@@ -8,7 +8,7 @@ use crate::{
 	AirError,
 	Client::{
 		AirClient::UpdateInfo,
-		AirServiceProvider::{AirServiceProvider, GenerateRequestID},
+		AirServiceProvider::{AirServiceProvider},
 	},
 	dev_log,
 };
@@ -26,7 +26,7 @@ impl AirServiceProvider {
 
 		channel:String,
 	) -> Result<Option<UpdateInfo::Struct>, AirError> {
-		let RequestID = GenerateRequestID::Fn();
+		let RequestID = crate::Utility::GenerateRequestId();
 
 		dev_log!("grpc", "[AirServiceProvider] CheckForUpdates (request_id: {})", RequestID);
 

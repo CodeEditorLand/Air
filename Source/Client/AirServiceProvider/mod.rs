@@ -30,10 +30,6 @@
 //! on the underlying `AirClient` serialises concurrent RPCs on a single
 //! channel.
 
-// --- Request-id helper ---
-
-pub mod GenerateRequestID;
-
 // --- Authentication ---
 
 pub mod Authenticate;

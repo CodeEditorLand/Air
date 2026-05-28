@@ -4,7 +4,7 @@
 
 use crate::{
 	AirError,
-	Client::AirServiceProvider::{AirServiceProvider, GenerateRequestID},
+	Client::AirServiceProvider::{AirServiceProvider},
 	dev_log,
 };
 
@@ -23,7 +23,7 @@ impl AirServiceProvider {
 
 		disk_limit_mb:u32,
 	) -> Result<(), AirError> {
-		let RequestID = GenerateRequestID::Fn();
+		let RequestID = crate::Utility::GenerateRequestId();
 
 		dev_log!("grpc", "[AirServiceProvider] SetResourceLimits (request_id: {})", RequestID);
 
