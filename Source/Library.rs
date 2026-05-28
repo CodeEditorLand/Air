@@ -198,8 +198,6 @@ pub mod Metrics;
 
 pub mod Mountain;
 
-pub mod Plugins;
-
 pub mod Resilience;
 
 pub mod Security;
