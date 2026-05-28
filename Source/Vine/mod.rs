@@ -36,14 +36,8 @@ pub mod Generated;
 
 pub mod Server;
 
-// --- Re-exports from `Vine` ---
-
-pub use ::Vine::{
-	ApplicationStateAccess,
-	DefaultAirAddress,
-	DefaultMaxMessageSize,
-	DefaultRequestTimeoutMs,
-	IPCProvider,
-	ProtocolVersion,
-	VineHost,
-};
+// Air code that needs the canonical `Vine` items (`VineHost`,
+// `IPCProvider`, `ApplicationStateAccess`, `ProtocolVersion`,
+// `DefaultRequestTimeoutMs`, `DefaultMaxMessageSize`, `DefaultAirAddress`)
+// imports them directly from the `::Vine::` workspace crate at the call
+// site - this module does not re-export them.

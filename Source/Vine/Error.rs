@@ -40,7 +40,11 @@
 /// New code should construct this directly. The [`AirCompat`] helpers
 /// below remain available for callers that prefer Air's prior variant
 /// names.
-pub use Vine::Error::{Result, VineError};
+/// Canonical Vine error enum, surfaced through Air's `Vine::Error` path.
+pub type VineError = ::Vine::Error::VineError;
+
+/// `Result<T, VineError>` convenience alias.
+pub type Result<T> = ::Vine::Error::Result<T>;
 
 /// Air-flavour compatibility constructors for the canonical [`VineError`].
 ///
