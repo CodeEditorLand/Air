@@ -96,7 +96,6 @@ Air/
 │   ├── Initialize/              # Configuration, port binding, gRPC server construction, per-service startup.
 │   ├── CLI/                     # Command-line interface for daemon interaction and diagnostics.
 │   ├── Vine/                    # gRPC protocol implementation (generated proto, server, errors).
-│   ├── Mountain/                # gRPC client for communication back to Mountain.
 │   ├── ApplicationState/        # Central coordination (connections, service states, telemetry, resources).
 │   ├── Configuration/           # TOML config loading with schema validation, env overrides, hot reload.
 │   ├── DevLog.rs                # Developer-facing logging and trace ID generation.
