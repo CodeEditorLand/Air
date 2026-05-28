@@ -21,7 +21,9 @@ impl AirClient {
 
 		let RequestPayload = FileInfoRequest { request_id, path };
 
-		let Client = self.Client().ok_or_else(|| AirError::Network("Air client not initialized".to_string()))?;
+		let Client = self
+			.Client()
+			.ok_or_else(|| AirError::Network("Air client not initialized".to_string()))?;
 
 		let mut ClientGuard = Client.lock().await;
 

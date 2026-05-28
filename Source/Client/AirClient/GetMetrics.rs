@@ -19,8 +19,8 @@ impl AirClient {
 	/// # Arguments
 	///
 	/// - `request_id` - opaque correlation id.
-	/// - `metric_type` - optional filter (`"performance"` / `"resources"`
-	///   / `"requests"`). `None` requests the full metric set.
+	/// - `metric_type` - optional filter (`"performance"` / `"resources"` /
+	///   `"requests"`). `None` requests the full metric set.
 	pub async fn GetMetrics(
 		&self,
 
@@ -32,7 +32,9 @@ impl AirClient {
 
 		let RequestPayload = MetricsRequest { request_id, metric_type:metric_type.unwrap_or_default() };
 
-		let Client = self.Client().ok_or_else(|| AirError::Network("Air client not initialized".to_string()))?;
+		let Client = self
+			.Client()
+			.ok_or_else(|| AirError::Network("Air client not initialized".to_string()))?;
 
 		let mut ClientGuard = Client.lock().await;
 

@@ -4,12 +4,7 @@
 
 use tonic::Request;
 
-use crate::{
-	AirError,
-	Client::AirClient::AirClient,
-	Vine::Generated::air::ResourceLimitsRequest,
-	dev_log,
-};
+use crate::{AirError, Client::AirClient::AirClient, Vine::Generated::air::ResourceLimitsRequest, dev_log};
 
 impl AirClient {
 	/// Sets daemon resource ceilings.
@@ -41,7 +36,9 @@ impl AirClient {
 
 		let RequestPayload = ResourceLimitsRequest { request_id, memory_limit_mb, cpu_limit_percent, disk_limit_mb };
 
-		let Client = self.Client().ok_or_else(|| AirError::Network("Air client not initialized".to_string()))?;
+		let Client = self
+			.Client()
+			.ok_or_else(|| AirError::Network("Air client not initialized".to_string()))?;
 
 		let mut ClientGuard = Client.lock().await;
 

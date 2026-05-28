@@ -34,7 +34,9 @@ impl AirClient {
 
 		let RequestPayload = UpdateCheckRequest { request_id, current_version, channel };
 
-		let Client = self.Client().ok_or_else(|| AirError::Network("Air client not initialized".to_string()))?;
+		let Client = self
+			.Client()
+			.ok_or_else(|| AirError::Network("Air client not initialized".to_string()))?;
 
 		let mut ClientGuard = Client.lock().await;
 

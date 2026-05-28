@@ -40,7 +40,9 @@ impl AirClient {
 
 		let RequestPayload = SearchRequest { request_id, query, path, max_results };
 
-		let Client = self.Client().ok_or_else(|| AirError::Network("Air client not initialized".to_string()))?;
+		let Client = self
+			.Client()
+			.ok_or_else(|| AirError::Network("Air client not initialized".to_string()))?;
 
 		let mut ClientGuard = Client.lock().await;
 

@@ -4,12 +4,7 @@
 
 use tonic::Request;
 
-use crate::{
-	AirError,
-	Client::AirClient::AirClient,
-	Vine::Generated::air::HealthCheckRequest,
-	dev_log,
-};
+use crate::{AirError, Client::AirClient::AirClient, Vine::Generated::air::HealthCheckRequest, dev_log};
 
 impl AirClient {
 	/// Performs a health check on the Air daemon.
@@ -18,7 +13,9 @@ impl AirClient {
 
 		let RequestPayload = HealthCheckRequest {};
 
-		let Client = self.Client().ok_or_else(|| AirError::Network("Air client not initialized".to_string()))?;
+		let Client = self
+			.Client()
+			.ok_or_else(|| AirError::Network("Air client not initialized".to_string()))?;
 
 		let mut ClientGuard = Client.lock().await;
 

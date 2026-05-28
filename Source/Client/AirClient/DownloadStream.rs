@@ -16,13 +16,15 @@ impl Struct {
 	/// Returns the next chunk from the stream. `None` when the stream ends.
 	pub async fn next(&mut self) -> Option<Result<DownloadStreamChunk::Struct, AirError>> {
 		match futures_util::stream::StreamExt::next(&mut self.inner).await {
-			Some(Ok(Response)) => Some(Ok(DownloadStreamChunk::Struct {
-				data:Response.chunk,
-				total_size:Response.total_size,
-				downloaded:Response.downloaded,
-				completed:Response.completed,
-				error:Response.error,
-			})),
+			Some(Ok(Response)) => {
+				Some(Ok(DownloadStreamChunk::Struct {
+					data:Response.chunk,
+					total_size:Response.total_size,
+					downloaded:Response.downloaded,
+					completed:Response.completed,
+					error:Response.error,
+				}))
+			},
 
 			Some(Err(Error)) => {
 				dev_log!("grpc", "error: [DownloadStream] Stream error: {}", Error);

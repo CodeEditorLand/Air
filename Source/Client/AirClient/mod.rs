@@ -53,7 +53,8 @@ pub mod ResourceUsage;
 
 pub mod UpdateInfo;
 
-// --- Per-domain method impls (each declares its own `impl AirClient` block) ---
+// --- Per-domain method impls (each declares its own `impl AirClient` block)
+// ---
 
 // Authentication
 pub mod Authenticate;
@@ -137,8 +138,8 @@ impl AirClient {
 	///
 	/// # Errors
 	///
-	/// - [`AirError::Network`] if the address parses as a tonic `Endpoint`
-	///   but the underlying connection attempt fails.
+	/// - [`AirError::Network`] if the address parses as a tonic `Endpoint` but
+	///   the underlying connection attempt fails.
 	/// - [`AirError::Validation`] if the address string is malformed.
 	pub async fn new(address:&str) -> Result<Self, AirError> {
 		dev_log!("grpc", "[AirClient] Connecting to Air daemon at: {}", address);
@@ -190,7 +191,8 @@ impl std::fmt::Debug for AirClient {
 /// `tonic::Request::new(payload)`.
 pub trait IntoRequestExt {
 	fn into_request(self) -> tonic::Request<Self>
-	where Self: Sized {
+	where
+		Self: Sized, {
 		tonic::Request::new(self)
 	}
 }

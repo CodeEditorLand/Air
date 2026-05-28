@@ -7,12 +7,7 @@
 
 use tonic::Request;
 
-use crate::{
-	AirError,
-	Client::AirClient::AirClient,
-	Vine::Generated::air::ApplyUpdateRequest,
-	dev_log,
-};
+use crate::{AirError, Client::AirClient::AirClient, Vine::Generated::air::ApplyUpdateRequest, dev_log};
 
 impl AirClient {
 	/// Applies an update package.
@@ -27,7 +22,9 @@ impl AirClient {
 
 		let RequestPayload = ApplyUpdateRequest { request_id, version, update_path };
 
-		let Client = self.Client().ok_or_else(|| AirError::Network("Air client not initialized".to_string()))?;
+		let Client = self
+			.Client()
+			.ok_or_else(|| AirError::Network("Air client not initialized".to_string()))?;
 
 		let mut ClientGuard = Client.lock().await;
 

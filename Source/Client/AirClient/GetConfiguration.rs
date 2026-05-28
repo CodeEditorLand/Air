@@ -9,12 +9,7 @@ use std::collections::HashMap;
 
 use tonic::Request;
 
-use crate::{
-	AirError,
-	Client::AirClient::AirClient,
-	Vine::Generated::air::ConfigurationRequest,
-	dev_log,
-};
+use crate::{AirError, Client::AirClient::AirClient, Vine::Generated::air::ConfigurationRequest, dev_log};
 
 impl AirClient {
 	/// Reads a configuration section from the daemon.
@@ -31,7 +26,9 @@ impl AirClient {
 
 		let RequestPayload = ConfigurationRequest { request_id, section };
 
-		let Client = self.Client().ok_or_else(|| AirError::Network("Air client not initialized".to_string()))?;
+		let Client = self
+			.Client()
+			.ok_or_else(|| AirError::Network("Air client not initialized".to_string()))?;
 
 		let mut ClientGuard = Client.lock().await;
 

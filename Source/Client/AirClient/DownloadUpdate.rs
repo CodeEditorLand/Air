@@ -42,7 +42,9 @@ impl AirClient {
 
 		let RequestPayload = DownloadRequest { request_id, url, destination_path, checksum, headers };
 
-		let Client = self.Client().ok_or_else(|| AirError::Network("Air client not initialized".to_string()))?;
+		let Client = self
+			.Client()
+			.ok_or_else(|| AirError::Network("Air client not initialized".to_string()))?;
 
 		let mut ClientGuard = Client.lock().await;
 
