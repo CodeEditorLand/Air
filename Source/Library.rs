@@ -176,6 +176,8 @@ pub mod Authentication;
 
 pub mod CLI;
 
+pub mod Client;
+
 pub mod Configuration;
 
 pub mod Daemon;
