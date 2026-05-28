@@ -12,9 +12,9 @@
 //!   `Arc<Mutex<AirServiceClient<Channel>>>` so clones share one channel.
 //!   Per-domain methods (authentication, updates, downloads, indexing,
 //!   monitoring) live as `impl AirClient` blocks in the same module.
-//! - [`AirServiceProvider`] - high-level surface that wraps
-//!   [`AirClient`] with automatic request-id generation, structured
-//!   error translation, and ergonomic per-operation method signatures.
+//! - [`AirServiceProvider`] - high-level surface that wraps [`AirClient`] with
+//!   automatic request-id generation, structured error translation, and
+//!   ergonomic per-operation method signatures.
 //!
 //! ## Threading model
 //!

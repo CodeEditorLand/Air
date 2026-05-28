@@ -8,14 +8,14 @@
 //!
 //! ## Layout
 //!
-//! - [`Generated`] - Air-local prost output for `Air.proto`. Air's own
-//!   service definitions (`UpdateService`, `IndexingService`,
-//!   `DownloaderService`, `AuthenticationService`) live here.
+//! - [`Generated`] - Air-local prost output for `Air.proto`. Air's own service
+//!   definitions (`UpdateService`, `IndexingService`, `DownloaderService`,
+//!   `AuthenticationService`) live here.
 //! - [`Server`] - Air's gRPC server implementation
-//!   (`Server::AirVinegRPCService`), wiring Air's `ApplicationState` into
-//!   the generated service traits.
-//! - [`Error`] - re-exports the canonical [`VineError`] from the
-//!   `Vine` crate and exposes [`Error::AirCompat`] alias constructors.
+//!   (`Server::AirVinegRPCService`), wiring Air's `ApplicationState` into the
+//!   generated service traits.
+//! - [`Error`] - re-exports the canonical [`VineError`] from the `Vine` crate
+//!   and exposes [`Error::AirCompat`] alias constructors.
 //!
 //! ## Re-exports from the `Vine` crate
 //!
@@ -23,12 +23,12 @@
 //! this module's root so Air code can write `use crate::Vine::{VineHost,
 //! IPCProvider};` without spelling out the workspace crate path:
 //!
-//! - [`VineHost`] / [`ApplicationStateAccess`] / [`IPCProvider`] -
-//!   embedder seam (Air's `ApplicationState` implements these to host the
-//!   `Vine` notification handler tree against Air's runtime).
+//! - [`VineHost`] / [`ApplicationStateAccess`] / [`IPCProvider`] - embedder
+//!   seam (Air's `ApplicationState` implements these to host the `Vine`
+//!   notification handler tree against Air's runtime).
 //! - [`ProtocolVersion`] / [`DefaultRequestTimeoutMs`] /
-//!   [`DefaultMaxMessageSize`] / [`DefaultAirAddress`] - canonical
-//!   protocol constants.
+//!   [`DefaultMaxMessageSize`] / [`DefaultAirAddress`] - canonical protocol
+//!   constants.
 
 pub mod Error;
 
