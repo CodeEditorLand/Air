@@ -1,6 +1,9 @@
 <table>
 	<tr>
 		<td align="left" valign="middle">
+			<h3 align="left">Air</h3>
+		</td>
+		<td align="left" valign="middle">
 			<h3 align="left">&#x2001;🪁</h3>
 		</td>
 		<td align="left" valign="middle">
@@ -18,16 +21,14 @@
 			</h3>
 		</td>
 		<td align="left" valign="middle">
-			<h3 align="left">
-				<a href="https://Land.PlayForm.Cloud" target="_blank">&#x2001;🏞️</a>
-			</h3>
+			<h3 align="left"><a href="https://Land.PlayForm.Cloud" target="_blank">Land&#x2001;🏞️</a></h3>
 		</td>
 	</tr>
 </table>
 
 ---
 
-# &#x2001;🪁
+# **Air**&#x2001;🪁
 
 The Native Background Daemon for `Land`&#x2001;🏞️.
 
@@ -40,7 +41,7 @@ update. The main window never blocks waiting for a download."_
 
 [![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](https://github.com/CodeEditorLand/Air/tree/Current/LICENSE)
 [<img src="https://land.playform.cloud/Image/Rust.svg" width="14" alt="Rust" />](https://www.rust-lang.org/)&#x2001;[![Crates.io](https://img.shields.io/crates/v/Air.svg)](https://crates.io/crates/Air)
-[![Rust Version](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
+[<img src="https://land.playform.cloud/Image/Rust.svg" width="14" alt="Rust" />](https://www.rust-lang.org/)&#x2001;[![Rust Version](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
 
 **[Rust API Documentation](https://Rust.Documentation.Land.PlayForm.Cloud/Air/)**&#x2001;📖
 
@@ -52,9 +53,21 @@ maintenance. It ensures that the main editor remains responsive by offloading
 resource-intensive tasks such as updates, large downloads, cryptographic
 signing, and file indexing.
 
-**Air** acts as the silent partner to `Mountain`, providing a robust server
-environment that persists even when the main editor window is closed, enabling
-seamless background updates and persistent state management.
+**Air** is engineered to:
+
+1. **Serve as the Persistent Background Daemon:** Run as a standalone process
+   alongside `Mountain`, surviving window closures and maintaining background
+   services across sessions.
+2. **Own the Update Lifecycle:** Take full ownership of downloading, verifying,
+   and applying patches for `Land` without user interruption or restart prompts.
+3. **Offload Heavy Network Operations:** Act as the traffic manager for large
+   downloads (extensions, language servers, dependencies) with resilient
+   resume-capable transfers.
+4. **Isolate Security-Critical Operations:** Manage cryptographic signing,
+   secure credential storage, and authentication token lifecycle, keeping
+   sensitive logic isolated from the main application view.
+5. **Maintain the File Index:** Build and persist a comprehensive file index
+   with symbol extraction and fast fuzzy search across the entire workspace.
 
 ---
 
@@ -63,9 +76,9 @@ seamless background updates and persistent state management.
 - **Native Sidecar Architecture:** Runs as a standalone process alongside
   `Mountain`, communicating via high-performance IPC (`gRPC`/`Vine`) to handle
   requests without blocking the UI thread.
-- **Dedicated Update Management:** Takes full ownership of the update lifecycle
-    - downloading, verifying, and applying patches for `Land` - without user
-      interruption or restart prompts.
+- **Dedicated Update Management:** Full ownership of the update lifecycle —
+  downloading, verifying, and applying patches for `Land` — without user
+  interruption or restart prompts.
 - **File Indexing and Search:** Builds and maintains a comprehensive file index
   with symbol extraction, content analysis, and fast fuzzy search across the
   entire workspace.
@@ -79,129 +92,32 @@ seamless background updates and persistent state management.
   recovery actions, performance tracking, and degradation alerts across all
   daemon services.
 - **Resource Offloading:** The designated handler for any "heavy" task that
-  doesn't require the main application loop - effectively decoupling
+  doesn't require the main application loop — effectively decoupling
   infrastructure maintenance from the user experience.
 
 ---
 
-## Project Structure&#x2001;🗺️
+## Core Architecture Principles&#x2001;🏗️
 
-```
-Air/
-├── Source/
-│   ├── Binary.rs                # Library entry point for the Air binary.
-│   ├── Library.rs               # Module declarations and crate-level exports.
-│   ├── Binary/                  # Daemon process lifecycle (startup, shutdown, monitoring).
-│   ├── Daemon/                  # Singleton enforcement, PID locking, platform-native integration.
-│   ├── Initialize/              # Configuration, port binding, gRPC server construction, per-service startup.
-│   ├── CLI/                     # Command-line interface for daemon interaction and diagnostics.
-│   ├── Vine/                    # gRPC protocol implementation (generated proto, server, errors).
-│   ├── ApplicationState/        # Central coordination (connections, service states, telemetry, resources).
-│   ├── Configuration/           # TOML config loading with schema validation, env overrides, hot reload.
-│   ├── DevLog.rs                # Developer-facing logging and trace ID generation.
-│   ├── Updates/                 # Version checking, download, verification, staged install, rollback.
-│   ├── Downloader/              # Parallel downloads, chunk transfers, rate limiting, resume capability.
-│   ├── Authentication/          # Token management, credential storage, AEAD encryption, key rotation.
-│   ├── Indexing/                # File index, symbol extraction, scanning, persistent storage, FS watch.
-│   ├── HealthCheck/             # Multi-level health monitoring (alive, responsive, functional).
-│   ├── Logging/                 # Structured JSON logging with trace ID propagation and rotation.
-│   ├── Metrics/                 # Prometheus-compatible metrics (latency, success rate, resource usage).
-│   ├── Resilience/              # Retry with backoff, circuit breaker, bulkhead, timeout management.
-│   ├── Security/                # Checksum verification, AES-GCM credential storage, audit subsystem.
-│   ├── Tracing/                 # Distributed tracing with sampling, span events, context propagation.
-│   └── HTTP/                    # Secure HTTP client with custom DNS, TLS, timeout management.
-```
+| Principle                      | Description                                                                                                                    | Key Components                                            |
+| :----------------------------- | :----------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------- |
+| **Sidecar Isolation**          | Run as a standalone daemon process, surviving independently of the main window lifecycle for persistent background operations. | `Daemon/`, `Binary/`, PID locking                         |
+| **gRPC IPC Boundary**          | Use `Vine` (`tonic`-based `gRPC`) for all communication with `Mountain`, ensuring a high-performance and well-defined API.     | `Vine/`, `Air.proto`, generated prost bindings            |
+| **Service Modularity**         | Each capability (updates, downloads, auth, indexing) lives in its own module with independent startup and health monitoring.   | `Updates/`, `Downloader/`, `Authentication/`, `Indexing/` |
+| **Resilience by Default**      | Wrap all network operations in retry-with-backoff, circuit breakers, bulkheads, and timeouts via the shared `Resilience/` lib. | `Resilience/`, `HealthCheck/`                             |
+| **Declarative Configuration**  | Load TOML config with schema validation, environment overrides, and hot reload without service interruption.                   | `Configuration/`, `Initialize/`                           |
+| **Observable Operations**      | Emit structured JSON logs, distributed traces, and Prometheus metrics for every delegated task.                                | `Logging/`, `Tracing/`, `Metrics/`                        |
+| **Secure Credential Handling** | Never expose raw secrets; store credentials with AEAD encryption (`ring`), enforce key rotation, and audit all access.         | `Security/`, `Authentication/`, `zeroize`                 |
 
 ---
 
 ## Deep Dive & Component Breakdown&#x2001;🔬
 
-The `Air` daemon is organized into three layers: the binary entry point, the
-`Vine` `gRPC` communication layer, and the service modules that perform actual
-work. The source structure is documented below with each module's
-responsibility.
-
-### Binary and Lifecycle
-
-[`Source/Binary/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Binary/)
-orchestrates the daemon process, including startup, shutdown signal handling,
-and runtime monitoring.
-[`Source/Daemon/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Daemon/)
-manages daemon lifecycle with singleton enforcement, `PID` file locking, and
-platform-native service integration for graceful shutdown coordination with
-`Mountain`.
-[`Source/Initialize/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Initialize/)
-contains all initialization routines for configuration, port binding, `gRPC`
-server construction, and per-service startup including `auth`, `download`,
-`echo`, `health` check, `indexing`, `state`, `update`, and `Vine` services.
-[`Source/CLI/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/CLI/)
-provides the command-line interface for interacting with a running daemon
-instance, including command parsing, routing, and diagnostics.
-
-### Communication Layer
-
-[`Source/Vine/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Vine/)
-implements the gRPC protocol for communication between Mountain and Air. It
-contains the generated protobuf code under `Generated/`, the server
-implementation under `Server/`, and error handling types.
-
-### State and Configuration
-
-[`Source/ApplicationState/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/ApplicationState/)
-acts as the central coordination point, tracking all active client connections,
-service states, request telemetry, and system resources with thread-safe async
-data structures.
-[`Source/Configuration/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Configuration/)
-handles configuration loading from TOML files with schema validation,
-environment variable overrides, and hot reload support without service restart.
-[`Source/DevLog.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/DevLog.rs)
-provides developer-facing logging utilities and trace ID generation.
-
-### Core Service Modules
-
-[`Source/Updates/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Updates/)
-manages the full update lifecycle: version availability checking, secure
-download with cryptographic signature verification, multi-checksum integrity
-validation, staged installation with atomic application, automatic rollback on
-failure, and platform-specific package handling.
-[`Source/Downloader/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Downloader/)
-provides a resilient download service for extensions, dependencies, and packages
-with parallel download support, chunk-based transfer, token-bucket rate
-limiting, and resume capability after network interruption.
-[`Source/Authentication/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Authentication/)
-handles user authentication, token management, and cryptographic operations
-including secure credential storage with AEAD encryption and key rotation.
-[`Source/Indexing/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/)
-builds and maintains a comprehensive file index with symbol extraction for Rust
-and TypeScript, content analysis, file scanning with permission checks, state
-management, persistent storage with backup and recovery, and real-time
-filesystem watching with debounced event processing.
-[`Source/HealthCheck/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/HealthCheck/)
-provides multi-level health monitoring (Alive, Responsive, Functional) across
-all daemon services with automatic recovery actions, performance indicator
-tracking, and degradation alerting.
-
-### Infrastructure Modules
-
-[`Source/Logging/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Logging/)
-provides structured JSON logging with request and trace ID propagation, context
-tracking, log rotation by size and time, and sensitive data filtering.
-[`Source/Metrics/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Metrics/)
-exposes Prometheus-compatible metrics including request latency histograms,
-success/failure rates, resource usage counters, and overflow-protected
-aggregation.
-[`Source/Resilience/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Resilience/)
-implements retry with exponential backoff and jitter, circuit breaker for fault
-isolation, bulkhead for resource isolation, and timeout management.
-[`Source/Security/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Security/)
-provides checksum verification, encrypted credential storage with AES-GCM, key
-rotation, rate limiting, and a security audit subsystem.
-[`Source/Tracing/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Tracing/)
-implements distributed tracing with sampling configuration, span event
-publishing, trace propagation contexts, and trace metadata management.
-[`Source/HTTP/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/HTTP/)
-provides a secure HTTP client with custom DNS resolution, TLS configuration, and
-timeout management.
+To understand how `Air`'s internal components interact to provide background
+services, see
+[`Documentation/GitHub/DeepDive.md`](https://github.com/CodeEditorLand/Air/tree/Current/Documentation/GitHub/DeepDive.md).
+This document explains the startup sequence, the `Vine` `gRPC` routing layer,
+and the data flow for update and download operations.
 
 ---
 
@@ -218,7 +134,7 @@ graph LR
         MountainIPC["Mountain gRPC client\n(delegates heavy tasks)"]:::mountain
     end
 
-    subgraph AIR["Air 🪁 - Persistent Background Daemon (:50053)"]
+    subgraph AIR["Air 🪁 - Persistent Background Daemon (::1:50053)"]
         direction TB
         subgraph COMM["Vine/ - gRPC Transport"]
             VineServer["Vine/Server/ - gRPC server\n(Generated/ prost bindings)"]:::air
@@ -279,16 +195,80 @@ graph LR
 
 ---
 
+## Project Structure&#x2001;🗺️
+
+The `Air` source is organized into three layers: the binary entry point and
+lifecycle, the `Vine` `gRPC` communication layer, and the service modules that
+perform actual work.
+
+```
+Air/
+└── Source/
+    ├── Binary.rs                # Binary entry point for the Air daemon.
+    ├── Library.rs               # Module declarations and crate-level exports.
+    ├── Binary/                  # Daemon process lifecycle (startup, shutdown, monitoring).
+    ├── Daemon/                  # Singleton enforcement, PID locking, platform-native integration.
+    ├── Initialize/              # Configuration, port binding, gRPC server construction, per-service startup.
+    ├── CLI/                     # Command-line interface for daemon interaction and diagnostics.
+    ├── Vine/                    # gRPC protocol implementation (generated proto, server, errors).
+    ├── ApplicationState/        # Central coordination (connections, service states, telemetry, resources).
+    ├── Configuration/           # TOML config loading with schema validation, env overrides, hot reload.
+    ├── DevLog.rs                # Developer-facing logging and trace ID generation.
+    ├── Updates/                 # Version checking, download, verification, staged install, rollback.
+    ├── Downloader/              # Parallel downloads, chunk transfers, rate limiting, resume capability.
+    ├── Authentication/          # Token management, credential storage, AEAD encryption, key rotation.
+    ├── Indexing/                # File index, symbol extraction, scanning, persistent storage, FS watch.
+    ├── HealthCheck/             # Multi-level health monitoring (alive, responsive, functional).
+    ├── Logging/                 # Structured JSON logging with trace ID propagation and rotation.
+    ├── Metrics/                 # Prometheus-compatible metrics (latency, success rate, resource usage).
+    ├── Resilience/              # Retry with backoff, circuit breaker, bulkhead, timeout management.
+    ├── Security/                # Checksum verification, AES-GCM credential storage, audit subsystem.
+    ├── Tracing/                 # Distributed tracing with sampling, span events, context propagation.
+    └── HTTP/                    # Secure HTTP client with custom DNS, TLS, timeout management.
+```
+
+---
+
 ## Getting Started&#x2001;🚀
 
-### Installation&#x2001;📥
+### Prerequisites
 
-To add `Air` to your project workspace:
+- Rust 1.75 or later
+- Protocol Buffer compiler (included via `tonic-build` build dependency)
 
-```toml
-[dependencies]
-Air = { git = "https://github.com/CodeEditorLand/Air.git", branch = "Current" }
+### Build
+
+```bash
+cd Element/Air
+cargo build --release
 ```
+
+### Run
+
+```bash
+# Run with default settings
+./Target/release/Air
+
+# Or via cargo
+cargo run --bin Air
+```
+
+### Key Dependencies
+
+| Crate / Package          | Purpose                                                      |
+| :----------------------- | :----------------------------------------------------------- |
+| `tonic` / `prost`        | `gRPC` server and Protocol Buffer code generation            |
+| `Vine`                   | Local path dependency — generated `Air.proto` gRPC contracts |
+| `Common`                 | Local path dependency — shared types and abstractions        |
+| `Mist`                   | Local path dependency — DNS isolation for HTTP client        |
+| `reqwest` / `rustls`     | HTTPS downloads with TLS certificate verification            |
+| `tokio`                  | Async runtime for concurrent I/O and task scheduling         |
+| `notify` / `ignore`      | File system event watching for real-time index updates       |
+| `ring` / `zeroize`       | Cryptographic signing and secure credential storage          |
+| `tracing`                | Structured JSON logging with span propagation                |
+| `config` / `toml`        | Configuration file loading with hot-reload support           |
+| `sysinfo` / `systemstat` | System resource monitoring and health checks                 |
+| `walkdir` / `ignore`     | Recursive directory traversal for file indexing              |
 
 ### Usage Pattern&#x2001;🚀
 
@@ -309,8 +289,9 @@ Air = { git = "https://github.com/CodeEditorLand/Air.git", branch = "Current" }
 
 - [`Mountain`](https://github.com/CodeEditorLand/Mountain)
 - [`Vine`](https://github.com/CodeEditorLand/Vine)
-- [`Echo`](https://github.com/CodeEditorLand/Echo)
 - [`Mist`](https://github.com/CodeEditorLand/Mist)
+- [`Common`](https://github.com/CodeEditorLand/Common)
+- [`Echo`](https://github.com/CodeEditorLand/Echo)
 
 ---
 
