@@ -46,10 +46,10 @@ async fn test_land_dns_resolver_wildcard() {
 
 	// Test wildcard resolution
 	let test_domains = vec![
-		"test.land.playform.cloud",
+		"test.editor.land",
 		"api.land.playform.cloud",
-		"cdn.land.playform.cloud",
-		"random-subdomain.land.playform.cloud",
+		"cdn.editor.land",
+		"random-subdomain.editor.land",
 	];
 
 	for domain in test_domains {
@@ -195,7 +195,7 @@ async fn test_resolver_concurrent_queries() {
 		let resolver_clone = resolver.clone();
 
 		let handle = tokio::spawn(async move {
-			let domain = format!("service{}.land.playform.cloud", i % 2); // Alternate between 2 domains
+			let domain = format!("service{}.editor.land", i % 2); // Alternate between 2 domains
 
 			let lookup = resolver_clone.lookup_ip(&domain).await;
 
@@ -319,7 +319,7 @@ async fn test_resolver_srv_records() {
 	let resolver = Mist::resolver::land_resolver(port);
 
 	// Try to query SRV records
-	let result = resolver.srv_lookup("_http._tcp.land.playform.cloud").await;
+	let result = resolver.srv_lookup("_http._tcp.editor.land").await;
 
 	println!("SRV lookup result: {:?}", result);
 
@@ -382,9 +382,9 @@ async fn test_resolver_multiple_domains_batch() {
 	let domains = vec![
 		"code.land.playform.cloud",
 		"api.land.playform.cloud",
-		"cdn.land.playform.cloud",
-		"test.land.playform.cloud",
-		"random.land.playform.cloud",
+		"cdn.editor.land",
+		"test.editor.land",
+		"random.editor.land",
 	];
 
 	for domain in domains {

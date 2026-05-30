@@ -1,7 +1,7 @@
 //! HTTP Client Module with DNS Override
 //!
 //! This module provides a secured HTTP client that uses the local DNS server
-//! for all DNS resolution. This ensures that all `*.land.playform.cloud`
+//! for all DNS resolution. This ensures that all `*.editor.land`
 //! queries go through the local Hickory DNS server, which resolves them to
 //! `127.x.x.x` addresses as a defense-in-depth measure.
 
@@ -53,7 +53,7 @@ pub fn secured_client_builder(dns_port:u16) -> Result<reqwest::ClientBuilder> {
 ///
 /// This client uses the local DNS server (running on the specified port)
 /// for all DNS resolution. This is a security measure to ensure that all
-/// `*.land.playform.cloud` queries go through the local Hickory DNS server,
+/// `*.editor.land` queries go through the local Hickory DNS server,
 /// which validates that they only resolve to `127.x.x.x` addresses.
 ///
 /// # Parameters
@@ -86,7 +86,7 @@ pub fn secured_client_builder(dns_port:u16) -> Result<reqwest::ClientBuilder> {
 ///
 /// The DNS override ensures:
 /// - All DNS queries go through the local DNS server
-/// - `*.land.playform.cloud` domains resolve only to `127.x.x.x` addresses
+/// - `*.editor.land` domains resolve only to `127.x.x.x` addresses
 /// - Protection against DNS spoofing and cache poisoning
 /// - Defense-in-depth security for the local network
 pub fn secured_client(dns_port:u16) -> Result<reqwest::Client> {
