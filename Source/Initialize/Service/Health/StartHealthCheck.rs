@@ -99,6 +99,7 @@ use crate::dev_log;
 /// - Implement health-based auto-recovery
 /// - Add health notification hooks
 pub async fn StartHealthCheck() -> Arc<HealthCheckManager> {
+
 	dev_log!("lifecycle", "[Health] Starting health check system...");
 
 	// Create health check manager

@@ -82,6 +82,7 @@ use crate::dev_log;
 /// Contains the configured Vine service and the sending half of a
 /// shutdown channel used to signal graceful server termination.
 pub struct BuiltServer {
+
 	/// The configured Vine gRPC service
 	pub service:AirVinegRPCService,
 
@@ -132,6 +133,7 @@ pub fn BuildServer(
 
 	bind_addr:SocketAddr,
 ) -> Result<BuiltServer, String> {
+
 	dev_log!("lifecycle", "[Build] Building Vine gRPC service...");
 
 	// Create the Vine gRPC service with all dependencies

@@ -38,8 +38,10 @@
 use std::{env, fs::File, io::BufReader, path::PathBuf, time::Duration};
 
 use tonic::transport::{Channel, Endpoint};
+
 #[cfg(feature = "mtls")]
 use rustls::ClientConfig;
+
 #[cfg(feature = "mtls")]
 use rustls::RootCertStore;
 
@@ -66,6 +68,7 @@ pub const DEFAULT_REQUEST_TIMEOUT_SECS:u64 = 30;
 #[cfg(feature = "mtls")]
 #[derive(Debug, Clone)]
 pub struct TlsConfig {
+
 	/// Path to the CA certificate file (optional, uses system defaults if not
 	/// provided)
 	pub ca_cert_path:Option<PathBuf>,
@@ -85,6 +88,7 @@ pub struct TlsConfig {
 
 #[cfg(feature = "mtls")]
 impl Default for TlsConfig {
+
 	fn default() -> Self {
 		Self {
 			ca_cert_path:None,
@@ -102,6 +106,7 @@ impl Default for TlsConfig {
 
 #[cfg(feature = "mtls")]
 impl TlsConfig {
+
 	/// Creates a new TLS configuration for server authentication only.
 	///
 	/// # Parameters
@@ -159,6 +164,7 @@ impl TlsConfig {
 /// Result containing the ClientConfig or an error if certificate loading fails
 #[cfg(feature = "mtls")]
 pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, Box<dyn std::error::Error>> {
+
 	dev_log!("grpc", "Creating TLS client configuration");
 
 	// Build the root certificate store
@@ -197,7 +203,9 @@ pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, B
 		if !cert_result.errors.is_empty() {
 			dev_log!(
 				"grpc",
+
 				"warn: Encountered errors loading system certificates: {:?}",
+
 				cert_result.errors
 			);
 		}
@@ -287,6 +295,7 @@ pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, B
 	if !tls_config.verify_certs {
 		dev_log!(
 			"grpc",
+
 			"warn: Certificate verification disabled - this is NOT secure for production!"
 		); // For development/testing, consider using a custom verifier
 
@@ -301,6 +310,7 @@ pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, B
 /// Configuration for connecting to Mountain.
 #[derive(Debug, Clone)]
 pub struct MountainClientConfig {
+
 	/// The gRPC server address of Mountain (e.g., `"[::1]:50051"`)
 	pub address:String,
 
@@ -316,6 +326,7 @@ pub struct MountainClientConfig {
 }
 
 impl Default for MountainClientConfig {
+
 	fn default() -> Self {
 		Self {
 			address:DEFAULT_MOUNTAIN_ADDRESS.to_string(),
@@ -331,6 +342,7 @@ impl Default for MountainClientConfig {
 }
 
 impl MountainClientConfig {
+
 	/// Creates a new MountainClientConfig with the specified address.
 	///
 	/// # Parameters
@@ -376,6 +388,7 @@ impl MountainClientConfig {
 		let tls_config = if env::var("MOUNTAIN_TLS_ENABLED")
 			.map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
 			.unwrap_or(false)
+
 		{
 			Some(TlsConfig {
 				ca_cert_path:env::var("MOUNTAIN_CA_CERT").ok().map(PathBuf::from),
@@ -453,6 +466,7 @@ impl MountainClientConfig {
 /// methods for common operations.
 #[derive(Debug, Clone)]
 pub struct MountainClient {
+
 	/// The underlying tonic gRPC channel
 	channel:Channel,
 
@@ -461,6 +475,7 @@ pub struct MountainClient {
 }
 
 impl MountainClient {
+
 	/// Creates a new MountainClient by connecting to Mountain.
 	///
 	/// This function establishes a gRPC connection to Mountain using the
@@ -625,6 +640,7 @@ impl MountainClient {
 /// # Returns
 /// Result containing the new MountainClient or a connection error
 pub async fn connect_to_mountain() -> Result<MountainClient, Box<dyn std::error::Error>> {
+
 	MountainClient::connect(MountainClientConfig::default()).await
 }
 
@@ -636,6 +652,7 @@ pub async fn connect_to_mountain() -> Result<MountainClient, Box<dyn std::error:
 /// # Returns
 /// Result containing the new MountainClient or a connection error
 pub async fn connect_to_mountain_at(address:impl Into<String>) -> Result<MountainClient, Box<dyn std::error::Error>> {
+
 	MountainClient::connect(MountainClientConfig::new(address)).await
 }
 
@@ -689,7 +706,9 @@ mod tests {
 	fn test_tls_config_mtls() {
 		let tls = TlsConfig::mtls(
 			std::path::PathBuf::from("/path/to/ca.pem"),
+
 			std::path::PathBuf::from("/path/to/cert.pem"),
+
 			std::path::PathBuf::from("/path/to/key.pem"),
 		);
 

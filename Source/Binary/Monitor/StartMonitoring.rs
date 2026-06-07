@@ -64,6 +64,7 @@
 use std::{sync::Arc, time::Duration};
 
 use tokio::time::interval;
+
 use AirLibrary::{ApplicationState, HealthCheck::HealthCheckManager, Metrics};
 
 use crate::dev_log;
@@ -72,6 +73,7 @@ use crate::dev_log;
 ///
 /// Contains join handles for all monitoring background tasks.
 pub struct MonitoringHandles {
+
 	/// Connection monitor task handle
 	pub ConnectionMonitor:tokio::task::JoinHandle<()>,
 
@@ -122,6 +124,7 @@ pub async fn StartMonitoring(
 
 	HealthManager:Arc<HealthCheckManager>,
 ) -> MonitoringHandles {
+
 	dev_log!("lifecycle", "[Monitor] Starting background monitoring tasks...");
 
 	// Start connection monitoring background task
@@ -140,7 +143,9 @@ pub async fn StartMonitoring(
 				if let Err(Error) = AppState.UpdateResourceUsage().await {
 					dev_log!(
 						"lifecycle",
+
 						"warn: [ConnectionMonitor] Failed to update resource usage: {}",
+
 						Error
 					);
 				}
@@ -157,8 +162,11 @@ pub async fn StartMonitoring(
 
 				MetricsCollector.UpdateResourceMetrics(
 					Resources.MemoryUsageMb.saturating_mul(1024).saturating_mul(1024), // Convert MB to bytes
+
 					Resources.CPUUsagePercent,
+
 					AppState.GetActiveConnectionCount().await as u64,
+
 					ActiveThreads,
 				);
 
@@ -168,7 +176,9 @@ pub async fn StartMonitoring(
 				if let Err(Error) = AppState.CleanupStaleConnections(300).await {
 					dev_log!(
 						"lifecycle",
+
 						"warn: [ConnectionMonitor] Failed to cleanup stale connections: {}",
+
 						Error
 					);
 				}
@@ -188,7 +198,9 @@ pub async fn StartMonitoring(
 
 				dev_log!(
 					"lifecycle",
+
 					"[ConnectionMonitor] Active connections: {}",
+
 					AppState.GetActiveConnectionCount().await
 				);
 			}
@@ -215,8 +227,11 @@ pub async fn StartMonitoring(
 					if let Err(Error) = HealthManager.CheckService(Service).await {
 						dev_log!(
 							"lifecycle",
+
 							"warn: [HealthMonitor] Health check failed for {}: {}",
+
 							Service,
+
 							Error
 						);
 					}

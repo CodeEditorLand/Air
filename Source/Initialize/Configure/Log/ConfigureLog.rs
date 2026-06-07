@@ -100,6 +100,7 @@
 use crate::dev_log;
 
 pub fn ConfigureLog() {
+
 	// Validate environment variables
 	let json_output = match std::env::var("AIR_LOG_JSON") {
 		Ok(val) if !val.is_empty() => {
@@ -108,6 +109,7 @@ pub fn ConfigureLog() {
 			if normalized != "true" && normalized != "false" {
 				eprintln!(
 					"Warning: Invalid AIR_LOG_JSON value '{}', expected 'true' or 'false'. Using default: false",
+
 					val
 				);
 
@@ -137,6 +139,7 @@ pub fn ConfigureLog() {
 				} else {
 					eprintln!(
 						"Warning: Log file directory does not exist: {}. Logging to stdout only.",
+
 						parent.display()
 					);
 

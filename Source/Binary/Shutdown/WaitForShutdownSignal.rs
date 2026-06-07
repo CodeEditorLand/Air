@@ -86,6 +86,7 @@ use crate::dev_log;
 /// # }
 /// ```
 pub async fn WaitForShutdownSignal() {
+
 	dev_log!("lifecycle", "[Shutdown] Waiting for termination signal...");
 
 	let CtrlC = async {
