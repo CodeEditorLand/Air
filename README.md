@@ -3,10 +3,6 @@
 		<td align="left" valign="middle">
 			<h3 align="left">
 				Air
-			</h3>
-		</td>
-		<td align="left" valign="middle">
-			<h3 align="left">
 				🪁
 			</h3>
 		</td>
