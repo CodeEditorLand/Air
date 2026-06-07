@@ -7,9 +7,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-
 use serde::{Deserialize, Serialize};
-
 use tokio::sync::RwLock;
 
 use crate::{Result, dev_log};
@@ -17,7 +15,6 @@ use crate::{Result, dev_log};
 /// Events published through the bus during the plugin lifecycle.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PluginEvent {
-
 	Loaded { plugin_id:String },
 
 	Started { plugin_id:String },
@@ -36,18 +33,15 @@ pub enum PluginEvent {
 /// Async handler trait for plugin events.
 #[async_trait]
 pub trait PluginEventHandler: Send + Sync {
-
 	async fn Event(&self, event:&PluginEvent) -> Result<()>;
 }
 
 /// Fan-out event bus: each `emit` delivers to all registered handlers.
 pub struct PluginEventBus {
-
 	handlers:Arc<RwLock<Vec<Box<dyn PluginEventHandler>>>>,
 }
 
 impl PluginEventBus {
-
 	pub fn new() -> Self { Self { handlers:Arc::new(RwLock::new(vec![])) } }
 
 	pub async fn register_handler(&self, handler:Box<dyn PluginEventHandler>) {
@@ -68,6 +62,5 @@ impl PluginEventBus {
 }
 
 impl Default for PluginEventBus {
-
 	fn default() -> Self { Self::new() }
 }

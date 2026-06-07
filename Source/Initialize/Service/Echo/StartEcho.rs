@@ -71,7 +71,6 @@
 /// - Provides basic connectivity verification
 /// - Can be extended with actual echo endpoints in the future
 pub async fn StartEcho() -> Result<(), String> {
-
 	dev_log!("lifecycle", "[Echo] Starting Echo scheduler service...");
 
 	// Echo service initialization
@@ -91,7 +90,6 @@ pub async fn StartEcho() -> Result<(), String> {
 mod tests {
 
 	use crate::dev_log;
-
 	use super::*;
 
 	#[test]

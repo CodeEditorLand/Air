@@ -726,8 +726,8 @@ fn CalculateLevenshteinDistance(s1:&str, s2:&str) -> usize {
 				dp[i][j] = dp[i - 1][j - 1];
 			} else {
 				dp[i][j] = 1 + [
-					dp[i - 1][j], // deletion
-					dp[i][j - 1], // insertion
+					dp[i - 1][j],     // deletion
+					dp[i][j - 1],     // insertion
 					dp[i - 1][j - 1], // substitution
 				]
 				.into_iter()

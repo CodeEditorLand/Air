@@ -88,13 +88,9 @@ pub mod EventBus;
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use async_trait::async_trait;
-
 use serde::{Deserialize, Serialize};
-
 use tokio::sync::RwLock;
-
 use chrono::{DateTime, Utc};
-
 use uuid::Uuid;
 
 use crate::{AirError, Result, dev_log};
@@ -106,7 +102,6 @@ use crate::{AirError, Result, dev_log};
 /// Plugin metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginMetadata {
-
 	pub id:String,
 
 	pub name:String,
@@ -129,7 +124,6 @@ pub struct PluginMetadata {
 /// Plugin dependency specification
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginDependency {
-
 	pub PluginId:String,
 
 	pub MinVersion:String,
@@ -142,7 +136,6 @@ pub struct PluginDependency {
 /// Plugin capability and permission descriptor
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginCapability {
-
 	pub name:String,
 
 	pub description:String,
@@ -153,7 +146,6 @@ pub struct PluginCapability {
 /// Plugin permission
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum PluginPermission {
-
 	/// Access filesystem
 	Filesystem { read:bool, write:bool, paths:Vec<String> },
 
@@ -173,7 +165,6 @@ pub enum PluginPermission {
 /// Plugin sandbox configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginSandboxConfig {
-
 	pub enabled:bool,
 
 	pub MaxMemoryMb:Option<u64>,
@@ -190,7 +181,6 @@ pub struct PluginSandboxConfig {
 }
 
 impl Default for PluginSandboxConfig {
-
 	fn default() -> Self {
 		Self {
 			enabled:true,
@@ -213,7 +203,6 @@ impl Default for PluginSandboxConfig {
 /// Plugin validation result
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PluginValidationResult {
-
 	Valid,
 
 	Invalid(String),
@@ -224,7 +213,6 @@ pub enum PluginValidationResult {
 /// Plugin lifecycle hooks
 #[async_trait]
 pub trait PluginHooks: Send + Sync {
-
 	/// Called when plugin is being loaded
 	async fn on_load(&self) -> Result<()> { Ok(()) }
 
@@ -244,7 +232,6 @@ pub trait PluginHooks: Send + Sync {
 /// Plugin interface trait
 #[async_trait]
 pub trait Plugin: PluginHooks + Send + Sync {
-
 	/// Get plugin metadata
 	fn metadata(&self) -> &PluginMetadata;
 
@@ -272,7 +259,6 @@ pub trait Plugin: PluginHooks + Send + Sync {
 /// Inter-plugin message
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginMessage {
-
 	pub id:String,
 
 	pub from:String,
@@ -287,7 +273,6 @@ pub struct PluginMessage {
 }
 
 impl PluginMessage {
-
 	/// Create a new plugin message
 	pub fn new(from:String, to:String, action:String, data:serde_json::Value) -> Self {
 		Self { id:Uuid::new_v4().to_string(), from, to, action, data, timestamp:Utc::now() }
@@ -326,7 +311,6 @@ impl PluginMessage {
 /// Plugin state tracking
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PluginState {
-
 	#[serde(rename = "unloaded")]
 	Unloaded,
 
@@ -348,7 +332,6 @@ pub enum PluginState {
 
 /// Plugin registry entry
 pub struct PluginRegistry {
-
 	pub plugin:Arc<Box<dyn Plugin>>,
 
 	pub state:PluginState,
@@ -364,7 +347,6 @@ pub struct PluginRegistry {
 
 /// Main plugin manager
 pub struct PluginManager {
-
 	plugins:Arc<RwLock<HashMap<String, PluginRegistry>>>,
 
 	MessageQueue:Arc<RwLock<Vec<PluginMessage>>>,
@@ -379,7 +361,6 @@ pub struct PluginManager {
 }
 
 impl PluginManager {
-
 	/// Create a new plugin manager
 	pub fn new(AirVersion:String) -> Self {
 		Self {
@@ -451,11 +432,8 @@ impl PluginManager {
 
 		dev_log!(
 			"extensions",
-
 			"[PluginManager] Registering plugin: {} v{}",
-
 			metadata.name,
-
 			metadata.version
 		);
 
@@ -491,11 +469,8 @@ impl PluginManager {
 			.map_err(|e| {
 				dev_log!(
 					"extensions",
-
 					"error: [PluginManager] Failed to load plugin {}: {}",
-
 					metadata.name,
-
 					e
 				);
 
@@ -507,7 +482,6 @@ impl PluginManager {
 
 		plugins.insert(
 			metadata.id.clone(),
-
 			PluginRegistry {
 				plugin:plugin.clone(),
 				state:PluginState::Loaded,
@@ -562,9 +536,7 @@ impl PluginManager {
 				PluginPermission::Filesystem { write, .. } if *write => {
 					dev_log!(
 						"extensions",
-
 						"warn: [PluginManager] Plugin {} requests filesystem write access",
-
 						plugin.metadata().id
 					);
 				},
@@ -572,9 +544,7 @@ impl PluginManager {
 				PluginPermission::Network { .. } => {
 					dev_log!(
 						"extensions",
-
 						"warn: [PluginManager] Plugin {} requests network access",
-
 						plugin.metadata().id
 					);
 				},
@@ -591,7 +561,6 @@ impl PluginManager {
 		if !self.version_satisfies(&self.AirVersion, &metadata.MinAirVersion) {
 			return Err(AirError::Plugin(format!(
 				"Plugin requires Air version {} or higher, current: {}",
-
 				metadata.MinAirVersion, self.AirVersion
 			)));
 		}
@@ -600,7 +569,6 @@ impl PluginManager {
 			if !self.version_satisfies(max_version, &self.AirVersion) {
 				return Err(AirError::Plugin(format!(
 					"Plugin is incompatible with Air version {}, max supported: {}",
-
 					self.AirVersion, max_version
 				)));
 			}
@@ -631,7 +599,6 @@ impl PluginManager {
 				if !self.version_satisfies(DepVersion, &dep.MinVersion) {
 					return Err(AirError::Plugin(format!(
 						"Dependency {} version {} does not satisfy requirement {}",
-
 						dep.PluginId, DepVersion, dep.MinVersion
 					)));
 				}
@@ -639,7 +606,6 @@ impl PluginManager {
 				if DepPlugin.state != PluginState::Running && DepPlugin.state != PluginState::Loaded {
 					return Err(AirError::Plugin(format!(
 						"Dependency {} is not ready (state: {:?})",
-
 						dep.PluginId, DepPlugin.state
 					)));
 				}
@@ -942,7 +908,6 @@ impl PluginManager {
 		if target.state != PluginState::Running {
 			return Err(AirError::Plugin(format!(
 				"Target plugin not running: {} (state: {:?})",
-
 				message.to, target.state
 			)));
 		}
@@ -955,7 +920,6 @@ impl PluginManager {
 		if !self.check_inter_plugin_permission(SenderMetadata, target, &message) {
 			return Err(AirError::Plugin(format!(
 				"Permission denied: {} cannot send to {}",
-
 				message.from, message.to
 			)));
 		}
@@ -1149,7 +1113,6 @@ impl PluginManager {
 /// Plugin information for listing
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginInfo {
-
 	pub id:String,
 
 	pub metadata:PluginMetadata,
@@ -1168,7 +1131,6 @@ pub struct PluginInfo {
 /// Plugin event types
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PluginEvent {
-
 	/// Plugin was loaded
 	Loaded { plugin_id:String },
 
@@ -1194,19 +1156,16 @@ pub enum PluginEvent {
 /// Plugin event handler
 #[async_trait]
 pub trait PluginEventHandler: Send + Sync {
-
 	/// Handle a plugin event
 	async fn Event(&self, event:&PluginEvent) -> Result<()>;
 }
 
 /// Event bus for plugin events
 pub struct PluginEventBus {
-
 	handlers:Arc<RwLock<Vec<Box<dyn PluginEventHandler>>>>,
 }
 
 impl PluginEventBus {
-
 	/// Create a new event bus
 	pub fn new() -> Self { Self { handlers:Arc::new(RwLock::new(vec![])) } }
 
@@ -1230,7 +1189,6 @@ impl PluginEventBus {
 }
 
 impl Default for PluginEventBus {
-
 	fn default() -> Self { Self::new() }
 }
 
@@ -1241,7 +1199,6 @@ impl Default for PluginEventBus {
 /// Plugin discovery result
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginDiscoveryResult {
-
 	pub plugin_id:String,
 
 	pub ManifestPath:String,
@@ -1254,7 +1211,6 @@ pub struct PluginDiscoveryResult {
 /// Plugin manifest
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginManifest {
-
 	pub plugin:PluginMetadata,
 
 	pub main:String,
@@ -1264,18 +1220,15 @@ pub struct PluginManifest {
 
 /// Plugin loader for discovering and loading plugins
 pub struct PluginLoader {
-
 	PluginPaths:Vec<String>,
 }
 
 impl PluginLoader {
-
 	/// Create a new plugin loader
 	pub fn new() -> Self {
 		Self {
 			PluginPaths:vec![
 				"/usr/local/lib/Air/plugins".to_string(),
-
 				"~/.local/share/Air/plugins".to_string(),
 			],
 		}
@@ -1297,11 +1250,8 @@ impl PluginLoader {
 				Err(e) => {
 					dev_log!(
 						"extensions",
-
 						"warn: [PluginLoader] Failed to discover plugins in {}: {}",
-
 						path,
-
 						e
 					);
 				},
@@ -1328,14 +1278,12 @@ impl PluginLoader {
 		// For now, we return an error
 		Err(AirError::Plugin(format!(
 			"Plugin loading not yet implemented: {}",
-
 			discovery.plugin_id
 		)))
 	}
 }
 
 impl Default for PluginLoader {
-
 	fn default() -> Self { Self::new() }
 }
 
@@ -1345,12 +1293,10 @@ impl Default for PluginLoader {
 
 /// Plugin sandbox manager
 pub struct PluginSandboxManager {
-
 	sandboxes:Arc<RwLock<HashMap<String, PluginSandboxConfig>>>,
 }
 
 impl PluginSandboxManager {
-
 	/// Create a new sandbox manager
 	pub fn new() -> Self { Self { sandboxes:Arc::new(RwLock::new(HashMap::new())) } }
 
@@ -1386,7 +1332,6 @@ impl PluginSandboxManager {
 }
 
 impl Default for PluginSandboxManager {
-
 	fn default() -> Self { Self::new() }
 }
 
@@ -1492,11 +1437,8 @@ mod tests {
 	async fn test_plugin_message_validation() {
 		let message = PluginMessage::new(
 			"sender".to_string(),
-
 			"receiver".to_string(),
-
 			"action".to_string(),
-
 			serde_json::json!({}),
 		);
 

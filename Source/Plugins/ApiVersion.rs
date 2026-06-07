@@ -14,7 +14,6 @@ use crate::Result;
 /// Semver-style API version.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ApiVersion {
-
 	pub major:u32,
 
 	pub minor:u32,
@@ -25,7 +24,6 @@ pub struct ApiVersion {
 }
 
 impl ApiVersion {
-
 	/// The current host API version.
 	pub fn current() -> Self { Self { major:1, minor:0, patch:0, PreRelease:None } }
 
@@ -57,14 +55,12 @@ impl ApiVersion {
 
 /// Tracks the current host API version and a set of compatible peer versions.
 pub struct ApiVersionManager {
-
 	CurrentVersion:ApiVersion,
 
 	CompatibleVersions:Vec<ApiVersion>,
 }
 
 impl ApiVersionManager {
-
 	pub fn new() -> Self {
 		let current = ApiVersion::current();
 
@@ -84,6 +80,5 @@ impl ApiVersionManager {
 }
 
 impl Default for ApiVersionManager {
-
 	fn default() -> Self { Self::new() }
 }
