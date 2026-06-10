@@ -55,6 +55,7 @@
 /// - Non-implemented commands show workarounds
 
 use AirLibrary::CLI::{Command, ConfigCommand, DebugCommand, OutputFormatter};
+
 use AirLibrary::Client::AirClient::AirClient;
 
 use AirLibrary::{DefaultConfigFile, DefaultBindAddress, Utility, VERSION, ProtocolVersion};
@@ -200,21 +201,25 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
 
                                 println!(
                                     "    Authentication:   [OK] {}",
+
                                     if Status.active_requests > 0 { "Active" } else { "Idle" }
                                 );
 
                                 println!(
                                     "    Updates:          [OK] {}",
+
                                     if Status.uptime_seconds > 0 { "Running" } else { "Starting" }
                                 );
 
                                 println!(
                                     "    Download Manager: [OK] {}",
+
                                     if Status.active_requests > 0 { "Active" } else { "Idle" }
                                 );
 
                                 println!(
                                     "    File Indexer:     [OK] {}",
+
                                     if Status.active_requests > 0 { "Active" } else { "Idle" }
                                 );
 
@@ -225,8 +230,11 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                                 println!("  Uptime:   {}s", Status.uptime_seconds);
 
                                 println!("  Requests: {} total, {} ok, {} failed",
+
                                     Status.total_requests,
+
                                     Status.successful_requests,
+
                                     Status.failed_requests
                                 );
 
