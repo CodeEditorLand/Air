@@ -1,7 +1,7 @@
 //! DNS Resolver Integration Tests
 //!
 //! These tests verify the Land DNS resolver functionality, including:
-//! - Resolution of land.playform.cloud domains to localhost
+//! - Resolution of editor.land domains to localhost
 //! - IP validation (security enforcement)
 //! - Resolver configuration
 //!
@@ -20,18 +20,22 @@ async fn test_land_dns_resolver_localhost() {
 	// Create resolver pointing to local server
 	let resolver = Mist::resolver::land_resolver(port);
 
-	// Test that code.land.playform.cloud resolves to localhost
-	let lookup = resolver.lookup_ip("code.land.playform.cloud").await.expect("DNS lookup failed");
+	// Test that code.editor.land resolves to localhost
+	let lookup = resolver.lookup_ip("code.editor.land").await.expect("DNS lookup failed");
 
 	let resolved_ips:Vec<_> = lookup.iter().collect();
 
-	println!("Resolved IPs for code.land.playform.cloud: {:?}", resolved_ips);
+	println!("Resolved IPs for code.editor.land: {:?}", resolved_ips);
 
 	assert!(!resolved_ips.is_empty(), "Should resolve to at least one IP");
 
 	assert!(
 		resolved_ips.iter().all(|ip| ip.is_loopback()),
+<<<<<<< HEAD
 		"All resolved IPs for land.playform.cloud should be loopback addresses"
+=======
+		"All resolved IPs for editor.land should be loopback addresses"
+>>>>>>> e2a56fcd30371f045835aabb633a4bb67d5bfd55
 	);
 }
 
@@ -47,7 +51,11 @@ async fn test_land_dns_resolver_wildcard() {
 	// Test wildcard resolution
 	let test_domains = vec![
 		"test.editor.land",
+<<<<<<< HEAD
 		"api.land.playform.cloud",
+=======
+		"api.editor.land",
+>>>>>>> e2a56fcd30371f045835aabb633a4bb67d5bfd55
 		"cdn.editor.land",
 		"random-subdomain.editor.land",
 	];
@@ -74,7 +82,11 @@ async fn test_land_dns_resolver_wildcard() {
 
 #[tokio::test]
 async fn test_ip_validation_blocks_non_localhost_for_editor_land() {
+<<<<<<< HEAD
 	// This test verifies the security feature that ensures land.playform.cloud
+=======
+	// This test verifies the security feature that ensures editor.land
+>>>>>>> e2a56fcd30371f045835aabb633a4bb67d5bfd55
 	// domains only resolve to loopback addresses (127.x.x.x)
 
 	// Start DNS server
@@ -84,8 +96,8 @@ async fn test_ip_validation_blocks_non_localhost_for_editor_land() {
 
 	let resolver = Mist::resolver::land_resolver(port);
 
-	// Query land.playform.cloud domain
-	let lookup = resolver.lookup_ip("code.land.playform.cloud").await.expect("DNS lookup failed");
+	// Query editor.land domain
+	let lookup = resolver.lookup_ip("code.editor.land").await.expect("DNS lookup failed");
 
 	// Verify ALL returned IPs are loopback
 	let mut all_loopback = true;
@@ -94,21 +106,29 @@ async fn test_ip_validation_blocks_non_localhost_for_editor_land() {
 		if !ip.is_loopback() {
 			all_loopback = false;
 
-			println!("SECURITY WARNING: land.playform.cloud resolved to non-loopback IP: {}", ip);
+			println!("SECURITY WARNING: editor.land resolved to non-loopback IP: {}", ip);
 		}
 	}
 
 	assert!(
 		all_loopback,
+<<<<<<< HEAD
 		"SECURITY: land.playform.cloud domains must only resolve to loopback addresses (127.x.x.x)"
+=======
+		"SECURITY: editor.land domains must only resolve to loopback addresses (127.x.x.x)"
+>>>>>>> e2a56fcd30371f045835aabb633a4bb67d5bfd55
 	);
 
-	println!("Security check passed: All land.playform.cloud IPs are loopback addresses");
+	println!("Security check passed: All editor.land IPs are loopback addresses");
 }
 
 #[tokio::test]
 async fn test_ip_validation_allows_non_editor_land() {
+<<<<<<< HEAD
 	// This test verifies that non-land.playform.cloud domains can resolve to any IP
+=======
+	// This test verifies that non-editor.land domains can resolve to any IP
+>>>>>>> e2a56fcd30371f045835aabb633a4bb67d5bfd55
 	// (subject to the forward authority allowlist restrictions)
 
 	// Start DNS server
@@ -118,20 +138,20 @@ async fn test_ip_validation_allows_non_editor_land() {
 
 	let resolver = Mist::resolver::land_resolver(port);
 
-	// Try to resolve a non-land.playform.cloud domain
+	// Try to resolve a non-editor.land domain
 	// This may fail or return NXDOMAIN since we don't have forwarding configured
 	let result = resolver.lookup_ip("example.com").await;
 
-	println!("Non-land.playform.cloud DNS query result: {:?}", result);
+	println!("Non-editor.land DNS query result: {:?}", result);
 
 	// The important thing is that the resolver doesn't crash or improperly filter
-	assert!(true, "Resolver handles non-land.playform.cloud domains gracefully");
+	assert!(true, "Resolver handles non-editor.land domains gracefully");
 }
 
 #[tokio::test]
 async fn test_resolver_handles_ipv6() {
 	// Test that the resolver can handle IPv6 addresses
-	// even though land.playform.cloud only has A records
+	// even though editor.land only has A records
 
 	let port = Mist::start(15374).expect("Failed to start DNS server");
 
@@ -140,8 +160,8 @@ async fn test_resolver_handles_ipv6() {
 	let resolver = Mist::resolver::land_resolver(port);
 
 	// The resolver should handle IPv6 queries without crashing
-	// (land.playform.cloud only has A records, so this won't return results)
-	let result = resolver.ipv6_lookup("code.land.playform.cloud").await;
+	// (editor.land only has A records, so this won't return results)
+	let result = resolver.ipv6_lookup("code.editor.land").await;
 
 	println!("IPv6 lookup result: {:?}", result);
 
@@ -160,12 +180,12 @@ async fn test_resolver_caching() {
 	let resolver = Mist::resolver::land_resolver(port);
 
 	// First query
-	let lookup1 = resolver.lookup_ip("code.land.playform.cloud").await.expect("DNS lookup failed");
+	let lookup1 = resolver.lookup_ip("code.editor.land").await.expect("DNS lookup failed");
 
 	let ips1:Vec<_> = lookup1.iter().collect();
 
 	// Second query (should be cached)
-	let lookup2 = resolver.lookup_ip("code.land.playform.cloud").await.expect("DNS lookup failed");
+	let lookup2 = resolver.lookup_ip("code.editor.land").await.expect("DNS lookup failed");
 
 	let ips2:Vec<_> = lookup2.iter().collect();
 
@@ -243,7 +263,7 @@ async fn test_resolver_port_configuration() {
 	let resolver = Mist::resolver::land_resolver(port);
 
 	// Verify resolver works
-	let lookup = resolver.lookup_ip("code.land.playform.cloud").await.expect("DNS lookup failed");
+	let lookup = resolver.lookup_ip("code.editor.land").await.expect("DNS lookup failed");
 
 	assert!(!lookup.iter().collect::<Vec<_>>().is_empty(), "Resolver should resolve domains");
 
@@ -258,7 +278,7 @@ async fn test_resolver_error_handling() {
 	let resolver = Mist::resolver::land_resolver(19999);
 
 	// Try to resolve (should fail or timeout)
-	let result = resolver.lookup_ip("code.land.playform.cloud").await;
+	let result = resolver.lookup_ip("code.editor.land").await;
 
 	println!("Resolver error handling result: {:?}", result);
 
@@ -279,9 +299,9 @@ async fn test_resolver_txt_records() {
 	let resolver = Mist::resolver::land_resolver(port);
 
 	// Try to query TXT records
-	// The land.playform.cloud zone may not have TXT records, but the resolver
+	// The editor.land zone may not have TXT records, but the resolver
 	// should handle the query gracefully
-	let result = resolver.txt_lookup("land.playform.cloud").await;
+	let result = resolver.txt_lookup("editor.land").await;
 
 	println!("TXT lookup result: {:?}", result);
 
@@ -300,7 +320,7 @@ async fn test_resolver_mx_records() {
 	let resolver = Mist::resolver::land_resolver(port);
 
 	// Try to query MX records
-	let result = resolver.mx_lookup("land.playform.cloud").await;
+	let result = resolver.mx_lookup("editor.land").await;
 
 	println!("MX lookup result: {:?}", result);
 
@@ -339,7 +359,7 @@ async fn test_resolver_timeout_handling() {
 	// Query should complete quickly
 	let start = std::time::Instant::now();
 
-	let result = resolver.lookup_ip("code.land.playform.cloud").await;
+	let result = resolver.lookup_ip("code.editor.land").await;
 
 	let elapsed = start.elapsed();
 
@@ -380,8 +400,13 @@ async fn test_resolver_multiple_domains_batch() {
 	let resolver = Mist::resolver::land_resolver(port);
 
 	let domains = vec![
+<<<<<<< HEAD
 		"code.land.playform.cloud",
 		"api.land.playform.cloud",
+=======
+		"code.editor.land",
+		"api.editor.land",
+>>>>>>> e2a56fcd30371f045835aabb633a4bb67d5bfd55
 		"cdn.editor.land",
 		"test.editor.land",
 		"random.editor.land",

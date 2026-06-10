@@ -77,7 +77,7 @@ pub fn secured_client_builder(dns_port:u16) -> Result<reqwest::ClientBuilder> {
 /// 	let client = secured_client(dns_port)?;
 ///
 /// 	// All HTTP requests will use the local DNS server
-/// 	let response = client.get("https://code.land.playform.cloud").send().await?;
+/// 	let response = client.get("https://code.editor.land").send().await?;
 /// 	Ok(())
 /// }
 /// ```
