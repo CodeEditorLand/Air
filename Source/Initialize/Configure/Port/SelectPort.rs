@@ -111,7 +111,6 @@ use crate::dev_log;
 /// - Add port conflict detection before binding
 /// - Add wildcard binding for all interfaces
 pub fn SelectPort(bind_address:Option<String>) -> Result<SocketAddr, String> {
-
 	match bind_address {
 		Some(addr) => {
 			// Custom address from command-line
@@ -152,7 +151,6 @@ pub fn SelectPort(bind_address:Option<String>) -> Result<SocketAddr, String> {
 /// Port 0 is valid for OS-assigned ports but not for configuration.
 /// Ports 1-1023 require root/admin privileges.
 pub fn ValidatePort(port:u16) -> Result<(), String> {
-
 	if port == 0 {
 		return Err("Port cannot be 0 for explicit configuration".to_string());
 	}

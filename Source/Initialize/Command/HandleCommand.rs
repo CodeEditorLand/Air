@@ -101,7 +101,7 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
 
         return Err(e.into());
     }
-    
+
     match cmd {
 
         Command::Help { command } => {
@@ -121,7 +121,7 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
 
             Ok(())
         }
-        
+
         Command::Version => {
 
             println!("Air {} ({})", VERSION, env!("CARGO_PKG_NAME"));
@@ -134,7 +134,7 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
 
             Ok(())
         }
-        
+
         Command::Status { service, verbose, json } => {
 
             // Validate inputs
@@ -145,27 +145,49 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                     return Err("Service name must be 1-64 characters".into());
                 }
             }
-            
-            // Attempt connection with timeout
-            match super::Connect::ConnectDaemon::Connect().await {
 
-                Ok(_) => {
+            // Connect to daemon via gRPC and request status
+            if let Some(svc) = service {
 
-                    // Basic status output
-                    if let Some(svc) = service {
+                println!("Status for service: {}", svc);
 
-                        println!("Status for service: {}", svc);
+                // Attempt connection with timeout
+                match super::Connect::ConnectDaemon::Connect().await {
+
+                    Ok(_) => {
 
                         println!("  Status: Running (basic check)");
 
-                        println!("  Note: Detailed status not yet implemented");
-                    } else {
+                        println!("  Note: Connect to gRPC endpoint for detailed status");
+                    }
 
-                        println!("Air Daemon Status");
+                    Err(e) => {
+
+                        println!("  Status: Cannot connect to daemon");
+
+                        println!("  Error: {}", e);
 
                         println!("");
 
+                        println!("  To start the daemon, run: Air --daemon");
+
+                        return Err(format!("Cannot connect to daemon: {}", e).into());
+                    }
+                }
+            } else {
+
+                println!("Air Daemon Status");
+
+                println!("");
+
+                // Attempt connection
+                match super::Connect::ConnectDaemon::Connect().await {
+
+                    Ok(_) => {
+
                         println!("  Overall: Running (basic check)");
+
+                        println!("  Note: Connect to gRPC endpoint for detailed status");
 
                         println!("");
 
@@ -173,65 +195,79 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
 
                         println!("    gRPC Server: [OK] Listening");
 
-                        println!("    Authentication: [?] Not checked");
+                        println!("    Authentication: [?] Status check not implemented");
 
-                        println!("    Updates: [?] Not checked");
+                        println!("    Updates: [?] Status check not implemented");
 
-                        println!("    Download Manager: [?] Not checked");
+                        println!("    Download Manager: [?] Status check not implemented");
 
-                        println!("    File Indexer: [?] Not checked");
+                        println!("    File Indexer: [?] Status check not implemented");
                     }
 
-                    if verbose {
+                    Err(e) => {
+
+                        println!("  Overall: [ERROR] Daemon not running");
+
+                        println!("  Error: {}", e);
 
                         println!("");
 
-                        println!("Verbose Information:");
+                        println!("  To start the daemon, run: Air --daemon");
 
-                        println!("  Debug mode: Disabled by default");
-
-                        println!("  Log level: info");
-
-                        println!("  Config file: {}", DefaultConfigFile);
+                        return Err("Daemon not running".into());
                     }
-                    
-                    if json {
-
-                        println!("");
-
-                        println!("JSON Output:");
-
-                        println!("{}",
-
-                            serde_json::json!({
-                                "overall": "running",
-                                "services": {
-                                    "grpc": "listening",
-                                    "status": "not_implemented"
-                                },
-                                "note": "Detailed JSON output not yet implemented"
-                            })
-                        );
-                    }
-
-                    Ok(())
-                }
-
-                Err(e) => {
-
-                    println!("  Status: [ERROR] Daemon not running");
-
-                    println!("  Error: {}", e);
-
-                    println!("");
-
-                    println!("  To start the daemon, run: Air --daemon");
-
-                    Err(format!("Daemon not running: {}", e).into())
                 }
             }
+
+            if verbose {
+
+                println!("");
+
+                println!("Verbose Information:");
+
+                println!("  Debug mode: Disabled by default");
+
+                println!("  Log level: info");
+
+                println!("  Config file: {}", DefaultConfigFile);
+
+                println!("");
+
+                println!("  Detailed service status can be obtained via gRPC:");
+
+                println!("    - Service uptime");
+
+                println!("    - Request/response statistics");
+
+                println!("    - Error rates and recent errors");
+
+                println!("    - Resource usage");
+
+                println!("    - Active connections");
+            }
+
+            if json {
+
+                println!("");
+
+                println!("JSON Output:");
+
+                println!("{}",
+
+                    serde_json::json!({
+                        "overall": "running",
+                        "services": {
+                            "grpc": "listening",
+                            "status": "not_implemented"
+                        },
+                        "note": "Detailed JSON output not yet implemented"
+                    })
+                );
+            }
+
+            Ok(())
         }
-        
+
         Command::Restart { service, force } => {
 
             // Validate input
@@ -242,44 +278,44 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                     return Err("Service name must be 1-64 characters".into());
                 }
             }
-            
+
             println!("Restart Command");
 
             println!("");
-            
+
             if let Some(svc) = service {
 
                 println!("Restarting service: {}", svc);
 
-                println!("  Note: Individual service restart not yet implemented");
+                println!("  Note: Individual service restart requires gRPC integration");
 
                 println!("  Workaround: Restart the entire daemon");
             } else {
 
                 println!("Restarting all services...");
 
-                println!("  Note: Full daemon restart not yet implemented");
+                println!("  Note: Full daemon restart requires gRPC integration");
 
                 println!("  Workaround: Use: kill <pid> && Air --daemon");
             }
-            
+
             if force {
 
                 println!("");
 
                 println!("Force mode enabled");
 
-                println!("  Warning: This will terminate in-progress operations");
+                println!("  Note: Force restart requires proper coordination to gracefully terminate in-progress operations");
             }
-            
-            Err("Restart command not yet implemented".into())
+
+            Err("Restart command requires gRPC integration".into())
         }
-        
+
         Command::Config(config_cmd) => {
 
             HandleConfigCommand(config_cmd).await
         }
-        
+
         Command::Metrics { json, service } => {
 
             // Validate inputs
@@ -290,16 +326,17 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                     return Err("Service name must be 1-64 characters".into());
                 }
             }
-            
+
             println!("Metrics");
 
             println!("");
-            
+
+            // Attempt to get metrics from daemon
             match super::Connect::ConnectDaemon::Connect().await {
 
                 Ok(_) => {
 
-                    println!("  Status: [OK] Daemon is running");
+                    println!("  Status: [OK] Daemon is running");
 
                     println!("");
 
@@ -318,18 +355,34 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                     println!("    Memory: Not tracked yet");
 
                     println!("    CPU: Not tracked yet");
+
+                    println!("");
+
+                    println!("  Note: Comprehensive metrics require gRPC integration:");
+
+                    println!("    - Request/response counters");
+
+                    println!("    - Latency percentiles");
+
+                    println!("    - Error rate tracking");
+
+                    println!("    - Resource usage");
+
+                    println!("    - Connection pool stats");
+
+                    println!("    - Background queue depth");
                 }
 
                 Err(e) => {
 
-                    println!("  Status: [ERROR] Cannot connect to daemon");
+                    println!("  Status: [ERROR] Cannot connect to daemon");
 
                     println!("  Error: {}", e);
 
                     return Err(format!("Cannot retrieve metrics: {}", e).into());
                 }
             }
-            
+
             if json {
 
                 println!("");
@@ -344,7 +397,7 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                     })
                 );
             }
-            
+
             if let Some(svc) = service {
 
                 println!("");
@@ -353,10 +406,10 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
 
                 println!("  Note: Service isolation not yet implemented");
             }
-            
+
             Ok(())
         }
-        
+
         Command::Logs { service, tail, filter, follow } => {
 
             // Validate inputs
@@ -383,45 +436,48 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                     return Err("Filter string must be 1-512 characters".into());
                 }
             }
-            
+
             println!("Logs");
 
             println!("");
-            
+
+            // Check for log file
             let log_file = std::env::var("AIR_LOG_FILE").ok();
 
             let log_dir = std::env::var("AIR_LOG_DIR").ok();
-            
+
             match (log_file, log_dir) {
 
                 (Some(file), _) => {
 
                     println!("  Log file: {}", file);
-                    
+
+                    // Check if file exists and is readable
                     if std::path::Path::new(&file).exists() {
 
-                        println!("  Status: [OK] Log file exists");
+                        println!("  Status: [OK] Log file exists");
 
                         println!("");
 
-                        println!("  Note: Log viewing not yet implemented");
+                        // Log tailing and filtering
+                        println!("  Note: Log tailing via file API not yet implemented");
 
                         println!("  Workaround: Use standard tools:");
 
                         println!("    - tail -n {} {}", tail.unwrap_or(100), file);
-                        
+
                         if let Some(f) = filter {
 
                             println!("    - grep '{}' {} | tail -n {}", f, file, tail.unwrap_or(100));
                         }
-                        
+
                         if follow {
 
                             println!("    - tail -f {}", file);
                         }
                     } else {
 
-                        println!("  Status: [ERROR] Log file not found");
+                        println!("  Status: [ERROR] Log file not found");
 
                         println!("  Check logging configuration");
                     }
@@ -432,6 +488,8 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                     println!("  Log directory: {}", dir);
 
                     println!("  Note: Log file viewing not yet implemented");
+
+                    println!("  Workaround: Find and view log files in the directory");
                 }
 
                 _ => {
@@ -443,12 +501,23 @@ pub async fn HandleCommand(cmd: Command) -> Result<(), Box<dyn std::error::Error
                     println!("");
 
                     println!("  Logs are likely going to stdout/stderr");
+
+                    println!("  Use journalctl (Linux/macOS) or Event Viewer (Windows)");
                 }
             }
-            
+
+            if let Some(svc) = service {
+
+                println!("");
+
+                println!("  Service-specific logs requested: {}", svc);
+
+                println!("  Note: Service log isolation not yet implemented");
+            }
+
             Err("Logs command not yet fully implemented".into())
         }
-        
+
         Command::Debug(debug_cmd) => {
 
             HandleDebugCommand(debug_cmd).await
@@ -473,20 +542,44 @@ async fn HandleConfigCommand(config_cmd: ConfigCommand) -> Result<(), Box<dyn st
 
                 return Err("Configuration key contains invalid characters".into());
             }
-            
+
+            // Connect to daemon and get config value
             println!("Get Configuration");
 
             println!("  Key: {}", key);
 
             println!("");
 
-            println!("  Note: Config retrieval not yet implemented");
+            match super::Connect::ConnectDaemon::Connect().await {
 
-            println!("  Workaround: Check config file directly: cat {}", DefaultConfigFile);
-            
-            Err("Config 'get' command not yet implemented".into())
+                Ok(_) => {
+
+                    println!("  Status: Connected to daemon");
+
+                    println!("");
+
+                    println!("  Note: Config retrieval via gRPC not yet implemented");
+
+                    println!("  Config value would be retrieved from daemon's configuration manager");
+                }
+
+                Err(e) => {
+
+                    println!("  Status: Cannot connect to daemon");
+
+                    println!("  Error: {}", e);
+
+                    println!("");
+
+                    println!("  Workaround: Check config file directly: cat {}", DefaultConfigFile);
+
+                    return Err(format!("Cannot get config: {}", e).into());
+                }
+            }
+
+            Err("Config 'get' command requires gRPC integration".into())
         }
-        
+
         ConfigCommand::Set { key, value } => {
 
             // Validate inputs
@@ -504,7 +597,8 @@ async fn HandleConfigCommand(config_cmd: ConfigCommand) -> Result<(), Box<dyn st
 
                 return Err("Configuration key contains invalid characters".into());
             }
-            
+
+            // Connect to daemon and set config value
             println!("Set Configuration");
 
             println!("  Key: {}", key);
@@ -513,81 +607,144 @@ async fn HandleConfigCommand(config_cmd: ConfigCommand) -> Result<(), Box<dyn st
 
             println!("");
 
-            println!("  Note: Config update not yet implemented");
-
-            println!("  Workaround: Edit config file directly, then use 'Air config reload'");
-            
-            Err("Config 'set' command not yet implemented".into())
-        }
-        
-        ConfigCommand::Reload { validate } => {
-
-            println!("Reload Configuration");
-
-            println!("");
-            
             match super::Connect::ConnectDaemon::Connect().await {
 
                 Ok(_) => {
 
-                    println!("  Status: [OK] Daemon is running");
+                    println!("  Status: Connected to daemon");
 
                     println!("");
 
-                    println!("  Note: Config reload not yet implemented");
+                    println!("  Note: Config update via gRPC not yet implemented");
 
-                    println!("  Workaround: Restart daemon to apply config changes");
+                    println!("  Config value would be set in daemon's configuration manager");
+                }
+
+                Err(e) => {
+
+                    println!("  Status: Cannot connect to daemon");
+
+                    println!("  Error: {}", e);
+
+                    println!("");
+
+                    println!("  Workaround: Edit config file directly, then use 'Air config reload'");
+
+                    return Err(format!("Cannot set config: {}", e).into());
+                }
+            }
+
+            println!("");
+
+            println!("  Warning: Config changes may require reload or restart");
+
+            Err("Config 'set' command requires gRPC integration".into())
+        }
+
+        ConfigCommand::Reload { validate } => {
+
+            // Reload configuration
+            println!("Reload Configuration");
+
+            println!("");
+
+            match super::Connect::ConnectDaemon::Connect().await {
+
+                Ok(_) => {
+
+                    println!("  Status: Connected to daemon");
 
                     println!("");
 
                     if validate {
 
-                        println!("  Validation mode requested");
+                        println!("  Validating configuration...");
+
+                        println!("  Note: Validation not yet implemented");
                     }
+
+                    println!("  Note: Config reload via gRPC not yet implemented");
+
+                    println!("  Workaround: Restart daemon to apply config changes");
                 }
 
                 Err(e) => {
 
-                    println!("  Status: [ERROR] Cannot connect to daemon");
+                    println!("  Status: Cannot connect to daemon");
 
                     println!("  Error: {}", e);
 
                     return Err(format!("Cannot reload config: {}", e).into());
                 }
             }
-            
-            Err("Config 'reload' command not yet implemented".into())
+
+            Err("Config 'reload' command requires gRPC integration".into())
         }
-        
+
         ConfigCommand::Show { json } => {
 
+            // Show configuration
             println!("Show Configuration");
 
             println!("");
-            
+
             if json {
 
                 println!("  JSON output requested");
 
-                println!("  Note: JSON config export not yet implemented");
+                match super::Connect::ConnectDaemon::Connect().await {
+
+                    Ok(_) => {
+
+                        println!("  Status: Connected to daemon");
+
+                        println!("  Note: JSON config export via gRPC not yet implemented");
+                    }
+
+                    Err(e) => {
+
+                        println!("  Status: Cannot connect to daemon");
+
+                        println!("  Error: {}", e);
+
+                        return Err(format!("Cannot show config: {}", e).into());
+                    }
+                }
             } else {
 
                 println!("  Current Configuration:");
 
-                println!("  Note: Config display not yet implemented");
+                match super::Connect::ConnectDaemon::Connect().await {
 
-                println!("  Workaround: View config file: cat {}", DefaultConfigFile);
+                    Ok(_) => {
+
+                        println!("  Status: Connected to daemon");
+
+                        println!("  Note: Config display via gRPC not yet implemented");
+                    }
+
+                    Err(e) => {
+
+                        println!("  Status: Cannot connect to daemon");
+
+                        println!("  Error: {}", e);
+
+                        println!("  Workaround: View config file: cat {}", DefaultConfigFile);
+
+                        return Err(format!("Cannot show config: {}", e).into());
+                    }
+                }
             }
-            
+
             println!("");
 
             println!("  Default config file: {}", DefaultConfigFile);
 
             println!("  Config directory: ~/.config/Air/");
-            
-            Err("Config 'show' command not yet implemented".into())
+
+            Err("Config 'show' command requires gRPC integration".into())
         }
-        
+
         ConfigCommand::Validate { path } => {
 
             // Validate path if provided
@@ -603,31 +760,37 @@ async fn HandleConfigCommand(config_cmd: ConfigCommand) -> Result<(), Box<dyn st
                     return Err("Config path contains invalid characters".into());
                 }
             }
-            
+
             println!("Validate Configuration");
 
             println!("");
-            
+
             let config_path = path.unwrap_or_else(|| DefaultConfigFile.to_string());
 
             println!("  Config file: {}", config_path);
 
             println!("");
-            
-            if std::path::Path::new(&config_path).exists() {
 
-                println!("  [OK] Config file exists");
+            // Check if file exists
+            match std::path::Path::new(&config_path).exists() {
 
-                println!("  Note: Detailed validation not yet implemented");
+                true => {
 
-                println!("  Workaround: Use: Air --validate-config");
-            } else {
+                    println!("  [OK] Config file exists");
 
-                println!("  [ERROR] Config file not found");
+                    println!("  Note: Detailed validation not yet implemented");
 
-                println!("  Hint: Create a config file or use defaults");
+                    println!("  Workaround: Use: Air --validate-config");
+                }
+
+                false => {
+
+                    println!("  [ERROR] Config file not found");
+
+                    println!("  Hint: Create a config file or use defaults");
+                }
             }
-            
+
             Err("Config 'validate' command not yet implemented".into())
         }
     }
@@ -648,11 +811,11 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
                     return Err("Service name must be 1-64 characters".into());
                 }
             }
-            
+
             println!("Debug: Dump State");
 
             println!("");
-            
+
             if let Some(svc) = service {
 
                 println!("  Service: {}", svc);
@@ -664,7 +827,7 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
 
                 println!("  Note: State dumping not yet implemented");
             }
-            
+
             if json {
 
                 println!("");
@@ -673,7 +836,7 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
 
                 println!("  Note: JSON state export not yet implemented");
             }
-            
+
             println!("");
 
             println!("  Note: State dumping requires gRPC integration:");
@@ -689,21 +852,21 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
             println!("    - Metrics cache");
 
             println!("    - Configuration snapshot");
-            
+
             Err("Debug 'dump-state' command not yet implemented".into())
         }
-        
+
         DebugCommand::DumpConnections { format } => {
 
             println!("Debug: Dump Connections");
 
             println!("");
-            
+
             match super::Connect::ConnectDaemon::Connect().await {
 
                 Ok(_) => {
 
-                    println!("  Status: [OK] Daemon is running");
+                    println!("  Status: [OK] Daemon is running");
 
                     println!("");
 
@@ -714,14 +877,14 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
 
                 Err(e) => {
 
-                    println!("  Status: [ERROR] Cannot connect to daemon");
+                    println!("  Status: [ERROR] Cannot connect to daemon");
 
                     println!("  Error: {}", e);
 
                     return Err(format!("Cannot dump connections: {}", e).into());
                 }
             }
-            
+
             if let Some(fmt) = format {
 
                 println!("");
@@ -730,7 +893,7 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
 
                 println!("  Note: Custom format not yet implemented");
             }
-            
+
             println!("");
 
             println!("  Note: Connection dump requires gRPC integration:");
@@ -746,10 +909,10 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
             println!("    - Active requests");
 
             println!("    - Bytes transferred");
-            
+
             Err("Debug 'dump-connections' command not yet implemented".into())
         }
-        
+
         DebugCommand::HealthCheck { verbose, service } => {
 
             // Validate input
@@ -760,19 +923,19 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
                     return Err("Service name must be 1-64 characters".into());
                 }
             }
-            
+
             println!("Debug: Health Check");
 
             println!("");
-            
+
             match super::Connect::ConnectDaemon::Connect().await {
 
                 Ok(_) => {
 
-                    println!("  Overall: [OK] Basic check passed");
+                    println!("  Overall: [OK] Basic check passed");
 
                     println!("");
-                    
+
                     if let Some(svc) = service {
 
                         println!("  Service: {}", svc);
@@ -782,22 +945,22 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
 
                         println!("  Services:");
 
-                        println!("    gRPC Server: [OK] Responding");
+                        println!("    gRPC Server: [OK] Responding");
 
-                        println!("    Authentication: [?] Not checked");
+                        println!("    Authentication: [?] Not checked");
 
-                        println!("    Updates: [?] Not checked");
+                        println!("    Updates: [?] Not checked");
 
-                        println!("    Download Manager: [?] Not checked");
+                        println!("    Download Manager: [?] Not checked");
 
-                        println!("    File Indexer: [?] Not checked");
+                        println!("    File Indexer: [?] Not checked");
                     }
-                    
+
                     if verbose {
 
                         println!("");
 
-                        println!("   Verbose Information:");
+                        println!("  Verbose Information:");
 
                         println!("    Last health check: Not tracked");
 
@@ -811,17 +974,17 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
 
                 Err(e) => {
 
-                    println!("  Overall: [ERROR] Daemon unreachable");
+                    println!("  Overall: [ERROR] Daemon unreachable");
 
                     println!("  Error: {}", e);
 
                     return Err(format!("Health check failed: {}", e).into());
                 }
             }
-            
+
             Err("Debug 'health-check' not detailed yet".into())
         }
-        
+
         DebugCommand::Diagnostics { level } => {
 
             println!("Debug: Diagnostics");
@@ -831,7 +994,7 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
             println!("  Level: {:?}", level);
 
             println!("");
-            
+
             println!("  System Information:");
 
             println!("    OS: {}", std::env::consts::OS);
@@ -841,22 +1004,22 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
             println!("    Air Version: {}", VERSION);
 
             println!("");
-            
+
             match super::Connect::ConnectDaemon::Connect().await {
 
                 Ok(_) => {
 
-                    println!("  Daemon: [OK] Running");
+                    println!("  Daemon: [OK] Running");
                 }
 
                 Err(e) => {
 
-                    println!("  Daemon: [ERROR] Running");
+                    println!("  Daemon: [ERROR] Not running");
 
                     println!("  Error: {}", e);
                 }
             }
-            
+
             println!("");
 
             println!("  Note: Advanced diagnostics require additional infrastructure:");
@@ -870,7 +1033,7 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
             println!("    - Resource leak detection");
 
             println!("    - Performance bottlenecks");
-            
+
             Ok(())
         }
     }
@@ -880,7 +1043,7 @@ async fn HandleDebugCommand(debug_cmd: DebugCommand) -> Result<(), Box<dyn std::
 mod tests {
 
     use super::*;
-    
+
     #[test]
     #[ignore] // Requires async runtime
    async fn test_handle_version() {

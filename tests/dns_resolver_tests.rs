@@ -11,7 +11,6 @@ use std::time::Duration;
 
 #[tokio::test]
 async fn test_land_dns_resolver_localhost() {
-
 	// Start DNS server from Mist module
 	let port = Mist::start(15370).expect("Failed to start DNS server");
 
@@ -32,14 +31,12 @@ async fn test_land_dns_resolver_localhost() {
 
 	assert!(
 		resolved_ips.iter().all(|ip| ip.is_loopback()),
-
 		"All resolved IPs for land.playform.cloud should be loopback addresses"
 	);
 }
 
 #[tokio::test]
 async fn test_land_dns_resolver_wildcard() {
-
 	// Start DNS server
 	let port = Mist::start(15371).expect("Failed to start DNS server");
 
@@ -50,11 +47,8 @@ async fn test_land_dns_resolver_wildcard() {
 	// Test wildcard resolution
 	let test_domains = vec![
 		"test.editor.land",
-
 		"api.land.playform.cloud",
-
 		"cdn.editor.land",
-
 		"random-subdomain.editor.land",
 	];
 
@@ -72,9 +66,7 @@ async fn test_land_dns_resolver_wildcard() {
 
 		assert!(
 			resolved_ips.iter().all(|ip| ip.is_loopback()),
-
 			"All IPs for {} should be loopback addresses",
-
 			domain
 		);
 	}
@@ -82,7 +74,6 @@ async fn test_land_dns_resolver_wildcard() {
 
 #[tokio::test]
 async fn test_ip_validation_blocks_non_localhost_for_editor_land() {
-
 	// This test verifies the security feature that ensures land.playform.cloud
 	// domains only resolve to loopback addresses (127.x.x.x)
 
@@ -109,7 +100,6 @@ async fn test_ip_validation_blocks_non_localhost_for_editor_land() {
 
 	assert!(
 		all_loopback,
-
 		"SECURITY: land.playform.cloud domains must only resolve to loopback addresses (127.x.x.x)"
 	);
 
@@ -118,7 +108,6 @@ async fn test_ip_validation_blocks_non_localhost_for_editor_land() {
 
 #[tokio::test]
 async fn test_ip_validation_allows_non_editor_land() {
-
 	// This test verifies that non-land.playform.cloud domains can resolve to any IP
 	// (subject to the forward authority allowlist restrictions)
 
@@ -141,7 +130,6 @@ async fn test_ip_validation_allows_non_editor_land() {
 
 #[tokio::test]
 async fn test_resolver_handles_ipv6() {
-
 	// Test that the resolver can handle IPv6 addresses
 	// even though land.playform.cloud only has A records
 
@@ -162,7 +150,6 @@ async fn test_resolver_handles_ipv6() {
 
 #[tokio::test]
 async fn test_resolver_caching() {
-
 	// Test that the resolver caches results
 	// Hickory clients cache results by default
 
@@ -193,7 +180,6 @@ async fn test_resolver_caching() {
 
 #[tokio::test]
 async fn test_resolver_concurrent_queries() {
-
 	// Test that the resolver can handle concurrent queries
 
 	let port = Mist::start(15376).expect("Failed to start DNS server");
@@ -247,7 +233,6 @@ async fn test_resolver_concurrent_queries() {
 
 #[tokio::test]
 async fn test_resolver_port_configuration() {
-
 	// Test resolver configuration with specific port
 
 	let port = Mist::start(15377).expect("Failed to start DNS server");
@@ -267,7 +252,6 @@ async fn test_resolver_port_configuration() {
 
 #[tokio::test]
 async fn test_resolver_error_handling() {
-
 	// Test that the resolver handles errors gracefully
 
 	// Try to create resolver for non-existent DNS server
@@ -285,7 +269,6 @@ async fn test_resolver_error_handling() {
 
 #[tokio::test]
 async fn test_resolver_txt_records() {
-
 	// Test that the resolver can query TXT records
 	// (if supported)
 
@@ -307,7 +290,6 @@ async fn test_resolver_txt_records() {
 
 #[tokio::test]
 async fn test_resolver_mx_records() {
-
 	// Test that the resolver can query MX records
 	// (if supported)
 
@@ -327,7 +309,6 @@ async fn test_resolver_mx_records() {
 
 #[tokio::test]
 async fn test_resolver_srv_records() {
-
 	// Test that the resolver can query SRV records
 	// (if supported)
 
@@ -347,7 +328,6 @@ async fn test_resolver_srv_records() {
 
 #[tokio::test]
 async fn test_resolver_timeout_handling() {
-
 	// Test that the resolver handles timeouts appropriately
 
 	let port = Mist::start(15381).expect("Failed to start DNS server");
@@ -372,7 +352,6 @@ async fn test_resolver_timeout_handling() {
 
 #[tokio::test]
 async fn test_resolver_reverse_dns() {
-
 	// Test reverse DNS lookup
 	// (if supported)
 
@@ -392,7 +371,6 @@ async fn test_resolver_reverse_dns() {
 
 #[tokio::test]
 async fn test_resolver_multiple_domains_batch() {
-
 	// Test resolving multiple domains in sequence
 
 	let port = Mist::start(15383).expect("Failed to start DNS server");
@@ -403,13 +381,9 @@ async fn test_resolver_multiple_domains_batch() {
 
 	let domains = vec![
 		"code.land.playform.cloud",
-
 		"api.land.playform.cloud",
-
 		"cdn.editor.land",
-
 		"test.editor.land",
-
 		"random.editor.land",
 	];
 
