@@ -31,11 +31,7 @@ async fn test_land_dns_resolver_localhost() {
 
 	assert!(
 		resolved_ips.iter().all(|ip| ip.is_loopback()),
-<<<<<<< HEAD
-		"All resolved IPs for land.playform.cloud should be loopback addresses"
-=======
 		"All resolved IPs for editor.land should be loopback addresses"
->>>>>>> e2a56fcd30371f045835aabb633a4bb67d5bfd55
 	);
 }
 
@@ -51,11 +47,7 @@ async fn test_land_dns_resolver_wildcard() {
 	// Test wildcard resolution
 	let test_domains = vec![
 		"test.editor.land",
-<<<<<<< HEAD
-		"api.land.playform.cloud",
-=======
 		"api.editor.land",
->>>>>>> e2a56fcd30371f045835aabb633a4bb67d5bfd55
 		"cdn.editor.land",
 		"random-subdomain.editor.land",
 	];
@@ -82,11 +74,7 @@ async fn test_land_dns_resolver_wildcard() {
 
 #[tokio::test]
 async fn test_ip_validation_blocks_non_localhost_for_editor_land() {
-<<<<<<< HEAD
-	// This test verifies the security feature that ensures land.playform.cloud
-=======
 	// This test verifies the security feature that ensures editor.land
->>>>>>> e2a56fcd30371f045835aabb633a4bb67d5bfd55
 	// domains only resolve to loopback addresses (127.x.x.x)
 
 	// Start DNS server
@@ -112,11 +100,7 @@ async fn test_ip_validation_blocks_non_localhost_for_editor_land() {
 
 	assert!(
 		all_loopback,
-<<<<<<< HEAD
-		"SECURITY: land.playform.cloud domains must only resolve to loopback addresses (127.x.x.x)"
-=======
 		"SECURITY: editor.land domains must only resolve to loopback addresses (127.x.x.x)"
->>>>>>> e2a56fcd30371f045835aabb633a4bb67d5bfd55
 	);
 
 	println!("Security check passed: All editor.land IPs are loopback addresses");
@@ -124,11 +108,7 @@ async fn test_ip_validation_blocks_non_localhost_for_editor_land() {
 
 #[tokio::test]
 async fn test_ip_validation_allows_non_editor_land() {
-<<<<<<< HEAD
-	// This test verifies that non-land.playform.cloud domains can resolve to any IP
-=======
 	// This test verifies that non-editor.land domains can resolve to any IP
->>>>>>> e2a56fcd30371f045835aabb633a4bb67d5bfd55
 	// (subject to the forward authority allowlist restrictions)
 
 	// Start DNS server
@@ -400,13 +380,8 @@ async fn test_resolver_multiple_domains_batch() {
 	let resolver = Mist::resolver::land_resolver(port);
 
 	let domains = vec![
-<<<<<<< HEAD
-		"code.land.playform.cloud",
-		"api.land.playform.cloud",
-=======
 		"code.editor.land",
 		"api.editor.land",
->>>>>>> e2a56fcd30371f045835aabb633a4bb67d5bfd55
 		"cdn.editor.land",
 		"test.editor.land",
 		"random.editor.land",
