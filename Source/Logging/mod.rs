@@ -341,14 +341,14 @@ impl LogManager {
 
 	/// Check if log rotation is needed
 	fn ShouldRotate(&self) -> bool {
-		let size = *self.CurrentSize.lock().unwrap();
+		let size = *self.CurrentSize.lock().unwrap_or_else(|e| e.into_inner());
 
 		size >= self.Config.MaxFileSizeBytes
 	}
 
 	/// Perform log rotation
 	fn Rotate(&self) -> Result<()> {
-		let CurrentFile = self.CurrentFile.lock().unwrap();
+		let CurrentFile = self.CurrentFile.lock().unwrap_or_else(|e| e.into_inner());
 
 		if let Some(ref FilePath) = *CurrentFile {
 			// Rename current file with timestamp
@@ -367,7 +367,7 @@ impl LogManager {
 			self.CleanupOldLogs()?;
 		}
 
-		*self.CurrentSize.lock().unwrap() = 0;
+		*self.CurrentSize.lock().unwrap_or_else(|e| e.into_inner()) = 0;
 
 		Ok(())
 	}
@@ -589,7 +589,7 @@ impl ContextLogger {
 	/// Initialize the logging system with tracing
 	pub fn Initialize(&self) -> Result<()> {
 		// Check if already initialized
-		let mut initialized = self.initialized.lock().unwrap();
+		let mut initialized = self.initialized.lock().unwrap_or_else(|e| e.into_inner());
 
 		if *initialized {
 			return Ok(());
