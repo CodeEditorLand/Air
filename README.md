@@ -81,8 +81,8 @@ signing, and file indexing.
 - **Native Sidecar Architecture:** Runs as a standalone process alongside
   `Mountain`, communicating via high-performance IPC (`gRPC`/`Vine`) to handle
   requests without blocking the UI thread.
-- **Dedicated Update Management:** Full ownership of the update lifecycle —
-  downloading, verifying, and applying patches for `Land` — without user
+- **Dedicated Update Management:** Full ownership of the update lifecycle -
+  downloading, verifying, and applying patches for `Land` - without user
   interruption or restart prompts.
 - **File Indexing and Search:** Builds and maintains a comprehensive file index
   with symbol extraction, content analysis, and fast fuzzy search across the
@@ -97,7 +97,7 @@ signing, and file indexing.
   recovery actions, performance tracking, and degradation alerts across all
   daemon services.
 - **Resource Offloading:** The designated handler for any "heavy" task that
-  doesn't require the main application loop — effectively decoupling
+  doesn't require the main application loop - effectively decoupling
   infrastructure maintenance from the user experience.
 
 ---
@@ -263,9 +263,9 @@ cargo run --bin Air
 | Crate / Package          | Purpose                                                      |
 | :----------------------- | :----------------------------------------------------------- |
 | `tonic` / `prost`        | `gRPC` server and Protocol Buffer code generation            |
-| `Vine`                   | Local path dependency — generated `Air.proto` gRPC contracts |
-| `Common`                 | Local path dependency — shared types and abstractions        |
-| `Mist`                   | Local path dependency — DNS isolation for HTTP client        |
+| `Vine`                   | Local path dependency - generated `Air.proto` gRPC contracts |
+| `Common`                 | Local path dependency - shared types and abstractions        |
+| `Mist`                   | Local path dependency - DNS isolation for HTTP client        |
 | `reqwest` / `rustls`     | HTTPS downloads with TLS certificate verification            |
 | `tokio`                  | Async runtime for concurrent I/O and task scheduling         |
 | `notify` / `ignore`      | File system event watching for real-time index updates       |
@@ -305,13 +305,13 @@ cargo run --bin Air
 This project is released into the public domain under the **Creative Commons CC0
 Universal** license. You are free to use, modify, distribute, and build upon
 this work for any purpose, without any restrictions. For the full legal text,
-see the [`LICENSE`](https://github.com/CodeEditorLand/Air/tree/Current/) file.
+see the [`LICENSE`](https://github.com/CodeEditorLand/Air/tree/Current/LICENSE) file.
 
 ---
 
 ## Changelog&#x2001;📜
 
-See [`CHANGELOG.md`](https://github.com/CodeEditorLand/Air/tree/Current/) for a
+See [`CHANGELOG.md`](https://github.com/CodeEditorLand/Air/tree/Current/CHANGELOG.md) for a
 history of changes specific to **Air**&#x2001;🪁.
 
 ---
