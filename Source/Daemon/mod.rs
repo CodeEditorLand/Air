@@ -192,7 +192,11 @@ impl DaemonManager {
 		match platform {
 			Platform::Linux => PathBuf::from("/var/run/Air.pid"),
 
-			Platform::MacOS => PathBuf::from("/tmp/Air.pid"),
+			// Dedicated subdir of the per-user temp dir (/var/folders/…)
+			// so AcquireLock's `chmod 0o700` on the parent succeeds - the
+			// old `/tmp/Air.pid` made it chmod root-owned /tmp itself
+			// (EPERM on every boot).
+			Platform::MacOS => std::env::temp_dir().join("Air").join("Air.pid"),
 
 			Platform::Windows => PathBuf::from("C:\\ProgramData\\Air\\Air.pid"),
 
@@ -235,23 +239,18 @@ impl DaemonManager {
 	pub async fn AcquireLock(&self) -> Result<()> {
 		dev_log!("daemon", "[Daemon] Acquiring daemon lock...");
 
-		// Acquire lock to prevent race conditions
-		tokio::select! {
+		// Single guarded acquisition held for the rest of the method. The
+		// previous `tokio::select!` matched the resolved `Ok(MutexGuard)`
+		// against `_`, which keeps the guard alive until the arm body
+		// finishes - and the body locked the SAME mutex again, deadlocking
+		// every boot until the caller's 5s timeout killed the daemon.
+		let _lock = match tokio::time::timeout(Duration::from_secs(30), self.PidLock.lock()).await {
+			Ok(Guard) => Guard,
 
-			_ = tokio::time::timeout(Duration::from_secs(30), self.PidLock.lock()) => {
-
-				let _lock_guard = self.PidLock.lock().await;
+			Err(_) => {
+				return Err(AirError::Internal("Timeout acquiring PID lock".to_string()));
 			},
-
-			_ = tokio::time::sleep(Duration::from_secs(30)) => {
-
-				return Err(AirError::Internal(
-					"Timeout acquiring PID lock".to_string()
-				));
-			}
-		}
-
-		let _lock = self.PidLock.lock().await;
+		};
 
 		// Check if shutdown has been requested
 		if *self.ShutdownRequested.read().await {
