@@ -91,5 +91,9 @@ pub mod ConfigurationManager;
 pub mod HotReload;
 pub mod Schema;
 
+// Re-export commonly-used sub-types so downstream code doesn't break.
+// Struct names match their module names (Rust convention).
+pub use AirConfiguration::{AirConfiguration, gRPCConfig, AuthConfig, UpdateConfig, DownloadConfig, IndexingConfig, LoggingConfig, PerformanceConfig};
+
 #[cfg(test)]
 mod Tests;
