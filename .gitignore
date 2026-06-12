@@ -1,56 +1,70 @@
+# =============================================================================
+# Git Ignore Configuration for Air
+# =============================================================================
+
+# Prevent accidental commits of editor/refactor backup files
+*.backup
+
+# Ignore everything in Target by default
 /Target/*
 
+# But allow specific directories and files
 !/Target/debug
 !/Target/release
 !/Target/x86_64-pc-windows-msvc
 
+# ------------------------------ Debug Build ------------------------------
 /Target/debug/*
-/Target/release/*
-/Target/x86_64-pc-windows-msvc/*
 
+# Allow specific debug artifacts
 !/Target/debug/bundle
 !/Target/debug/bundle/nsis
-!/Target/debug/bundle/msi
-!/Target/debug/bundle/appimage
-
 !/Target/debug/bundle/nsis/*.exe
+!/Target/debug/bundle/msi
 !/Target/debug/bundle/msi/*.msi
+!/Target/debug/bundle/appimage
 !/Target/debug/bundle/appimage/*.AppImage
 
+# ------------------------------ EXCLUDE: Files exceeding 100MB ------------------------------
+Target/debug/bundle/dmg
+Target/debug/bundle/macos
+/Target/debug/bundle/share/
+
+# ------------------------------ Executables ------------------------------
 !/Target/debug/*.exe
-
 !/Target/debug/Air
-
-!/Target/release/bundle
-!/Target/release/bundle/nsis
-!/Target/release/bundle/msi
-!/Target/release/bundle/appimage
-
-!/Target/release/bundle/nsis/*.exe
-!/Target/release/bundle/msi/*.msi
-!/Target/release/bundle/appimage/*.AppImage
-
-!/Target/release/*.exe
-
-!/Target/release/Air
-
-!/Target/x86_64-pc-windows-msvc/bundle
-!/Target/x86_64-pc-windows-msvc/bundle/nsis
-!/Target/x86_64-pc-windows-msvc/bundle/msi
-!/Target/x86_64-pc-windows-msvc/bundle/appimage
-
-!/Target/x86_64-pc-windows-msvc/bundle/nsis/*.exe
-!/Target/x86_64-pc-windows-msvc/bundle/msi/*.msi
-!/Target/x86_64-pc-windows-msvc/bundle/appimage/*.AppImage
-
-!/Target/x86_64-pc-windows-msvc/*.exe
-
+Target/debug/Air/
 !/Target/debug/libAirLibrary.rlib
 
+# ------------------------------ Release Build ------------------------------
+/Target/release/*
+!/Target/release/bundle
+!/Target/release/bundle/nsis
+!/Target/release/bundle/nsis/*.exe
+!/Target/release/bundle/msi
+!/Target/release/bundle/msi/*.msi
+!/Target/release/bundle/appimage
+!/Target/release/bundle/appimage/*.AppImage
+Target/release/bundle/dmg
+Target/release/bundle/macos
+/Target/release/bundle/share/
+!/Target/release/*.exe
+!/Target/release/Air
+Target/release/Air/
 !/Target/release/libAirLibrary.rlib
 
-!/Target/x86_64-pc-windows-msvc/libAirLibrary.rlib
+# ------------------------------ Windows MSVC Build ------------------------------
+/Target/x86_64-pc-windows-msvc/*
+!/Target/x86_64-pc-windows-msvc/bundle
+!/Target/x86_64-pc-windows-msvc/bundle/nsis
+!/Target/x86_64-pc-windows-msvc/bundle/nsis/*.exe
+!/Target/x86_64-pc-windows-msvc/bundle/msi
+!/Target/x86_64-pc-windows-msvc/bundle/msi/*.msi
+!/Target/x86_64-pc-windows-msvc/bundle/appimage
+!/Target/x86_64-pc-windows-msvc/bundle/appimage/*.AppImage
+!/Target/x86_64-pc-windows-msvc/*.exe
 
+# ------------------------------ Documentation ------------------------------
 Documentation/Rust/debug
 Documentation/Rust/release
 Documentation/Rust/.rustc_info.json
