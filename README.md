@@ -50,7 +50,7 @@ The Native Background Daemon for `Land`&#x2001;🏞️
 
 [![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](https://github.com/CodeEditorLand/Air/tree/Current/LICENSE)
 
-**[Rust API Documentation](https://Rust.Documentation.editor.land/Air/)**&#x2001;📖
+**[Rust API Documentation](https://rust.documentation.air.editor.land/)**&#x2001;📖
 
 ---
 
@@ -622,7 +622,7 @@ from the main application process:
 
 ## API Reference
 
-- **[Rust API Documentation](https://Rust.Documentation.editor.land/Air/)**&#x2001;📖
+- **[Rust API Documentation](https://rust.documentation.air.editor.land/)**&#x2001;📖
 - [Deep Dive](https://github.com/CodeEditorLand/Air/tree/Current/Documentation/GitHub/DeepDive.md) — Detailed startup sequence, `gRPC` routing, and data flow
 
 ---
