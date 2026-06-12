@@ -425,7 +425,7 @@ impl TraceGenerator {
 			(r"(?i)token[=:]\S+", "token=[REDACTED]"),
 			(r"(?i)secret[=:]\S+", "secret=[REDACTED]"),
 			(r"(?i)(api|private)[_-]?key[=:]\S+", "api_key=[REDACTED]"),
-			(r"(?i)authorization[=[:space:]]+Bearer[[:space:]]+\S+", "Authorization: Bearer ***"),"),
+			(r"(?i)authorization[=[:space:]]+Bearer[[:space:]]+\S+", "Authorization: Bearer ***"),
 		];
 
 		for (pattern, replacement) in patterns {
@@ -441,8 +441,6 @@ impl TraceGenerator {
 impl Default for TraceGenerator {
 	fn default() -> Self { Self::new() }
 }
-
-use crate::Tracing::SamplingConfig::SamplingConfig;
 
 /// Global trace generator instance
 static TRACE_GENERATOR:std::sync::OnceLock<TraceGenerator> = std::sync::OnceLock::new();
