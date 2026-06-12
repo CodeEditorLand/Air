@@ -19,7 +19,7 @@ use crate::{
 	AirError,
 	ApplicationState::ApplicationState::Struct,
 	Authentication::AuthenticationService,
-	Downloader::DownloadManager,
+	Downloader::DownloadManager::Struct as DownloadManager,
 	Indexing::{
 		FileIndexer,
 		Store::QueryIndex::{SearchMode, SearchQuery},
@@ -2250,7 +2250,7 @@ impl AirVinegRPCService {
 		checksum:String,
 
 		progress_callback:Option<Box<dyn Fn(f32) + Send>>,
-	) -> Result<crate::Downloader::DownloadResult> {
+	) -> Result<crate::Downloader::Types::DownloadResult> {
 		let config = &self.AppState.Configuration.Downloader;
 
 		let mut retries = 0;

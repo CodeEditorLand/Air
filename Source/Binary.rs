@@ -187,7 +187,7 @@ use AirLibrary::{
 	Daemon::DaemonManager::DaemonManager,
 	DefaultBindAddress,
 	DefaultConfigFile,
-	Downloader::DownloadManager,
+	Downloader::DownloadManager::Struct as DownloadManager,
 	HealthCheck::HealthCheckLevel::HealthCheckLevel,
 	HealthCheck::HealthCheckManager::HealthCheckManager,
 	HealthCheck::HealthStatistics::HealthStatistics,
