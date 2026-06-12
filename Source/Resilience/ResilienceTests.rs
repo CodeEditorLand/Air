@@ -6,7 +6,17 @@
 #[cfg(test)]
 mod tests {
 
-	use super::*;
+	use std::time::{Duration, Instant};
+
+	use super::super::{
+		BulkheadConfig::BulkheadConfig,
+		BulkheadExecutor::BulkheadExecutor,
+		CircuitBreaker::CircuitBreaker,
+		CircuitBreakerConfig::CircuitBreakerConfig,
+		CircuitState::CircuitState,
+		Retry::{ErrorClass, RetryManager, RetryPolicy},
+		Timeout::TimeoutManager,
+	};
 
 	#[test]
 	fn test_retry_delay_calculation() {
