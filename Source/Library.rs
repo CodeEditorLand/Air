@@ -202,6 +202,8 @@ pub mod Security;
 
 pub mod Tracing;
 
+pub mod Plugins;
+
 pub mod Updates;
 
 pub mod Vine;

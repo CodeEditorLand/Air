@@ -1488,7 +1488,7 @@ fn HandleMetricsRequest() -> String {
 	// Defensive: Use a timeout to prevent metrics export from blocking
 	let _timeout_duration = std::time::Duration::from_millis(100);
 
-	let metrics_collector = Metrics::GetMetrics();
+	let metrics_collector = Metrics::GetMetrics::GetMetrics();
 
 	// Export metrics with error handling and timeout
 	let export_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| metrics_collector.ExportMetrics()));
@@ -1619,7 +1619,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	Trace!("[Boot] [Observability] Initializing observability systems...");
 
 	// Initialize metrics with error handling
-	if let Err(e) = Metrics::InitializeMetrics() {
+	if let Err(e) = Metrics::GetMetrics::InitializeMetrics() {
 		dev_log!("lifecycle", "error: [Boot] Failed to initialize metrics: {}", e);
 
 		// Non-fatal: continue without metrics
@@ -2028,7 +2028,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 				let resources = AppState.GetResourceUsage().await;
 
 				// Record metrics
-				let metrics_collector = Metrics::GetMetrics();
+				let metrics_collector = Metrics::GetMetrics::GetMetrics();
 
 				metrics_collector.UpdateResourceMetrics(
 					(resources.MemoryUsageMb * 1024.0 * 1024.0) as u64, // Convert MB to bytes
@@ -2053,7 +2053,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 						dev_log!("lifecycle", "warn: [ConnectionMonitor] Health check failed: {}", e);
 
 						// Record metrics for failed health check
-						let metrics_collector = Metrics::GetMetrics();
+						let metrics_collector = Metrics::GetMetrics::GetMetrics();
 
 						metrics_collector.RecordRequestFailure("health_check_failed", 0.0);
 					},
@@ -2211,7 +2211,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	let health_stats:HealthStatistics = health_manager.GetHealthStatistics().await;
 
 	// Get final metrics data
-	let metrics_data = Metrics::GetMetrics().GetMetricsData();
+	let metrics_data = Metrics::GetMetrics::GetMetrics().GetMetricsData();
 
 	dev_log!("lifecycle", "===========================================");
 

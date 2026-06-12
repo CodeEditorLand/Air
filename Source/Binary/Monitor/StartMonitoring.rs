@@ -153,7 +153,7 @@ pub async fn StartMonitoring(
 				let ActiveThreads = AppState.GetActiveTaskCount().await.unwrap_or(0);
 
 				// Record metrics
-				let MetricsCollector = Metrics::GetMetrics();
+				let MetricsCollector = Metrics::GetMetrics::GetMetrics();
 
 				MetricsCollector.UpdateResourceMetrics(
 					Resources.MemoryUsageMb.saturating_mul(1024).saturating_mul(1024), // Convert MB to bytes
@@ -180,7 +180,7 @@ pub async fn StartMonitoring(
 						dev_log!("lifecycle", "warn: [ConnectionMonitor] Health check failed: {}", Error);
 
 						// Record metrics for failed health check
-						let MetricsCollector = Metrics::GetMetrics();
+						let MetricsCollector = Metrics::GetMetrics::GetMetrics();
 
 						MetricsCollector.RecordRequestFailure("health_check_failed", 0.0);
 					},
