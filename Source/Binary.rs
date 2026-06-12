@@ -1628,7 +1628,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	}
 
 	// Initialize tracing with error handling
-	if let Err(e) = Tracing::initialize_tracing(None) {
+	if let Err(e) = Tracing::TraceGenerator::initialize_tracing(None) {
 		dev_log!("lifecycle", "error: [Boot] Failed to initialize tracing: {}", e);
 
 		// Non-fatal: continue without tracing

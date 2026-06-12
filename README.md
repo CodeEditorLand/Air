@@ -24,7 +24,7 @@
 				<picture>
 					<source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/github/stars/CodeEditorLand/Air?style=flat&label=Star&logo=github&color=black&labelColor=black&logoColor=white&logoWidth=0" />
 					<source media="(prefers-color-scheme: light)" srcset="https://img.shields.io/github/stars/CodeEditorLand/Air?style=flat&label=Star&logo=github&color=white&labelColor=white&logoColor=black&logoWidth=0" />
-					<img src="https://img.shields.io/github/stars/CodeEditorLand/Air?style=flat&label=Star&logo=github&color=black&labelColor=black&logoColor=white&logoWidth=0" alt="Star" />
+					<img src="https://img.shields.io/github/stars/CodeEditorLand/Air?style=flat&label=Star&logo=github&color=black&labelColor=black&logoColor=white&logoWidth=0" alt="Star" title="Star" />
 				</picture>
 			</a>
 			<br />
@@ -44,11 +44,13 @@ The Native Background Daemon for `Land`&#x2001;🏞️
 > **`VS Code` cold-starts slowly because everything initializes fresh each
 > launch. Updates require a full restart that kills open terminals and
 > in-progress work. There is no mechanism to pre-stage work between sessions.**
->
-> _\"The next version is already downloaded and verified before you decide to
-> update. The main window never blocks waiting for a download.\"_
+
+_"The next version is already downloaded and verified before you decide to
+update. The main window never blocks waiting for a download."_
 
 [![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](https://github.com/CodeEditorLand/Air/tree/Current/LICENSE)
+[<img src="https://editor.land/Image/Rust.svg" width="14" alt="Rust" />](https://www.rust-lang.org/)&#x2001;[![Crates.io](https://img.shields.io/crates/v/Air.svg)](https://crates.io/crates/Air)
+[<img src="https://editor.land/Image/Rust.svg" width="14" alt="Rust" />](https://www.rust-lang.org/)&#x2001;[![Rust Version](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
 
 **[Rust API Documentation](https://rust.documentation.air.editor.land/)**&#x2001;📖
 
@@ -57,69 +59,82 @@ The Native Background Daemon for `Land`&#x2001;🏞️
 ## Overview
 
 **Air** is the lightweight, persistent daemon that powers the background
-capabilities of the **Land** Code Editor. While **Mountain** handles the core
-application logic and UI, **Air** operates as a specialized sidecar process
-dedicated to heavy lifting, network operations, and system maintenance. It
-ensures that the main editor remains responsive by offloading resource-intensive
-tasks such as updates, large downloads, cryptographic signing, and file
-indexing.
+capabilities of the **Land** Code Editor. While **Mountain** ⛰️ handles the
+core application logic and UI, **Air** operates as a specialized sidecar
+process dedicated to heavy lifting, network operations, and system maintenance.
+It ensures that the main editor remains responsive by offloading
+resource-intensive tasks such as updates, large downloads, cryptographic
+signing, and file indexing.
 
-**Air** is engineered to:
+`VS Code` cold-starts slowly because everything initializes fresh each launch,
+and updates require a full restart. **Air** solves this by running as a
+persistent background process that survives window closures, pre-stages updates,
+and keeps a warm file index across sessions — so the editor is always ready the
+moment you launch it.
 
-1. **Serve as the Persistent Background Daemon:** Run as a standalone process
-   alongside **Mountain**, surviving window closures and maintaining background
-   services across sessions.
-2. **Own the Update Lifecycle:** Take full ownership of downloading, verifying,
+**Air is engineered to:**
+
+1. **Serve as the Persistent Background Daemon** — Run as a standalone process
+   alongside **Mountain** ⛰️, surviving window closures and maintaining
+   background services across sessions via `Daemon/` singleton enforcement and
+   platform-native daemonization.
+2. **Own the Update Lifecycle** — Take full ownership of downloading, verifying,
    and applying patches for **Land** without user interruption or restart
-   prompts.
-3. **Offload Heavy Network Operations:** Act as the traffic manager for large
-   downloads (extensions, language servers, dependencies) with resilient
-   resume-capable transfers.
-4. **Isolate Security-Critical Operations:** Manage cryptographic signing,
-   secure credential storage, and authentication token lifecycle, keeping
-   sensitive logic isolated from the main application view.
-5. **Maintain the File Index:** Build and persist a comprehensive file index
-   with symbol extraction and fast fuzzy search across the entire workspace.
+   prompts, with staged installation and automatic rollback via `Updates/`.
+3. **Offload Heavy Network Operations** — Act as the traffic manager for large
+   downloads (extensions, language servers, dependencies) with resilient,
+   resume-capable transfers through `Downloader/` and `Resilience/`.
+4. **Isolate Security-Critical Operations** — Manage cryptographic signing,
+   secure credential storage, and authentication token lifecycle via
+   `Security/` and `Authentication/`, keeping sensitive logic isolated from the
+   main application process.
 
 ---
 
 ## Key Features&#x2001;🪁
 
 **`gRPC` Native Communication** — All inter-process communication with
-**Mountain** travels over a **Vine** (`tonic`-based `gRPC`) channel on
+**Mountain** ⛰️ travels over a **Vine** 🌿 (`tonic`-based `gRPC`) channel on
 `[::1]:50053`, providing strongly-typed `protobuf` contracts, bi-directional
 streaming for progress events, and a well-defined API surface generated from
 `Air.proto`.
 
 **Self-Contained Daemon Lifecycle** — Runs as an independent process with
-singleton enforcement via PID locking, graceful shutdown on `SIGTERM`, and
+singleton enforcement via PID locking in `Daemon/`, graceful shutdown on
+`SIGTERM` managed by `Binary/Shutdown/WaitForShutdownSignal.rs`, and
 platform-native daemonization on `macOS`, `Linux`, and `Windows`. Survives
 window closures and persists across editor sessions.
 
 **Resilient Update Engine** — Full ownership of the update lifecycle: version
-checking against multiple channels (stable, beta, nightly), concurrent chunked
-downloads with resume capability, cryptographic checksum verification, staged
-installation, and automatic rollback on failure.
+checking against multiple channels (stable, beta, nightly) in `Updates/`,
+concurrent chunked downloads with resume capability in `Downloader/`,
+cryptographic checksum verification via `Security/ChecksumVerifier.rs`, staged
+installation, and automatic rollback on failure via
+`Updates/RollbackState.rs`.
 
 **Isolated Security Boundaries** — Cryptographic signing with `ring`, AEAD
-encrypted credential storage with `zeroize`, token lifecycle management, rate
-limiting via token bucket, and a comprehensive security audit subsystem — all
-isolated from the main application process.
+encrypted credential storage with `zeroize` in `Security/SecureStorage.rs`,
+token lifecycle management in `Authentication/`, rate limiting via token bucket
+in `Security/TokenBucket.rs`, and a comprehensive security audit subsystem in
+`Security/SecurityAuditor.rs` — all isolated from the main application process.
 
 **Real-Time File Indexing** — Persistent file index with `Rust` and
-`TypeScript` symbol extraction, recursive directory scanning, `notify`-based
-file system watching for live updates, and a fast query engine with fuzzy
-search across the entire workspace.
+`TypeScript` symbol extraction in `Indexing/Language/`, recursive directory
+scanning via `Indexing/Scan/`, `notify`-based file system watching for live
+updates in `Indexing/Watch/`, and a fast query engine with fuzzy search across
+the entire workspace in `Indexing/Store/`.
 
 **Observability by Default** — Structured `JSON` logging with trace-ID
-propagation, `OpenTelemetry`-compatible distributed tracing with configurable
-sampling, and `Prometheus`-compatible metrics for latency, success rates, and
-resource utilization across every service.
+propagation in `Logging/`, `OpenTelemetry`-compatible distributed tracing with
+configurable sampling in `Tracing/`, and `Prometheus`-compatible metrics for
+latency, success rates, and resource utilization across every service in
+`Metrics/`.
 
 **Resilience Everywhere** — All network operations are wrapped in retry-with-
-exponential-backoff, circuit breakers with half-open probing, bulkhead
-executors for service isolation, and configurable timeouts via the shared
-`Resilience/` infrastructure.
+exponential-backoff via `Resilience/Retry.rs`, circuit breakers with half-open
+probing in `Resilience/CircuitBreaker.rs`, bulkhead executors for service
+isolation in `Resilience/BulkheadExecutor.rs`, and configurable timeouts via
+`Resilience/Timeout.rs`.
 
 ---
 
@@ -128,11 +143,9 @@ executors for service isolation, and configurable timeouts via the shared
 | Principle | Description | Key Components |
 |-----------|-------------|----------------|
 | **Sidecar Isolation** | Run as a standalone daemon process, surviving independently of the main window lifecycle for persistent background operations. | `Daemon/`, `Binary/`, PID locking |
-| **`gRPC` IPC Boundary** | Use **Vine** (`tonic`-based `gRPC`) for all communication with **Mountain**, ensuring a high-performance and well-defined API. | `Vine/`, `Air.proto`, generated `prost` bindings |
+| **`gRPC` IPC Boundary** | Use **Vine** 🌿 (`tonic`-based `gRPC`) for all communication with **Mountain** ⛰️, ensuring a high-performance and well-defined API. | `Vine/`, `Air.proto`, generated `prost` bindings |
 | **Service Modularity** | Each capability (updates, downloads, auth, indexing) lives in its own module with independent startup and health monitoring. | `Updates/`, `Downloader/`, `Authentication/`, `Indexing/` |
 | **Resilience by Default** | Wrap all network operations in retry-with-backoff, circuit breakers, bulkheads, and timeouts via the shared `Resilience/` library. | `Resilience/`, `HealthCheck/` |
-| **Declarative Configuration** | Load `TOML` config with schema validation, environment overrides, and hot reload without service interruption. | `Configuration/`, `Initialize/` |
-| **Observable Operations** | Emit structured `JSON` logs, distributed traces, and `Prometheus` metrics for every delegated task. | `Logging/`, `Tracing/`, `Metrics/` |
 | **Secure Credential Handling** | Never expose raw secrets; store credentials with AEAD encryption (`ring`), enforce key rotation, and audit all access. | `Security/`, `Authentication/`, `zeroize` |
 
 ---
@@ -146,28 +159,28 @@ graph LR
     classDef external fill:#ebebeb,stroke:#888,stroke-width:1px,stroke-dasharray:5 5,color:#333;
     classDef infra    fill:#fff3c0,stroke:#f39c12,stroke-width:1px,stroke-dasharray:5 5,color:#5a3e00;
 
-    subgraph MOUNTAIN[\"Mountain ⛰️ - Main Application\"]
-        MountainIPC[\"Mountain gRPC client&#x2001;delegates heavy tasks\"]:::mountain
+    subgraph MOUNTAIN["Mountain ⛰️ - Main Application"]
+        MountainIPC["Mountain gRPC client delegates heavy tasks"]:::mountain
     end
 
-    subgraph AIR[\"Air 🪁 - Persistent Background Daemon (::1:50053)\"]
+    subgraph AIR["Air 🪁 - Persistent Background Daemon (::1:50053)"]
         direction TB
-        subgraph COMM[\"Vine/ - gRPC Transport\"]
-            VineServer[\"Vine/Server/ - gRPC server&#x2001;(Generated/ prost bindings)\"]:::air
-            MountainClient[\"Mountain gRPC client&#x2001;(Air → Mountain callbacks)\"]:::air
+        subgraph COMM["Vine/ - gRPC Transport"]
+            VineServer["Vine/Server/ - gRPC server (Generated/ prost bindings)"]:::air
+            MountainClient["Mountain gRPC client (Air → Mountain callbacks)"]:::air
         end
-        subgraph CORE[\"Core Services\"]
-            Updates[\"Updates/ - version check&#x2001;download · verify · staged install · rollback\"]:::air
-            Downloader[\"Downloader/ - parallel chunks&#x2001;rate-limit · resume · retry\"]:::air
-            Auth[\"Authentication/ - token mgmt&#x2001;AEAD encrypt · key rotation\"]:::air
-            Indexing[\"Indexing/ - file index&#x2001;symbol extract · FS watch · search\"]:::air
+        subgraph CORE["Core Services"]
+            Updates["Updates/ - version check, download, verify, staged install, rollback"]:::air
+            Downloader["Downloader/ - parallel chunks, rate-limit, resume, retry"]:::air
+            Auth["Authentication/ - token mgmt, AEAD encrypt, key rotation"]:::air
+            Indexing["Indexing/ - file index, symbol extract, FS watch, search"]:::air
         end
-        subgraph INFRA[\"Infrastructure\"]
-            Health[\"HealthCheck/ - Alive/Responsive/Functional&#x2001;auto-recovery\"]:::infra
-            Resilience[\"Resilience/ - retry backoff&#x2001;circuit breaker · bulkhead\"]:::infra
-            Metrics[\"Metrics/ - Prometheus-compatible&#x2001;latency · success rate\"]:::infra
-            Security[\"Security/ - AES-GCM&#x2001;checksum · audit\"]:::infra
-            Daemon[\"Daemon/ - PID lock&#x2001;singleton enforce\"]:::air
+        subgraph INFRA["Infrastructure"]
+            Health["HealthCheck/ - Alive/Responsive/Functional, auto-recovery"]:::infra
+            Resilience["Resilience/ - retry backoff, circuit breaker, bulkhead"]:::infra
+            Metrics["Metrics/ - Prometheus-compatible, latency, success rate"]:::infra
+            Security["Security/ - AES-GCM, checksum, audit"]:::infra
+            Daemon["Daemon/ - PID lock, singleton enforce"]:::air
         end
 
         VineServer --> Updates
@@ -178,8 +191,8 @@ graph LR
         Downloader --> Resilience
     end
 
-    subgraph EXTERNAL[\"External ☁️\"]
-        UpdateSrv[\"Update servers / extension registry\"]:::external
+    subgraph EXTERNAL["External ☁️"]
+        UpdateSrv["Update servers / extension registry"]:::external
     end
 
     MountainIPC -- gRPC :50053 --> VineServer
@@ -192,9 +205,9 @@ graph LR
 
 | Path | Protocol | Use Case |
 |------|----------|----------|
-| **Mountain** → **Air** via `gRPC` | `protobuf` over `gRPC` on port 50053 | Delegate updates, downloads, indexing, auth |
-| **Air** → **Mountain** via `gRPC` callback | `protobuf` over `gRPC` | Progress events, health status, metrics |
-| **Air** → External via `HTTP` | `HTTPS` with `Mist` DNS isolation | Update servers, extension registries |
+| **Mountain** ⛰️ → **Air** via `gRPC` | `protobuf` over `gRPC` on port 50053 | Delegate updates, downloads, indexing, auth |
+| **Air** → **Mountain** ⛰️ via `gRPC` callback | `protobuf` over `gRPC` | Progress events, health status, metrics |
+| **Air** → External via `HTTP` | `HTTPS` with `Mist` 🌫️ DNS isolation | Update servers, extension registries |
 
 ---
 
@@ -202,29 +215,29 @@ graph LR
 
 | Component | Path | Description |
 |-----------|------|-------------|
-| Binary Entry Point | `Source/Binary.rs` | Binary entry point for the Air daemon. |
-| Library Root | `Source/Library.rs` | Module declarations and crate-level exports. |
-| Daemon Lifecycle | `Source/Binary/` | Daemon process lifecycle (startup, shutdown, monitoring). |
-| Singleton Enforcer | `Source/Daemon/` | Singleton enforcement, PID locking, platform-native integration. |
-| Initialization | `Source/Initialize/` | Configuration, port binding, `gRPC` server construction, per-service startup. |
-| CLI | `Source/CLI/` | Command-line interface for daemon interaction and diagnostics. |
-| `gRPC` Client | `Source/Client/` | Typed `gRPC` client (`AirClient`) and service provider (`AirServiceProvider`) for **Mountain** interaction. |
-| `gRPC` Protocol | `Source/Vine/` | `gRPC` protocol implementation (generated `prost` bindings, server, errors). |
-| Application State | `Source/ApplicationState/` | Central coordination (connections, service states, telemetry, resources). |
-| Configuration | `Source/Configuration/` | `TOML` config loading with schema validation, env overrides, hot reload. |
-| Updates | `Source/Updates/` | Version checking, download, verification, staged install, rollback. |
-| Downloader | `Source/Downloader/` | Parallel downloads, chunk transfers, rate limiting, resume capability. |
-| Authentication | `Source/Authentication/` | Token management, credential storage, AEAD encryption, key rotation. |
-| Indexing | `Source/Indexing/` | File index, symbol extraction, scanning, persistent storage, FS watch. |
-| Health Check | `Source/HealthCheck/` | Multi-level health monitoring (alive, responsive, functional) with auto-recovery. |
-| Logging | `Source/Logging/` | Structured `JSON` logging with trace-ID propagation, rotation, sensitive data filtering. |
-| Metrics | `Source/Metrics/` | `Prometheus`-compatible metrics (latency, success rate, resource usage). |
-| Resilience | `Source/Resilience/` | Retry with exponential backoff, circuit breaker, bulkhead, timeout management. |
-| Security | `Source/Security/` | Checksum verification, AES-GCM credential storage, rate limiting, audit subsystem. |
-| Tracing | `Source/Tracing/` | Distributed tracing with sampling, span events, context propagation. |
-| HTTP Client | `Source/HTTP/` | Secure HTTP client with custom DNS via `Mist`, `TLS`, timeout management. |
-| Mountain Bridge | `Source/Mountain/` | Client for **Mountain** callbacks with `TLS` configuration. |
-| Plugins | `Source/Plugins/` | Plugin API versioning and event bus for extensibility. |
+| Binary Entry Point | `Source/Binary.rs` | Binary entry point for the Air daemon |
+| Library Root | `Source/Library.rs` | Module declarations and crate-level exports |
+| Daemon Lifecycle | `Source/Binary/` | Daemon process lifecycle (startup, shutdown, monitoring) |
+| Singleton Enforcer | `Source/Daemon/` | Singleton enforcement, PID locking, platform-native integration |
+| Initialization | `Source/Initialize/` | Configuration, port binding, `gRPC` server construction, per-service startup |
+| CLI Interface | `Source/CLI/` | Command-line interface for daemon interaction and diagnostics |
+| `gRPC` Client | `Source/Client/` | Typed `gRPC` client (`AirClient`) and service provider (`AirServiceProvider`) for **Mountain** ⛰️ interaction |
+| `gRPC` Protocol | `Source/Vine/` | `gRPC` protocol implementation (generated `prost` bindings, server, errors) |
+| Application State | `Source/ApplicationState/` | Central coordination (connections, service states, telemetry, resources) |
+| Configuration | `Source/Configuration/` | `TOML` config loading with schema validation, env overrides, hot reload |
+| Updates | `Source/Updates/` | Version checking, download, verification, staged install, rollback |
+| Downloader | `Source/Downloader/` | Parallel downloads, chunk transfers, rate limiting, resume capability |
+| Authentication | `Source/Authentication/` | Token management, credential storage, AEAD encryption, key rotation |
+| Indexing Engine | `Source/Indexing/` | File index, symbol extraction, scanning, persistent storage, FS watch |
+| Health Check | `Source/HealthCheck/` | Multi-level health monitoring (alive, responsive, functional) with auto-recovery |
+| Logging | `Source/Logging/` | Structured `JSON` logging with trace-ID propagation, rotation, sensitive data filtering |
+| Metrics | `Source/Metrics/` | `Prometheus`-compatible metrics (latency, success rate, resource usage) |
+| Resilience | `Source/Resilience/` | Retry with exponential backoff, circuit breaker, bulkhead, timeout management |
+| Security | `Source/Security/` | Checksum verification, AES-GCM credential storage, rate limiting, audit subsystem |
+| Tracing | `Source/Tracing/` | Distributed tracing with sampling, span events, context propagation |
+| HTTP Client | `Source/HTTP/` | Secure HTTP client with custom DNS via `Mist` 🌫️, `TLS`, timeout management |
+| Mountain Bridge | `Source/Mountain/` | Client for **Mountain** ⛰️ callbacks with `TLS` configuration |
+| Plugin System | `Source/Plugins/` | Plugin discovery, loading, sandboxing, event bus, and capability management |
 
 ---
 
@@ -240,36 +253,56 @@ Element/Air/
 │   ├── Library.rs                # Library root (rlib)
 │   ├── DevLog.rs                 # Development logging utilities
 │   ├── ApplicationState/
-│   │   └── mod.rs                # Central state coordination
+│   │   ├── mod.rs
+│   │   ├── ApplicationState.rs   # Central application state
+│   │   ├── ConnectionHealthReport.rs
+│   │   ├── ConnectionInfo.rs
+│   │   ├── ConnectionType.rs
+│   │   ├── PerformanceMetrics.rs
+│   │   ├── RequestState.rs
+│   │   ├── RequestStatus.rs
+│   │   ├── ResourceUsage.rs
+│   │   └── ServiceStatus.rs
 │   ├── Authentication/
-│   │   └── mod.rs                # Token and credential management
+│   │   ├── mod.rs
+│   │   ├── AuthenticationService.rs
+│   │   ├── AuthSession.rs
+│   │   ├── CredentialsStore.rs
+│   │   └── CryptoKeys.rs
 │   ├── Binary/
 │   │   ├── mod.rs
 │   │   ├── Binary.rs             # Binary initialization
 │   │   ├── Monitor/
-│   │   │   └── StartMonitoring.rs # Process monitoring
+│   │   │   └── StartMonitoring.rs
 │   │   └── Shutdown/
-│   │       └── WaitForShutdownSignal.rs # Graceful shutdown
+│   │       └── WaitForShutdownSignal.rs
 │   ├── CLI/
 │   │   ├── mod.rs
-│   │   ├── CliHandler.rs         # CLI command handler
-│   │   ├── CliParser.rs          # Argument parser
-│   │   ├── CommandTypes.rs       # Command type definitions
-│   │   ├── DaemonClient.rs       # Daemon CLI client
-│   │   ├── OutputFormat.rs       # Output format types
-│   │   ├── OutputFormatter.rs    # Output formatting
-│   │   ├── ResponseTypes.rs      # Response type definitions
-│   │   └── Tests.rs              # CLI integration tests
+│   │   ├── CliHandler.rs
+│   │   ├── CliParser.rs
+│   │   ├── CommandTypes.rs
+│   │   ├── DaemonClient.rs
+│   │   ├── OutputFormat.rs
+│   │   ├── OutputFormatter.rs
+│   │   ├── ResponseTypes.rs
+│   │   └── Tests.rs
 │   ├── Client/
 │   │   ├── mod.rs
-│   │   ├── AirClient/            # Typed client methods
+│   │   ├── AirClient/            # Typed gRPC client methods
 │   │   │   ├── mod.rs
+│   │   │   ├── AirMetrics.rs
+│   │   │   ├── AirStatus.rs
 │   │   │   ├── ApplyUpdate.rs
 │   │   │   ├── Authenticate.rs
 │   │   │   ├── CheckForUpdates.rs
 │   │   │   ├── DownloadFile.rs
 │   │   │   ├── DownloadStream.rs
+│   │   │   ├── DownloadStreamChunk.rs
+│   │   │   ├── DownloadStreamRpc.rs
 │   │   │   ├── DownloadUpdate.rs
+│   │   │   ├── ExtendedFileInfo.rs
+│   │   │   ├── FileInfo.rs
+│   │   │   ├── FileResult.rs
 │   │   │   ├── GetConfiguration.rs
 │   │   │   ├── GetFileInfo.rs
 │   │   │   ├── GetMetrics.rs
@@ -277,10 +310,12 @@ Element/Air/
 │   │   │   ├── GetStatus.rs
 │   │   │   ├── HealthCheck.rs
 │   │   │   ├── IndexFiles.rs
+│   │   │   ├── IndexInfo.rs
+│   │   │   ├── ResourceUsage.rs
 │   │   │   ├── SearchFiles.rs
 │   │   │   ├── SetResourceLimits.rs
 │   │   │   ├── UpdateConfiguration.rs
-│   │   │   └── (supporting types)
+│   │   │   └── UpdateInfo.rs
 │   │   └── AirServiceProvider/   # Service provider implementations
 │   │       ├── mod.rs
 │   │       ├── ApplyUpdate.rs
@@ -302,191 +337,226 @@ Element/Air/
 │   │       └── UpdateConfiguration.rs
 │   ├── Configuration/
 │   │   ├── mod.rs
-│   │   ├── AirConfiguration.rs   # Main configuration struct
-│   │   ├── ConfigurationManager.rs # Config loading and management
-│   │   ├── HotReload.rs          # Hot-reload support
-│   │   ├── Schema.rs             # Schema validation
-│   │   └── Tests.rs              # Configuration tests
+│   │   ├── AirConfiguration.rs
+│   │   ├── ConfigurationManager.rs
+│   │   ├── HotReload.rs
+│   │   ├── Schema.rs
+│   │   └── Tests.rs
 │   ├── Daemon/
 │   │   ├── mod.rs
-│   │   ├── DaemonManager.rs      # Daemon lifecycle manager
-│   │   ├── DaemonStatus.rs       # Daemon status types
-│   │   ├── ExitCode.rs           # Exit code definitions
-│   │   ├── Platform.rs           # Platform abstraction
-│   │   └── PlatformInfo.rs       # Platform information
+│   │   ├── DaemonManager.rs
+│   │   ├── DaemonStatus.rs
+│   │   ├── ExitCode.rs
+│   │   ├── Platform.rs
+│   │   └── PlatformInfo.rs
 │   ├── Downloader/
 │   │   ├── mod.rs
-│   │   ├── RateLimit.rs          # Download rate limiting
-│   │   └── Types.rs              # Downloader type definitions
-│   ├── HTTP/
-│   │   ├── mod.rs
-│   │   └── Client.rs             # Secure HTTP client
+│   │   ├── DownloadManager.rs
+│   │   ├── RateLimit.rs
+│   │   └── Types.rs
 │   ├── HealthCheck/
 │   │   ├── mod.rs
-│   │   ├── DegradationLevel.rs   # Service degradation levels
-│   │   ├── HealthCheckConfig.rs  # Health check configuration
-│   │   ├── HealthCheckLevel.rs   # Check depth levels
-│   │   ├── HealthCheckManager.rs # Health check orchestrator
-│   │   ├── HealthCheckRecord.rs  # Check result records
-│   │   ├── HealthCheckResponse.rs # Health check response
-│   │   ├── HealthStatistics.rs   # Health statistics aggregation
-│   │   ├── HealthStatus.rs       # Health status enum
-│   │   ├── PerformanceIndicators.rs # Performance metrics
-│   │   ├── RecoveryAction.rs     # Recovery action definitions
-│   │   ├── RecoveryActionType.rs # Recovery action types
-│   │   ├── RecoveryTrigger.rs    # Recovery trigger logic
-│   │   ├── ResourceWarning.rs    # Resource warning types
-│   │   ├── ResourceWarningType.rs # Warning type enum
-│   │   ├── ServiceHealth.rs      # Per-service health tracking
-│   │   └── WarningSeverity.rs    # Warning severity levels
+│   │   ├── DegradationLevel.rs
+│   │   ├── HealthCheckConfig.rs
+│   │   ├── HealthCheckLevel.rs
+│   │   ├── HealthCheckManager.rs
+│   │   ├── HealthCheckRecord.rs
+│   │   ├── HealthCheckResponse.rs
+│   │   ├── HealthStatistics.rs
+│   │   ├── HealthStatus.rs
+│   │   ├── PerformanceIndicators.rs
+│   │   ├── RecoveryAction.rs
+│   │   ├── RecoveryActionType.rs
+│   │   ├── RecoveryTrigger.rs
+│   │   ├── ResourceWarning.rs
+│   │   ├── ResourceWarningType.rs
+│   │   ├── ServiceHealth.rs
+│   │   └── WarningSeverity.rs
+│   ├── HTTP/
+│   │   ├── mod.rs
+│   │   └── Client.rs
 │   ├── Indexing/
 │   │   ├── mod.rs
+│   │   ├── FileIndexer.rs
+│   │   ├── IndexResult.rs
 │   │   ├── Background/
 │   │   │   ├── mod.rs
-│   │   │   └── StartWatcher.rs   # Background file watcher
+│   │   │   └── StartWatcher.rs
 │   │   ├── Language/
 │   │   │   ├── mod.rs
-│   │   │   ├── ParseRust.rs      # Rust symbol extraction
-│   │   │   └── ParseTypeScript.rs # TypeScript symbol extraction
+│   │   │   ├── ParseRust.rs
+│   │   │   └── ParseTypeScript.rs
 │   │   ├── Process/
 │   │   │   ├── mod.rs
-│   │   │   ├── ExtractSymbols.rs # Symbol extraction engine
-│   │   │   └── ProcessContent.rs # Content processing
+│   │   │   ├── ExtractSymbols.rs
+│   │   │   └── ProcessContent.rs
 │   │   ├── Scan/
 │   │   │   ├── mod.rs
-│   │   │   ├── ScanDirectory.rs  # Directory scanner
-│   │   │   └── ScanFile.rs       # Single file scanner
+│   │   │   ├── ScanDirectory.rs
+│   │   │   └── ScanFile.rs
 │   │   ├── State/
 │   │   │   ├── mod.rs
-│   │   │   ├── CreateState.rs    # Index state creation
-│   │   │   └── UpdateState.rs    # Index state updates
+│   │   │   ├── CreateState.rs
+│   │   │   └── UpdateState.rs
 │   │   ├── Store/
 │   │   │   ├── mod.rs
-│   │   │   ├── QueryIndex.rs     # Index query engine
-│   │   │   ├── StoreEntry.rs     # Index entry storage
-│   │   │   └── UpdateIndex.rs    # Index update operations
+│   │   │   ├── QueryIndex.rs
+│   │   │   ├── StoreEntry.rs
+│   │   │   └── UpdateIndex.rs
 │   │   └── Watch/
 │   │       ├── mod.rs
-│   │       └── WatchFile.rs      # File change watcher
+│   │       └── WatchFile.rs
 │   ├── Initialize/
 │   │   ├── mod.rs
 │   │   ├── Build/
 │   │   │   ├── mod.rs
-│   │   │   └── BuildServer.rs    # gRPC server construction
+│   │   │   └── BuildServer.rs
 │   │   ├── Command/
 │   │   │   ├── mod.rs
 │   │   │   ├── Connect/
 │   │   │   │   ├── mod.rs
-│   │   │   │   └── ConnectDaemon.rs # Daemon connection
-│   │   │   ├── HandleCommand.rs  # Command dispatcher
-│   │   │   ├── ParseArguments.rs # Argument parsing
-│   │   │   └── ValidateCommand.rs # Command validation
+│   │   │   │   └── ConnectDaemon.rs
+│   │   │   ├── HandleCommand.rs
+│   │   │   ├── ParseArguments.rs
+│   │   │   └── ValidateCommand.rs
 │   │   ├── Configure/
 │   │   │   ├── mod.rs
 │   │   │   ├── Log/
-│   │   │   │   └── ConfigureLog.rs  # Log configuration
+│   │   │   │   └── ConfigureLog.rs
 │   │   │   └── Port/
-│   │   │       └── SelectPort.rs # Port selection
+│   │   │       └── SelectPort.rs
 │   │   └── Service/
 │   │       ├── mod.rs
 │   │       ├── Auth/
-│   │       │   └── StartAuth.rs  # Auth service startup
+│   │       │   └── StartAuth.rs
 │   │       ├── Download/
-│   │       │   └── StartDownload.rs # Download service startup
+│   │       │   └── StartDownload.rs
 │   │       ├── Echo/
-│   │       │   └── StartEcho.rs  # Echo service startup
+│   │       │   └── StartEcho.rs
 │   │       ├── Health/
-│   │       │   └── StartHealthCheck.rs # Health check startup
+│   │       │   └── StartHealthCheck.rs
 │   │       ├── Index/
-│   │       │   └── StartIndex.rs # Indexing service startup
+│   │       │   └── StartIndex.rs
 │   │       ├── State/
-│   │       │   └── CreateState.rs # Application state creation
+│   │       │   └── CreateState.rs
 │   │       ├── Update/
-│   │       │   └── StartUpdate.rs # Update service startup
+│   │       │   └── StartUpdate.rs
 │   │       └── Vine/
-│   │           └── StartService.rs # gRPC service startup
+│   │           └── StartService.rs
 │   ├── Logging/
 │   │   ├── mod.rs
-│   │   ├── ContextLogger.rs      # Context-aware logger
-│   │   ├── LogContext.rs         # Log context types
-│   │   ├── LogManager.rs         # Log manager
-│   │   ├── LogRotationConfig.rs  # Log rotation configuration
-│   │   ├── SensitiveDataConfig.rs # Sensitive data config
-│   │   ├── SensitiveDataFilter.rs # Sensitive data redaction
-│   │   └── StructuredLogEntry.rs # Structured log entry format
+│   │   ├── ContextLogger.rs
+│   │   ├── LogContext.rs
+│   │   ├── LogManager.rs
+│   │   ├── LogRotationConfig.rs
+│   │   ├── SensitiveDataConfig.rs
+│   │   ├── SensitiveDataFilter.rs
+│   │   └── StructuredLogEntry.rs
 │   ├── Metrics/
-│   │   └── mod.rs                # Prometheus metrics collection
+│   │   ├── mod.rs
+│   │   ├── AggregationValidator.rs
+│   │   ├── GetMetrics.rs
+│   │   ├── MetricGuard.rs
+│   │   ├── MetricsCollector.rs
+│   │   ├── MetricsData.rs
+│   │   └── MinMaxUpdate.rs
 │   ├── Mountain/
 │   │   ├── mod.rs
-│   │   ├── Constants.rs          # Mountain connection constants
-│   │   ├── MountainClient.rs     # Mountain gRPC client
-│   │   ├── MountainClientConfig.rs # Mountain client configuration
-│   │   └── TlsConfig.rs          # TLS configuration
+│   │   ├── Constants.rs
+│   │   ├── MountainClient.rs
+│   │   ├── MountainClientConfig.rs
+│   │   └── TlsConfig.rs
 │   ├── Plugins/
 │   │   ├── mod.rs
-│   │   ├── ApiVersion.rs         # Plugin API versioning
-│   │   └── EventBus.rs           # Plugin event bus
+│   │   ├── ApiVersion.rs
+│   │   ├── EventBus.rs
+│   │   ├── Plugin.rs
+│   │   ├── PluginCapability.rs
+│   │   ├── PluginDependency.rs
+│   │   ├── PluginDiscoveryResult.rs
+│   │   ├── PluginHooks.rs
+│   │   ├── PluginInfo.rs
+│   │   ├── PluginLoader.rs
+│   │   ├── PluginManager.rs
+│   │   ├── PluginManifest.rs
+│   │   ├── PluginMessage.rs
+│   │   ├── PluginMetadata.rs
+│   │   ├── PluginPermission.rs
+│   │   ├── PluginRegistry.rs
+│   │   ├── PluginSandboxConfig.rs
+│   │   ├── PluginSandboxManager.rs
+│   │   ├── PluginState.rs
+│   │   ├── PluginValidationResult.rs
+│   │   └── Test.rs
 │   ├── Resilience/
 │   │   ├── mod.rs
-│   │   ├── BulkheadConfig.rs     # Bulkhead configuration
-│   │   ├── BulkheadExecutor.rs   # Bulkhead execution
-│   │   ├── BulkheadStatistics.rs # Bulkhead metrics
-│   │   ├── CircuitBreaker.rs     # Circuit breaker state machine
-│   │   ├── CircuitBreakerConfig.rs # Circuit breaker config
-│   │   ├── CircuitEvent.rs       # Circuit events
-│   │   ├── CircuitState.rs       # Circuit state enum
-│   │   ├── CircuitStatistics.rs  # Circuit metrics
-│   │   ├── ResilienceOrchestrator.rs # Resilience orchestrator
-│   │   ├── ResilienceTests.rs    # Resilience test suite
-│   │   ├── Retry.rs              # Retry with exponential backoff
-│   │   └── Timeout.rs            # Timeout configuration
+│   │   ├── BulkheadConfig.rs
+│   │   ├── BulkheadExecutor.rs
+│   │   ├── BulkheadStatistics.rs
+│   │   ├── CircuitBreaker.rs
+│   │   ├── CircuitBreakerConfig.rs
+│   │   ├── CircuitEvent.rs
+│   │   ├── CircuitState.rs
+│   │   ├── CircuitStatistics.rs
+│   │   ├── ResilienceOrchestrator.rs
+│   │   ├── ResilienceTests.rs
+│   │   ├── Retry.rs
+│   │   └── Timeout.rs
 │   ├── Security/
 │   │   ├── mod.rs
-│   │   ├── ChecksumVerifier.rs   # Checksum verification
-│   │   ├── RateLimitConfig.rs    # Rate limit configuration
-│   │   ├── RateLimiter.rs        # Rate limiter implementation
-│   │   ├── RateLimitStatus.rs    # Rate limit status
-│   │   ├── SecureBytes.rs        # Secure byte handling
-│   │   ├── SecureStorage.rs      # AEAD encrypted storage
-│   │   ├── SecurityAuditor.rs    # Security audit subsystem
-│   │   ├── SecurityEvent.rs      # Security event types
-│   │   ├── SecurityEventType.rs  # Security event enum
-│   │   ├── SecuritySeverity.rs   # Severity levels
-│   │   ├── SecurityTests.rs      # Security test suite
-│   │   └── TokenBucket.rs        # Token bucket algorithm
+│   │   ├── ChecksumVerifier.rs
+│   │   ├── RateLimitConfig.rs
+│   │   ├── RateLimiter.rs
+│   │   ├── RateLimitStatus.rs
+│   │   ├── SecureBytes.rs
+│   │   ├── SecureStorage.rs
+│   │   ├── SecurityAuditor.rs
+│   │   ├── SecurityEvent.rs
+│   │   ├── SecurityEventType.rs
+│   │   ├── SecuritySeverity.rs
+│   │   ├── SecurityTests.rs
+│   │   └── TokenBucket.rs
 │   ├── Tracing/
-│   │   └── mod.rs                # Distributed tracing
+│   │   ├── mod.rs
+│   │   ├── PropagationContext.rs
+│   │   ├── SamplingConfig.rs
+│   │   ├── SpanEvent.rs
+│   │   ├── SpanStatus.rs
+│   │   ├── TraceGenerator.rs
+│   │   ├── TraceMetadata.rs
+│   │   ├── TraceSpan.rs
+│   │   └── TraceStatistics.rs
 │   ├── Updates/
 │   │   ├── mod.rs
-│   │   ├── ChecksumUtil.rs       # Update checksum utilities
-│   │   ├── DownloadSession.rs    # Download session management
-│   │   ├── InstallationStatus.rs # Installation status tracking
-│   │   ├── PackageFormat.rs      # Package format support
-│   │   ├── PlatformConfig.rs     # Platform-specific config
-│   │   ├── PlatformDetect.rs     # Platform detection
-│   │   ├── PlatformMetadata.rs   # Platform metadata
-│   │   ├── RollbackHistory.rs    # Rollback history tracking
-│   │   ├── RollbackState.rs      # Rollback state machine
-│   │   ├── Types.rs              # Update type definitions
-│   │   ├── UpdateChannel.rs      # Update channel enum
-│   │   ├── UpdateInfo.rs         # Update information
-│   │   ├── UpdateManager.rs      # Update lifecycle manager
-│   │   ├── UpdateStatus.rs       # Update status types
-│   │   ├── UpdateTelemetry.rs    # Update telemetry
-│   │   └── VersionCompare.rs     # Semantic version comparison
+│   │   ├── ChecksumUtil.rs
+│   │   ├── DownloadSession.rs
+│   │   ├── InstallationStatus.rs
+│   │   ├── PackageFormat.rs
+│   │   ├── PlatformConfig.rs
+│   │   ├── PlatformDetect.rs
+│   │   ├── PlatformMetadata.rs
+│   │   ├── RollbackHistory.rs
+│   │   ├── RollbackState.rs
+│   │   ├── Types.rs
+│   │   ├── UpdateChannel.rs
+│   │   ├── UpdateInfo.rs
+│   │   ├── UpdateManager.rs
+│   │   ├── UpdateStatus.rs
+│   │   ├── UpdateTelemetry.rs
+│   │   └── VersionCompare.rs
 │   └── Vine/
 │       ├── mod.rs
-│       ├── Error.rs              # gRPC error types
+│       ├── Error.rs
 │       ├── Generated/
 │       │   ├── mod.rs
-│       │   └── air.rs            # Generated prost bindings
+│       │   └── air.rs
 │       └── Server/
 │           ├── mod.rs
-│           └── AirVinegRPCService.rs # gRPC service implementation
+│           └── AirVinegRPCService.rs
 └── Documentation/
     ├── GitHub/
-    │   ├── Architecture.md       # Internal module architecture
-    │   └── DeepDive.md           # In-depth technical details
+    │   ├── Architecture.md
+    │   └── DeepDive.md
     └── Rust/
         └── doc/                  # Cargo doc output
 ```
@@ -495,40 +565,40 @@ Element/Air/
 
 ## In the Land Project
 
-**Air** is the persistent background daemon for the Land ecosystem. It
-communicates with **Mountain** via **Vine** (`gRPC`) on port `[::1]:50053` and
-uses **Mist** for DNS isolation on its HTTP client.
+**Air** 🪁 is the persistent background daemon for the Land ecosystem. It
+communicates with **Mountain** ⛰️ via **Vine** 🌿 (`gRPC`) on port
+`[::1]:50053` and uses **Mist** 🌫️ for DNS isolation on its HTTP client.
 
 | Role | Details |
 |------|---------|
-| **Daemon Process** | Persistent executable that runs independently of the main window, even after the window closes. |
-| **Server Host** | Hosts a local `gRPC` server on `[::1]:50053` to accept commands from **Mountain**. |
-| **Update Delegate** | Sole authority for modifying installation files of the parent application. |
-| **Signer** | Handles cryptographic signing of artifacts and secure token storage for user login. |
-| **Traffic Manager** | Proxy/downloader that keeps large network operations off the main renderer process. |
-| **File Indexer** | Maintains a persistent file index with symbol extraction and fast search across the workspace. |
-| **Health Monitor** | Periodically checks all service health with automatic recovery and degradation tracking. |
+| **Daemon Process** | Persistent executable that runs independently of the main window, even after the window closes |
+| **Server Host** | Hosts a local `gRPC` server on `[::1]:50053` to accept commands from **Mountain** ⛰️ |
+| **Update Delegate** | Sole authority for modifying installation files of the parent application |
+| **Signer** | Handles cryptographic signing of artifacts and secure token storage for user login |
+| **Traffic Manager** | Proxy/downloader that keeps large network operations off the main renderer process |
+| **File Indexer** | Maintains a persistent file index with symbol extraction and fast search across the workspace |
+| **Health Monitor** | Periodically checks all service health with automatic recovery and degradation tracking |
 
 ### Port Allocation
 
 | Process | Port | Protocol | Purpose |
 |---------|------|----------|---------|
-| **Air** | `50053` | **Vine**/`Air.proto` (`gRPC`) | Daemon services — updates, downloads, indexing |
-| **Cocoon** | `50052` | `Vine.proto` (`gRPC`) | VS Code extension hosting |
+| **Air** 🪁 | `50053` | **Vine** 🌿 / `Air.proto` (`gRPC`) | Daemon services — updates, downloads, indexing |
+| **Cocoon** 🦋 | `50052` | `Vine.proto` (`gRPC`) | VS Code extension hosting |
 
 **Air** is part of the networking/IPC connectivity stack alongside **Mist** 🌫️
 (DNS isolation) and **Vine** 🌿 (`gRPC` protocol layer).
 
 Typical usage flow:
 
-1. **Spawn:** **Mountain** detects if **Air** is running. If not, it spawns the
-   binary.
-2. **Connect:** **Mountain** establishes a **Vine** (`gRPC`) connection to
-   **Air**'s local port `[::1]:50053`.
+1. **Spawn:** **Mountain** ⛰️ detects if **Air** is running. If not, it spawns
+   the binary.
+2. **Connect:** **Mountain** ⛰️ establishes a **Vine** 🌿 (`gRPC`) connection
+   to **Air**'s local port `[::1]:50053`.
 3. **Delegate:** When a user requests an update or large download, **Mountain**
-   sends a command to **Air** and immediately returns control to the user.
-4. **Monitor:** **Air** emits progress events back to **Mountain** to update the
-   UI status bars.
+   ⛰️ sends a command to **Air** and immediately returns control to the user.
+4. **Monitor:** **Air** emits progress events back to **Mountain** ⛰️ to update
+   the UI status bars.
 
 ---
 
@@ -536,7 +606,7 @@ Typical usage flow:
 
 ### Prerequisites
 
-- `Rust` 1.75 or later
+- **`Rust`** 1.75 or later
 - Protocol Buffer compiler (included via `tonic-build` build dependency)
 
 ### Build
@@ -574,7 +644,7 @@ cargo run --bin Air
 ### Build with Features
 
 ```bash
-# Default features (full-services + mTLS)
+# Default features (full-services + `mTLS`)
 cargo build --release
 
 # Minimal daemon (no update/auth/indexing)
@@ -589,9 +659,9 @@ cargo build --release --all-features
 | Crate / Package | Purpose |
 |-----------------|---------|
 | `tonic` / `prost` | `gRPC` server and Protocol Buffer code generation |
-| **Vine** | Local path dependency — generated `Air.proto` `gRPC` contracts |
+| **Vine** 🌿 | Local path dependency — generated `Air.proto` `gRPC` contracts |
 | `Common` | Local path dependency — shared types and abstractions |
-| **Mist** | Local path dependency — DNS isolation for HTTP client |
+| **Mist** 🌫️ | Local path dependency — DNS isolation for HTTP client |
 | `reqwest` / `rustls` | `HTTPS` downloads with `TLS` certificate verification |
 | `tokio` | Async runtime for concurrent I/O and task scheduling |
 | `notify` / `ignore` | File system event watching for real-time index updates |
@@ -611,12 +681,26 @@ from the main application process:
 | Layer | Mechanism |
 |-------|-----------|
 | **Process Isolation** | Separate daemon process — cryptographic and auth logic never runs in the renderer |
-| **Network** | `mTLS` for `gRPC` connections, `Mist` DNS isolation for outbound HTTP |
+| **Network** | `mTLS` for `gRPC` connections, `Mist` 🌫️ DNS isolation for outbound HTTP |
 | **Credentials** | AEAD encryption via `ring`, `zeroize`-protected memory, key rotation |
 | **Rate Limiting** | Token bucket algorithm per-endpoint rate limiting |
 | **Checksum Verification** | All downloaded artifacts verified via `SHA-256` / `MD5` before installation |
 | **Audit Logging** | Security audit subsystem with severity-classified events |
 | **Singleton Enforcement** | PID locking prevents duplicate daemon instances |
+
+---
+
+## Compatibility
+
+**Air** is designed to be compatible with:
+
+| Target | Integration |
+|--------|-------------|
+| **Mountain** ⛰️ | Communicates via `gRPC` on port 50053 — delegates updates, downloads, indexing, auth |
+| **Vine** 🌿 | Uses `Air.proto` `gRPC` contracts for all inter-process communication |
+| **Mist** 🌫️ | Uses DNS isolation for all outbound HTTP requests |
+| **Cocoon** 🦋 | Shares port allocation awareness — Cocoon occupies port 50052, Air occupies 50053 |
+| **Echo** 📣 | StartEcho service initializes Echo task scheduling within the daemon process |
 
 ---
 
@@ -637,7 +721,7 @@ from the main application process:
 - **Vine** 🌿 — `gRPC` protocol layer — [GitHub](https://github.com/CodeEditorLand/Vine)
 - **Cocoon** 🦋 — `Node.js`/`Effect-TS` extension host — [GitHub](https://github.com/CodeEditorLand/Cocoon)
 - **Grove** 🌳 — `Rust`/`WASM` extension host — [GitHub](https://github.com/CodeEditorLand/Grove)
-- **Echo** 📣 — [GitHub](https://github.com/CodeEditorLand/Echo)
+- **Echo** 📣 — Task scheduler — [GitHub](https://github.com/CodeEditorLand/Echo)
 - **Common** — Shared types and abstractions — [GitHub](https://github.com/CodeEditorLand/Common)
 
 ---
@@ -678,10 +762,3 @@ the open-source steward for Code Editor Land under the NGI0 Commons Fund grant.
 		</tr>
 	</tbody>
 </table>
-
----
-
-**Project Maintainers**: Source Open (Source/Open@editor.land) |
-[GitHub Repository](https://github.com/CodeEditorLand/Air) |
-[Report an Issue](https://github.com/CodeEditorLand/Air/issues) |
-[Security Policy](https://github.com/CodeEditorLand/Air/security/policy)
