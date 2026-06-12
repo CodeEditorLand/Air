@@ -69,22 +69,22 @@ indexing.
 `VS Code` cold-starts slowly because everything initializes fresh each launch,
 and updates require a full restart. **Air** solves this by running as a
 persistent background process that survives window closures, pre-stages updates,
-and keeps a warm file index across sessions — so the editor is always ready the
+and keeps a warm file index across sessions - so the editor is always ready the
 moment you launch it.
 
 **Air is engineered to:**
 
-1. **Serve as the Persistent Background Daemon** — Run as a standalone process
+1. **Serve as the Persistent Background Daemon** - Run as a standalone process
    alongside **Mountain** ⛰️, surviving window closures and maintaining
    background services across sessions via `Daemon/` singleton enforcement and
    platform-native daemonization.
-2. **Own the Update Lifecycle** — Take full ownership of downloading, verifying,
+2. **Own the Update Lifecycle** - Take full ownership of downloading, verifying,
    and applying patches for **Land** without user interruption or restart
    prompts, with staged installation and automatic rollback via `Updates/`.
-3. **Offload Heavy Network Operations** — Act as the traffic manager for large
+3. **Offload Heavy Network Operations** - Act as the traffic manager for large
    downloads (extensions, language servers, dependencies) with resilient,
    resume-capable transfers through `Downloader/` and `Resilience/`.
-4. **Isolate Security-Critical Operations** — Manage cryptographic signing,
+4. **Isolate Security-Critical Operations** - Manage cryptographic signing,
    secure credential storage, and authentication token lifecycle via `Security/`
    and `Authentication/`, keeping sensitive logic isolated from the main
    application process.
@@ -93,43 +93,43 @@ moment you launch it.
 
 ## Key Features&#x2001;🪁
 
-**`gRPC` Native Communication** — All inter-process communication with
+**`gRPC` Native Communication** - All inter-process communication with
 **Mountain** ⛰️ travels over a **Vine** 🌿 (`tonic`-based `gRPC`) channel on
 `[::1]:50053`, providing strongly-typed `protobuf` contracts, bi-directional
 streaming for progress events, and a well-defined API surface generated from
 `Air.proto`.
 
-**Self-Contained Daemon Lifecycle** — Runs as an independent process with
+**Self-Contained Daemon Lifecycle** - Runs as an independent process with
 singleton enforcement via PID locking in `Daemon/`, graceful shutdown on
 `SIGTERM` managed by `Binary/Shutdown/WaitForShutdownSignal.rs`, and
 platform-native daemonization on `macOS`, `Linux`, and `Windows`. Survives
 window closures and persists across editor sessions.
 
-**Resilient Update Engine** — Full ownership of the update lifecycle: version
+**Resilient Update Engine** - Full ownership of the update lifecycle: version
 checking against multiple channels (stable, beta, nightly) in `Updates/`,
 concurrent chunked downloads with resume capability in `Downloader/`,
 cryptographic checksum verification via `Security/ChecksumVerifier.rs`, staged
 installation, and automatic rollback on failure via `Updates/RollbackState.rs`.
 
-**Isolated Security Boundaries** — Cryptographic signing with `ring`, AEAD
+**Isolated Security Boundaries** - Cryptographic signing with `ring`, AEAD
 encrypted credential storage with `zeroize` in `Security/SecureStorage.rs`,
 token lifecycle management in `Authentication/`, rate limiting via token bucket
 in `Security/TokenBucket.rs`, and a comprehensive security audit subsystem in
-`Security/SecurityAuditor.rs` — all isolated from the main application process.
+`Security/SecurityAuditor.rs` - all isolated from the main application process.
 
-**Real-Time File Indexing** — Persistent file index with `Rust` and `TypeScript`
+**Real-Time File Indexing** - Persistent file index with `Rust` and `TypeScript`
 symbol extraction in `Indexing/Language/`, recursive directory scanning via
 `Indexing/Scan/`, `notify`-based file system watching for live updates in
 `Indexing/Watch/`, and a fast query engine with fuzzy search across the entire
 workspace in `Indexing/Store/`.
 
-**Observability by Default** — Structured `JSON` logging with trace-ID
+**Observability by Default** - Structured `JSON` logging with trace-ID
 propagation in `Logging/`, `OpenTelemetry`-compatible distributed tracing with
 configurable sampling in `Tracing/`, and `Prometheus`-compatible metrics for
 latency, success rates, and resource utilization across every service in
 `Metrics/`.
 
-**Resilience Everywhere** — All network operations are wrapped in retry-with-
+**Resilience Everywhere** - All network operations are wrapped in retry-with-
 exponential-backoff via `Resilience/Retry.rs`, circuit breakers with half-open
 probing in `Resilience/CircuitBreaker.rs`, bulkhead executors for service
 isolation in `Resilience/BulkheadExecutor.rs`, and configurable timeouts via
@@ -582,7 +582,7 @@ and uses **Mist** 🌫️ for DNS isolation on its HTTP client.
 
 | Process       | Port    | Protocol                           | Purpose                                        |
 | ------------- | ------- | ---------------------------------- | ---------------------------------------------- |
-| **Air** 🪁    | `50053` | **Vine** 🌿 / `Air.proto` (`gRPC`) | Daemon services — updates, downloads, indexing |
+| **Air** 🪁    | `50053` | **Vine** 🌿 / `Air.proto` (`gRPC`) | Daemon services - updates, downloads, indexing |
 | **Cocoon** 🦋 | `50052` | `Vine.proto` (`gRPC`)              | VS Code extension hosting                      |
 
 **Air** is part of the networking/IPC connectivity stack alongside **Mist** 🌫️
@@ -658,9 +658,9 @@ cargo build --release --all-features
 | Crate / Package          | Purpose                                                        |
 | ------------------------ | -------------------------------------------------------------- |
 | `tonic` / `prost`        | `gRPC` server and Protocol Buffer code generation              |
-| **Vine** 🌿              | Local path dependency — generated `Air.proto` `gRPC` contracts |
-| `Common`                 | Local path dependency — shared types and abstractions          |
-| **Mist** 🌫️              | Local path dependency — DNS isolation for HTTP client          |
+| **Vine** 🌿              | Local path dependency - generated `Air.proto` `gRPC` contracts |
+| `Common`                 | Local path dependency - shared types and abstractions          |
+| **Mist** 🌫️              | Local path dependency - DNS isolation for HTTP client          |
 | `reqwest` / `rustls`     | `HTTPS` downloads with `TLS` certificate verification          |
 | `tokio`                  | Async runtime for concurrent I/O and task scheduling           |
 | `notify` / `ignore`      | File system event watching for real-time index updates         |
@@ -679,7 +679,7 @@ from the main application process:
 
 | Layer                     | Mechanism                                                                         |
 | ------------------------- | --------------------------------------------------------------------------------- |
-| **Process Isolation**     | Separate daemon process — cryptographic and auth logic never runs in the renderer |
+| **Process Isolation**     | Separate daemon process - cryptographic and auth logic never runs in the renderer |
 | **Network**               | `mTLS` for `gRPC` connections, `Mist` 🌫️ DNS isolation for outbound HTTP          |
 | **Credentials**           | AEAD encryption via `ring`, `zeroize`-protected memory, key rotation              |
 | **Rate Limiting**         | Token bucket algorithm per-endpoint rate limiting                                 |
@@ -695,10 +695,10 @@ from the main application process:
 
 | Target          | Integration                                                                          |
 | --------------- | ------------------------------------------------------------------------------------ |
-| **Mountain** ⛰️ | Communicates via `gRPC` on port 50053 — delegates updates, downloads, indexing, auth |
+| **Mountain** ⛰️ | Communicates via `gRPC` on port 50053 - delegates updates, downloads, indexing, auth |
 | **Vine** 🌿     | Uses `Air.proto` `gRPC` contracts for all inter-process communication                |
 | **Mist** 🌫️     | Uses DNS isolation for all outbound HTTP requests                                    |
-| **Cocoon** 🦋   | Shares port allocation awareness — Cocoon occupies port 50052, Air occupies 50053    |
+| **Cocoon** 🦋   | Shares port allocation awareness - Cocoon occupies port 50052, Air occupies 50053    |
 | **Echo** 📣     | StartEcho service initializes Echo task scheduling within the daemon process         |
 
 ---
@@ -707,31 +707,31 @@ from the main application process:
 
 - **[Rust API Documentation](https://rust.documentation.air.editor.land/)**&#x2001;📖
 - [Deep Dive](https://github.com/CodeEditorLand/Air/tree/Current/Documentation/GitHub/DeepDive.md)
-  — Detailed startup sequence, `gRPC` routing, and data flow
+  - Detailed startup sequence, `gRPC` routing, and data flow
 
 ---
 
 ## Related Documentation
 
 - [Architecture Overview](https://github.com/CodeEditorLand/Air/tree/Current/Documentation/GitHub/Architecture.md)
-  — Internal module structure
+  - Internal module structure
 - [Deep Dive](https://github.com/CodeEditorLand/Air/tree/Current/Documentation/GitHub/DeepDive.md)
-  — In-depth technical details
-- [Land Documentation](../../Documentation/GitHub/README.md) — Complete
+  - In-depth technical details
+- [Land Documentation](../../Documentation/GitHub/README.md) - Complete
   documentation index
-- **Mountain** ⛰️ — Main application process —
+- **Mountain** ⛰️ - Main application process -
   [GitHub](https://github.com/CodeEditorLand/Mountain)
-- **Mist** 🌫️ — DNS isolation for the private network —
+- **Mist** 🌫️ - DNS isolation for the private network -
   [GitHub](https://github.com/CodeEditorLand/Mist)
-- **Vine** 🌿 — `gRPC` protocol layer —
+- **Vine** 🌿 - `gRPC` protocol layer -
   [GitHub](https://github.com/CodeEditorLand/Vine)
-- **Cocoon** 🦋 — `Node.js`/`Effect-TS` extension host —
+- **Cocoon** 🦋 - `Node.js`/`Effect-TS` extension host -
   [GitHub](https://github.com/CodeEditorLand/Cocoon)
-- **Grove** 🌳 — `Rust`/`WASM` extension host —
+- **Grove** 🌳 - `Rust`/`WASM` extension host -
   [GitHub](https://github.com/CodeEditorLand/Grove)
-- **Echo** 📣 — Task scheduler —
+- **Echo** 📣 - Task scheduler -
   [GitHub](https://github.com/CodeEditorLand/Echo)
-- **Common** — Shared types and abstractions —
+- **Common** - Shared types and abstractions -
   [GitHub](https://github.com/CodeEditorLand/Common)
 
 ---
