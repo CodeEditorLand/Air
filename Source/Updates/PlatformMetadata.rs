@@ -12,17 +12,17 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlatformMetadata {
 	/// Package format (exe, dmg, appimage, etc.)
-	pub package_format: String,
+	pub package_format:String,
 
 	/// Installation instructions
-	pub install_instructions: Vec<String>,
+	pub install_instructions:Vec<String>,
 
 	/// Required disk space in bytes
-	pub required_disk_space: u64,
+	pub required_disk_space:u64,
 
 	/// Whether admin privileges are required
-	pub requires_admin: bool,
+	pub requires_admin:bool,
 
 	/// Additional platform-specific parameters
-	pub additional_params: HashMap<String, serde_json::Value>,
+	pub additional_params:HashMap<String, serde_json::Value>,
 }

@@ -1,11 +1,11 @@
-//! Plugin sandbox manager: creates, retrieves, and removes sandboxes, and checks sandbox state.
+//! Plugin sandbox manager: creates, retrieves, and removes sandboxes, and
+//! checks sandbox state.
 
 use std::{collections::HashMap, sync::Arc};
 
 use tokio::sync::RwLock;
 
-use crate::Plugins::PluginSandboxConfig::PluginSandboxConfig;
-use crate::Result;
+use crate::{Plugins::PluginSandboxConfig::PluginSandboxConfig, Result};
 
 /// Plugin sandbox manager
 pub struct PluginSandboxManager {

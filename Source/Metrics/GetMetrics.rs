@@ -1,4 +1,4 @@
-use crate::{Result, dev_log, Metrics::MetricsCollector::MetricsCollector};
+use crate::{Metrics::MetricsCollector::MetricsCollector, Result, dev_log};
 
 /// Global metrics collector instance
 static METRICS_INSTANCE:std::sync::OnceLock<MetricsCollector> = std::sync::OnceLock::new();

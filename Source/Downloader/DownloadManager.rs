@@ -18,12 +18,22 @@ use crate::{
 	Utility,
 	dev_log,
 };
+use super::{
+	RateLimit::TokenBucket,
+	Types::{
+		DownloadConfig,
+		DownloadPriority,
+		DownloadResult,
+		DownloadState,
+		DownloadStatistics,
+		DownloadStatus,
+		ProgressCallback,
+		QueuedDownload,
+	},
+};
 
-
-use super::Types::{DownloadState, DownloadPriority, DownloadStatus, QueuedDownload, DownloadResult, DownloadStatistics, ProgressCallback, DownloadConfig};
-use super::RateLimit::TokenBucket;
-
-/// Download manager — full download lifecycle with retry, verification, and queue management.
+/// Download manager — full download lifecycle with retry, verification, and
+/// queue management.
 pub struct Struct {
 	/// Application state reference
 	AppState:Arc<AppState>,
@@ -1982,4 +1992,3 @@ impl Struct {
 		Ok(())
 	}
 }
-

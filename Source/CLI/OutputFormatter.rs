@@ -4,7 +4,7 @@
 //! JSON text. The `HELP_*` constants supply the help screens dispatched
 //! by `format_help`.
 
-use super::ResponseTypes::{StatusResponse, ServiceHealth, MetricsResponse};
+use super::ResponseTypes::{MetricsResponse, ServiceHealth, StatusResponse};
 
 // =============================================================================
 // Help Messages

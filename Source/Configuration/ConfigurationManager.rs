@@ -8,16 +8,19 @@ use sha2::Digest;
 use serde::{Deserialize, Serialize};
 
 use crate::{AirError, DefaultConfigFile, Result, dev_log};
-
-use super::AirConfiguration::Struct as AirConfig;
-use super::AirConfiguration::AuthConfig;
-use super::AirConfiguration::DownloadConfig;
-use super::AirConfiguration::IndexingConfig;
-use super::AirConfiguration::LoggingConfig;
-use super::AirConfiguration::PerformanceConfig;
-use super::AirConfiguration::UpdateConfig;
-use super::AirConfiguration::gRPCConfig;
-use super::Schema::generate_schema;
+use super::{
+	AirConfiguration::{
+		AuthConfig,
+		DownloadConfig,
+		IndexingConfig,
+		LoggingConfig,
+		PerformanceConfig,
+		Struct as AirConfig,
+		UpdateConfig,
+		gRPCConfig,
+	},
+	Schema::generate_schema,
+};
 
 pub struct Struct {
 	/// Path to configuration file
@@ -1042,7 +1045,7 @@ impl Struct {
 	///
 	/// Parsed and validated configuration
 	pub fn ImportFromJson(json_str:&str) -> Result<AirConfig> {
-			let config:AirConfig = serde_json::from_str(json_str)
+		let config:AirConfig = serde_json::from_str(json_str)
 			.map_err(|e| AirError::Configuration(format!("Failed to import from JSON: {}", e)))?;
 
 		Ok(config)
@@ -1099,51 +1102,38 @@ impl Struct {
 // =============================================================================
 
 /// Expand a path with home directory (~) expansion
-pub fn ExpandPath(path:&str) -> Result<PathBuf> {
-	Struct::ExpandPath(path)
-}
+pub fn ExpandPath(path:&str) -> Result<PathBuf> { Struct::ExpandPath(path) }
 
 /// Compute SHA-256 hash of configuration for change detection
-pub fn ComputeHash(config:&AirConfig) -> Result<String> {
-	Struct::ComputeHash(config)
-}
+pub fn ComputeHash(config:&AirConfig) -> Result<String> { Struct::ComputeHash(config) }
 
 /// Validate an address string (IP:port or hostname:port format)
-pub fn IsValidAddress(addr:&str) -> bool {
-	Struct::IsValidAddress(addr)
-}
+pub fn IsValidAddress(addr:&str) -> bool { Struct::IsValidAddress(addr) }
 
 /// Validate a URL string
-pub fn IsValidUrl(url:&str) -> bool {
-	Struct::IsValidUrl(url)
-}
+pub fn IsValidUrl(url:&str) -> bool { Struct::IsValidUrl(url) }
 
 /// Get profile-specific default configuration
-pub fn GetProfileDefaults(profile:&str) -> AirConfig {
-	Struct::GetProfileDefaults(profile)
-}
+pub fn GetProfileDefaults(profile:&str) -> AirConfig { Struct::GetProfileDefaults(profile) }
 
 /// Create a new configuration manager
-pub fn New(ConfigPath:Option<String>) -> Result<Struct> {
-	Struct::New(ConfigPath)
-}
+pub fn New(ConfigPath:Option<String>) -> Result<Struct> { Struct::New(ConfigPath) }
 
 /// Export configuration to JSON string
-pub fn ExportToJson(config:&AirConfig) -> Result<String> {
-	Struct::ExportToJson(config)
-}
+pub fn ExportToJson(config:&AirConfig) -> Result<String> { Struct::ExportToJson(config) }
 
 /// Import configuration from JSON string
-pub fn ImportFromJson(json_str:&str) -> Result<AirConfig> {
-	Struct::ImportFromJson(json_str)
-}
+pub fn ImportFromJson(json_str:&str) -> Result<AirConfig> { Struct::ImportFromJson(json_str) }
 
 /// Load configuration from a specific file path
 pub fn load(config_path:&std::path::Path) -> Result<AirConfig> {
 	// Create a temporary manager to load from the given path
 	let path_str = config_path.to_str().map(|s| s.to_string());
+
 	let manager = Struct::New(path_str)?;
+
 	let rt = tokio::runtime::Runtime::new()
 		.map_err(|e| AirError::Configuration(format!("Failed to create tokio runtime: {}", e)))?;
+
 	rt.block_on(manager.LoadConfiguration())
 }

@@ -1,13 +1,24 @@
 //! Context-aware logger for structured logging.
 
-use std::{path::Path,sync::{Arc, Mutex}};
+use std::{
+	path::Path,
+	sync::{Arc, Mutex},
+};
+
 use tracing_subscriber::{fmt::format::FmtSpan, prelude::*};
 use tracing_appender::rolling::Rotation;
-use crate::{Result, dev_log};
-use crate::Logging::LogContext::{GetLogContext, LogContext};
-use crate::Logging::LogRotationConfig::LogRotationConfig;
-use crate::Logging::SensitiveDataConfig::SensitiveDataConfig;
-use crate::Logging::SensitiveDataFilter::SensitiveDataFilter;
+
+use crate::{
+	Logging::{
+		LogContext::{GetLogContext, LogContext},
+		LogRotationConfig::LogRotationConfig,
+		SensitiveDataConfig::SensitiveDataConfig,
+		SensitiveDataFilter::SensitiveDataFilter,
+	},
+	Result,
+	dev_log,
+};
+
 /// Context-aware logger for structured logging
 #[derive(Debug, Clone)]
 pub struct ContextLogger {
@@ -239,7 +250,8 @@ impl ContextLogger {
 	}
 }
 
-static LOGGER_INSTANCE: std::sync::OnceLock<ContextLogger> = std::sync::OnceLock::new();
+static LOGGER_INSTANCE:std::sync::OnceLock<ContextLogger> = std::sync::OnceLock::new();
+
 pub fn GetLogger() -> &'static ContextLogger { LOGGER_INSTANCE.get_or_init(|| ContextLogger::New(false, None)) }
 
 /// Initialize the global context logger

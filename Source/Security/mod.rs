@@ -102,15 +102,25 @@
 //! Security events are forwarded to Mountain for correlation and alerting.
 
 pub mod SecureBytes;
+
 pub mod SecurityEvent;
+
 pub mod SecurityEventType;
+
 pub mod SecuritySeverity;
+
 pub mod SecurityAuditor;
+
 pub mod RateLimitConfig;
+
 pub(crate) mod TokenBucket;
+
 pub mod RateLimiter;
+
 pub mod RateLimitStatus;
+
 pub mod ChecksumVerifier;
+
 pub mod SecureStorage;
 
 #[cfg(test)]

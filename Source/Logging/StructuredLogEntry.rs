@@ -1,8 +1,11 @@
 //! Structured log entry for validation.
 
 use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
+
 use crate::{Result, dev_log};
+
 /// Structured log entry for validation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StructuredLogEntry {

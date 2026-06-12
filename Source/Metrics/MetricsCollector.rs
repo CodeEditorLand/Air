@@ -1,9 +1,13 @@
-use std::sync::{Arc, atomic::{AtomicI64, AtomicU64, Ordering}};
+use std::sync::{
+	Arc,
+	atomic::{AtomicI64, AtomicU64, Ordering},
+};
 
 use crate::{
-	AirError, Result, dev_log,
-	Metrics::AggregationValidator::AggregationValidator,
-	Metrics::MinMaxUpdate::MinMaxUpdate,
+	AirError,
+	Metrics::{AggregationValidator::AggregationValidator, MinMaxUpdate::MinMaxUpdate},
+	Result,
+	dev_log,
 };
 
 /// MetricsCollector for collecting and exporting Prometheus metrics with thread

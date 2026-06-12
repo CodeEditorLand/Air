@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::Result;
-use crate::Tracing::TraceGenerator::TraceGenerator;
+use crate::{Result, Tracing::TraceGenerator::TraceGenerator};
 
 /// Context propagation information
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -8,8 +8,11 @@ use std::time::Duration;
 use tonic::transport::{Channel, Endpoint};
 
 use crate::dev_log;
+
 use crate::Mountain::Constants::*;
+
 use crate::Mountain::MountainClientConfig::MountainClientConfig;
+
 #[cfg(feature = "mtls")]
 use crate::Mountain::TlsConfig::create_tls_client_config;
 
@@ -20,6 +23,7 @@ use crate::Mountain::TlsConfig::create_tls_client_config;
 /// methods for common operations.
 #[derive(Debug, Clone)]
 pub struct MountainClient {
+
 	/// The underlying tonic gRPC channel
 	channel:Channel,
 
@@ -28,6 +32,7 @@ pub struct MountainClient {
 }
 
 impl MountainClient {
+
 	/// Creates a new MountainClient by connecting to Mountain.
 	///
 	/// Establishes a gRPC connection to Mountain using the
@@ -192,6 +197,7 @@ impl MountainClient {
 /// # Returns
 /// Result containing the new MountainClient or a connection error
 pub async fn connect_to_mountain() -> Result<MountainClient, Box<dyn std::error::Error>> {
+
 	MountainClient::connect(MountainClientConfig::default()).await
 }
 
@@ -203,17 +209,22 @@ pub async fn connect_to_mountain() -> Result<MountainClient, Box<dyn std::error:
 /// # Returns
 /// Result containing the new MountainClient or a connection error
 pub async fn connect_to_mountain_at(address:impl Into<String>) -> Result<MountainClient, Box<dyn std::error::Error>> {
+
 	MountainClient::connect(MountainClientConfig::new(address)).await
 }
 
 
 #[cfg(test)]
 mod tests {
+
     use std::env;
+
     use std::path::PathBuf;
 
     use crate::Mountain::Constants::*;
+
     use crate::Mountain::MountainClientConfig::MountainClientConfig;
+
     #[cfg(feature = "mtls")]
     use crate::Mountain::TlsConfig::TlsConfig;
 
@@ -226,6 +237,7 @@ mod tests {
 
 	#[test]
 	fn test_config_builder() {
+
 		let config = MountainClientConfig::new("[::1]:50060")
 			.with_connection_timeout(10)
 			.with_request_timeout(60);
@@ -240,6 +252,7 @@ mod tests {
 	#[cfg(feature = "mtls")]
 	#[test]
 	fn test_tls_config_server_auth() {
+
 		let tls = TlsConfig::server_auth(std::path::PathBuf::from("/path/to/ca.pem"));
 
 		assert_eq!(tls.server_name, Some("localhost".to_string()));
@@ -256,9 +269,12 @@ mod tests {
 	#[cfg(feature = "mtls")]
 	#[test]
 	fn test_tls_config_mtls() {
+
 		let tls = TlsConfig::mtls(
 			std::path::PathBuf::from("/path/to/ca.pem"),
+
 			std::path::PathBuf::from("/path/to/cert.pem"),
+
 			std::path::PathBuf::from("/path/to/key.pem"),
 		);
 
@@ -276,6 +292,7 @@ mod tests {
 	#[cfg(feature = "mtls")]
 	#[test]
 	fn test_tls_config_default() {
+
 		let tls = TlsConfig::default();
 
 		assert!(tls.ca_cert_path.is_none());
@@ -291,6 +308,7 @@ mod tests {
 
 	#[test]
 	fn test_from_env_default() {
+
 		// Clear any existing environment variables
 		unsafe {
 			env::remove_var("MOUNTAIN_ADDRESS");
@@ -319,6 +337,7 @@ mod tests {
 
 	#[test]
 	fn test_from_env_custom() {
+
 		unsafe {
 			env::set_var("MOUNTAIN_ADDRESS", "[::1]:50060");
 		}
@@ -356,6 +375,7 @@ mod tests {
 	#[cfg(feature = "mtls")]
 	#[test]
 	fn test_from_env_tls() {
+
 		unsafe {
 			env::set_var("MOUNTAIN_TLS_ENABLED", "1");
 		}
@@ -397,6 +417,7 @@ mod tests {
 	#[cfg(feature = "mtls")]
 	#[test]
 	fn test_from_env_mtls() {
+
 		unsafe {
 			env::set_var("MOUNTAIN_TLS_ENABLED", "true");
 		}

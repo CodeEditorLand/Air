@@ -1,17 +1,21 @@
 #[cfg(test)]
 mod tests {
+
 	use std::collections::HashMap;
 
-	use crate::Security::SecurityAuditor::Struct as SecurityAuditor;
-	use crate::Security::SecurityEvent::Struct as SecurityEvent;
-	use crate::Security::SecurityEventType::SecurityEventType;
-	use crate::Security::SecuritySeverity::SecuritySeverity;
-
-	use super::super::SecureBytes::Struct as SecureBytes;
-	use super::super::ChecksumVerifier::Struct as ChecksumVerifier;
-	use super::super::RateLimitConfig::Struct as RateLimitConfig;
-	use super::super::RateLimiter::Struct as RateLimiter;
-	use super::super::SecureStorage::Struct as SecureStorage;
+	use crate::Security::{
+		SecurityAuditor::Struct as SecurityAuditor,
+		SecurityEvent::Struct as SecurityEvent,
+		SecurityEventType::SecurityEventType,
+		SecuritySeverity::SecuritySeverity,
+	};
+	use super::super::{
+		ChecksumVerifier::Struct as ChecksumVerifier,
+		RateLimitConfig::Struct as RateLimitConfig,
+		RateLimiter::Struct as RateLimiter,
+		SecureBytes::Struct as SecureBytes,
+		SecureStorage::Struct as SecureStorage,
+	};
 
 	#[tokio::test]
 	async fn test_rate_limiter() {

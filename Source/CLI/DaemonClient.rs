@@ -8,10 +8,20 @@ use std::{collections::HashMap, time::Duration};
 
 use chrono::Utc;
 
-use super::CommandTypes::DiagnosticLevel;
-use super::ResponseTypes::{
-	StatusResponse, ServiceStatus, ServiceHealth, MetricsResponse, ServiceMetrics,
-	HealthCheckResponse, ConfigResponse, LogEntry, ConnectionInfo, DaemonState,
+use super::{
+	CommandTypes::DiagnosticLevel,
+	ResponseTypes::{
+		ConfigResponse,
+		ConnectionInfo,
+		DaemonState,
+		HealthCheckResponse,
+		LogEntry,
+		MetricsResponse,
+		ServiceHealth,
+		ServiceMetrics,
+		ServiceStatus,
+		StatusResponse,
+	},
 };
 
 /// Daemon client for communicating with running Air daemon

@@ -68,15 +68,25 @@
 //! - Sanitize service names before publishing to telemetry
 
 pub mod Retry;
+
 pub mod Timeout;
+
 pub mod CircuitState;
+
 pub mod CircuitBreakerConfig;
+
 pub mod CircuitEvent;
+
 pub mod CircuitBreaker;
+
 pub mod CircuitStatistics;
+
 pub mod BulkheadConfig;
+
 pub mod BulkheadStatistics;
+
 pub mod BulkheadExecutor;
+
 pub mod ResilienceOrchestrator;
 
 #[cfg(test)]

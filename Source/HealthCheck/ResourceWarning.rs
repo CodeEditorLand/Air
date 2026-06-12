@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::ResourceWarningType::ResourceWarningType;
-use super::WarningSeverity::WarningSeverity;
+use super::{ResourceWarningType::ResourceWarningType, WarningSeverity::WarningSeverity};
 
 /// Resource warning types
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,10 +1,12 @@
 //! Structured logging context with request ID and trace propagation.
 
 use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::Utility::GenerateRequestId;
-use crate::{Result, dev_log};
+
+use crate::{Result, Utility::GenerateRequestId, dev_log};
+
 /// Context for structured logging with request IDs and metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogContext {
@@ -96,8 +98,10 @@ impl LogContext {
 }
 
 thread_local! {
+
 	static LOG_CONTEXT: std::cell::RefCell<Option<LogContext>> = std::cell::RefCell::new(None);
 }
+
 pub fn SetLogContext(Context:LogContext) {
 	if let Err(e) = Context.Validate() {
 		dev_log!("air", "error: [Logging] Invalid log context provided: {:?}", e);

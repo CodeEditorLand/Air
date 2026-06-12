@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::RecoveryActionType::RecoveryActionType;
-use super::RecoveryTrigger::RecoveryTrigger;
+use super::{RecoveryActionType::RecoveryActionType, RecoveryTrigger::RecoveryTrigger};
 
 /// Recovery action configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]

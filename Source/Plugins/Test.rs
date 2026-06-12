@@ -7,15 +7,17 @@ mod tests {
 
 	use async_trait::async_trait;
 
-	use crate::Plugins::ApiVersion::ApiVersion;
-	use crate::Plugins::Plugin::Plugin;
-	use crate::Plugins::PluginHooks::PluginHooks;
-	use crate::Plugins::PluginManager::PluginManager;
-	use crate::Plugins::PluginMessage::PluginMessage;
-	use crate::Plugins::PluginMetadata::PluginMetadata;
-	use crate::Plugins::PluginSandboxConfig::PluginSandboxConfig;
-	use crate::Plugins::PluginState::PluginState;
-	use crate::Plugins::PluginValidationResult::PluginValidationResult;
+	use crate::Plugins::{
+		ApiVersion::ApiVersion,
+		Plugin::Plugin,
+		PluginHooks::PluginHooks,
+		PluginManager::PluginManager,
+		PluginMessage::PluginMessage,
+		PluginMetadata::PluginMetadata,
+		PluginSandboxConfig::PluginSandboxConfig,
+		PluginState::PluginState,
+		PluginValidationResult::PluginValidationResult,
+	};
 
 	struct TestPlugin;
 

@@ -9,11 +9,11 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RollbackState {
-	pub version: String,
+	pub version:String,
 
-	pub backup_path: PathBuf,
+	pub backup_path:PathBuf,
 
-	pub timestamp: chrono::DateTime<chrono::Utc>,
+	pub timestamp:chrono::DateTime<chrono::Utc>,
 
-	pub checksum: String,
+	pub checksum:String,
 }

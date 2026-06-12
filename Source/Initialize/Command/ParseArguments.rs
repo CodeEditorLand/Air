@@ -54,6 +54,7 @@
 //! - Partial inputs are rejected completely
 
 use AirLibrary::CLI::CliParser::CliParser;
+
 use AirLibrary::CLI::CommandTypes::Command;
 
 use crate::dev_log;

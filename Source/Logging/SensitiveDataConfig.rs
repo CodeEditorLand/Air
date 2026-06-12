@@ -1,6 +1,7 @@
 //! Configuration for sensitive data redaction in log output.
 
 use serde::{Deserialize, Serialize};
+
 /// Sensitive data patterns for redaction
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SensitiveDataConfig {

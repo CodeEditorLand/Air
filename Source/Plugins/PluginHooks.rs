@@ -1,4 +1,5 @@
-//! Plugin lifecycle hooks: on_load, on_start, on_stop, on_unload, on_config_changed.
+//! Plugin lifecycle hooks: on_load, on_start, on_stop, on_unload,
+//! on_config_changed.
 
 use async_trait::async_trait;
 

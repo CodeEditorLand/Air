@@ -1,12 +1,11 @@
-//! Plugin registry entry: wraps a Plugin with state, timestamps, and sandbox config.
+//! Plugin registry entry: wraps a Plugin with state, timestamps, and sandbox
+//! config.
 
 use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
 
-use crate::Plugins::Plugin::Plugin;
-use crate::Plugins::PluginSandboxConfig::PluginSandboxConfig;
-use crate::Plugins::PluginState::PluginState;
+use crate::Plugins::{Plugin::Plugin, PluginSandboxConfig::PluginSandboxConfig, PluginState::PluginState};
 
 /// Plugin registry entry
 pub struct PluginRegistry {

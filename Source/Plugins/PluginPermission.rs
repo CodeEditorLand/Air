@@ -1,4 +1,5 @@
-//! Plugin permission variants: Filesystem, Network, System, InterPlugin, and Custom.
+//! Plugin permission variants: Filesystem, Network, System, InterPlugin, and
+//! Custom.
 
 use serde::{Deserialize, Serialize};
 

@@ -3,14 +3,15 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::sync::RwLock;
 
 use crate::{AirError, Result, Utility, dev_log};
-
-use super::HealthCheckConfig::HealthCheckConfig;
-use super::HealthCheckLevel::HealthCheckLevel;
-use super::HealthCheckRecord::HealthCheckRecord;
-use super::HealthStatistics::HealthStatistics;
-use super::HealthStatus::HealthStatus;
-use super::RecoveryAction::RecoveryAction;
-use super::ServiceHealth::ServiceHealth;
+use super::{
+	HealthCheckConfig::HealthCheckConfig,
+	HealthCheckLevel::HealthCheckLevel,
+	HealthCheckRecord::HealthCheckRecord,
+	HealthStatistics::HealthStatistics,
+	HealthStatus::HealthStatus,
+	RecoveryAction::RecoveryAction,
+	ServiceHealth::ServiceHealth,
+};
 
 /// Health check manager
 #[derive(Debug)]

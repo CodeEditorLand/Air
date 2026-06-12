@@ -19,19 +19,26 @@ use sha2::{Digest, Sha256};
 use uuid::Uuid;
 use md5;
 
-use crate::{AirError, ApplicationState::ApplicationState::Struct, Configuration::ConfigurationManager, Result, dev_log};
-
-use super::DownloadSession::DownloadSession;
-use super::InstallationStatus::InstallationStatus;
-use super::PackageFormat::PackageFormat;
-use super::PlatformConfig::PlatformConfig;
-use super::PlatformMetadata::PlatformMetadata;
-use super::RollbackHistory::RollbackHistory;
-use super::RollbackState::RollbackState;
-use super::UpdateChannel::UpdateChannel;
-use super::UpdateInfo::UpdateInfo;
-use super::UpdateStatus::UpdateStatus;
-use super::UpdateTelemetry::UpdateTelemetry;
+use crate::{
+	AirError,
+	ApplicationState::ApplicationState::Struct,
+	Configuration::ConfigurationManager,
+	Result,
+	dev_log,
+};
+use super::{
+	DownloadSession::DownloadSession,
+	InstallationStatus::InstallationStatus,
+	PackageFormat::PackageFormat,
+	PlatformConfig::PlatformConfig,
+	PlatformMetadata::PlatformMetadata,
+	RollbackHistory::RollbackHistory,
+	RollbackState::RollbackState,
+	UpdateChannel::UpdateChannel,
+	UpdateInfo::UpdateInfo,
+	UpdateStatus::UpdateStatus,
+	UpdateTelemetry::UpdateTelemetry,
+};
 
 /// Update manager implementation with full lifecycle support
 pub struct UpdateManager {

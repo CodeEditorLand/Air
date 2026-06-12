@@ -11,8 +11,8 @@ use super::RollbackState::RollbackState;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(super) struct RollbackHistory {
 	/// Previous versions available for rollback
-	pub(super) versions: Vec<RollbackState>,
+	pub(super) versions:Vec<RollbackState>,
 
 	/// Maximum number of versions to keep
-	pub(super) max_versions: usize,
+	pub(super) max_versions:usize,
 }

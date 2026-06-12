@@ -1,8 +1,10 @@
 #[cfg(test)]
 mod tests {
 
-	use super::super::CommandTypes::{Command, ConfigCommand};
-	use super::super::CliParser::CliParser;
+	use super::super::{
+		CliParser::CliParser,
+		CommandTypes::{Command, ConfigCommand},
+	};
 
 	#[test]
 	fn test_parse_status_command() {

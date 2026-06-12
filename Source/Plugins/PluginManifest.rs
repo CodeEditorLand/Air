@@ -1,9 +1,9 @@
-//! Plugin manifest: plugin metadata, main entry point, and optional sandbox config.
+//! Plugin manifest: plugin metadata, main entry point, and optional sandbox
+//! config.
 
 use serde::{Deserialize, Serialize};
 
-use crate::Plugins::PluginMetadata::PluginMetadata;
-use crate::Plugins::PluginSandboxConfig::PluginSandboxConfig;
+use crate::Plugins::{PluginMetadata::PluginMetadata, PluginSandboxConfig::PluginSandboxConfig};
 
 /// Plugin manifest
 #[derive(Debug, Clone, Serialize, Deserialize)]

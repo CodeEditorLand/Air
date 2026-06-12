@@ -4,10 +4,12 @@
 //! returns formatted output strings.
 
 use crate::dev_log;
-use super::CommandTypes::{Command, ConfigCommand, DebugCommand, PermissionLevel};
-use super::OutputFormat::OutputFormat;
-use super::DaemonClient::DaemonClient;
-use super::OutputFormatter::OutputFormatter;
+use super::{
+	CommandTypes::{Command, ConfigCommand, DebugCommand, PermissionLevel},
+	DaemonClient::DaemonClient,
+	OutputFormat::OutputFormat,
+	OutputFormatter::OutputFormatter,
+};
 
 /// Main CLI command handler
 pub struct CliHandler {

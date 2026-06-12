@@ -3,10 +3,11 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use crate::dev_log;
-
-use super::SecurityEvent::Struct as SecurityEvent;
-use super::SecurityEventType::SecurityEventType;
-use super::SecuritySeverity::SecuritySeverity;
+use super::{
+	SecurityEvent::Struct as SecurityEvent,
+	SecurityEventType::SecurityEventType,
+	SecuritySeverity::SecuritySeverity,
+};
 
 /// Security auditor for logging security events
 pub struct Struct {

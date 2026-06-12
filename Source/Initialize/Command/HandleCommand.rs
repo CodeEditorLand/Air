@@ -55,6 +55,7 @@
 /// - Non-implemented commands show workarounds
 
 use AirLibrary::CLI::CommandTypes::{Command, ConfigCommand, DebugCommand};
+
 use AirLibrary::CLI::OutputFormatter::OutputFormatter;
 
 use AirLibrary::Client::AirClient::AirClient;

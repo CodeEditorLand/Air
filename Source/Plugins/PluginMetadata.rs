@@ -1,5 +1,5 @@
-//! Plugin metadata: id, name, version, description, author, version compatibility,
-//! dependencies, and capabilities.
+//! Plugin metadata: id, name, version, description, author, version
+//! compatibility, dependencies, and capabilities.
 
 use serde::{Deserialize, Serialize};
 

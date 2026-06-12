@@ -1,4 +1,5 @@
-//! Plugin dependency specification: required or optional dependency with version range.
+//! Plugin dependency specification: required or optional dependency with
+//! version range.
 
 use serde::{Deserialize, Serialize};
 

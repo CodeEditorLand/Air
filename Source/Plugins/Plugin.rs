@@ -1,14 +1,19 @@
-//! Plugin interface trait: extends PluginHooks with metadata, sandbox, permissions,
-//! message handling, state, and capability checks.
+//! Plugin interface trait: extends PluginHooks with metadata, sandbox,
+//! permissions, message handling, state, and capability checks.
 
 use async_trait::async_trait;
 
-use crate::Plugins::PluginHooks::PluginHooks;
-use crate::Plugins::PluginMetadata::PluginMetadata;
-use crate::Plugins::PluginMessage::PluginMessage;
-use crate::Plugins::PluginPermission::PluginPermission;
-use crate::Plugins::PluginSandboxConfig::PluginSandboxConfig;
-use crate::{AirError, Result};
+use crate::{
+	AirError,
+	Plugins::{
+		PluginHooks::PluginHooks,
+		PluginMessage::PluginMessage,
+		PluginMetadata::PluginMetadata,
+		PluginPermission::PluginPermission,
+		PluginSandboxConfig::PluginSandboxConfig,
+	},
+	Result,
+};
 
 /// Plugin interface trait
 #[async_trait]

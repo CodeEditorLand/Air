@@ -5,7 +5,11 @@
 
 use std::{env, path::PathBuf, time::Duration};
 
-use crate::Mountain::Constants::{DEFAULT_CONNECTION_TIMEOUT_SECS, DEFAULT_MOUNTAIN_ADDRESS, DEFAULT_REQUEST_TIMEOUT_SECS};
+use crate::Mountain::Constants::{
+	DEFAULT_CONNECTION_TIMEOUT_SECS,
+	DEFAULT_MOUNTAIN_ADDRESS,
+	DEFAULT_REQUEST_TIMEOUT_SECS,
+};
 #[cfg(feature = "mtls")]
 use crate::Mountain::TlsConfig::TlsConfig;
 
@@ -156,4 +160,3 @@ impl MountainClientConfig {
 		self
 	}
 }
-

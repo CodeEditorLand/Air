@@ -70,7 +70,13 @@ use tokio::{
 	task::JoinHandle,
 };
 
-use crate::{AirError, ApplicationState::ApplicationState::Struct, Indexing::State::CreateState::FileIndex, Result, dev_log};
+use crate::{
+	AirError,
+	ApplicationState::ApplicationState::Struct,
+	Indexing::State::CreateState::FileIndex,
+	Result,
+	dev_log,
+};
 
 /// Maximum number of parallel watch event processors
 const MAX_WATCH_PROCESSORS:usize = 5;
@@ -97,7 +103,10 @@ pub struct BackgroundIndexerContext {
 }
 
 impl BackgroundIndexerContext {
-	pub fn new(app_state:Arc<crate::ApplicationState::ApplicationState::Struct>, file_index:Arc<RwLock<FileIndex>>) -> Self {
+	pub fn new(
+		app_state:Arc<crate::ApplicationState::ApplicationState::Struct>,
+		file_index:Arc<RwLock<FileIndex>>,
+	) -> Self {
 		Self {
 			app_state,
 

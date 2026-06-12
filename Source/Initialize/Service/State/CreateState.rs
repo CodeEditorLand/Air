@@ -61,7 +61,8 @@
 //!
 //! ## Thread Safety
 //!
-//! - Returns Arc<crate::ApplicationState::ApplicationState::Struct> for thread-safe sharing
+//! - Returns Arc<crate::ApplicationState::ApplicationState::Struct> for
+//!   thread-safe sharing
 //! - Safe for concurrent access across all services
 
 use std::{sync::Arc, time::Duration};
@@ -82,7 +83,8 @@ use crate::dev_log;
 ///
 /// # Returns
 ///
-/// Returns an `Arc<crate::ApplicationState::ApplicationState::Struct>` on success.
+/// Returns an `Arc<crate::ApplicationState::ApplicationState::Struct>` on
+/// success.
 ///
 /// # Errors
 ///
@@ -99,12 +101,17 @@ use crate::dev_log;
 /// - Add configuration validation before state creation
 /// - Implement state recovery from previous run
 /// - Add state snapshot for debugging
-pub async fn CreateState(configuration:Arc<Struct>) -> Result<Arc<crate::ApplicationState::ApplicationState::Struct>, String> {
+pub async fn CreateState(
+	configuration:Arc<Struct>,
+) -> Result<Arc<crate::ApplicationState::ApplicationState::Struct>, String> {
 	dev_log!("lifecycle", "[State] Creating application state...");
 
 	// Initialize state with timeout
-	let state_result =
-		tokio::time::timeout(Duration::from_secs(10), crate::ApplicationState::ApplicationState::Struct::New(configuration.clone())).await;
+	let state_result = tokio::time::timeout(
+		Duration::from_secs(10),
+		crate::ApplicationState::ApplicationState::Struct::New(configuration.clone()),
+	)
+	.await;
 
 	match state_result {
 		Ok(Ok(state)) => {

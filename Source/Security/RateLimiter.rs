@@ -3,10 +3,11 @@ use std::{collections::HashMap, sync::Arc, time::Duration};
 use tokio::sync::RwLock;
 
 use crate::Result;
-
-use super::RateLimitConfig::Struct as RateLimitConfig;
-use super::RateLimitStatus::Struct as RateLimitStatus;
-use super::TokenBucket::TokenBucket;
+use super::{
+	RateLimitConfig::Struct as RateLimitConfig,
+	RateLimitStatus::Struct as RateLimitStatus,
+	TokenBucket::TokenBucket,
+};
 
 /// Rate limiter with per-IP and per-client tracking
 pub struct Struct {

@@ -14,47 +14,47 @@ use super::PlatformMetadata::PlatformMetadata;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateInfo {
 	/// Semantic version (e.g., "1.2.3")
-	pub version: String,
+	pub version:String,
 
 	/// Download URL for the update package
-	pub download_url: String,
+	pub download_url:String,
 
 	/// Release notes and changelog
-	pub release_notes: String,
+	pub release_notes:String,
 
 	/// Primary checksum (SHA256 recommended)
-	pub checksum: String,
+	pub checksum:String,
 
 	/// Alternative checksums for verification
-	pub checksums: HashMap<String, String>,
+	pub checksums:HashMap<String, String>,
 
 	/// Size of update package in bytes
-	pub size: u64,
+	pub size:u64,
 
 	/// When the update was published
-	pub published_at: chrono::DateTime<chrono::Utc>,
+	pub published_at:chrono::DateTime<chrono::Utc>,
 
 	/// Whether this update is mandatory
-	pub is_mandatory: bool,
+	pub is_mandatory:bool,
 
 	/// Whether update requires application restart
-	pub requires_restart: bool,
+	pub requires_restart:bool,
 
 	/// Minimum compatible version
-	pub min_compatible_version: Option<String>,
+	pub min_compatible_version:Option<String>,
 
 	/// Delta update URL (if available for incremental update)
-	pub delta_url: Option<String>,
+	pub delta_url:Option<String>,
 
 	/// Delta update checksum (if available)
-	pub delta_checksum: Option<String>,
+	pub delta_checksum:Option<String>,
 
 	/// Delta update size (if available)
-	pub delta_size: Option<u64>,
+	pub delta_size:Option<u64>,
 
 	/// Cryptographic signature (Ed25519 or PGP)
-	pub signature: Option<String>,
+	pub signature:Option<String>,
 
 	/// Platform-specific metadata
-	pub platform_metadata: Option<PlatformMetadata>,
+	pub platform_metadata:Option<PlatformMetadata>,
 }

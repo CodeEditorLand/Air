@@ -5,17 +5,11 @@
 //! is the main entry point — it validates configuration, checks the
 //! circuit, acquires a bulkhead permit, and retries with adaptive delay.
 
-use std::{
-	collections::HashMap,
-	sync::Arc,
-	time::Duration,
-};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use tokio::sync::RwLock;
 
 use crate::dev_log;
-
-
 use super::{
 	BulkheadConfig::BulkheadConfig,
 	BulkheadExecutor::BulkheadExecutor,

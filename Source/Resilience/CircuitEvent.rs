@@ -3,8 +3,9 @@
 //! Published on every state transition so subscribers (e.g. Mountain
 //! telemetry) can react to circuit changes.
 
-use super::CircuitState::CircuitState;
 use serde::{Deserialize, Serialize};
+
+use super::CircuitState::CircuitState;
 
 /// Circuit breaker events for metrics and telemetry integration
 #[derive(Debug, Clone, Serialize, Deserialize)]

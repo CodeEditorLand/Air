@@ -68,7 +68,13 @@ use std::path::PathBuf;
 
 use tokio::sync::{Mutex, RwLock};
 
-use crate::{AirError, Configuration::AirConfiguration::IndexingConfig, Indexing::State::CreateState::FileIndex, Result, dev_log};
+use crate::{
+	AirError,
+	Configuration::AirConfiguration::IndexingConfig,
+	Indexing::State::CreateState::FileIndex,
+	Result,
+	dev_log,
+};
 
 /// Handle file watcher event for incremental indexing
 ///

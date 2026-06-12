@@ -8,11 +8,7 @@ use ring::{aead, rand::SecureRandom};
 use crate::{
 	AirError,
 	ApplicationState::ApplicationState::Struct,
-	Authentication::{
-		AuthSession::AuthSession,
-		CredentialsStore::CredentialsStore,
-		CryptoKeys::CryptoKeys,
-	},
+	Authentication::{AuthSession::AuthSession, CredentialsStore::CredentialsStore, CryptoKeys::CryptoKeys},
 	Configuration::ConfigurationManager,
 	Result,
 	Utility,
@@ -122,7 +118,12 @@ impl AuthenticationService {
 	}
 
 	/// Validate user credentials
-	async fn ValidateCredentials(&self, Username:&str, Password:&str, Provider:&str) -> Result<crate::Authentication::AuthSession::UserCredentials> {
+	async fn ValidateCredentials(
+		&self,
+		Username:&str,
+		Password:&str,
+		Provider:&str,
+	) -> Result<crate::Authentication::AuthSession::UserCredentials> {
 		let CredentialsStore = self.Credentials.lock().await;
 
 		let Key = format!("{}:{}", Provider, Username);
@@ -256,8 +257,9 @@ impl AuthenticationService {
 				.await
 				.map_err(|e| AirError::Authentication(format!("Failed to read credentials file: {}", e)))?;
 
-			let Credentials:HashMap<String, crate::Authentication::AuthSession::UserCredentials> = serde_json::from_str(&Content)
-				.map_err(|e| AirError::Authentication(format!("Failed to parse credentials file: {}", e)))?;
+			let Credentials:HashMap<String, crate::Authentication::AuthSession::UserCredentials> =
+				serde_json::from_str(&Content)
+					.map_err(|e| AirError::Authentication(format!("Failed to parse credentials file: {}", e)))?;
 
 			Ok(CredentialsStore { Credentials, FilePath:FilePath.to_string_lossy().to_string() })
 		} else {

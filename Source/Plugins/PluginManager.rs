@@ -1,5 +1,5 @@
-//! Main plugin manager: registration, validation, lifecycle management, messaging,
-//! dependency resolution, and load-order resolution.
+//! Main plugin manager: registration, validation, lifecycle management,
+//! messaging, dependency resolution, and load-order resolution.
 
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
@@ -7,16 +7,22 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
-use crate::Plugins::Plugin::Plugin;
-use crate::Plugins::PluginInfo::PluginInfo;
-use crate::Plugins::PluginMessage::PluginMessage;
-use crate::Plugins::PluginMetadata::PluginMetadata;
-use crate::Plugins::PluginPermission::PluginPermission;
-use crate::Plugins::PluginRegistry::PluginRegistry;
-use crate::Plugins::PluginSandboxConfig::PluginSandboxConfig;
-use crate::Plugins::PluginState::PluginState;
-use crate::Plugins::PluginValidationResult::PluginValidationResult;
-use crate::{AirError, Result, dev_log};
+use crate::{
+	AirError,
+	Plugins::{
+		Plugin::Plugin,
+		PluginInfo::PluginInfo,
+		PluginMessage::PluginMessage,
+		PluginMetadata::PluginMetadata,
+		PluginPermission::PluginPermission,
+		PluginRegistry::PluginRegistry,
+		PluginSandboxConfig::PluginSandboxConfig,
+		PluginState::PluginState,
+		PluginValidationResult::PluginValidationResult,
+	},
+	Result,
+	dev_log,
+};
 
 /// Main plugin manager
 pub struct PluginManager {

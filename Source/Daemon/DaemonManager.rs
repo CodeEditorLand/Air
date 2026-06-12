@@ -93,10 +93,12 @@ use std::{fs, path::PathBuf, sync::Arc, time::Duration};
 use tokio::sync::{Mutex, RwLock};
 use sha2::{Digest, Sha256};
 
-use crate::{AirError, Result, dev_log};
-use crate::Daemon::Platform::Platform;
-use crate::Daemon::PlatformInfo::PlatformInfo;
-use crate::Daemon::DaemonStatus::DaemonStatus;
+use crate::{
+	AirError,
+	Daemon::{DaemonStatus::DaemonStatus, Platform::Platform, PlatformInfo::PlatformInfo},
+	Result,
+	dev_log,
+};
 
 /// Daemon lifecycle manager
 #[derive(Debug)]

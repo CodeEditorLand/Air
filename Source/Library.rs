@@ -440,7 +440,7 @@ pub mod Utility {
 	/// Validate file path security
 	///
 	/// Checks for path traversal attempts and invalid characters.
-/// Security measure to prevent directory traversal attacks.
+	/// Security measure to prevent directory traversal attacks.
 	///
 	/// # Arguments
 	///

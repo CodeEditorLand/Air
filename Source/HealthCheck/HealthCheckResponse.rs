@@ -3,12 +3,13 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::Utility;
-
-use super::HealthStatistics::HealthStatistics;
-use super::HealthStatus::HealthStatus;
-use super::PerformanceIndicators::PerformanceIndicators;
-use super::ResourceWarning::ResourceWarning;
-use super::ServiceHealth::ServiceHealth;
+use super::{
+	HealthStatistics::HealthStatistics,
+	HealthStatus::HealthStatus,
+	PerformanceIndicators::PerformanceIndicators,
+	ResourceWarning::ResourceWarning,
+	ServiceHealth::ServiceHealth,
+};
 
 /// Health check response for gRPC
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,4 +1,5 @@
-//! Plugin discovery result: plugin_id, manifest path, metadata, and enabled flag.
+//! Plugin discovery result: plugin_id, manifest path, metadata, and enabled
+//! flag.
 
 use serde::{Deserialize, Serialize};
 

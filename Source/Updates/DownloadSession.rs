@@ -9,23 +9,23 @@ use std::path::PathBuf;
 #[derive(Debug, Clone)]
 pub(super) struct DownloadSession {
 	/// Session unique identifier
-	pub(super) session_id: String,
+	pub(super) session_id:String,
 
 	/// Original update URL
-	pub(super) download_url: String,
+	pub(super) download_url:String,
 
 	/// Current file path
-	pub(super) temp_path: PathBuf,
+	pub(super) temp_path:PathBuf,
 
 	/// Bytes downloaded so far
-	pub(super) downloaded_bytes: u64,
+	pub(super) downloaded_bytes:u64,
 
 	/// Total file size
-	pub(super) total_bytes: u64,
+	pub(super) total_bytes:u64,
 
 	/// Whether download is complete
-	pub(super) complete: bool,
+	pub(super) complete:bool,
 
 	/// Cancellation flag for download
-	pub(super) cancelled: bool,
+	pub(super) cancelled:bool,
 }

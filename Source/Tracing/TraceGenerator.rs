@@ -3,15 +3,21 @@ use std::{collections::HashMap, sync::Arc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
-use crate::{AirError, Result, dev_log};
-use crate::Tracing::SamplingConfig::SamplingConfig;
-use crate::Tracing::TraceSpan::TraceSpan;
-use crate::Tracing::SpanStatus::SpanStatus;
-use crate::Tracing::SpanEvent::SpanEvent;
-use crate::Tracing::TraceMetadata::TraceMetadata;
-use crate::Tracing::TraceStatus::TraceStatus;
-use crate::Tracing::TraceStatistics::TraceStatistics;
-use crate::Tracing::PropagationContext::PropagationContext;
+use crate::{
+	AirError,
+	Result,
+	Tracing::{
+		PropagationContext::PropagationContext,
+		SamplingConfig::SamplingConfig,
+		SpanEvent::SpanEvent,
+		SpanStatus::SpanStatus,
+		TraceMetadata::TraceMetadata,
+		TraceSpan::TraceSpan,
+		TraceStatistics::TraceStatistics,
+		TraceStatus::TraceStatus,
+	},
+	dev_log,
+};
 
 /// Trace ID generator and manager with sampling support
 #[derive(Debug, Clone)]
@@ -425,7 +431,10 @@ impl TraceGenerator {
 			(r"(?i)token[=:]\S+", "token=[REDACTED]"),
 			(r"(?i)secret[=:]\S+", "secret=[REDACTED]"),
 			(r"(?i)(api|private)[_-]?key[=:]\S+", "api_key=[REDACTED]"),
-			(r"(?i)authorization[=[:space:]]+Bearer[[:space:]]+\S+", "Authorization: Bearer ***"),
+			(
+				r"(?i)authorization[=[:space:]]+Bearer[[:space:]]+\S+",
+				"Authorization: Bearer ***",
+			),
 		];
 
 		for (pattern, replacement) in patterns {
@@ -464,6 +473,4 @@ pub fn initialize_tracing(sampling_config:Option<SamplingConfig>) -> crate::Resu
 }
 
 /// Initialize tracing (alias for initialize_tracing with default config)
-pub fn initialize() -> crate::Result<()> {
-	initialize_tracing(None)
-}
+pub fn initialize() -> crate::Result<()> { initialize_tracing(None) }

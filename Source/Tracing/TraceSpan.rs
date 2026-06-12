@@ -2,8 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::Tracing::SpanEvent::SpanEvent;
-use crate::Tracing::SpanStatus::SpanStatus;
+use crate::Tracing::{SpanEvent::SpanEvent, SpanStatus::SpanStatus};
 
 /// A single span in a trace
 #[derive(Debug, Clone, Serialize, Deserialize)]

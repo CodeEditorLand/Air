@@ -1,8 +1,9 @@
 //! Sensitive data filter for log sanitization.
 
 use std::sync::Arc;
-use crate::{Result, dev_log};
-use crate::Logging::SensitiveDataConfig::SensitiveDataConfig;
+
+use crate::{Logging::SensitiveDataConfig::SensitiveDataConfig, Result, dev_log};
+
 /// Sensitive data filter for log sanitization
 #[derive(Debug, Clone)]
 pub struct SensitiveDataFilter {

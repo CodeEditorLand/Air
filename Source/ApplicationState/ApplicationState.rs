@@ -16,7 +16,9 @@ use crate::{
 		ServiceStatus::ServiceStatus,
 	},
 	Configuration::AirConfiguration::Struct as AirConfig,
-	Result, Utility, dev_log,
+	Result,
+	Utility,
+	dev_log,
 };
 
 /// Application state structure

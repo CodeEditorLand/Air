@@ -217,8 +217,8 @@ macro_rules! Trace {
 
 /// Shutdown signal handler for graceful termination
 ///
-/// Waits for either Ctrl+C (SIGINT) or SIGTERM signals to initiate graceful shutdown.
-/// and then initiates the shutdown sequence. It provides a timeout
+/// Waits for either Ctrl+C (SIGINT) or SIGTERM signals to initiate graceful
+/// shutdown. and then initiates the shutdown sequence. It provides a timeout
 /// to handle cases where signal handlers fail to install properly.
 ///
 /// # FUTURE Enhancements
@@ -1756,31 +1756,35 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	// -------------------------------------------------------------------------
 	Trace!("[Boot] [State] Initializing application state...");
 
-	let AppState:std::sync::Arc<AirLibrary::ApplicationState::ApplicationState::Struct> =
-		match tokio::time::timeout(Duration::from_secs(10), AirLibrary::ApplicationState::ApplicationState::Struct::New(configuration.clone())).await {
-			Ok(Ok(state)) => {
-				dev_log!("lifecycle", "[Boot] [State] Application state initialized");
+	let AppState:std::sync::Arc<AirLibrary::ApplicationState::ApplicationState::Struct> = match tokio::time::timeout(
+		Duration::from_secs(10),
+		AirLibrary::ApplicationState::ApplicationState::Struct::New(configuration.clone()),
+	)
+	.await
+	{
+		Ok(Ok(state)) => {
+			dev_log!("lifecycle", "[Boot] [State] Application state initialized");
 
-				Arc::new(state)
-			},
+			Arc::new(state)
+		},
 
-			Ok(Err(e)) => {
-				dev_log!("lifecycle", "error: [Boot] Failed to initialize application state: {}", e);
+		Ok(Err(e)) => {
+			dev_log!("lifecycle", "error: [Boot] Failed to initialize application state: {}", e);
 
-				// Attempt to release lock before returning
-				let _ = daemon_manager.ReleaseLock().await;
+			// Attempt to release lock before returning
+			let _ = daemon_manager.ReleaseLock().await;
 
-				return Err(format!("Application state initialization failed: {}", e).into());
-			},
+			return Err(format!("Application state initialization failed: {}", e).into());
+		},
 
-			Err(_) => {
-				dev_log!("lifecycle", "error: [Boot] Application state initialization timed out");
+		Err(_) => {
+			dev_log!("lifecycle", "error: [Boot] Application state initialization timed out");
 
-				let _ = daemon_manager.ReleaseLock().await;
+			let _ = daemon_manager.ReleaseLock().await;
 
-				return Err("Application state initialization timed out".into());
-			},
-		};
+			return Err("Application state initialization timed out".into());
+		},
+	};
 
 	// -------------------------------------------------------------------------
 	// [Boot] [Services] Initialize core services

@@ -46,9 +46,7 @@ impl SamplingConfig {
 		}
 
 		if self.max_spans_per_trace == 0 {
-			return Err(AirError::Internal(
-				"max_spans_per_trace must be greater than 0".to_string(),
-			));
+			return Err(AirError::Internal("max_spans_per_trace must be greater than 0".to_string()));
 		}
 
 		if self.trace_ttl_ms == 0 {

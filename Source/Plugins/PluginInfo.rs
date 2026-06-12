@@ -2,8 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::Plugins::PluginMetadata::PluginMetadata;
-use crate::Plugins::PluginState::PluginState;
+use crate::Plugins::{PluginMetadata::PluginMetadata, PluginState::PluginState};
 
 /// Plugin information for listing
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -13,7 +13,6 @@ use std::{
 use tokio::sync::{RwLock, broadcast};
 
 use crate::dev_log;
-
 use super::{
 	CircuitBreakerConfig::CircuitBreakerConfig,
 	CircuitEvent::CircuitEvent,

@@ -8,9 +8,9 @@ use super::PackageFormat::PackageFormat;
 /// Platform-specific update configuration
 #[derive(Debug, Clone)]
 pub(super) struct PlatformConfig {
-	pub(super) platform: String,
+	pub(super) platform:String,
 
-	pub(super) arch: String,
+	pub(super) arch:String,
 
-	pub(super) package_format: PackageFormat,
+	pub(super) package_format:PackageFormat,
 }

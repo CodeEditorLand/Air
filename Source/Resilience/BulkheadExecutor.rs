@@ -5,19 +5,12 @@
 //! queue depth, and collects telemetry counters for rejected, completed,
 //! and timed-out requests.
 
-use std::{
-	sync::Arc,
-	time::Duration,
-};
+use std::{sync::Arc, time::Duration};
 
 use tokio::sync::RwLock;
 
 use crate::dev_log;
-
-use super::{
-	BulkheadConfig::BulkheadConfig,
-	BulkheadStatistics::BulkheadStatistics,
-};
+use super::{BulkheadConfig::BulkheadConfig, BulkheadStatistics::BulkheadStatistics};
 
 /// Bulkhead semaphore for resource isolation with metrics and panic recovery
 #[derive(Debug)]

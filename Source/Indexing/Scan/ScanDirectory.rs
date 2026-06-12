@@ -28,7 +28,8 @@
 //! **Internal Modules:**
 //! - `crate::Result` - Error handling type
 //! - `crate::AirError` - Error types
-//! - `crate::Configuration::AirConfiguration::IndexingConfig` - Indexing configuration
+//! - `crate::Configuration::AirConfiguration::IndexingConfig` - Indexing
+//!   configuration
 //!
 //! ## Dependents
 //!

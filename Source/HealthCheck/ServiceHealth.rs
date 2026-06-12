@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::HealthCheckLevel::HealthCheckLevel;
-use super::HealthStatus::HealthStatus;
+use super::{HealthCheckLevel::HealthCheckLevel, HealthStatus::HealthStatus};
 
 /// Service health information
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,10 +1,14 @@
-//! Plugin loader: discovers plugins from configured paths and loads them from discovery results.
+//! Plugin loader: discovers plugins from configured paths and loads them from
+//! discovery results.
 
 use std::sync::Arc;
 
-use crate::Plugins::Plugin::Plugin;
-use crate::Plugins::PluginDiscoveryResult::PluginDiscoveryResult;
-use crate::{AirError, Result, dev_log};
+use crate::{
+	AirError,
+	Plugins::{Plugin::Plugin, PluginDiscoveryResult::PluginDiscoveryResult},
+	Result,
+	dev_log,
+};
 
 /// Plugin loader for discovering and loading plugins
 pub struct PluginLoader {

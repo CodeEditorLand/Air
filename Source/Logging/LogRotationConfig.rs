@@ -1,10 +1,19 @@
 //! Log rotation configuration and strategies.
-//! Controls automatic log file rotation with size-based and time-based policies.
+//! Controls automatic log file rotation with size-based and time-based
+//! policies.
 
-use std::{collections::HashMap,path::{Path, PathBuf},sync::{Arc, Mutex},time::{SystemTime, UNIX_EPOCH}};
+use std::{
+	collections::HashMap,
+	path::{Path, PathBuf},
+	sync::{Arc, Mutex},
+	time::{SystemTime, UNIX_EPOCH},
+};
+
 use serde::{Deserialize, Serialize};
 use tracing_appender::rolling::Rotation;
+
 use crate::{Result, dev_log};
+
 /// Configuration for log rotation and management
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogRotationConfig {

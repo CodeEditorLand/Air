@@ -8,12 +8,13 @@ use base64::{Engine, engine::general_purpose::STANDARD};
 use zeroize::Zeroize;
 
 use crate::{AirError, Result, dev_log};
-
-use super::SecureBytes::Struct as SecureBytesType;
-use super::SecurityAuditor::Struct as SecurityAuditorType;
-use super::SecurityEvent::Struct as SecurityEvent;
-use super::SecurityEventType::SecurityEventType;
-use super::SecuritySeverity::SecuritySeverity;
+use super::{
+	SecureBytes::Struct as SecureBytesType,
+	SecurityAuditor::Struct as SecurityAuditorType,
+	SecurityEvent::Struct as SecurityEvent,
+	SecurityEventType::SecurityEventType,
+	SecuritySeverity::SecuritySeverity,
+};
 
 /// Secure credential storage with AES-GCM encryption
 pub struct Struct {

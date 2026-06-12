@@ -88,18 +88,33 @@
 //! - `recovery_timeout_sec`: Maximum time for recovery actions
 
 pub mod DegradationLevel;
+
 pub mod HealthCheckConfig;
+
 pub mod HealthCheckLevel;
+
 pub mod HealthCheckManager;
+
 pub mod HealthCheckRecord;
+
 pub mod HealthCheckResponse;
+
 pub mod HealthStatistics;
+
 pub mod HealthStatus;
+
 pub mod PerformanceIndicators;
+
 pub mod RecoveryAction;
+
 pub mod RecoveryActionType;
+
 pub mod RecoveryTrigger;
+
 pub mod ResourceWarning;
+
 pub mod ResourceWarningType;
+
 pub mod ServiceHealth;
+
 pub mod WarningSeverity;

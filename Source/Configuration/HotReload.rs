@@ -1103,9 +1103,7 @@ impl ConfigHotReload {
 	pub async fn GetConfig(&self) -> Struct { self.active_config.read().await.clone() }
 
 	/// Get current configuration (read-only, non-copying)
-	pub async fn GetConfigRef(&self) -> tokio::sync::RwLockReadGuard<'_, Struct> {
-		self.active_config.read().await
-	}
+	pub async fn GetConfigRef(&self) -> tokio::sync::RwLockReadGuard<'_, Struct> { self.active_config.read().await }
 
 	/// Set configuration value by path (e.g., "grpc.bind_address")
 	pub async fn SetValue(&self, path:&str, value:&str) -> Result<()> {

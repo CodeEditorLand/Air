@@ -30,7 +30,8 @@
 //! **Internal Modules:**
 //! - `crate::Result` - Error handling type
 //! - `crate::AirError` - Error types
-//! - `crate::Configuration::AirConfiguration::IndexingConfig` - Indexing configuration
+//! - `crate::Configuration::AirConfiguration::IndexingConfig` - Indexing
+//!   configuration
 //! - `super::super::State::CreateState` - State structure definitions
 //! - `super::Process::ProcessContent` - Content processing operations
 //!

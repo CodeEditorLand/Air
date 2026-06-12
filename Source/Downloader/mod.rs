@@ -6,5 +6,7 @@
 //! verification, and priority queuing.
 
 pub mod DownloadManager;
+
 pub mod RateLimit;
+
 pub mod Types;

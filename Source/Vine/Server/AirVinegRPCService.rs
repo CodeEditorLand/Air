@@ -8,12 +8,10 @@
 use std::{collections::HashMap, sync::Arc};
 
 use tonic::{Request, Response, Status};
-
-use crate::ApplicationState::ConnectionType::ConnectionType;
 use tokio_stream::StreamExt as TokioStreamExt;
 use async_trait::async_trait;
 
-use crate::dev_log;
+use crate::{ApplicationState::ConnectionType::ConnectionType, dev_log};
 // Note: Mist is available as a workspace dependency, no extern crate needed
 use crate::{
 	AirError,
@@ -281,7 +279,11 @@ impl AirService for AirVinegRPCService {
 		match result {
 			Ok(token) => {
 				self.AppState
-					.UpdateRequestStatus(&request_id, crate::ApplicationState::RequestState::RequestState::Completed, Some(100.0))
+					.UpdateRequestStatus(
+						&request_id,
+						crate::ApplicationState::RequestState::RequestState::Completed,
+						Some(100.0),
+					)
 					.await
 					.ok();
 
@@ -399,7 +401,11 @@ impl AirService for AirVinegRPCService {
 		match result {
 			Ok(UpdateInfo) => {
 				self.AppState
-					.UpdateRequestStatus(&request_id, crate::ApplicationState::RequestState::RequestState::Completed, Some(100.0))
+					.UpdateRequestStatus(
+						&request_id,
+						crate::ApplicationState::RequestState::RequestState::Completed,
+						Some(100.0),
+					)
 					.await
 					.ok();
 
@@ -421,7 +427,11 @@ impl AirService for AirVinegRPCService {
 
 			Err(crate::AirError::Network(e)) => {
 				self.AppState
-					.UpdateRequestStatus(&request_id, crate::ApplicationState::RequestState::RequestState::Failed(e.clone()), None)
+					.UpdateRequestStatus(
+						&request_id,
+						crate::ApplicationState::RequestState::RequestState::Failed(e.clone()),
+						None,
+					)
 					.await
 					.ok();
 
@@ -592,7 +602,11 @@ impl AirService for AirVinegRPCService {
 
 			tokio::spawn(async move {
 				let _ = state
-					.UpdateRequestStatus(&id, crate::ApplicationState::RequestState::RequestState::InProgress, Some(progress))
+					.UpdateRequestStatus(
+						&id,
+						crate::ApplicationState::RequestState::RequestState::InProgress,
+						Some(progress),
+					)
 					.await;
 			});
 		};
@@ -688,7 +702,11 @@ impl AirService for AirVinegRPCService {
 		match result {
 			Ok(index_info) => {
 				self.AppState
-					.UpdateRequestStatus(&request_id, crate::ApplicationState::RequestState::RequestState::Completed, Some(100.0))
+					.UpdateRequestStatus(
+						&request_id,
+						crate::ApplicationState::RequestState::RequestState::Completed,
+						Some(100.0),
+					)
 					.await
 					.ok();
 
@@ -890,7 +908,11 @@ impl AirService for AirVinegRPCService {
 		match download_result {
 			Ok(result) => {
 				self.AppState
-					.UpdateRequestStatus(&request_id, crate::ApplicationState::RequestState::RequestState::Completed, Some(100.0))
+					.UpdateRequestStatus(
+						&request_id,
+						crate::ApplicationState::RequestState::RequestState::Completed,
+						Some(100.0),
+					)
 					.await
 					.ok();
 
@@ -914,7 +936,11 @@ impl AirService for AirVinegRPCService {
 
 			Err(crate::AirError::Network(e)) => {
 				self.AppState
-					.UpdateRequestStatus(&request_id, crate::ApplicationState::RequestState::RequestState::Failed(e.clone()), None)
+					.UpdateRequestStatus(
+						&request_id,
+						crate::ApplicationState::RequestState::RequestState::Failed(e.clone()),
+						None,
+					)
 					.await
 					.ok();
 
@@ -925,7 +951,11 @@ impl AirService for AirVinegRPCService {
 
 			Err(crate::AirError::FileSystem(e)) => {
 				self.AppState
-					.UpdateRequestStatus(&request_id, crate::ApplicationState::RequestState::RequestState::Failed(e.clone()), None)
+					.UpdateRequestStatus(
+						&request_id,
+						crate::ApplicationState::RequestState::RequestState::Failed(e.clone()),
+						None,
+					)
 					.await
 					.ok();
 
@@ -1087,7 +1117,11 @@ impl AirService for AirVinegRPCService {
 				);
 
 				self.AppState
-					.UpdateRequestStatus(&request_id, crate::ApplicationState::RequestState::RequestState::Completed, Some(100.0))
+					.UpdateRequestStatus(
+						&request_id,
+						crate::ApplicationState::RequestState::RequestState::Completed,
+						Some(100.0),
+					)
 					.await
 					.ok();
 
@@ -1158,7 +1192,11 @@ impl AirService for AirVinegRPCService {
 
 			Err(crate::AirError::FileSystem(e)) => {
 				self.AppState
-					.UpdateRequestStatus(&request_id, crate::ApplicationState::RequestState::RequestState::Failed(e.clone()), None)
+					.UpdateRequestStatus(
+						&request_id,
+						crate::ApplicationState::RequestState::RequestState::Failed(e.clone()),
+						None,
+					)
 					.await
 					.ok();
 
