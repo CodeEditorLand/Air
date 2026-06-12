@@ -6,7 +6,7 @@ use subtle::ConstantTimeEq;
 #[derive(Clone, Deserialize, Serialize)]
 pub struct SecureBytes {
 	/// The underlying bytes
-	Data:Vec<u8>,
+	pub(crate) Data:Vec<u8>,
 }
 
 impl SecureBytes {

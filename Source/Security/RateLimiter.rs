@@ -4,7 +4,9 @@ use tokio::sync::RwLock;
 
 use crate::Result;
 
-use super::{RateLimitConfig, RateLimitStatus, TokenBucket};
+use super::RateLimitConfig::RateLimitConfig;
+use super::RateLimitStatus::RateLimitStatus;
+use super::TokenBucket::TokenBucket;
 
 /// Rate limiter with per-IP and per-client tracking
 pub struct RateLimiter {

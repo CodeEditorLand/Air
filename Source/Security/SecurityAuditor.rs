@@ -4,7 +4,9 @@ use tokio::sync::RwLock;
 
 use crate::dev_log;
 
-use super::{SecurityEvent, SecurityEventType, SecuritySeverity};
+use super::SecurityEvent::SecurityEvent;
+use super::SecurityEventType::SecurityEventType;
+use super::SecuritySeverity::SecuritySeverity;
 
 /// Security auditor for logging security events
 pub struct SecurityAuditor {

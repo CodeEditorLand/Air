@@ -1,13 +1,13 @@
 /// Rate limit bucket for token bucket algorithm
 #[derive(Debug, Clone)]
 pub(crate) struct TokenBucket {
-	tokens:f64,
+	pub(crate) tokens:f64,
 
-	capacity:f64,
+	pub(crate) capacity:f64,
 
-	refill_rate:f64,
+	pub(crate) refill_rate:f64,
 
-	last_refill:std::time::Instant,
+	pub(crate) last_refill:std::time::Instant,
 }
 
 impl TokenBucket {
