@@ -707,16 +707,16 @@ from the main application process:
 
 - **[Rust API Documentation](https://rust.documentation.air.editor.land/)**&#x2001;📖
 - [Deep Dive](https://github.com/CodeEditorLand/Air/tree/Current/Documentation/GitHub/DeepDive.md)
-  - Detailed startup sequence, `gRPC` routing, and data flow
+    - Detailed startup sequence, `gRPC` routing, and data flow
 
 ---
 
 ## Related Documentation
 
 - [Architecture Overview](https://github.com/CodeEditorLand/Air/tree/Current/Documentation/GitHub/Architecture.md)
-  - Internal module structure
+    - Internal module structure
 - [Deep Dive](https://github.com/CodeEditorLand/Air/tree/Current/Documentation/GitHub/DeepDive.md)
-  - In-depth technical details
+    - In-depth technical details
 - [Land Documentation](../../Documentation/GitHub/README.md) - Complete
   documentation index
 - **Mountain** ⛰️ - Main application process -
