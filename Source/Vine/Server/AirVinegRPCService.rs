@@ -23,7 +23,7 @@ use crate::{
 		Store::QueryIndex::{SearchMode, SearchQuery},
 	},
 	Result,
-	Updates::UpdateManager,
+	Updates::UpdateManager::UpdateManager,
 	Utility::CurrentTimestamp,
 	Vine::Generated::{
 		air as air_generated,

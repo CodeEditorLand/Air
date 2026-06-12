@@ -65,7 +65,7 @@ use crate::dev_log;
 
 use AirLibrary::{
     ApplicationState,
-    Updates::UpdateManager,
+    Updates::UpdateManager::UpdateManager,
 };
 
 /// Start the update manager

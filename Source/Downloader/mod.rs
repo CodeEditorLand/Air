@@ -974,7 +974,7 @@ impl DownloadManager {
 
 		config:&DownloadConfig,
 	) -> Result<DownloadResult> {
-		let RetryPolicy = crate::Resilience::RetryPolicy {
+		let RetryPolicy = crate::Resilience::Retry::RetryPolicy {
 			MaxRetries:config.MaxRetries,
 
 			InitialIntervalMs:1000,
@@ -990,18 +990,18 @@ impl DownloadManager {
 			ErrorClassification:std::collections::HashMap::new(),
 		};
 
-		let RetryManager = crate::Resilience::RetryManager::new(RetryPolicy.clone());
+		let RetryManager = crate::Resilience::Retry::RetryManager::new(RetryPolicy.clone());
 
-		let CircuitBreaker = crate::Resilience::CircuitBreaker::new(
+		let CircuitBreaker = crate::Resilience::CircuitBreaker::CircuitBreaker::new(
 			"downloader".to_string(),
-			crate::Resilience::CircuitBreakerConfig::default(),
+			crate::Resilience::CircuitBreakerConfig::CircuitBreakerConfig::default(),
 		);
 
 		let mut attempt = 0;
 
 		loop {
 			// Check circuit breaker state
-			if CircuitBreaker.GetState().await == crate::Resilience::CircuitState::Open {
+			if CircuitBreaker.GetState().await == crate::Resilience::CircuitState::CircuitState::Open {
 				if !CircuitBreaker.AttemptRecovery().await {
 					return Err(AirError::Network(
 						"Circuit breaker is open, too many recent failures".to_string(),

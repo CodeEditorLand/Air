@@ -192,7 +192,7 @@ use AirLibrary::{
 	Metrics,
 	ProtocolVersion,
 	Tracing,
-	Updates::UpdateManager,
+	Updates::UpdateManager::UpdateManager,
 	VERSION,
 	Vine::Generated::air::air_service_server::AirServiceServer,
 	Vine::Server::AirVinegRPCService::AirVinegRPCService,
