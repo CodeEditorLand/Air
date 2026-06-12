@@ -94,7 +94,9 @@ use tokio::sync::{Mutex, RwLock};
 use sha2::{Digest, Sha256};
 
 use crate::{AirError, Result, dev_log};
-use crate::daemon::{Platform, PlatformInfo, DaemonStatus};
+use crate::Daemon::Platform::Platform;
+use crate::Daemon::PlatformInfo::PlatformInfo;
+use crate::Daemon::DaemonStatus::DaemonStatus;
 
 /// Daemon lifecycle manager
 #[derive(Debug)]
@@ -116,57 +118,6 @@ pub struct DaemonManager {
 
 	/// Graceful shutdown flag
 	ShutdownRequested:Arc<RwLock<bool>>,
-}
-
-/// Platform-specific daemon information
-#[derive(Debug)]
-pub struct PlatformInfo {
-	/// Platform type
-	pub Platform:Platform,
-
-	/// Service name for system integration
-	pub ServiceName:String,
-
-	/// User under which daemon runs
-	pub RunAsUser:Option<String>,
-}
-
-/// Platform enum
-#[derive(Debug, Clone, PartialEq)]
-pub enum Platform {
-	Linux,
-
-	MacOS,
-
-	Windows,
-
-	Unknown,
-}
-
-/// Exit codes for daemon operations
-#[derive(Debug, Clone)]
-pub enum ExitCode {
-	Success = 0,
-
-	ConfigurationError = 1,
-
-	AlreadyRunning = 2,
-
-	PermissionDenied = 3,
-
-	ServiceError = 4,
-
-	ResourceError = 5,
-
-	NetworkError = 6,
-
-	AuthenticationError = 7,
-
-	FileSystemError = 8,
-
-	InternalError = 9,
-
-	UnknownError = 10,
 }
 
 impl DaemonManager {

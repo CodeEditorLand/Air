@@ -1,4 +1,4 @@
-use crate::daemon::Platform;
+use crate::Daemon::Platform::Platform;
 
 /// Daemon status information
 #[derive(Debug, Clone)]
