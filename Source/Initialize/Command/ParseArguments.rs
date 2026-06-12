@@ -53,7 +53,8 @@
 //! - Unknown flags are logged but ignored
 //! - Partial inputs are rejected completely
 
-use AirLibrary::CLI::{CliParser, Command};
+use AirLibrary::CLI::CliParser::CliParser;
+use AirLibrary::CLI::CommandTypes::Command;
 
 use crate::dev_log;
 

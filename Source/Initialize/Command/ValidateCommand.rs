@@ -57,7 +57,7 @@
 //! - Pure function, no mutable state
 //! - Thread-safe for any context
 
-use AirLibrary::CLI::Command;
+use AirLibrary::CLI::CommandTypes::Command;
 
 /// Validate command parameters to prevent invalid inputs
 ///

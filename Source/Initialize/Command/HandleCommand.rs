@@ -54,7 +54,8 @@
 /// - Connection failures explain next steps
 /// - Non-implemented commands show workarounds
 
-use AirLibrary::CLI::{Command, ConfigCommand, DebugCommand, OutputFormatter};
+use AirLibrary::CLI::CommandTypes::{Command, ConfigCommand, DebugCommand};
+use AirLibrary::CLI::OutputFormatter::OutputFormatter;
 
 use AirLibrary::Client::AirClient::AirClient;
 
