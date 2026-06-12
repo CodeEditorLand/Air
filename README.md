@@ -1,4 +1,4 @@
-# **Air** 🪁
+# **Air**&#x2001;🪁
 
 <table>
 	<tr>
@@ -50,7 +50,7 @@ The native background daemon for the Land editor.
 
 [![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](https://github.com/CodeEditorLand/Air/tree/Current/LICENSE)
 
-**[Rust API Documentation](https://Rust.Documentation.editor.land/Air/)** 📖
+**[Rust API Documentation](https://Rust.Documentation.editor.land/Air/)**&#x2001;📖
 
 ---
 
