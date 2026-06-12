@@ -1696,7 +1696,7 @@ struct ParallelDownloadResult {
 impl Struct {
 	/// Download a large file using parallel chunked downloads
 	///
-	/// This feature is in progress and will be enhanced with:
+	/// Feature in progress, to be enhanced with:
 	/// - Dynamic chunk size optimization based on bandwidth
 	/// - Adaptive chunk count based on file size
 	/// - Reassembly with integrity verification

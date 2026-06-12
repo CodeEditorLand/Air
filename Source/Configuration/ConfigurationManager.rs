@@ -78,7 +78,7 @@ impl Struct {
 
 	/// Load configuration from file, environment, or create default
 	///
-	/// This method implements the configuration priority chain:
+	/// Implements the configuration priority chain:
 	/// 1. Defaults from code
 	/// 2. Configuration file
 	/// 3. Environment variables (with prefix)

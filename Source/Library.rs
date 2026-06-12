@@ -210,7 +210,7 @@ pub mod Vine;
 
 /// Air Daemon version information
 ///
-/// This is automatically populated from Cargo.toml at build time
+/// Automatically populated from Cargo.toml at build time.
 pub const VERSION:&str = env!("CARGO_PKG_VERSION");
 
 /// Default configuration file name
@@ -238,7 +238,7 @@ pub const DefaultBindAddress:&str = "[::1]:50053";
 
 /// Protocol version for Mountain-Air communication
 ///
-/// This version is sent in all gRPC messages and checked by clients
+/// Sent in all gRPC messages and checked by clients
 /// to ensure compatibility. Increment this value when breaking
 /// protocol changes are made.
 ///
@@ -440,7 +440,7 @@ pub mod Utility {
 	/// Validate file path security
 	///
 	/// Checks for path traversal attempts and invalid characters.
-	/// This is a security measure to prevent directory traversal attacks.
+/// Security measure to prevent directory traversal attacks.
 	///
 	/// # Arguments
 	///

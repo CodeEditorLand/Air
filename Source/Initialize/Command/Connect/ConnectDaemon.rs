@@ -57,7 +57,7 @@ use AirLibrary::DefaultBindAddress;
 /// Attempt to connect to the running daemon
 ///
 /// Creates a basic TCP connection to check if the daemon is running.
-/// This is a simplified check for CLI commands that require daemon access.
+/// Simplified check for CLI commands that require daemon access.
 ///
 /// # Returns
 ///
@@ -69,7 +69,7 @@ use AirLibrary::DefaultBindAddress;
 ///
 /// # Notes
 ///
-/// This is a basic connectivity check. A full gRPC connection with
+/// Basic connectivity check. A full gRPC connection with
 /// authentication would be implemented for production secure communication.
 ///
 /// # FUTURE Enhancements

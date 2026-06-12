@@ -117,7 +117,7 @@ impl BackgroundIndexerContext {
 /// Start file watcher for incremental indexing
 ///
 /// Monitors file system changes and updates index in real-time.
-/// This enables:
+/// Enables:
 /// - Real-time search updates
 /// - Automatic reindexing of changed files
 /// - Removal of deleted files from index

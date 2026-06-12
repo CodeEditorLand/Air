@@ -72,7 +72,7 @@ use crate::{AirError, Configuration::AirConfiguration::IndexingConfig, Indexing:
 
 /// Handle file watcher event for incremental indexing
 ///
-/// This function processes file system events and updates the index
+/// Processes file system events and updates the index accordingly.
 /// accordingly:
 /// - File Created: Index the new file
 /// - File Modified: Re-index the modified file

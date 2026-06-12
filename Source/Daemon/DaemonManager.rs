@@ -182,7 +182,7 @@ impl DaemonManager {
 	}
 
 	/// Acquire daemon lock to ensure single instance
-	/// This method provides comprehensive defensive coding with:
+	/// Performs defensive coding operations with:
 	/// - Race condition protection through mutex locking
 	/// - PID file checksum verification
 	/// - Process validation checks
@@ -713,7 +713,7 @@ WantedBy=multi-user.target
 	///
 	/// Note: For production use with actual Windows service registration,
 	/// integrate with the winsvc crate or windows-rs API.
-	/// This method generates a configuration file compatible with winsvc.
+	/// Generates a configuration file compatible with winsvc.
 	#[cfg(target_os = "windows")]
 	fn GenerateWindowsService(&self) -> Result<String> {
 		let ExePath = std::env::current_exe()

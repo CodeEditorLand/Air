@@ -31,7 +31,7 @@ const MAX_PARALLEL_INDEXING:usize = 10;
 
 /// File indexer implementation with comprehensive search capabilities
 ///
-/// This indexer provides:
+/// Provides:
 /// - Incremental file watching with real-time updates
 /// - Multi-mode search (literal, regex, fuzzy)
 /// - Symbol extraction for VSCode Outline View

@@ -14,7 +14,7 @@ pub use Mist::Resolver::{LandResolver, TokioResolver};
 
 /// Creates a secured reqwest ClientBuilder with DNS override configured.
 ///
-/// This returns a `ClientBuilder` with the DNS resolver already set, allowing
+/// Returns a `ClientBuilder` with the DNS resolver already set, allowing
 /// you to add additional configurations before calling `.build()`.
 ///
 /// # Parameters
@@ -51,7 +51,7 @@ pub fn secured_client_builder(dns_port:u16) -> Result<reqwest::ClientBuilder> {
 
 /// Creates a secured reqwest Client with DNS override.
 ///
-/// This client uses the local DNS server (running on the specified port)
+/// Uses the local DNS server (running on the specified port)
 /// for all DNS resolution. This is a security measure to ensure that all
 /// `*.editor.land` queries go through the local Hickory DNS server,
 /// which validates that they only resolve to `127.x.x.x` addresses.
@@ -97,7 +97,7 @@ pub fn secured_client(dns_port:u16) -> Result<reqwest::Client> {
 
 /// Creates a secured reqwest Client with timeout and DNS override.
 ///
-/// This client uses the local DNS server for all DNS resolution and
+/// Uses the local DNS server for all DNS resolution and
 /// has a default timeout configured.
 ///
 /// # Parameters

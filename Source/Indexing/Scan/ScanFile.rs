@@ -90,7 +90,7 @@ use crate::{
 
 /// Index a single file internally with comprehensive validation
 ///
-/// This function is called by parallel tasks during directory scanning
+/// Called by parallel tasks during directory scanning
 /// and includes:
 /// - File metadata extraction
 /// - Size validation

@@ -15,7 +15,7 @@ use crate::Mountain::TlsConfig::create_tls_client_config;
 
 /// Mountain gRPC client wrapper for Air.
 ///
-/// This struct provides a high-level interface for Air to communicate with
+/// High-level gRPC client for Air to communicate with
 /// Mountain via gRPC. It handles connection lifecycle and provides convenient
 /// methods for common operations.
 #[derive(Debug, Clone)]
@@ -30,7 +30,7 @@ pub struct MountainClient {
 impl MountainClient {
 	/// Creates a new MountainClient by connecting to Mountain.
 	///
-	/// This function establishes a gRPC connection to Mountain using the
+	/// Establishes a gRPC connection to Mountain using the
 	/// provided configuration.
 	///
 	/// # Parameters
@@ -99,7 +99,7 @@ impl MountainClient {
 
 	/// Checks if the connection to Mountain is healthy.
 	///
-	/// This performs a basic connectivity check on the underlying gRPC channel.
+	/// Performs a basic connectivity check on the underlying gRPC channel.
 	///
 	/// # Returns
 	/// Result indicating health status (true if healthy, false otherwise)
@@ -136,7 +136,7 @@ impl MountainClient {
 
 	/// Gets Mountain's operational status.
 	///
-	/// This is a stub for future implementation. When the Mountain service
+	/// Stub for future implementation. When the Mountain service
 	/// exposes a status RPC, this method will call it.
 	///
 	/// # Returns
@@ -151,7 +151,7 @@ impl MountainClient {
 
 	/// Gets a configuration value from Mountain.
 	///
-	/// This is a stub for future implementation. When the Mountain service
+	/// Stub for future implementation. When the Mountain service
 	/// exposes a configuration RPC, this method will call it.
 	///
 	/// # Parameters
@@ -169,7 +169,7 @@ impl MountainClient {
 
 	/// Updates a configuration value in Mountain.
 	///
-	/// This is a stub for future implementation. When the Mountain service
+	/// Stub for future implementation. When the Mountain service
 	/// exposes a configuration RPC, this method will call it.
 	///
 	/// # Parameters

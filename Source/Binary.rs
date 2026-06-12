@@ -217,7 +217,7 @@ macro_rules! Trace {
 
 /// Shutdown signal handler for graceful termination
 ///
-/// This function waits for either Ctrl+C (SIGINT) or SIGTERM signals
+/// Waits for either Ctrl+C (SIGINT) or SIGTERM signals to initiate graceful shutdown.
 /// and then initiates the shutdown sequence. It provides a timeout
 /// to handle cases where signal handlers fail to install properly.
 ///
@@ -1385,7 +1385,7 @@ fn validate_command(cmd:&Command) -> Result<(), String> {
 /// Attempt to connect to the running daemon
 ///
 /// Creates a basic TCP connection to check if the daemon is running.
-/// This is a simplified check for pre-implementation status.
+/// Performs a simplified status check for pre-implementation readiness.
 ///
 /// # FUTURE Enhancements
 /// - Implement proper gRPC client connection
@@ -1458,7 +1458,7 @@ async fn attempt_daemon_connection_with_retry(max_retries:usize, initial_delay_m
 
 /// Attempt to connect to the running daemon (simple version with default retry)
 ///
-/// This is the main entry point that uses default retry settings.
+/// Main entry point that uses default retry settings.
 /// For more control, use attempt_daemon_connection_with_retry directly.
 async fn attempt_daemon_connection() -> Result<(), String> {
 	// Default: 3 retries with 500ms initial delay
@@ -1529,7 +1529,7 @@ fn HandleMetricsRequest() -> String {
 
 /// The main asynchronous function that sets up and runs the Air daemon
 ///
-/// This is the primary entry point for the Air background service. It
+/// Primary entry point for the Air background service. It
 /// coordinates all initialization, starts the gRPC server, manages the daemon
 /// lifecycle, and handles graceful shutdown.
 ///

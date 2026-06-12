@@ -55,7 +55,7 @@ use crate::dev_log;
 
 /// Shutdown signal handler for graceful termination
 ///
-/// This function waits for either Ctrl+C (SIGINT) or SIGTERM signals
+/// Waits for either Ctrl+C (SIGINT) or SIGTERM signals to initiate graceful shutdown.
 /// and then initiates the shutdown sequence. It provides a timeout
 /// to handle cases where signal handlers fail to install properly.
 ///

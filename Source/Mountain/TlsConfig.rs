@@ -14,7 +14,7 @@ use crate::dev_log;
 
 /// TLS configuration for gRPC connections to Mountain.
 ///
-/// This struct holds the paths to certificates and keys required for
+/// Paths to certificates and keys required for
 /// TLS/mTLS authentication when connecting to Mountain.
 #[cfg(feature = "mtls")]
 #[derive(Debug, Clone)]
@@ -102,7 +102,7 @@ impl TlsConfig {
 
 /// Creates a TLS client configuration from a TlsConfig.
 ///
-/// This function loads certificates and keys from the file system and
+/// Loads certificates and keys from the file system and
 /// constructs a rustls ClientConfig suitable for gRPC connections.
 ///
 /// # Parameters

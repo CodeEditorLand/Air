@@ -212,7 +212,7 @@ impl UpdateManager {
 
 	/// Check for available updates from the configured update server
 	///
-	/// This method:
+	/// Performs the configured operation.
 	/// - Queries the update server based on the configured channel
 	/// - Validates the update against minimum compatibility requirements
 	/// - Updates the internal status with available update information
@@ -352,7 +352,7 @@ impl UpdateManager {
 
 	/// Download update package with resumable download support
 	///
-	/// This method:
+	/// Performs the configured operation.
 	/// - Validates available disk space before starting download
 	/// - Supports resumable downloads from network interruptions
 	/// - Tracks download progress and calculates ETA
@@ -690,7 +690,7 @@ impl UpdateManager {
 
 	/// Apply update with rollback capability
 	///
-	/// This method:
+	/// Performs the configured operation.
 	/// - Creates full backup of current installation
 	/// - Validates update package integrity
 	/// - Applies update atomically
@@ -937,7 +937,7 @@ impl UpdateManager {
 
 	/// Fetch update information from the configured update server
 	///
-	/// This method:
+	/// Performs the configured operation.
 	/// - Queries the update server based on platform, version, and channel
 	/// - Uses circuit breakers and retry policies for resilience
 	/// - Returns update information if a newer version is available
@@ -1113,7 +1113,7 @@ impl UpdateManager {
 
 	/// Verify file checksum (SHA256 by default)
 	///
-	/// This method:
+	/// Performs the configured operation.
 	/// - Reads the entire file into memory
 	/// - Computes SHA256 hash
 	/// - Compares with expected checksum
@@ -1203,7 +1203,7 @@ impl UpdateManager {
 
 	/// Verify cryptographic signature of update package
 	///
-	/// This method:
+	/// Performs the configured operation.
 	/// - Uses Ed25519 signature verification
 	/// - Verifies the package hasn't been tampered with
 	/// - Uses the public key configured in the system
@@ -1255,7 +1255,7 @@ impl UpdateManager {
 
 	/// Create backup of current installation
 	///
-	/// This method:
+	/// Performs the configured operation.
 	/// - Creates a timestamped backup directory
 	/// - Copies critical files (binaries, config, data)
 	/// - Computes checksum of backup for rollback verification
@@ -1337,7 +1337,7 @@ impl UpdateManager {
 
 	/// Rollback to a previous version using backup
 	///
-	/// This method:
+	/// Performs the configured operation.
 	/// - Verifies backup integrity using checksum
 	/// - Restores files from backup
 	/// - Validated rollback success
@@ -1443,7 +1443,7 @@ impl UpdateManager {
 
 	/// Rollback to a specific version by version number
 	///
-	/// This method:
+	/// Performs the configured operation.
 	/// - Searches for backup matching the version
 	/// - Calls RollbackToBackup with the backup
 	///
@@ -1553,7 +1553,7 @@ impl UpdateManager {
 
 	/// Verify update file integrity comprehensive check
 	///
-	/// This method:
+	/// Performs the configured operation.
 	/// - Checks file existence and non-zero size
 	/// - Verifies all checksums if UpdateInfo provided
 	/// - Detects corrupted downloads
@@ -1730,7 +1730,7 @@ impl UpdateManager {
 
 	/// Record telemetry for update operations
 	///
-	/// This method:
+	/// Performs the configured operation.
 	/// - Creates telemetry event with operation details
 	/// - In production, would send to analytics service
 	/// - Currently logs to file for debugging
@@ -1909,7 +1909,7 @@ impl UpdateManager {
 
 	/// Cancel ongoing download
 	///
-	/// This method:
+	/// Performs the configured operation.
 	/// - Cancels the active download session
 	/// - Cleans up temporary files
 	/// - Updates status to paused
@@ -1958,7 +1958,7 @@ impl UpdateManager {
 
 	/// Resume paused download
 	///
-	/// This method:
+	/// Performs the configured operation.
 	/// - Resumes a paused download session
 	/// - Uses HTTP Range header for resume capability
 	///
@@ -1995,7 +1995,7 @@ impl UpdateManager {
 
 	/// Recursively copy a directory
 	///
-	/// This helper method copies all files and subdirectories from source to
+	/// Copies all files and subdirectories from source to
 	/// destination. Used during backup and restore operations.
 	///
 	/// # Arguments
@@ -2041,7 +2041,7 @@ impl UpdateManager {
 
 	/// Stage update for pre-installation verification
 	///
-	/// This method:
+	/// Performs the configured operation.
 	/// - Stages the update in the staging directory
 	/// - Verifies the staged update
 	/// - Prepares for installation
@@ -2139,7 +2139,7 @@ impl UpdateManager {
 
 	/// Start background update checking task
 	///
-	/// This method:
+	/// Performs the configured operation.
 	/// - Periodically checks for updates based on configured interval
 	/// - Runs in a separate tokio task
 	/// - Can be cancelled by stopping the task
@@ -2165,7 +2165,7 @@ impl UpdateManager {
 
 	/// Background task for periodic update checks
 	///
-	/// This task:
+	/// Background task for periodic update checks that:
 	/// - Checks for updates at regular intervals
 	/// - Logs any errors but doesn't fail the task
 	/// - Can run indefinitely until stopped
@@ -2216,7 +2216,7 @@ impl UpdateManager {
 
 	/// Stop background tasks
 	///
-	/// This method:
+	/// Performs the configured operation.
 	/// - Logs the stop request
 	/// - Aborts the stored JoinHandle to cancel the background task
 	pub async fn StopBackgroundTasks(&self) {

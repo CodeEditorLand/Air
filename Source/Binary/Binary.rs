@@ -400,8 +400,7 @@ impl Binary {
 
     /// Creates a new Binary instance with the specified configuration.
     ///
-    /// This is the primary constructor for the daemon coordinator. It validates
-    /// the configuration and prepares the internal state for initialization.
+    /// Validates the configuration and prepares the internal state for initialization.
     ///
     /// # Arguments
     ///
@@ -470,7 +469,7 @@ impl Binary {
 
     /// Initializes the daemon and all required subsystems.
     ///
-    /// This is the main initialization routine that:
+    /// Main initialization routine that:
     /// 1. Initializes logging, metrics, and tracing
     /// 2. Loads and validates configuration
     /// 3. Creates the application state
@@ -563,7 +562,7 @@ impl Binary {
 
     /// Runs the daemon until shutdown signal received.
     ///
-    /// This is the main event loop that runs until:
+    /// Main event loop that runs until:
     /// - Operating system signals (SIGTERM, SIGINT)
     /// - Fatal error occurs
     /// - Explicit shutdown requested
@@ -613,7 +612,7 @@ impl Binary {
 
     /// Performs graceful shutdown of all daemon components.
     ///
-    /// This orchestrates a clean shutdown sequence:
+    /// Orchestrates a clean shutdown sequence:
     /// 1. Sets shutdown flag (prevents new connections)
     /// 2. Stops accepting new gRPC connections
     /// 3. Waits for active connections to drain (with timeout)
@@ -1886,7 +1885,7 @@ pub fn get_build_info() -> &'static str {
 
 /// Macro to gather build-time information.
 ///
-/// This macro is used by `get_build_info()` to provide detailed
+Used by `get_build_info()` to provide detailed
 /// build metadata. In a real implementation, this would be populated
 /// by the build system (build.rs).
 ///

@@ -53,7 +53,7 @@ impl MountainClientConfig {
 
 	/// Creates a MountainClientConfig from environment variables.
 	///
-	/// This method reads configuration from the following environment
+	/// Reads configuration from the following environment
 	/// variables:
 	/// - `MOUNTAIN_ADDRESS`: gRPC server address (default: `"[::1]:50051"`)
 	/// - `MOUNTAIN_CONNECTION_TIMEOUT_SECS`: Connection timeout in seconds

@@ -1308,7 +1308,7 @@ impl ConfigHotReload {
 
 	/// Get configuration change event receiver
 	///
-	/// This can be used to subscribe to configuration change notifications
+	/// Subscribes to configuration change notifications
 	pub fn SubscribeChanges(&self) -> broadcast::Receiver<ConfigChangeEvent> { self.change_sender.subscribe() }
 
 	/// Get configuration path

@@ -96,7 +96,7 @@ pub struct StartedService {
 /// # Port
 ///
 /// The server listens on port 50053 by default (Air's Vine protocol port).
-/// This is separate from Cocoon's port 50052 (NodeJS host).
+/// Separate from Cocoon's port 50052 (NodeJS host).
 ///
 /// # Protocol
 ///
