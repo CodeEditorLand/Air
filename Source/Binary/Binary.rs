@@ -164,7 +164,7 @@ use crate::dev_log;
 use AirLibrary::{
     ApplicationState,
     Authentication::AuthenticationService,
-    CLI::Command,
+    CLI::CommandTypes::Command,
     Configuration::{
         AirConfiguration,
         ConfigurationManager
