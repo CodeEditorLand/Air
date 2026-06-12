@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use ring::pbkdf2;
 use rand::{Rng, rng};
 use base64::{Engine, engine::general_purpose::STANDARD};
+use zeroize::Zeroize;
 
 use crate::{AirError, Result, dev_log};
 
