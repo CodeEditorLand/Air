@@ -118,7 +118,7 @@ pub struct MonitoringHandles {
 /// the number of concurrent operations. Note that this is not an exact thread
 /// count as tokio uses work-stealing scheduling with a limited worker pool.
 pub async fn StartMonitoring(
-	AppState:Arc<ApplicationState>,
+	AppState:Arc<crate::ApplicationState::ApplicationState::Struct>,
 
 	HealthManager:Arc<HealthCheckManager>,
 ) -> MonitoringHandles {

@@ -120,7 +120,7 @@ pub struct BuiltServer {
 /// - Add dependency injection validation
 /// - Add service version compatibility checks
 pub fn BuildServer(
-	app_state:Arc<ApplicationState>,
+	app_state:Arc<crate::ApplicationState::ApplicationState::Struct>,
 
 	auth_service:Arc<AuthenticationService>,
 

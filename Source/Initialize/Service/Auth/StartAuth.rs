@@ -103,7 +103,7 @@ use AirLibrary::{
 /// - Implement token revocation
 /// - Add biometric authentication support
 pub async fn StartAuth(
-    app_state: Arc<ApplicationState>,
+    app_state: Arc<crate::ApplicationState::ApplicationState::Struct>,
 ) -> Result<Arc<AuthenticationService>, String> {
 
     dev_log!("lifecycle", "[Auth] Starting authentication service...");    

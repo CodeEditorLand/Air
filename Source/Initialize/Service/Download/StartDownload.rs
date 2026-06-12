@@ -105,7 +105,7 @@ use AirLibrary::{
 //! - Add peer-to-peer download support
 
 pub async fn StartDownload(
-    app_state: Arc<ApplicationState>,
+    app_state: Arc<crate::ApplicationState::ApplicationState::Struct>,
 ) -> Result<Arc<DownloadManager>, String> {
 
     dev_log!("lifecycle", "[Download] Starting download manager...");    

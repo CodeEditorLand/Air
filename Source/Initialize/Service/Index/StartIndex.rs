@@ -105,7 +105,7 @@ use AirLibrary::{
 //! - Add symbol relationship tracking
 
 pub async fn StartIndex(
-    app_state: Arc<ApplicationState>,
+    app_state: Arc<crate::ApplicationState::ApplicationState::Struct>,
 ) -> Result<Arc<FileIndexer>, String> {
 
     dev_log!("lifecycle", "[Index] Starting file indexer...");    

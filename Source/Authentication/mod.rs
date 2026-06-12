@@ -14,7 +14,7 @@ use ring::{aead, rand::SecureRandom};
 
 use crate::{
 	AirError,
-	ApplicationState::ApplicationState,
+	ApplicationState::ApplicationState::Struct,
 	Configuration::ConfigurationManager,
 	Result,
 	Utility,
@@ -24,7 +24,7 @@ use crate::{
 /// Authentication service implementation
 pub struct AuthenticationService {
 	/// Application state
-	AppState:Arc<ApplicationState>,
+	AppState:Arc<crate::ApplicationState::ApplicationState::Struct>,
 
 	/// Active sessions
 	Sessions:Arc<RwLock<HashMap<String, AuthSession>>>,
@@ -89,7 +89,7 @@ struct CryptoKeys {
 
 impl AuthenticationService {
 	/// Create a new authentication service
-	pub async fn new(AppState:Arc<ApplicationState>) -> Result<Self> {
+	pub async fn new(AppState:Arc<crate::ApplicationState::ApplicationState::Struct>) -> Result<Self> {
 		let config = &AppState.Configuration.Authentication;
 
 		// Expand credentials path
@@ -118,7 +118,7 @@ impl AuthenticationService {
 		// Initialize service status
 		Service
 			.AppState
-			.UpdateServiceStatus("authentication", crate::ApplicationState::ServiceStatus::Running)
+			.UpdateServiceStatus("authentication", crate::ApplicationState::ServiceStatus::ServiceStatus::Running)
 			.await
 			.map_err(|e| AirError::Authentication(e.to_string()))?;
 

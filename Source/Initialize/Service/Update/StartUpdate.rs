@@ -103,7 +103,7 @@ use AirLibrary::{
 //! - Implement rollback on update failure
 //! - Add update download progress streaming
 pub async fn StartUpdate(
-    app_state: Arc<ApplicationState>,
+    app_state: Arc<crate::ApplicationState::ApplicationState::Struct>,
 ) -> Result<Arc<UpdateManager>, String> {
 
     dev_log!("lifecycle", "[Update] Starting update manager...");    

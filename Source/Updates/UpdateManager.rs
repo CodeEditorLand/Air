@@ -19,7 +19,7 @@ use sha2::{Digest, Sha256};
 use uuid::Uuid;
 use md5;
 
-use crate::{AirError, ApplicationState::ApplicationState, Configuration::ConfigurationManager, Result, dev_log};
+use crate::{AirError, ApplicationState::ApplicationState::Struct, Configuration::ConfigurationManager, Result, dev_log};
 
 use super::DownloadSession::DownloadSession;
 use super::InstallationStatus::InstallationStatus;
@@ -36,7 +36,7 @@ use super::UpdateTelemetry::UpdateTelemetry;
 /// Update manager implementation with full lifecycle support
 pub struct UpdateManager {
 	/// Application state
-	AppState:Arc<ApplicationState>,
+	AppState:Arc<crate::ApplicationState::ApplicationState::Struct>,
 
 	/// Current update status
 	update_status:Arc<RwLock<UpdateStatus>>,
@@ -68,7 +68,7 @@ pub struct UpdateManager {
 
 impl UpdateManager {
 	/// Create a new update manager with comprehensive initialization
-	pub async fn new(AppState:Arc<ApplicationState>) -> Result<Self> {
+	pub async fn new(AppState:Arc<crate::ApplicationState::ApplicationState::Struct>) -> Result<Self> {
 		let config = &AppState.Configuration.Updates;
 
 		// Expand cache directory path
@@ -159,7 +159,7 @@ impl UpdateManager {
 		// Initialize service status
 		manager
 			.AppState
-			.UpdateServiceStatus("updates", crate::ApplicationState::ServiceStatus::Running)
+			.UpdateServiceStatus("updates", crate::ApplicationState::ServiceStatus::ServiceStatus::Running)
 			.await
 			.map_err(|e| AirError::Internal(e.to_string()))?;
 

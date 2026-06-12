@@ -116,7 +116,7 @@ use tokio::sync::{RwLock, Semaphore};
 
 use crate::{
 	AirError,
-	ApplicationState::ApplicationState,
+	ApplicationState::ApplicationState::Struct,
 	Configuration::ConfigurationManager,
 	Result,
 	Utility,
@@ -126,7 +126,7 @@ use crate::{
 /// Download manager implementation with full resilience and capabilities
 pub struct DownloadManager {
 	/// Application state reference
-	AppState:Arc<ApplicationState>,
+	AppState:Arc<crate::ApplicationState::ApplicationState::Struct>,
 
 	/// Active downloads tracking
 	ActiveDownloads:Arc<RwLock<HashMap<String, DownloadStatus>>>,
@@ -432,7 +432,7 @@ impl Default for DownloadConfig {
 
 impl DownloadManager {
 	/// Create a new download manager with comprehensive initialization
-	pub async fn new(AppState:Arc<ApplicationState>) -> Result<Self> {
+	pub async fn new(AppState:Arc<crate::ApplicationState::ApplicationState::Struct>) -> Result<Self> {
 		let config = &AppState.Configuration.Downloader;
 
 		// Expand and validate cache directory path
@@ -497,7 +497,7 @@ impl DownloadManager {
 		// Initialize service status
 		manager
 			.AppState
-			.UpdateServiceStatus("downloader", crate::ApplicationState::ServiceStatus::Running)
+			.UpdateServiceStatus("downloader", crate::ApplicationState::ServiceStatus::ServiceStatus::Running)
 			.await
 			.map_err(|e| AirError::Internal(e.to_string()))?;
 
@@ -1903,7 +1903,7 @@ impl DownloadManager {
 		// Stop service status
 		let _ = self
 			.AppState
-			.UpdateServiceStatus("downloader", crate::ApplicationState::ServiceStatus::Stopped)
+			.UpdateServiceStatus("downloader", crate::ApplicationState::ServiceStatus::ServiceStatus::Stopped)
 			.await;
 	}
 

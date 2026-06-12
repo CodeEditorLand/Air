@@ -84,7 +84,7 @@ use tokio::sync::{Mutex, RwLock};
 
 use crate::{
 	AirError,
-	ApplicationState::ApplicationState,
+	ApplicationState::ApplicationState::Struct,
 	Configuration::ConfigurationManager,
 	Indexing::{
 		Scan::{
@@ -153,7 +153,7 @@ pub struct IndexStatistics {
 /// - Parallel indexing with resource limits
 pub struct FileIndexer {
 	/// Application state
-	AppState:Arc<ApplicationState>,
+	AppState:Arc<crate::ApplicationState::ApplicationState::Struct>,
 
 	/// File index with metadata and symbols
 	file_index:Arc<RwLock<FileIndex>>,
@@ -179,7 +179,7 @@ impl FileIndexer {
 	/// - Existing index loading or fresh creation
 	/// - Index corruption detection
 	/// - Service status initialization
-	pub async fn new(AppState:Arc<ApplicationState>) -> Result<Self> {
+	pub async fn new(AppState:Arc<crate::ApplicationState::ApplicationState::Struct>) -> Result<Self> {
 		let config = &AppState.Configuration.Indexing;
 
 		// Expand index directory path with validation
@@ -211,7 +211,7 @@ impl FileIndexer {
 		// Initialize service status
 		indexer
 			.AppState
-			.UpdateServiceStatus("indexing", crate::ApplicationState::ServiceStatus::Running)
+			.UpdateServiceStatus("indexing", crate::ApplicationState::ServiceStatus::ServiceStatus::Running)
 			.await
 			.map_err(|e| AirError::Internal(e.to_string()))?;
 
