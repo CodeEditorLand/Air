@@ -105,6 +105,7 @@ pub struct BackgroundIndexerContext {
 impl BackgroundIndexerContext {
 	pub fn new(
 		app_state:Arc<crate::ApplicationState::ApplicationState::Struct>,
+
 		file_index:Arc<RwLock<FileIndex>>,
 	) -> Self {
 		Self {
