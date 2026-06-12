@@ -9,10 +9,17 @@ use serde::{Deserialize, Serialize};
 
 use crate::{AirError, DefaultConfigFile, Result, dev_log};
 
-use super::{AirConfiguration, AuthConfig, DownloadConfig, IndexingConfig, LoggingConfig, PerformanceConfig, UpdateConfig, gRPCConfig};
+use super::AirConfiguration::Struct as AirConfig;
+use super::AirConfiguration::AuthConfig;
+use super::AirConfiguration::DownloadConfig;
+use super::AirConfiguration::IndexingConfig;
+use super::AirConfiguration::LoggingConfig;
+use super::AirConfiguration::PerformanceConfig;
+use super::AirConfiguration::UpdateConfig;
+use super::AirConfiguration::gRPCConfig;
 use super::Schema::generate_schema;
 
-pub struct ConfigurationManager {
+pub struct Struct {
 	/// Path to configuration file
 	ConfigPath:Option<PathBuf>,
 
@@ -26,7 +33,7 @@ pub struct ConfigurationManager {
 	EnvPrefix:String,
 }
 
-impl ConfigurationManager {
+impl Struct {
 	/// Create a new configuration manager
 	///
 	/// # Arguments
@@ -79,9 +86,9 @@ impl ConfigurationManager {
 	/// # Returns
 	///
 	/// Validated and loaded configuration
-	pub async fn LoadConfiguration(&self) -> Result<AirConfiguration> {
+	pub async fn LoadConfiguration(&self) -> Result<AirConfig> {
 		// Start with default configuration
-		let mut config = AirConfiguration::default();
+		let mut config = AirConfig::default();
 
 		// Try to load from specified or default path
 		let ConfigPath = self.GetConfigPath()?;
@@ -117,12 +124,12 @@ impl ConfigurationManager {
 	/// # Returns
 	///
 	/// Parsed and validated configuration
-	async fn LoadFromFile(&self, path:&Path) -> Result<AirConfiguration> {
+	async fn LoadFromFile(&self, path:&Path) -> Result<AirConfig> {
 		let content = tokio::fs::read_to_string(path)
 			.await
 			.map_err(|e| AirError::Configuration(format!("Failed to read config file '{}': {}", path.display(), e)))?;
 
-		let config:AirConfiguration = toml::from_str(&content).map_err(|e| {
+		let config:AirConfig = toml::from_str(&content).map_err(|e| {
 			AirError::Configuration(format!("Failed to parse TOML config file '{}': {}", path.display(), e))
 		})?;
 
@@ -144,7 +151,7 @@ impl ConfigurationManager {
 	/// - Creates backup if enabled
 	/// - Uses atomic write (write to temp file, then rename)
 	/// - Creates parent directories if needed
-	pub async fn SaveConfiguration(&self, config:&AirConfiguration) -> Result<()> {
+	pub async fn SaveConfiguration(&self, config:&AirConfig) -> Result<()> {
 		// Validate before saving
 		self.ValidateConfiguration(config)?;
 
@@ -190,7 +197,7 @@ impl ConfigurationManager {
 	/// - Range validation for numeric values
 	/// - Path validation for security
 	/// - URL validation for network resources
-	fn ValidateConfiguration(&self, config:&AirConfiguration) -> Result<()> {
+	fn ValidateConfiguration(&self, config:&AirConfig) -> Result<()> {
 		// Schema version validation
 		self.ValidateSchemaVersion(&config.SchemaVersion)?;
 
@@ -711,7 +718,7 @@ impl ConfigurationManager {
 	fn IsValidUrl(url:&str) -> bool { url::Url::parse(url).is_ok() }
 
 	/// Perform schema-based validation
-	fn SchemaValidate(&self, config:&AirConfiguration) -> Result<()> {
+	fn SchemaValidate(&self, config:&AirConfig) -> Result<()> {
 		let _schema = generate_schema();
 
 		// Convert config to JSON for validation
@@ -737,7 +744,7 @@ impl ConfigurationManager {
 	///
 	/// Variable naming convention: {PREFIX}_{SECTION}_{FIELD} (uppercase,
 	/// underscores)
-	fn ApplyEnvironmentOverrides(&self, config:&mut AirConfiguration) -> Result<()> {
+	fn ApplyEnvironmentOverrides(&self, config:&mut AirConfig) -> Result<()> {
 		let mut override_count = 0;
 
 		// gRPC overrides
@@ -920,8 +927,8 @@ impl ConfigurationManager {
 	/// # Returns
 	///
 	/// Configuration with profile-appropriate defaults
-	pub fn GetProfileDefaults(profile:&str) -> AirConfiguration {
-		let mut config = AirConfiguration::default();
+	pub fn GetProfileDefaults(profile:&str) -> AirConfig {
+		let mut config = AirConfig::default();
 
 		config.Profile = profile.to_string();
 
@@ -998,7 +1005,7 @@ impl ConfigurationManager {
 	/// # Returns
 	///
 	/// SHA256 hash of the configuration
-	pub fn ComputeHash(config:&AirConfiguration) -> Result<String> {
+	pub fn ComputeHash(config:&AirConfig) -> Result<String> {
 		let config_str = toml::to_string_pretty(config)
 			.map_err(|e| AirError::Configuration(format!("Failed to serialize config: {}", e)))?;
 
@@ -1020,7 +1027,7 @@ impl ConfigurationManager {
 	/// # Returns
 	///
 	/// JSON string representation of configuration
-	pub fn ExportToJson(config:&AirConfiguration) -> Result<String> {
+	pub fn ExportToJson(config:&AirConfig) -> Result<String> {
 		serde_json::to_string_pretty(config)
 			.map_err(|e| AirError::Configuration(format!("Failed to export to JSON: {}", e)))
 	}
@@ -1034,8 +1041,8 @@ impl ConfigurationManager {
 	/// # Returns
 	///
 	/// Parsed and validated configuration
-	pub fn ImportFromJson(json_str:&str) -> Result<AirConfiguration> {
-		let config:AirConfiguration = serde_json::from_str(json_str)
+	pub fn ImportFromJson(json_str:&str) -> Result<AirConfig> {
+			let config:AirConfig = serde_json::from_str(json_str)
 			.map_err(|e| AirError::Configuration(format!("Failed to import from JSON: {}", e)))?;
 
 		Ok(config)
@@ -1085,4 +1092,58 @@ impl ConfigurationManager {
 
 		mappings
 	}
+}
+
+// =============================================================================
+// Free-function wrappers
+// =============================================================================
+
+/// Expand a path with home directory (~) expansion
+pub fn ExpandPath(path:&str) -> Result<PathBuf> {
+	Struct::ExpandPath(path)
+}
+
+/// Compute SHA-256 hash of configuration for change detection
+pub fn ComputeHash(config:&AirConfig) -> Result<String> {
+	Struct::ComputeHash(config)
+}
+
+/// Validate an address string (IP:port or hostname:port format)
+pub fn IsValidAddress(addr:&str) -> bool {
+	Struct::IsValidAddress(addr)
+}
+
+/// Validate a URL string
+pub fn IsValidUrl(url:&str) -> bool {
+	Struct::IsValidUrl(url)
+}
+
+/// Get profile-specific default configuration
+pub fn GetProfileDefaults(profile:&str) -> AirConfig {
+	Struct::GetProfileDefaults(profile)
+}
+
+/// Create a new configuration manager
+pub fn New(ConfigPath:Option<String>) -> Result<Struct> {
+	Struct::New(ConfigPath)
+}
+
+/// Export configuration to JSON string
+pub fn ExportToJson(config:&AirConfig) -> Result<String> {
+	Struct::ExportToJson(config)
+}
+
+/// Import configuration from JSON string
+pub fn ImportFromJson(json_str:&str) -> Result<AirConfig> {
+	Struct::ImportFromJson(json_str)
+}
+
+/// Load configuration from a specific file path
+pub fn load(config_path:&std::path::Path) -> Result<AirConfig> {
+	// Create a temporary manager to load from the given path
+	let path_str = config_path.to_str().map(|s| s.to_string());
+	let manager = Struct::New(path_str)?;
+	let rt = tokio::runtime::Runtime::new()
+		.map_err(|e| AirError::Configuration(format!("Failed to create tokio runtime: {}", e)))?;
+	rt.block_on(manager.LoadConfiguration())
 }

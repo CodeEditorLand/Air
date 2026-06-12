@@ -7,7 +7,7 @@ use super::SecuritySeverity::SecuritySeverity;
 
 /// Security event audit log
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SecurityEvent {
+pub struct Struct {
 	/// Event timestamp
 	pub Timestamp:u64,
 

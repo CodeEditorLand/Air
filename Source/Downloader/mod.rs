@@ -141,7 +141,7 @@ pub struct DownloadManager {
 	client:reqwest::Client,
 
 	/// Checksum verifier helper
-	ChecksumVerifier:Arc<crate::Security::ChecksumVerifier::ChecksumVerifier>,
+	ChecksumVerifier:Arc<crate::Security::ChecksumVerifier::Struct>,
 
 	/// Bandwidth limiter for global control
 	BandwidthLimiter:Arc<Semaphore>,
@@ -483,7 +483,7 @@ impl DownloadManager {
 
 			client,
 
-			ChecksumVerifier:Arc::new(crate::Security::ChecksumVerifier::ChecksumVerifier::New()),
+			ChecksumVerifier:Arc::new(crate::Security::ChecksumVerifier::Struct::New()),
 
 			BandwidthLimiter,
 

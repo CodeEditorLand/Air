@@ -104,7 +104,7 @@ use tokio::{
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Result as NotifyResult, Watcher};
 use chrono::{DateTime, Utc};
 
-use crate::{AirError, Configuration::AirConfiguration, Result, dev_log};
+use crate::{AirError, Configuration::AirConfiguration::Struct, Result, dev_log};
 
 // =============================================================================
 // Configuration Hot-Reload Manager
@@ -113,10 +113,10 @@ use crate::{AirError, Configuration::AirConfiguration, Result, dev_log};
 /// Configuration hot-reload manager with file watching and validation
 pub struct ConfigHotReload {
 	/// Current active configuration
-	active_config:Arc<RwLock<AirConfiguration>>,
+	active_config:Arc<RwLock<Struct>>,
 
 	/// Previous configuration for rollback
-	previous_config:Arc<RwLock<Option<AirConfiguration>>>,
+	previous_config:Arc<RwLock<Option<Struct>>>,
 
 	/// Last successful configuration hash
 	last_config_hash:Arc<RwLock<Option<String>>>,
@@ -241,7 +241,7 @@ pub struct ConfigChange {
 /// Configuration validation trait
 pub trait ConfigValidator: Send + Sync {
 	/// Validate a configuration
-	fn validate(&self, config:&AirConfiguration) -> Result<()>;
+	fn validate(&self, config:&Struct) -> Result<()>;
 
 	/// Get validator name
 	fn name(&self) -> &str;
@@ -258,7 +258,7 @@ pub trait ConfigValidator: Send + Sync {
 pub struct gRPCConfigValidator;
 
 impl ConfigValidator for gRPCConfigValidator {
-	fn validate(&self, config:&AirConfiguration) -> Result<()> {
+	fn validate(&self, config:&Struct) -> Result<()> {
 		if config.gRPC.BindAddress.is_empty() {
 			return Err(AirError::Configuration("gRPC bind address cannot be empty".to_string()));
 		}
@@ -301,7 +301,7 @@ impl ConfigValidator for gRPCConfigValidator {
 pub struct AuthConfigValidator;
 
 impl ConfigValidator for AuthConfigValidator {
-	fn validate(&self, config:&AirConfiguration) -> Result<()> {
+	fn validate(&self, config:&Struct) -> Result<()> {
 		if config.Authentication.Enabled {
 			if config.Authentication.CredentialsPath.is_empty() {
 				return Err(AirError::Configuration(
@@ -347,7 +347,7 @@ impl ConfigValidator for AuthConfigValidator {
 pub struct UpdateConfigValidator;
 
 impl ConfigValidator for UpdateConfigValidator {
-	fn validate(&self, config:&AirConfiguration) -> Result<()> {
+	fn validate(&self, config:&Struct) -> Result<()> {
 		if config.Updates.Enabled {
 			if config.Updates.UpdateServerUrl.is_empty() {
 				return Err(AirError::Configuration(
@@ -394,7 +394,7 @@ impl ConfigValidator for UpdateConfigValidator {
 pub struct DownloadConfigValidator;
 
 impl ConfigValidator for DownloadConfigValidator {
-	fn validate(&self, config:&AirConfiguration) -> Result<()> {
+	fn validate(&self, config:&Struct) -> Result<()> {
 		if config.Downloader.Enabled {
 			if config.Downloader.CacheDirectory.is_empty() {
 				return Err(AirError::Configuration(
@@ -448,7 +448,7 @@ impl ConfigValidator for DownloadConfigValidator {
 pub struct IndexingConfigValidator;
 
 impl ConfigValidator for IndexingConfigValidator {
-	fn validate(&self, config:&AirConfiguration) -> Result<()> {
+	fn validate(&self, config:&Struct) -> Result<()> {
 		if config.Indexing.Enabled {
 			if config.Indexing.IndexDirectory.is_empty() {
 				return Err(AirError::Configuration(
@@ -501,7 +501,7 @@ impl ConfigValidator for IndexingConfigValidator {
 pub struct LoggingConfigValidator;
 
 impl ConfigValidator for LoggingConfigValidator {
-	fn validate(&self, config:&AirConfiguration) -> Result<()> {
+	fn validate(&self, config:&Struct) -> Result<()> {
 		let valid_levels = ["trace", "debug", "info", "warn", "error"];
 
 		if !valid_levels.contains(&config.Logging.Level.as_str()) {
@@ -542,7 +542,7 @@ impl ConfigValidator for LoggingConfigValidator {
 pub struct PerformanceConfigValidator;
 
 impl ConfigValidator for PerformanceConfigValidator {
-	fn validate(&self, config:&AirConfiguration) -> Result<()> {
+	fn validate(&self, config:&Struct) -> Result<()> {
 		// Validate range [64, 16384]
 		if config.Performance.MemoryLimitMb < 64 || config.Performance.MemoryLimitMb > 16384 {
 			return Err(AirError::Configuration(format!(
@@ -600,7 +600,7 @@ impl ConfigHotReload {
 	/// # Returns
 	///
 	/// New ConfigHotReload instance with validation chain initialized
-	pub async fn New(config_path:PathBuf, initial_config:AirConfiguration) -> Result<Self> {
+	pub async fn New(config_path:PathBuf, initial_config:Struct) -> Result<Self> {
 		let (change_sender, _) = broadcast::channel(100);
 
 		let (reload_tx, reload_rx) = mpsc::channel(100);
@@ -895,7 +895,7 @@ impl ConfigHotReload {
 
 		let content = content.unwrap();
 
-		let new_config:std::result::Result<AirConfiguration, toml::de::Error> = toml::from_str(&content);
+		let new_config:std::result::Result<Struct, toml::de::Error> = toml::from_str(&content);
 
 		if let Err(e) = new_config {
 			let mut stats = self.stats.write().await;
@@ -993,7 +993,7 @@ impl ConfigHotReload {
 	}
 
 	/// Validate configuration using all registered validators
-	async fn ValidateConfig(&self, config:&AirConfiguration) -> Result<()> {
+	async fn ValidateConfig(&self, config:&Struct) -> Result<()> {
 		let validators = self.validators.read().await;
 
 		// Sort validators by priority (higher first)
@@ -1100,10 +1100,10 @@ impl ConfigHotReload {
 	}
 
 	/// Get current configuration
-	pub async fn GetConfig(&self) -> AirConfiguration { self.active_config.read().await.clone() }
+	pub async fn GetConfig(&self) -> Struct { self.active_config.read().await.clone() }
 
 	/// Get current configuration (read-only, non-copying)
-	pub async fn GetConfigRef(&self) -> tokio::sync::RwLockReadGuard<'_, AirConfiguration> {
+	pub async fn GetConfigRef(&self) -> tokio::sync::RwLockReadGuard<'_, Struct> {
 		self.active_config.read().await
 	}
 
@@ -1153,7 +1153,7 @@ impl ConfigHotReload {
 	}
 
 	/// Set a nested configuration value
-	fn SetConfigValue(config:&mut AirConfiguration, path:&str, value:&str) -> Result<()> {
+	fn SetConfigValue(config:&mut Struct, path:&str, value:&str) -> Result<()> {
 		let parts:Vec<&str> = path.split('.').collect();
 
 		match parts.as_slice() {
@@ -1230,7 +1230,7 @@ impl ConfigHotReload {
 	}
 
 	/// Compute configuration changes
-	fn ComputeChanges(&self, old:&AirConfiguration, new:&AirConfiguration) -> Vec<ConfigChange> {
+	fn ComputeChanges(&self, old:&Struct, new:&Struct) -> Vec<ConfigChange> {
 		let mut changes = Vec::new();
 
 		let old_json = serde_json::to_value(old).unwrap_or_default();

@@ -76,7 +76,7 @@ use tokio::{
 
 use crate::{
 	AirError,
-	Configuration::IndexingConfig,
+	Configuration::AirConfiguration::IndexingConfig,
 	Indexing::State::CreateState::{FileIndex, FileMetadata},
 	Result,
 	dev_log,

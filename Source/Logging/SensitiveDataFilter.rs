@@ -33,7 +33,7 @@ impl Default for SensitiveDataFilter {
 }
 
 impl SensitiveDataFilter {
-	fn new(Config:SensitiveDataConfig) -> Result<Self> {
+	pub fn new(Config:SensitiveDataConfig) -> Result<Self> {
 		let mut filter = Self::default();
 
 		filter.enabled = Config.Enabled;
@@ -55,7 +55,7 @@ impl SensitiveDataFilter {
 	}
 
 	/// Filter sensitive data from a string
-	fn Filter(&self, input:&str) -> String {
+	pub fn Filter(&self, input:&str) -> String {
 		if !self.enabled {
 			return input.to_string();
 		}

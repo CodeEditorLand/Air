@@ -28,7 +28,7 @@
 //! **Internal Modules:**
 //! - `crate::Result` - Error handling type
 //! - `crate::AirError` - Error types
-//! - `crate::Configuration::IndexingConfig` - Indexing configuration
+//! - `crate::Configuration::AirConfiguration::IndexingConfig` - Indexing configuration
 //!
 //! ## Dependents
 //!
@@ -70,7 +70,7 @@ use tokio::sync::Semaphore;
 
 use crate::{
 	AirError,
-	Configuration::IndexingConfig,
+	Configuration::AirConfiguration::IndexingConfig,
 	Indexing::{Scan::ScanFile::ValidateFileAccess, State::CreateState::FileIndex},
 	Result,
 	dev_log,

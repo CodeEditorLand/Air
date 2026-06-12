@@ -4,12 +4,12 @@ use subtle::ConstantTimeEq;
 
 /// Secure byte array that zeroizes memory on drop
 #[derive(Clone, Deserialize, Serialize)]
-pub struct SecureBytes {
+pub struct Struct {
 	/// The underlying bytes
 	pub(crate) Data:Vec<u8>,
 }
 
-impl SecureBytes {
+impl Struct {
 	/// Create a new secure byte array
 	pub fn new(Data:Vec<u8>) -> Self { Self { Data } }
 
@@ -29,6 +29,6 @@ impl SecureBytes {
 	pub fn ct_eq(&self, Other:&Self) -> bool { self.Data.ct_eq(&Other.Data).into() }
 }
 
-impl Drop for SecureBytes {
+impl Drop for Struct {
 	fn drop(&mut self) { self.Data.zeroize(); }
 }

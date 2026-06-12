@@ -67,7 +67,7 @@
 use std::{sync::Arc, time::Duration};
 
 use tokio as _;
-use AirLibrary::{ApplicationState, Configuration::AirConfiguration};
+use AirLibrary::{ApplicationState, Configuration::AirConfiguration::Struct};
 
 use crate::dev_log;
 
@@ -99,7 +99,7 @@ use crate::dev_log;
 /// - Add configuration validation before state creation
 /// - Implement state recovery from previous run
 /// - Add state snapshot for debugging
-pub async fn CreateState(configuration:Arc<AirConfiguration>) -> Result<Arc<ApplicationState>, String> {
+pub async fn CreateState(configuration:Arc<Struct>) -> Result<Arc<ApplicationState>, String> {
 	dev_log!("lifecycle", "[State] Creating application state...");
 
 	// Initialize state with timeout

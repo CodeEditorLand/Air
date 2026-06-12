@@ -9,25 +9,25 @@ use zeroize::Zeroize;
 
 use crate::{AirError, Result, dev_log};
 
-use super::SecureBytes::SecureBytes;
-use super::SecurityAuditor::SecurityAuditor;
-use super::SecurityEvent::SecurityEvent;
+use super::SecureBytes::Struct as SecureBytesType;
+use super::SecurityAuditor::Struct as SecurityAuditorType;
+use super::SecurityEvent::Struct as SecurityEvent;
 use super::SecurityEventType::SecurityEventType;
 use super::SecuritySeverity::SecuritySeverity;
 
 /// Secure credential storage with AES-GCM encryption
-pub struct SecureStorage {
+pub struct Struct {
 	/// Encrypted credentials storage
 	credentials:Arc<RwLock<HashMap<String, EncryptedCredential>>>,
 
 	/// Master key for encryption/decryption (zeroized on drop)
-	master_key:SecureBytes,
+	master_key:SecureBytesType,
 
 	/// Key version for key rotation support
 	key_version:u32,
 
 	/// Security auditor
-	auditor:SecurityAuditor,
+	auditor:SecurityAuditorType,
 }
 
 /// Encrypted credential with AES-GCM
@@ -56,10 +56,10 @@ pub struct KeyRotationResult {
 	pub timestamp:u64,
 }
 
-impl SecureStorage {
+impl Struct {
 	/// Create a new secure storage with a master key
-	pub fn New(master_key:Vec<u8>, auditor:SecurityAuditor) -> Self {
-		let key = SecureBytes::new(master_key);
+	pub fn New(master_key:Vec<u8>, auditor:SecurityAuditorType) -> Self {
+		let key = SecureBytesType::new(master_key);
 
 		// Log key generation event
 		let event = SecurityEvent {
@@ -291,7 +291,7 @@ impl SecureStorage {
 	}
 
 	/// Derive a subkey from the master key using PBKDF2
-	fn DeriveSubkey(&self, salt:&[u8]) -> Result<SecureBytes> {
+	fn DeriveSubkey(&self, salt:&[u8]) -> Result<SecureBytesType> {
 		const N_ITERATIONS:u32 = 10_000;
 
 		const KEY_LEN:usize = 32;
@@ -306,7 +306,7 @@ impl SecureStorage {
 			&mut subkey,
 		);
 
-		Ok(SecureBytes::new(subkey))
+		Ok(SecureBytesType::new(subkey))
 	}
 
 	/// Rotate the master key and re-encrypt all credentials
@@ -321,7 +321,7 @@ impl SecureStorage {
 		let credentials_to_rotate:Vec<(_, _)> = credentials.drain().collect();
 
 		// Rotate the master key
-		let mut new_key = SecureBytes::new(new_master_key);
+		let mut new_key = SecureBytesType::new(new_master_key);
 
 		// We need to update the master key, but SecureStorage is immutable
 		// In a real implementation, we'd use interior mutability or recreate the
@@ -429,7 +429,7 @@ impl SecureStorage {
 	}
 }
 
-impl Clone for SecureStorage {
+impl Clone for Struct {
 	fn clone(&self) -> Self {
 		Self {
 			credentials:self.credentials.clone(),
@@ -456,7 +456,7 @@ fn standard_decode(input:&str) -> Result<Vec<u8>> {
 /// zeroization to happen now rather than waiting for the Drop implementation.
 /// Note: Rust compiler optimizations may optimize away the zeroization
 /// without proper precautions like volatile operations or zeroize crate.
-fn zeroize(bytes:&mut SecureBytes) {
+fn zeroize(bytes:&mut SecureBytesType) {
 	// Force write zeros to the underlying bytes
 	// This is a best-effort implementation. For production use,
 	// consider using the `zeroize` crate which provides guarantees

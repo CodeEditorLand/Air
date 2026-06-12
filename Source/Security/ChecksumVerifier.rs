@@ -6,10 +6,10 @@ use subtle::ConstantTimeEq;
 use crate::{AirError, Result};
 
 /// Checksum verification for file integrity
-pub struct ChecksumVerifier;
+pub struct Struct;
 
-impl ChecksumVerifier {
-	/// Create a new ChecksumVerifier
+impl Struct {
+	/// Create a new Struct
 	pub fn New() -> Self { Self }
 
 	/// Calculate SHA-256 checksum of a file

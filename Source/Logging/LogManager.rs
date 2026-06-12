@@ -1,6 +1,6 @@
 //! Log file manager for rotation and cleanup.
 
-use std::{path::Path,sync::{Arc, Mutex},time::{SystemTime, UNIX_EPOCH}};
+use std::{path::{Path, PathBuf},sync::{Arc, Mutex},time::{SystemTime, UNIX_EPOCH}};
 use crate::{Result, dev_log};
 use crate::Logging::LogRotationConfig::LogRotationConfig;
 /// Log file manager for rotation and cleanup

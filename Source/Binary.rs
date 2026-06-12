@@ -183,7 +183,7 @@ use AirLibrary::{
 	CLI::CliParser::CliParser,
 	CLI::CommandTypes::{Command, ConfigCommand, DebugCommand},
 	CLI::OutputFormatter::OutputFormatter,
-	Configuration::{AirConfiguration, ConfigurationManager},
+	Configuration::{AirConfiguration::Struct, ConfigurationManager},
 	Daemon::DaemonManager::DaemonManager,
 	DefaultBindAddress,
 	DefaultConfigFile,
@@ -329,7 +329,7 @@ fn InitializeLogging() {
 	});
 
 	// Initialize structured logging with defensive error handling
-	let log_result = Logging::InitializeLogger(json_output, log_file_path.clone());
+	let log_result = Logging::ContextLogger::InitializeLogger(json_output, log_file_path.clone());
 
 	match log_result {
 		Ok(_) => {
@@ -1682,7 +1682,7 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	};
 
 	// Load configuration with timeout
-	let configuration:std::sync::Arc<AirLibrary::Configuration::AirConfiguration> =
+	let configuration:std::sync::Arc<AirLibrary::Configuration::AirConfiguration::Struct> =
 		match tokio::time::timeout(Duration::from_secs(10), config_manager.LoadConfiguration()).await {
 			Ok(Ok(config)) => {
 				dev_log!("lifecycle", "[Boot] [Configuration] Configuration loaded successfully");
@@ -2310,7 +2310,7 @@ async fn validate_environment() -> Result<(), String> {
 /// - Validate timeout values
 /// - Validate file paths exist or are creatable
 /// - Validate URLs are properly formatted
-fn validate_configuration(_config:&AirConfiguration) -> Result<(), String> {
+fn validate_configuration(_config:&Struct) -> Result<(), String> {
 	// Add configuration validation logic here
 	dev_log!("lifecycle", "[Config] Configuration passed basic validation");
 

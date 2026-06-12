@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 /// Rate limiting configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RateLimitConfig {
+pub struct Struct {
 	/// Requests per second per IP
 	pub requests_per_second_ip:u32,
 
@@ -16,7 +16,7 @@ pub struct RateLimitConfig {
 	pub refill_interval_ms:u64,
 }
 
-impl Default for RateLimitConfig {
+impl Default for Struct {
 	fn default() -> Self {
 		Self {
 			requests_per_second_ip:100,

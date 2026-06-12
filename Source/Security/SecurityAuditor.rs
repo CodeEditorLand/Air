@@ -4,12 +4,12 @@ use tokio::sync::RwLock;
 
 use crate::dev_log;
 
-use super::SecurityEvent::SecurityEvent;
+use super::SecurityEvent::Struct as SecurityEvent;
 use super::SecurityEventType::SecurityEventType;
 use super::SecuritySeverity::SecuritySeverity;
 
 /// Security auditor for logging security events
-pub struct SecurityAuditor {
+pub struct Struct {
 	/// Event history
 	events:Arc<RwLock<Vec<SecurityEvent>>>,
 
@@ -17,7 +17,7 @@ pub struct SecurityAuditor {
 	retention:usize,
 }
 
-impl SecurityAuditor {
+impl Struct {
 	/// Create a new security auditor
 	pub fn new(retention:usize) -> Self { Self { events:Arc::new(RwLock::new(Vec::new())), retention } }
 
@@ -75,6 +75,6 @@ impl SecurityAuditor {
 	}
 }
 
-impl Clone for SecurityAuditor {
+impl Clone for Struct {
 	fn clone(&self) -> Self { Self { events:self.events.clone(), retention:self.retention } }
 }

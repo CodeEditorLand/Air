@@ -4,12 +4,12 @@ use tokio::sync::RwLock;
 
 use crate::Result;
 
-use super::RateLimitConfig::RateLimitConfig;
-use super::RateLimitStatus::RateLimitStatus;
+use super::RateLimitConfig::Struct as RateLimitConfig;
+use super::RateLimitStatus::Struct as RateLimitStatus;
 use super::TokenBucket::TokenBucket;
 
 /// Rate limiter with per-IP and per-client tracking
-pub struct RateLimiter {
+pub struct Struct {
 	config:RateLimitConfig,
 
 	ip_buckets:Arc<RwLock<HashMap<String, TokenBucket>>>,
@@ -19,7 +19,7 @@ pub struct RateLimiter {
 	cleanup_interval:Duration,
 }
 
-impl RateLimiter {
+impl Struct {
 	/// Create a new rate limiter
 	pub fn New(config:RateLimitConfig) -> Self {
 		let cleanup_interval = Duration::from_secs(300); // 5 minutes
@@ -159,7 +159,7 @@ impl RateLimiter {
 	}
 }
 
-impl Clone for RateLimiter {
+impl Clone for Struct {
 	fn clone(&self) -> Self {
 		Self {
 			config:self.config.clone(),

@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 /// Main configuration structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AirConfiguration {
+pub struct Struct {
 	/// Configuration schema version for migration tracking
 	#[serde(default = "default_schema_version")]
 	pub SchemaVersion:String,
@@ -333,7 +333,7 @@ fn default_perf_disk_limit() -> u32 { 1024 }
 
 fn default_perf_task_interval() -> u64 { 60 }
 
-impl Default for AirConfiguration {
+impl Default for Struct {
 	fn default() -> Self {
 		Self {
 			SchemaVersion:default_schema_version(),

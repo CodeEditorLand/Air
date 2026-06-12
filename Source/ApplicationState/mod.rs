@@ -95,13 +95,13 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, RwLock};
 use systemstat::{Platform, System};
 
-use crate::{AirError, Configuration::AirConfiguration, Result, Utility, dev_log};
+use crate::{AirError, Configuration::AirConfiguration::Struct, Result, Utility, dev_log};
 
 /// Application state structure
 #[derive(Debug)]
 pub struct ApplicationState {
 	/// Current configuration
-	pub Configuration:Arc<AirConfiguration>,
+	pub Configuration:Arc<Struct>,
 
 	/// Service status tracking
 	pub ServiceStatus:Arc<RwLock<HashMap<String, ServiceStatus>>>,
@@ -242,7 +242,7 @@ pub struct ConnectionHealthReport {
 
 impl ApplicationState {
 	/// Create a new ApplicationState instance
-	pub async fn New(Configuration:Arc<AirConfiguration>) -> Result<Self> {
+	pub async fn New(Configuration:Arc<Struct>) -> Result<Self> {
 		let State = Self {
 			Configuration,
 
@@ -788,7 +788,7 @@ impl ApplicationState {
 	}
 
 	/// Get current configuration
-	pub async fn GetConfiguration(&self) -> Arc<AirConfiguration> { self.Configuration.clone() }
+	pub async fn GetConfiguration(&self) -> Arc<Struct> { self.Configuration.clone() }
 
 	/// Update configuration with validation and atomic operations
 	pub async fn UpdateConfiguration(

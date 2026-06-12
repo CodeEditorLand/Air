@@ -166,8 +166,8 @@ use AirLibrary::{
     Authentication::AuthenticationService,
     CLI::CommandTypes::Command,
     Configuration::{
-        AirConfiguration,
-        ConfigurationManager
+        AirConfiguration::Struct,
+        ConfigurationManager::Struct
     },
     Daemon::DaemonManager,
     Downloader::DownloadManager,
@@ -226,7 +226,7 @@ use crate::Binary::Monitor::StartMonitoring;
 pub struct Binary {
 
     /// Configuration loaded from file and CLI arguments
-    config: Arc<AirConfiguration>,
+    config: Arc<Struct>,
 
     /// Shared application state across all services
     application_state: Arc<ApplicationState>,
@@ -427,7 +427,7 @@ impl Binary {
     /// # Example
     ///
     /// ```no_run
-    /// use AirLibrary::Configuration::AirConfiguration;
+    /// use AirLibrary::Configuration::AirConfiguration::Struct;
     /// # use Source::Binary::Binary;
     /// # let config = BinaryConfig::default();
     /// let binary = Binary::new(config)?;
@@ -448,9 +448,9 @@ impl Binary {
         // be replaced during initialization
         let application_state = Arc::new(ApplicationState::default());
 
-        // Note: config will be converted to AirConfiguration during initialize()
+        // Note: config will be converted to Struct during initialize()
         // Placeholder for now
-        let Air_config = Arc::new(AirConfiguration::default());
+        let Air_config = Arc::new(Struct::default());
 
         let binary = Self {
 
@@ -1189,7 +1189,7 @@ impl Binary {
 
     /// Loads and validates configuration from file.
     ///
-    /// Loads the AirConfiguration from the specified config file or creates
+    /// Loads the Struct from the specified config file or creates
     /// a default configuration if the file doesn't exist. Validates all
     /// configuration values before returning.
     ///
@@ -1199,7 +1199,7 @@ impl Binary {
     ///
     /// # Returns
     ///
-    /// * `Result<Arc<ConfigurationManager>, Error>` - Configuration manager or error
+    /// * `Result<Arc<Struct>, Error>` - Configuration manager or error
     ///
     /// # Errors
     ///
@@ -1213,7 +1213,7 @@ impl Binary {
     /// - Validates config file permissions (requires 600 or 640)
     /// - Ensures config directory exists and is secure
     #[tracing::instrument(skip(config))]
-    async fn load_configuration(&self, config: &BinaryConfig) -> Result<AirConfiguration, Error> {
+    async fn load_configuration(&self, config: &BinaryConfig) -> Result<Struct, Error> {
 
         dev_log!("lifecycle", "Loading configuration config_file={}", config.config_file.display());
 
@@ -1227,7 +1227,7 @@ impl Binary {
         }
 
         // Load configuration
-        let Air_config = ConfigurationManager::load(&config.config_file).map_err(|e| {
+        let Air_config = crate::Configuration::ConfigurationManager::load(&config.config_file).map_err(|e| {
             Error::InvalidConfiguration(format!("Failed to load configuration: {}", e))
         })?;
 
