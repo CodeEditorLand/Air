@@ -65,7 +65,7 @@ use crate::dev_log;
 
 use AirLibrary::{
     ApplicationState,
-    Authentication::AuthenticationService,
+    Authentication::AuthenticationService::AuthenticationService,
 };
 
 /// Start the authentication service

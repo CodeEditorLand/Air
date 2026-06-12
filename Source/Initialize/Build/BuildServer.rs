@@ -68,7 +68,7 @@ use std::{net::SocketAddr, sync::Arc};
 
 use AirLibrary::{
 	ApplicationState,
-	Authentication::AuthenticationService,
+	Authentication::AuthenticationService::AuthenticationService,
 	Downloader::DownloadManager,
 	Indexing::FileIndexer::FileIndexer,
 	Updates::UpdateManager::UpdateManager,

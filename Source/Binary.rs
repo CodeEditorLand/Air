@@ -179,7 +179,7 @@ use tokio::{signal, time::interval};
 // Import types from AirLibrary (the crate root)
 use AirLibrary::{
 	ApplicationState::ApplicationState::Struct as AppState,
-	Authentication::AuthenticationService,
+	Authentication::AuthenticationService::AuthenticationService,
 	CLI::CliParser::CliParser,
 	CLI::CommandTypes::{Command, ConfigCommand, DebugCommand},
 	CLI::OutputFormatter::OutputFormatter,

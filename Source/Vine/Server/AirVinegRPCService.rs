@@ -18,7 +18,7 @@ use crate::dev_log;
 use crate::{
 	AirError,
 	ApplicationState::ApplicationState::Struct,
-	Authentication::AuthenticationService,
+	Authentication::AuthenticationService::AuthenticationService,
 	Downloader::DownloadManager::Struct as DownloadManager,
 	Indexing::FileIndexer::FileIndexer,
 	Indexing::Store::QueryIndex::{SearchMode, SearchQuery},
