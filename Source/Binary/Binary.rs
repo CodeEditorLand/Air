@@ -118,7 +118,7 @@
 //! ## Thread Safety
 //!
 //! - Tokio async runtime manages thread pool
-//! - Arc<crate::ApplicationState::ApplicationState::Struct> for thread-safe shared state
+//! - Arc<AirLibrary::ApplicationState::ApplicationState::Struct> for thread-safe shared state
 //! - Services use interior mutability where needed (Arc<RwLock<T>>)
 //! - Signal handling uses dedicated channels
 //! - No manual thread spawning (all through tokio::spawn)
@@ -229,7 +229,7 @@ pub struct Binary {
     config: Arc<Struct>,
 
     /// Shared application state across all services
-    application_state: Arc<crate::ApplicationState::ApplicationState::Struct>,
+    application_state: Arc<AirLibrary::ApplicationState::ApplicationState::Struct>,
 
     /// gRPC server handle for Vine protocol
     server_handle: Option<tokio::task::JoinHandle<()>>,
@@ -446,7 +446,7 @@ impl Binary {
         // Note: application_state will be created during initialize()
         // We create a placeholder here to satisfy the struct, but it will
         // be replaced during initialization
-        let application_state = Arc::new(crate::ApplicationState::ApplicationState::Struct::default());
+        let application_state = Arc::new(AirLibrary::ApplicationState::ApplicationState::Struct::default());
 
         // Note: config will be converted to Struct during initialize()
         // Placeholder for now
@@ -675,12 +675,12 @@ impl Binary {
     ///
     /// # Returns
     ///
-    /// * `Option<Arc<crate::ApplicationState::ApplicationState::Struct>>` - Some(state) if initialized, None otherwise
+    /// * `Option<Arc<AirLibrary::ApplicationState::ApplicationState::Struct>>` - Some(state) if initialized, None otherwise
     ///
     /// # Lifecycle
     ///
     /// Returns None until after [`initialize()`] completes successfully.
-    pub fn get_state(&self) -> Option<Arc<crate::ApplicationState::ApplicationState::Struct>> {
+    pub fn get_state(&self) -> Option<Arc<AirLibrary::ApplicationState::ApplicationState::Struct>> {
 
         Some(Arc::clone(&self.application_state))
     }
@@ -1325,7 +1325,7 @@ impl Binary {
         dev_log!("lifecycle", "Creating application state");
 
         // Create default application state
-        let mut state = crate::ApplicationState::ApplicationState::Struct::default();
+        let mut state = AirLibrary::ApplicationState::ApplicationState::Struct::default();
 
         // Initialize authentication service
         let auth_service =
@@ -1483,7 +1483,7 @@ impl Binary {
 
         config: &BinaryConfig,
 
-        state: &Arc<crate::ApplicationState::ApplicationState::Struct>,
+        state: &Arc<AirLibrary::ApplicationState::ApplicationState::Struct>,
     ) -> Result<MonitoringHandles, Error> {
 
         dev_log!("lifecycle", "Starting background monitoring");

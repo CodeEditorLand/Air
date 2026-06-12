@@ -178,7 +178,7 @@ use AirLibrary::dev_log;
 use tokio::{signal, time::interval};
 // Import types from AirLibrary (the crate root)
 use AirLibrary::{
-	ApplicationState::ApplicationState::Struct,
+	ApplicationState::ApplicationState::Struct as AppState,
 	Authentication::AuthenticationService,
 	CLI::CliParser::CliParser,
 	CLI::CommandTypes::{Command, ConfigCommand, DebugCommand},
@@ -1756,8 +1756,8 @@ async fn Main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	// -------------------------------------------------------------------------
 	Trace!("[Boot] [State] Initializing application state...");
 
-	let AppState:std::sync::Arc<crate::ApplicationState::ApplicationState::Struct> =
-		match tokio::time::timeout(Duration::from_secs(10), crate::ApplicationState::ApplicationState::Struct::New(configuration.clone())).await {
+	let AppState:std::sync::Arc<AirLibrary::ApplicationState::ApplicationState::Struct> =
+		match tokio::time::timeout(Duration::from_secs(10), AirLibrary::ApplicationState::ApplicationState::Struct::New(configuration.clone())).await {
 			Ok(Ok(state)) => {
 				dev_log!("lifecycle", "[Boot] [State] Application state initialized");
 
