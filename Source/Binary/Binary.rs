@@ -175,7 +175,7 @@ use AirLibrary::{
         HealthCheckLevel,
         HealthCheckManager
     },
-    Indexing::FileIndexer,
+    Indexing::FileIndexer::FileIndexer,
     Logging,
     Metrics,
     Tracing,

@@ -191,7 +191,7 @@ use AirLibrary::{
 	HealthCheck::HealthCheckLevel::HealthCheckLevel,
 	HealthCheck::HealthCheckManager::HealthCheckManager,
 	HealthCheck::HealthStatistics::HealthStatistics,
-	Indexing::FileIndexer,
+	Indexing::FileIndexer::FileIndexer,
 	Logging,
 	Metrics,
 	ProtocolVersion,

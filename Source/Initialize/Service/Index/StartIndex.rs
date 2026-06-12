@@ -64,7 +64,7 @@ use crate::dev_log;
 
 use AirLibrary::{
     ApplicationState,
-    Indexing::FileIndexer,
+    Indexing::FileIndexer::FileIndexer,
 };
 
 /// Start the file indexer

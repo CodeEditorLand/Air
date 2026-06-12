@@ -20,10 +20,8 @@ use crate::{
 	ApplicationState::ApplicationState::Struct,
 	Authentication::AuthenticationService,
 	Downloader::DownloadManager::Struct as DownloadManager,
-	Indexing::{
-		FileIndexer,
-		Store::QueryIndex::{SearchMode, SearchQuery},
-	},
+	Indexing::FileIndexer::FileIndexer,
+	Indexing::Store::QueryIndex::{SearchMode, SearchQuery},
 	Result,
 	Updates::UpdateManager::UpdateManager,
 	Utility::CurrentTimestamp,

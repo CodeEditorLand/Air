@@ -70,7 +70,7 @@ use AirLibrary::{
 	ApplicationState,
 	Authentication::AuthenticationService,
 	Downloader::DownloadManager,
-	Indexing::FileIndexer,
+	Indexing::FileIndexer::FileIndexer,
 	Updates::UpdateManager::UpdateManager,
 	Vine::Server::AirVinegRPCService::AirVinegRPCService,
 };
