@@ -1,4 +1,4 @@
-# Air: Background Daemon 🪁
+# Air: Background Daemon&#x2001;🪁
 
 This document describes the `Air` background daemon:
 
@@ -53,7 +53,7 @@ graph TB
     MOUNTAIN["Mountain<br/>ProcessManagement"] -->|"gRPC: PerformAction"| GRPC
 ```
 
-## Overview 📋
+## Overview&#x2001;📋
 
 | Attribute    | Value                                                          |
 | ------------ | -------------------------------------------------------------- |
@@ -65,7 +65,7 @@ graph TB
 
 ---
 
-## Architecture 🏗️
+## Architecture&#x2001;🏗️
 
 `Air` is structured around a central `gRPC` server that receives task delegation
 from `Mountain`. Internal modules handle distinct responsibilities.
@@ -103,7 +103,7 @@ from `Mountain`. Internal modules handle distinct responsibilities.
 
 ---
 
-## Module Map 🗺️
+## Module Map&#x2001;🗺️
 
 | Path                      | Purpose                                                                        |
 | ------------------------- | ------------------------------------------------------------------------------ |
@@ -125,7 +125,7 @@ from `Mountain`. Internal modules handle distinct responsibilities.
 | `Source/Library.rs`       | Library root exposing the public API for integration tests                     |
 | `Source/Daemon/`          | Daemon lifecycle management (start, stop, restart)                             |
 
-### gRPC Service Definition (Vine/Air.proto) 📜
+### gRPC Service Definition (Vine/Air.proto)&#x2001;📜
 
 ```protobuf
 service BackgroundServices {
@@ -146,9 +146,9 @@ service BackgroundServices {
 
 ---
 
-## Services 🔌
+## Services&#x2001;🔌
 
-### Update Manager 🔄
+### Update Manager&#x2001;🔄
 
 The update manager owns the full lifecycle of application updates:
 
@@ -160,7 +160,7 @@ The update manager owns the full lifecycle of application updates:
 | Apply    | `ApplyUpdate`    | Replace running binary on next restart         |
 | Rollback | `RollbackUpdate` | Restore previous version on failure            |
 
-### Download Manager 📥
+### Download Manager&#x2001;📥
 
 The resilient download manager handles extension downloads, language server
 binaries, and dependency fetching:
@@ -173,7 +173,7 @@ binaries, and dependency fetching:
 | Bandwidth  | Configurable rate limiting per download               |
 | Concurrent | Parallel download queue with configurable concurrency |
 
-### Indexing Service 🔍
+### Indexing Service&#x2001;🔍
 
 File indexing builds and maintains a searchable content index of the workspace:
 
@@ -184,7 +184,7 @@ File indexing builds and maintains a searchable content index of the workspace:
 4. Incremental indexing on file system change events
 5. Index persistence across daemon restarts
 
-### Authentication Service 🔐
+### Authentication Service&#x2001;🔐
 
 Manages sensitive cryptographic operations:
 
@@ -195,9 +195,9 @@ Manages sensitive cryptographic operations:
 
 ---
 
-## Data Flow 📊
+## Data Flow&#x2001;📊
 
-### Update Check Flow 🔄
+### Update Check Flow&#x2001;🔄
 
 ```
 Mountain triggers update check
@@ -221,7 +221,7 @@ Air returns update metadata to Mountain
 Mountain displays update notification to user
 ```
 
-### Download with Progress Flow 📥
+### Download with Progress Flow&#x2001;📥
 
 ```
 Mountain calls PerformAction(StartDownload { url, target })
@@ -242,7 +242,7 @@ Download Manager returns ActionResponse { success, filePath }
 
 ---
 
-## Startup Sequence 🚀
+## Startup Sequence&#x2001;🚀
 
 ```
 1. Mountain spawns Air binary via ProcessManagement
@@ -273,7 +273,7 @@ Download Manager returns ActionResponse { success, filePath }
 
 ---
 
-## Configuration ⚙️
+## Configuration&#x2001;⚙️
 
 `Air` reads configuration from environment variables and supports hot-reload via
 file watching:
@@ -289,7 +289,7 @@ file watching:
 
 ---
 
-## Related Documentation 📚
+## Related Documentation&#x2001;📚
 
 - [Common](https://github.com/CodeEditorLand/Common/tree/Current/Documentation/GitHub/Architecture.md) -
   Abstract core traits
