@@ -316,7 +316,7 @@ file watching:
 > intercepts VS Code engine events at both the JavaScript prototype level (🟠
 > orange) and the application service level (🔵 blue). Gated behind `TierShim`
 > env var (default: `None` - zero overhead). See the
-> [Shim documentation](/doc/low-level-shim).
+> [Shim documentation](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Shim.md).
 
 **Shim Modules:** No shim-specific modules - events routed through
 `Wind`/`Mountain`/`Cocoon`.
