@@ -136,8 +136,8 @@ impl AuthenticationService {
 				return Err(AirError::Authentication("Credentials are invalid".to_string()));
 			}
 
-			// Verify password (in a real implementation, this would decrypt and verify)
-			// For now, we'll use a simple approach
+			// Verify password (in a real implementation, this would decrypt and
+			// verify) For now, we'll use a simple approach
 			let DecryptedPassword = self.DecryptPassword(&UserCredentials.EncryptedPassword).await?;
 
 			if DecryptedPassword == Password {
@@ -185,7 +185,8 @@ impl AuthenticationService {
 	async fn EncryptPassword(&self, Password:&str) -> Result<String> {
 		let CryptoKeys = self.CryptoKeys.lock().await;
 
-		// Use AES-256-GCM via ring::aead. Prefix nonce to ciphertext and base64 encode.
+		// Use AES-256-GCM via ring::aead. Prefix nonce to ciphertext and base64
+		// encode.
 		let UnboundKey = aead::UnboundKey::new(&aead::AES_256_GCM, &CryptoKeys.EncryptionKey)
 			.map_err(|e| AirError::Authentication(format!("Failed to create AEAD key: {:?}", e)))?;
 

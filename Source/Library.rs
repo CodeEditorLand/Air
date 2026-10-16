@@ -449,7 +449,8 @@ pub mod Utility {
 	/// # Errors
 	///
 	/// Returns an error if the path contains suspicious patterns.
-	// Basic path validation - platform-specific validation can be added as needed
+	// Basic path validation - platform-specific validation can be added as
+	// needed
 	pub fn ValidateFilePath(Path:&str) -> Result<()> {
 		// Null check
 		if Path.is_empty() {
@@ -519,8 +520,8 @@ pub mod Utility {
 			return Err(AirError::Validation("URL contains null character".to_string()));
 		}
 
-		// FUTURE: More comprehensive validation using url crate for full RFC 3986
-		// compliance
+		// FUTURE: More comprehensive validation using url crate for full RFC
+		// 3986 compliance
 		Ok(())
 	}
 

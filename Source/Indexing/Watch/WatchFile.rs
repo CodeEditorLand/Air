@@ -329,7 +329,8 @@ pub enum FileChangeType {
 
 impl FileChangeType {
 	pub fn max(self, other:Self) -> Self {
-		// Removed takes precedence over Modified, which takes precedence over Created
+		// Removed takes precedence over Modified, which takes precedence over
+		// Created
 		match (self, other) {
 			(Self::Removed, _) | (_, Self::Removed) => Self::Removed,
 

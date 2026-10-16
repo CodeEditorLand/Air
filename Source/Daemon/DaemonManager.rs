@@ -906,7 +906,8 @@ WantedBy=multi-user.target
 		dev_log!("daemon", "[Daemon] Launchd service installed at {}", ServiceFilePath);
 
 		// No need to load immediately - launchd will pick it up automatically
-		// User can run: sudo launchctl load -w /Library/LaunchDaemons/Air-daemon.plist
+		// User can run: sudo launchctl load -w
+		// /Library/LaunchDaemons/Air-daemon.plist
 
 		Ok(())
 	}

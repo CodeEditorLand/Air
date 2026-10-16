@@ -462,7 +462,8 @@ fn ParseArguments() -> (Option<String>, Option<String>, Option<Command>) {
 						std::process::exit(1);
 					}
 
-					// Full validation happens during bind, but check for null characters
+					// Full validation happens during bind, but check for null
+					// characters
 					if addr.contains('\0') {
 						eprintln!("[ERROR] Invalid bind address: contains null character");
 
@@ -570,7 +571,8 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 			// Connect to daemon via gRPC and request status
 			// For now, perform basic connection check
 
-			// Implementation note: Detailed service status requires gRPC client integration
+			// Implementation note: Detailed service status requires gRPC client
+			// integration
 			if let Some(svc) = service {
 				println!("📊 Status for service: {}", svc);
 
@@ -736,7 +738,8 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 					}
 
 					// Connect to daemon and get config value
-					// Implementation note: Requires gRPC client with GetConfig RPC method
+					// Implementation note: Requires gRPC client with GetConfig
+					// RPC method
 					println!("⚙️  Get Configuration");
 
 					println!("  Key: {}", key);
@@ -785,7 +788,8 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 					}
 
 					// Connect to daemon and set config value
-					// Implementation note: Requires gRPC client with SetConfig RPC method
+					// Implementation note: Requires gRPC client with SetConfig
+					// RPC method
 					println!("⚙️  Set Configuration");
 
 					println!("  Key: {}", key);
@@ -827,7 +831,8 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 
 				ConfigCommand::Reload { validate } => {
 					// Reload configuration
-					// Implementation note: Requires gRPC client with ReloadConfig RPC method
+					// Implementation note: Requires gRPC client with
+					// ReloadConfig RPC method
 					println!("🔄 Reload Configuration");
 
 					println!("");
@@ -863,7 +868,8 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 
 				ConfigCommand::Show { json } => {
 					// Show configuration
-					// Implementation note: Requires gRPC client with GetFullConfig RPC method
+					// Implementation note: Requires gRPC client with
+					// GetFullConfig RPC method
 					println!("⚙️  Show Configuration");
 
 					println!("");
@@ -1087,7 +1093,8 @@ async fn HandleCommand(cmd:Command) -> Result<(), Box<dyn std::error::Error>> {
 						println!("");
 
 						// Log tailing and filtering
-						// Implementation note: Requires log file streaming support
+						// Implementation note: Requires log file streaming
+						// support
 						println!("  Note: Log tailing via file API not yet implemented");
 
 						println!("  Workaround: Use standard tools:");

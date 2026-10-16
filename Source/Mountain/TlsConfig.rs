@@ -221,7 +221,8 @@ pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, B
 
 		None => {
 			// TLS configuration with server authentication only
-			// rustls 0.23: The builder will auto-complete when no client auth needed
+			// rustls 0.23: The builder will auto-complete when no client auth
+			// needed
 			let client_config = ClientConfig::builder().with_root_certificates(root_store).with_no_client_auth();
 
 			dev_log!("grpc", "Configured TLS with server authentication only");
@@ -233,10 +234,10 @@ pub fn create_tls_client_config(tls_config:&TlsConfig) -> Result<ClientConfig, B
 	// Set ALPN protocols for HTTP/2 (required for gRPC)
 	config.alpn_protocols = vec![b"h2".to_vec()];
 
-	// Note: Certificate verification can only be disabled during the config build
-	// phase The current rustls API doesn't support disabling verification after
-	// building If verification needs to be disabled, use NoServerAuthVerifier
-	// during build
+	// Note: Certificate verification can only be disabled during the config
+	// build phase The current rustls API doesn't support disabling
+	// verification after building If verification needs to be disabled, use
+	// NoServerAuthVerifier during build
 	if !tls_config.verify_certs {
 		dev_log!(
 			"grpc",

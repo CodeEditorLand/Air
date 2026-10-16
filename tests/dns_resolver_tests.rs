@@ -119,12 +119,14 @@ async fn test_ip_validation_allows_non_editor_land() {
 	let resolver = Mist::resolver::land_resolver(port);
 
 	// Try to resolve a non-editor.land domain
-	// This may fail or return NXDOMAIN since we don't have forwarding configured
+	// This may fail or return NXDOMAIN since we don't have forwarding
+	// configured
 	let result = resolver.lookup_ip("example.com").await;
 
 	println!("Non-editor.land DNS query result: {:?}", result);
 
-	// The important thing is that the resolver doesn't crash or improperly filter
+	// The important thing is that the resolver doesn't crash or improperly
+	// filter
 	assert!(true, "Resolver handles non-editor.land domains gracefully");
 }
 

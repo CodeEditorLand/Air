@@ -209,7 +209,8 @@ impl Struct {
 
 				let credential = self.DecryptCredential(&encrypted.cipher_text, &nonce, &salt)?;
 
-				// Log credential retrieval event (without exposing the credential)
+				// Log credential retrieval event (without exposing the
+				// credential)
 				let event = SecurityEvent {
 					Timestamp:crate::Utility::CurrentTimestamp(),
 
@@ -325,8 +326,8 @@ impl Struct {
 		let mut new_key = SecureBytesType::new(new_master_key);
 
 		// We need to update the master key, but SecureStorage is immutable
-		// In a real implementation, we'd use interior mutability or recreate the
-		// storage For now, we'll log the rotation
+		// In a real implementation, we'd use interior mutability or recreate
+		// the storage For now, we'll log the rotation
 		dev_log!(
 			"security",
 			"[Security] Master key rotation from version {} to {}",

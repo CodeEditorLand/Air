@@ -149,7 +149,8 @@ pub async fn StartMonitoring(
 				let Resources = AppState.GetResourceUsage().await;
 
 				// Calculate active thread count approximation
-				// This estimates concurrent operations by querying internal task count
+				// This estimates concurrent operations by querying internal
+				// task count
 				let ActiveThreads = AppState.GetActiveTaskCount().await.unwrap_or(0);
 
 				// Record metrics

@@ -1465,7 +1465,8 @@ impl Struct {
 			if metadata.is_file() {
 				let path = entry.path();
 
-				// Skip if file is being actively used (check for active downloads)
+				// Skip if file is being actively used (check for active
+				// downloads)
 				let IsActive = {
 					let downloads = self.ActiveDownloads.read().await;
 

@@ -1384,7 +1384,8 @@ impl UpdateManager {
 
 		// Restore executable from backup
 		// Note: This may not work on all platforms due to file locks
-		// In production, this would need to be done by a separate updater process
+		// In production, this would need to be done by a separate updater
+		// process
 		match tokio::fs::copy(&backup_exe, &exe_path).await {
 			Ok(_) => {
 				dev_log!("update", "[UpdateManager] Executable restored from backup");

@@ -145,8 +145,8 @@ mod tests {
 
 		let result = secured_client(port);
 
-		// Should succeed even if DNS server isn't running (client creation doesn't
-		// require DNS)
+		// Should succeed even if DNS server isn't running (client creation
+		// doesn't require DNS)
 		assert!(result.is_ok(), "Client creation should succeed");
 	}
 

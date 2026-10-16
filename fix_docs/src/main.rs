@@ -62,7 +62,8 @@ fn run(source_dir:&std::path::Path) {
 
 		let is_library_rs = file_path.file_name().map_or(false, |n| n == "Library.rs");
 
-		// Fix 1: Replace "This function/struct/enum/trait/module/type/method" meta-text
+		// Fix 1: Replace "This function/struct/enum/trait/module/type/method"
+		// meta-text
 		let after_meta = fix_meta_text(&content, &mut meta_fixes);
 
 		// Fix 2: Add module-level //! docs if missing (mod.rs files only)

@@ -128,7 +128,8 @@ impl BulkheadExecutor {
 
 			*self.current_requests.write().await += 1;
 
-			// Execute with timeout (no catch_unwind to avoid interior mutability issues)
+			// Execute with timeout (no catch_unwind to avoid interior
+			// mutability issues)
 			let execution_result = tokio::time::timeout(Duration::from_secs(self.config.timeout_secs), f).await;
 
 			let execution_result:Result<R, String> = match execution_result {

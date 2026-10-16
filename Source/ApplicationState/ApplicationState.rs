@@ -245,10 +245,10 @@ impl Struct {
 			);
 
 			// Clean up any resources associated with this connection
-			// Note: The Connection struct would contain references to resources that need
-			// cleanup such as file handles, pending requests, etc. These would be
-			// released via Drop trait implementation or explicit cleanup methods as
-			// needed.
+			// Note: The Connection struct would contain references to resources
+			// that need cleanup such as file handles, pending
+			// requests, etc. These would be released via Drop trait
+			// implementation or explicit cleanup methods as needed.
 			drop(Connection); // Explicit drop to trigger any cleanup logic
 		} else {
 			dev_log!(

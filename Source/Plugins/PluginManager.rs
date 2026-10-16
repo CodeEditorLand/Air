@@ -623,8 +623,8 @@ impl PluginManager {
 
 		_message:&PluginMessage,
 	) -> bool {
-		// In production, this would check if sender has permission to communicate with
-		// target For now, we allow all communication
+		// In production, this would check if sender has permission to
+		// communicate with target For now, we allow all communication
 		true
 	}
 

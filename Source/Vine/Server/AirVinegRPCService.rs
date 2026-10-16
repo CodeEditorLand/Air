@@ -898,8 +898,8 @@ impl AirService for AirVinegRPCService {
 			let _ = std::fs::remove_file(parent.join(".write_test"));
 		}
 
-		// Use download manager - includes SHA256 checksum verification, progress
-		// tracking, and retry logic
+		// Use download manager - includes SHA256 checksum verification,
+		// progress tracking, and retry logic
 		let download_result = self
 			.DownloadManager
 			.DownloadFile(RequestData.url, destination.clone(), RequestData.checksum)
@@ -1328,7 +1328,8 @@ impl AirService for AirVinegRPCService {
 		// Create a channel for streaming responses
 		let (tx, rx) = tokio::sync::mpsc::channel(100);
 
-		// Configure chunk size (8MB chunks for balance between throughput and latency)
+		// Configure chunk size (8MB chunks for balance between throughput and
+		// latency)
 		let chunk_size = 8 * 1024 * 1024; // 8MB
 
 		// Clone necessary data for spawn task
@@ -2067,7 +2068,8 @@ impl AirService for AirVinegRPCService {
 		}
 	}
 
-	// ==================== Phase 6: Configuration Management ====================
+	// ==================== Phase 6: Configuration Management
+	// ====================
 
 	/// Handle get configuration requests
 	async fn get_configuration(
