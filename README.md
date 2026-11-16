@@ -73,7 +73,7 @@ provenance:
 
 ---
 
-## Overview
+## Overview 📋
 
 **Air** is the lightweight, persistent daemon that powers the background
 capabilities of the **Land** Code Editor. While
@@ -167,7 +167,7 @@ isolation in `Resilience/BulkheadExecutor.rs`, and configurable timeouts via
 
 ---
 
-## System Architecture
+## System Architecture 🏗️
 
 ```mermaid
 graph LR
