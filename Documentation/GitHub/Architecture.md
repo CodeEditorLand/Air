@@ -1,4 +1,4 @@
-# Air: Background Daemon&#x2001;🪁
+# Air: Background Daemon 🪁
 
 This document describes the `Air` background daemon:
 
@@ -65,7 +65,7 @@ graph TB
 > The graph shows the request direction: every arrow starts at the gRPC server,
 > so nothing inside the daemon runs without an inbound call or a timer.
 
-## Overview&#x2001;📋
+## Overview 📋
 
 | Attribute    | Value                                                          |
 | ------------ | -------------------------------------------------------------- |
@@ -89,7 +89,7 @@ files rather than a single large module.
 
 ---
 
-## Architecture&#x2001;🏗️
+## Architecture 🏗️
 
 `Air` is structured around a central `gRPC` server that receives task delegation
 from `Mountain`. Internal modules handle distinct responsibilities.
@@ -130,7 +130,7 @@ from `Mountain`. Internal modules handle distinct responsibilities.
 > The nine boxes are the runtime services; the module map below names the
 > directory that implements each one.
 
-### Runtime Composition&#x2001;🧩
+### Runtime Composition 🧩
 
 The daemon is assembled in one direction. The binary owns the process, the
 library owns the subsystems, and the server owns the request path.
@@ -151,7 +151,7 @@ library owns the subsystems, and the server owns the request path.
 
 ---
 
-## Module Map&#x2001;🗺️
+## Module Map 🗺️
 
 Every row below is a directory or file that exists in the tree. Paths link to
 their canonical location on the `Current` branch.
@@ -182,7 +182,7 @@ their canonical location on the `Current` branch.
 | `Source/Tracing/`         | OpenTelemetry-compatible spans, sampling and propagation contexts              |
 | `Source/DevLog.rs`        | Tag-filtered developer logging gated by the `Trace` environment variable       |
 
-### Subsystem Directories&#x2001;📁
+### Subsystem Directories 📁
 
 Each subsystem is a directory of single-purpose files. These are the
 second-level units a reader will meet when opening the tree.
@@ -210,7 +210,7 @@ second-level units a reader will meet when opening the tree.
 > `Vine/Generated/` is build output, not hand-written code, and is regenerated
 > whenever Proto/Air.proto changes.
 
-### gRPC Service Definition (Vine/Air.proto)&#x2001;📜
+### gRPC Service Definition (Vine/Air.proto) 📜
 
 ```protobuf
 service BackgroundServices {
@@ -260,9 +260,9 @@ why heartbeat-style polling continues to work unchanged.
 
 ---
 
-## Services&#x2001;🔌
+## Services 🔌
 
-### Update Manager&#x2001;🔄
+### Update Manager 🔄
 
 The update manager owns the full lifecycle of application updates:
 
@@ -279,7 +279,7 @@ Implementation sits in
 where `UpdateManager.rs` drives the phases and `RollbackHistory.rs` plus
 `RollbackState.rs` retain the previous version for the last row.
 
-### Download Manager&#x2001;📥
+### Download Manager 📥
 
 The resilient download manager handles extension downloads, language server
 binaries, and dependency fetching:
@@ -296,7 +296,7 @@ Rate limiting is a separate file,
 [`Source/Downloader/RateLimit.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Downloader/RateLimit.rs),
 so the bandwidth row is enforced independently of the queue itself.
 
-### Indexing Service&#x2001;🔍
+### Indexing Service 🔍
 
 File indexing builds and maintains a searchable content index of the workspace:
 
@@ -323,7 +323,7 @@ Those five steps map onto six directories, one stage each:
 > `ScanDirectory` is `async` and has a parallel sibling,
 > `ScanDirectoriesParallel`, for multi-root workspaces.
 
-### Authentication Service&#x2001;🔐
+### Authentication Service 🔐
 
 Manages sensitive cryptographic operations:
 
@@ -336,7 +336,7 @@ The four bullets correspond to `CryptoKeys.rs`, `CredentialsStore.rs`,
 `AuthSession.rs` and `AuthenticationService.rs` under
 [`Source/Authentication/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Authentication).
 
-### Application State&#x2001;🗃️
+### Application State 🗃️
 
 [`Source/ApplicationState/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/ApplicationState)
 is the shared handle threaded through every service. The gRPC server holds it,
@@ -359,7 +359,7 @@ each RPC reads or mutates it, and health reporting reads it back out.
 > `ServiceStatus::Error` carries a `String`, so a failed service reports why it
 > failed rather than only that it did.
 
-### Plugin System&#x2001;🧩
+### Plugin System 🧩
 
 [`Source/Plugins/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Plugins)
 extends the daemon with dynamically loaded plugins. The `Plugin` trait extends
@@ -386,7 +386,7 @@ opts in by overriding it.
 > A plugin that never overrides `has_permission` is denied everything - the
 > trait's default answer is `false`.
 
-### Client Layer&#x2001;📡
+### Client Layer 📡
 
 [`Source/Client/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Client)
 is Air's client-side view of its own server, used by `Mountain`, external
@@ -408,7 +408,7 @@ Per-message DTOs live one per file beneath `AirClient/`: `AirMetrics`,
 > Both layers are cheap to clone; the interior `tokio::sync::Mutex` serialises
 > concurrent RPCs onto the one channel.
 
-### Mountain Client&#x2001;⛰️
+### Mountain Client ⛰️
 
 [`Source/Mountain/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Mountain)
 reverses the direction: here Air is the client and `Mountain` is the server, so
@@ -422,7 +422,7 @@ application.
 | Request timeout    | `30` seconds                   | `Constants.rs`           |
 | TLS / mTLS         | Enabled by the `mtls` feature  | `TlsConfig.rs`           |
 
-### Boot Pipeline&#x2001;🔧
+### Boot Pipeline 🔧
 
 [`Source/Initialize/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Initialize)
 turns configuration into running services, in four steps that match its four
@@ -445,7 +445,7 @@ than at bind time. `Initialize/Service/State/CreateState.rs` constructs the
 > `StartEcho` exists alongside the real services as a minimal round-trip probe
 > for verifying the transport in isolation.
 
-### Observability&#x2001;📈
+### Observability 📈
 
 Four independent subsystems answer "what is the daemon doing", each with its
 own directory.
@@ -462,7 +462,7 @@ values described by `SensitiveDataConfig.rs` before an entry is written.
 `HealthCheck/RecoveryAction.rs` and `RecoveryTrigger.rs` let a failing check
 repair the daemon rather than only report on it.
 
-### Developer Logging&#x2001;🔦
+### Developer Logging 🔦
 
 [`Source/DevLog.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/DevLog.rs)
 is separate from `Source/Logging/`. It is tag-filtered developer tracing gated
@@ -485,7 +485,7 @@ Available tags include `vfs`, `ipc`, `config`, `lifecycle`, `storage`,
 > In short mode consecutive duplicate messages collapse to a single line with an
 > `(x14)`-style suffix and long app-data paths are aliased to `$APP`.
 
-### Resilience and Security&#x2001;🛡️
+### Resilience and Security 🛡️
 
 [`Source/Resilience/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Resilience)
 wraps every outbound call in four patterns: exponential backoff retry with
@@ -501,7 +501,7 @@ covers the inbound side: token-bucket rate limiting per IP and per client
 and zeroizing memory for secrets (`SecureBytes.rs`). `SecurityAuditor.rs`
 records each event as a typed `SecurityEvent` with a severity.
 
-### Daemon and CLI&#x2001;🖥️
+### Daemon and CLI 🖥️
 
 [`Source/Daemon/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Daemon)
 owns process lifecycle: `DaemonManager.rs` starts, stops and restarts,
@@ -515,9 +515,9 @@ is the operator interface onto a running daemon: `CliParser.rs` and
 
 ---
 
-## Data Flow&#x2001;📊
+## Data Flow 📊
 
-### Update Check Flow&#x2001;🔄
+### Update Check Flow 🔄
 
 ```
 Mountain triggers update check
@@ -546,7 +546,7 @@ Mountain displays update notification to user
 > The wire name for the first inbound step is `CheckForUpdates`, handled by
 > `AirVinegRPCService::check_for_updates`.
 
-### Download with Progress Flow&#x2001;📥
+### Download with Progress Flow 📥
 
 ```
 Mountain calls PerformAction(StartDownload { url, target })
@@ -572,7 +572,7 @@ Download Manager returns ActionResponse { success, filePath }
 
 ---
 
-## Startup Sequence&#x2001;🚀
+## Startup Sequence 🚀
 
 ```
 1. Mountain spawns Air binary via ProcessManagement
@@ -608,7 +608,7 @@ Download Manager returns ActionResponse { success, filePath }
 
 ---
 
-## Configuration&#x2001;⚙️
+## Configuration ⚙️
 
 `Air` reads configuration from environment variables and supports hot-reload via
 file watching:
@@ -651,7 +651,7 @@ directory beside the configuration file whenever `EnableBackup` is set.
 
 ---
 
-## Related Documentation&#x2001;📚
+## Related Documentation 📚
 
 - [Common](https://github.com/CodeEditorLand/Common/tree/Current/Documentation/GitHub/Architecture.md) -
   Abstract core traits
