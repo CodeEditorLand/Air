@@ -1,4 +1,4 @@
-# Air: Background Daemon 🪁
+# Air: Background Daemon
 
 This document describes the `Air` background daemon:
 
@@ -17,7 +17,7 @@ and a single binary target named `Air` rooted at
 
 ---
 
-## Table of Contents
+## Table of Contents 📖
 
 1. [Overview](#overview)
 2. [Architecture](#architecture)
@@ -75,7 +75,7 @@ graph TB
 | Dependencies | `tokio`, `tonic`, `prost`, `reqwest`, `ring`, `Common`, `Mist` |
 | Managed by   | `Mountain` `ProcessManagement`                                 |
 
-Two further facts decide how the rest of this document is organised. Air is a
+Two further facts decide how the rest of this document is organised. `Air` is a
 library plus a thin binary, and every subsystem is a directory of one-item
 files rather than a single large module.
 
@@ -207,7 +207,7 @@ second-level units a reader will meet when opening the tree.
 
 > [!NOTE]
 >
-> `Vine/Generated/` is build output, not hand-written code, and is regenerated
+> `Vine/Generated/` is build output, not hand-written code, and is rebuilt
 > whenever Proto/Air.proto changes.
 
 ### gRPC Service Definition (Vine/Air.proto) 📜
@@ -517,6 +517,20 @@ is the operator interface onto a running daemon: `CliParser.rs` and
 
 ## Data Flow 📊
 
+```mermaid
+sequenceDiagram
+    participant Mountain as Mountain (main process)
+    participant Air as Air (daemon)
+    participant UpdateServer as Update server
+
+    Mountain->>Air: CheckForUpdates over gRPC :50053
+    Air->>UpdateServer: HTTP GET for release manifest
+    UpdateServer-->>Air: version, URL, checksum, signature
+    Air->>Air: verify response signature
+    Air-->>Mountain: update metadata
+```
+
+
 ### Update Check Flow 🔄
 
 ```
@@ -573,6 +587,25 @@ Download Manager returns ActionResponse { success, filePath }
 ---
 
 ## Startup Sequence 🚀
+
+```mermaid
+sequenceDiagram
+    participant Mountain as Mountain (spawner)
+    participant Binary as Air Binary.rs
+    participant Server as Air gRPC server
+    participant State as ApplicationState
+
+    Mountain->>Binary: spawn with VINE_PORT, MIST_PORT, DATA_DIR, LOG_LEVEL
+    Binary->>Binary: parse CLI, initialize logging, load configuration
+    Binary->>Server: bind [::1]:50053 and register AirService handlers
+    Server->>State: create shared state
+    Mountain->>Server: Connect with version and capabilities
+    loop every 5 seconds
+        Mountain->>Server: Heartbeat
+        Server-->>Mountain: Heartbeat with resource usage
+    end
+```
+
 
 ```
 1. Mountain spawns Air binary via ProcessManagement
@@ -666,7 +699,7 @@ directory beside the configuration file whenever `EnableBackup` is set.
 
 ---
 
-## Shim Compatibility
+## Shim Compatibility 🛡️
 
 | 🟠 Low-Level Shim                              | 🔵 Coverage Shim                   |
 | ---------------------------------------------- | ---------------------------------- |
