@@ -1221,43 +1221,44 @@ impl UpdateManager {
 	///
 	/// # Returns
 	/// Result<()> indicating success or failure
-	async fn VerifySignature(&self, _file_path:&Path, _signature:&str) -> Result<()> {
-		// Signature verification stub implementation
-		// For production use, this would require:
-		// 1. A public key embedded in the application
-		// 2. Use ring::signature or ed25519-dalek for Ed25519 verification
-		// 3. Decode the base64 signature
-		// 4. Verify the file content against the signature
+	async fn VerifySignature(&self, file_path:&Path, signature:&str) -> Result<()> {
+		use base64::Engine;
 
-		// In development builds, we skip signature verification
-		#[cfg(debug_assertions)]
-		{
-			dev_log!("update", "[UpdateManager] Development build: skipping signature verification");
+		// The Ed25519 public key is deployment configuration, not source:
+		// a missing key disables verification with a visible warning, while a
+		// configured-but-invalid key or signature fails closed.
+		let EncodedKey = match std::env::var("LAND_UPDATE_PUBLIC_KEY") {
+			Ok(Key) => Key,
 
-			return Ok(());
-		}
+			Err(_) => {
+				dev_log!(
+					"update",
+					"warn: [UpdateManager] LAND_UPDATE_PUBLIC_KEY is not set; signature verification is disabled"
+				);
 
-		// In release builds, we log a warning but allow updates to proceed
-		// This is a security decision that should be reviewed for production
-		#[cfg(not(debug_assertions))]
-		{
-			dev_log!(
-				"update",
-				"warn: [UpdateManager] WARNING: Cryptographic signature verification is not yet implemented"
-			);
+				return Ok(());
+			},
+		};
 
-			dev_log!(
-				"update",
-				"warn: [UpdateManager] Update packages should be cryptographically signed in production"
-			);
+		let Decode = base64::engine::general_purpose::STANDARD;
 
-			dev_log!(
-				"update",
-				"[UpdateManager] Proceeding with update without signature verification"
-			);
+		let PublicKey = Decode.decode(EncodedKey.trim()).map_err(|Error| {
+			AirError::Configuration(format!("Invalid LAND_UPDATE_PUBLIC_KEY (base64): {}", Error))
+		})?;
 
-			return Ok(());
-		}
+		let SignatureBytes = Decode.decode(signature.trim()).map_err(|Error| {
+			AirError::Validation(format!("Invalid update signature encoding: {}", Error))
+		})?;
+
+		let Contents = tokio::fs::read(file_path)
+			.await
+			.map_err(|Error| AirError::FileSystem(format!("Cannot read update package for signature verification: {}", Error)))?;
+
+		ring::signature::UnparsedPublicKey::new(&ring::signature::ED25519, &PublicKey)
+			.verify(&Contents, &SignatureBytes)
+			.map_err(|_| {
+				AirError::Validation(format!("Update signature did not verify for {:?}", file_path))
+			})
 	}
 
 	/// Create backup of current installation
@@ -1625,23 +1626,51 @@ impl UpdateManager {
 	async fn ApplyWindowsUpdate(&self, file_path:&Path) -> Result<()> {
 		dev_log!("update", "[UpdateManager] Installing Windows update: {:?}", file_path);
 
-		// Windows-specific installation stub
-		// In production, this would:
-		// 1. Create a temporary updater process
-		// 2. Run the Windows installer in silent mode
-		// 3. The updater waits for the main process to exit
-		// 4. Extracts and replaces files
-		// 5. Restarts the application
+		if !file_path.is_file() {
+			dev_log!(
+				"update",
+				"warn: [UpdateManager] Windows update package is missing: {:?}",
+				file_path
+			);
 
-		dev_log!(
-			"update",
-			"warn: [UpdateManager] Windows installation: update package ready at {:?}",
-			file_path
-		);
+			return Err(AirError::FileSystem(format!(
+				"Windows update package not found: {:?}",
+				file_path
+			)));
+		}
 
-		dev_log!("update", "[UpdateManager] Manual installation may be required");
+		let Updater = std::env::var("LAND_WINDOWS_UPDATER")
+			.unwrap_or_else(|_| "updater.exe".to_string());
 
-		Ok(())
+		// The updater must outlive this process to replace running files, so
+		// spawn it and return without waiting for it.
+		match tokio::process::Command::new(&Updater)
+			.arg("--install")
+			.arg(file_path)
+			.spawn()
+		{
+			Ok(mut Child) => {
+				dev_log!(
+					"update",
+					"[UpdateManager] Windows updater started (pid {:?})",
+					Child.id()
+				);
+
+				Ok(())
+			},
+
+			Err(Error) => {
+				dev_log!(
+					"update",
+					"warn: [UpdateManager] cannot start '{}' ({}); update package staged at {:?} for manual installation",
+					Updater,
+					Error,
+					file_path
+				);
+
+				Ok(())
+			},
+		}
 	}
 
 	/// Platform-specific update installation for macOS
@@ -1649,22 +1678,151 @@ impl UpdateManager {
 	async fn ApplyMacOsUpdate(&self, file_path:&Path) -> Result<()> {
 		dev_log!("update", "[UpdateManager] Installing macOS update: {:?}", file_path);
 
-		// macOS-specific installation stub
-		// In production, this would:
-		// 1. Verify the DMG signature
-		// 2. Mount the DMG using hdiutil
-		// 3. Copy the new application bundle
-		// 4. Set correct permissions
-		// 5. Re-sign the application if needed
-		// 6. Unmount the DMG
+		if !file_path.is_file() {
+			dev_log!(
+				"update",
+				"warn: [UpdateManager] macOS update package is missing: {:?}",
+				file_path
+			);
 
-		dev_log!(
-			"update",
-			"warn: [UpdateManager] macOS installation: update package ready at {:?}",
-			file_path
-		);
+			return Err(AirError::FileSystem(format!(
+				"macOS update package not found: {:?}",
+				file_path
+			)));
+		}
 
-		dev_log!("update", "[UpdateManager] Manual installation may be required");
+		let Attach = tokio::process::Command::new("hdiutil")
+			.arg("attach")
+			.arg("-nobrowse")
+			.arg("-noautoopen")
+			.arg(file_path)
+			.output()
+			.await;
+
+		let MountOutput = match Attach {
+			Ok(Output) if Output.status.success() => {
+				String::from_utf8_lossy(&Output.stdout).into_owned()
+			},
+
+			Ok(Output) => {
+				dev_log!(
+					"update",
+					"warn: [UpdateManager] hdiutil attach failed: {}",
+					String::from_utf8_lossy(&Output.stderr)
+				);
+
+				return Ok(());
+			},
+
+			Err(Error) => {
+				dev_log!(
+					"update",
+					"warn: [UpdateManager] hdiutil is unavailable ({}); update package staged at {:?} for manual installation",
+					Error,
+					file_path
+				);
+
+				return Ok(());
+			},
+		};
+
+		let MountPoint = MountOutput
+			.lines()
+			.filter_map(|Line| Line.split('	').last())
+			.find(|Entry| Entry.starts_with("/Volumes/"))
+			.unwrap_or_default()
+			.trim()
+			.to_string();
+
+		if MountPoint.is_empty() {
+			dev_log!(
+				"update",
+				"warn: [UpdateManager] hdiutil reported no mount point; update package left staged"
+			);
+
+			return Ok(());
+		}
+
+		let Destination = std::env::var("LAND_MACOS_INSTALL_DIR")
+			.unwrap_or_else(|_| "/Applications".to_string());
+
+		let Bundle = std::fs::read_dir(&MountPoint)
+			.ok()
+			.and_then(|Entries| {
+				Entries.filter_map(|Entry| Entry.ok()).find(|Entry| {
+					Entry.path().extension().and_then(|E| E.to_str()) == Some("app")
+				})
+			})
+			.map(|Entry| Entry.path());
+
+		let Bundle = match Bundle {
+			Some(Path) => Path,
+
+			None => {
+				dev_log!(
+					"update",
+					"warn: [UpdateManager] no .app bundle found at {:?}",
+					MountPoint
+				);
+
+				let _ = tokio::process::Command::new("hdiutil")
+					.arg("detach")
+					.arg(&MountPoint)
+					.output()
+					.await;
+
+				return Ok(());
+			},
+		};
+
+		match tokio::process::Command::new("cp")
+			.arg("-R")
+			.arg(&Bundle)
+			.arg(&Destination)
+			.output()
+			.await
+		{
+			Ok(Output) if Output.status.success() => {
+				dev_log!(
+					"update",
+					"[UpdateManager] installed {:?} into {}",
+					Bundle,
+					Destination
+				);
+			},
+
+			Ok(Output) => {
+				dev_log!(
+					"update",
+					"warn: [UpdateManager] copying {:?} failed: {}",
+					Bundle,
+					String::from_utf8_lossy(&Output.stderr)
+				);
+			},
+
+			Err(Error) => {
+				dev_log!(
+					"update",
+					"warn: [UpdateManager] cp failed ({}); update package staged at {:?}",
+					Error,
+					file_path
+				);
+			},
+		}
+
+		if let Err(Error) = tokio::process::Command::new("hdiutil")
+			.arg("detach")
+			.arg(&MountPoint)
+			.output()
+			.await
+		{
+			dev_log!(
+				"update",
+				"warn: [UpdateManager] could not detach {:?}: {}",
+				MountPoint,
+				Error
+			);
+		}
 
 		Ok(())
 	}
@@ -1674,22 +1832,68 @@ impl UpdateManager {
 	async fn ApplyLinuxAppImageUpdate(&self, file_path:&Path) -> Result<()> {
 		dev_log!("update", "[UpdateManager] Installing Linux AppImage update: {:?}", file_path);
 
-		// Linux AppImage installation stub
-		// In production, this would:
-		// 1. Verify the AppImage signature
-		// 2. Make the new AppImage executable
-		// 3. Replace the old AppImage
-		// 4. Update desktop entry and icons
+		if !file_path.is_file() {
+			dev_log!(
+				"update",
+				"warn: [UpdateManager] AppImage update package is missing: {:?}",
+				file_path
+			);
 
-		dev_log!(
-			"update",
-			"warn: [UpdateManager] Linux AppImage installation: update package ready at {:?}",
-			file_path
-		);
+			return Err(AirError::FileSystem(format!(
+				"AppImage update package not found: {:?}",
+				file_path
+			)));
+		}
 
-		dev_log!("update", "[UpdateManager] Manual installation may be required");
+		let Current = match std::env::var("LAND_APPIMAGE_PATH") {
+			Ok(Path) => PathBuf::from(Path),
 
-		Ok(())
+			Err(_) => {
+				dev_log!(
+					"update",
+					"warn: [UpdateManager] LAND_APPIMAGE_PATH is not set; cannot replace the running AppImage, package staged at {:?}",
+					file_path
+				);
+
+				return Ok(());
+			},
+		};
+
+		use std::os::unix::fs::PermissionsExt;
+
+		if let Err(Error) = std::fs::set_permissions(
+			file_path,
+			std::fs::Permissions::from_mode(0o755),
+		) {
+			dev_log!(
+				"update",
+				"warn: [UpdateManager] cannot make {:?} executable ({}); manual installation required",
+				file_path,
+				Error
+			);
+
+			return Ok(());
+		}
+
+		match tokio::fs::rename(file_path, &Current).await {
+			Ok(()) => {
+				dev_log!("update", "[UpdateManager] AppImage replaced at {:?}", Current);
+
+				Ok(())
+			},
+
+			Err(Error) => {
+				dev_log!(
+					"update",
+					"warn: [UpdateManager] cannot replace {:?} with {:?} ({}); manual installation required",
+					Current,
+					file_path,
+					Error
+				);
+
+				Ok(())
+			},
+		}
 	}
 
 	/// Platform-specific update installation for Linux (DEB)
@@ -1697,21 +1901,59 @@ impl UpdateManager {
 	async fn ApplyLinuxDebUpdate(&self, file_path:&Path) -> Result<()> {
 		dev_log!("update", "[UpdateManager] Installing Linux DEB update: {:?}", file_path);
 
-		// Linux DEB installation stub
-		// In production, this would:
-		// 1. Verify the package signature
-		// 2. Install using dpkg or apt
-		// 3. Handle dependencies
+		if !file_path.is_file() {
+			dev_log!(
+				"update",
+				"warn: [UpdateManager] DEB update package is missing: {:?}",
+				file_path
+			);
 
-		dev_log!(
-			"update",
-			"warn: [UpdateManager] Linux DEB installation: update package ready at {:?}",
-			file_path
-		);
+			return Err(AirError::FileSystem(format!(
+				"DEB update package not found: {:?}",
+				file_path
+			)));
+		}
 
-		dev_log!("update", "[UpdateManager] Manual installation may be required");
+		let Installer = std::env::var("LAND_DEB_INSTALLER")
+			.unwrap_or_else(|_| "pkexec".to_string());
 
-		Ok(())
+		match tokio::process::Command::new(&Installer)
+			.arg("dpkg")
+			.arg("-i")
+			.arg(file_path)
+			.output()
+			.await
+		{
+			Ok(Output) if Output.status.success() => {
+				dev_log!("update", "[UpdateManager] DEB update installed: {:?}", file_path);
+
+				Ok(())
+			},
+
+			Ok(Output) => {
+				dev_log!(
+					"update",
+					"warn: [UpdateManager] '{} dpkg -i' failed: {}; package staged at {:?}",
+					Installer,
+					String::from_utf8_lossy(&Output.stderr),
+					file_path
+				);
+
+				Ok(())
+			},
+
+			Err(Error) => {
+				dev_log!(
+					"update",
+					"warn: [UpdateManager] '{}' is unavailable ({}); package staged at {:?} for manual installation",
+					Installer,
+					Error,
+					file_path
+				);
+
+				Ok(())
+			},
+		}
 	}
 
 	/// Platform-specific update installation for Linux (RPM)
@@ -1719,21 +1961,60 @@ impl UpdateManager {
 	async fn ApplyLinuxRpmUpdate(&self, file_path:&Path) -> Result<()> {
 		dev_log!("update", "[UpdateManager] Installing Linux RPM update: {:?}", file_path);
 
-		// Linux RPM installation stub
-		// In production, this would:
-		// 1. Verify the package signature
-		// 2. Install using rpm or dnf
-		// 3. Handle dependencies
+		if !file_path.is_file() {
+			dev_log!(
+				"update",
+				"warn: [UpdateManager] RPM update package is missing: {:?}",
+				file_path
+			);
 
-		dev_log!(
-			"update",
-			"warn: [UpdateManager] Linux RPM installation: update package ready at {:?}",
-			file_path
-		);
+			return Err(AirError::FileSystem(format!(
+				"RPM update package not found: {:?}",
+				file_path
+			)));
+		}
 
-		dev_log!("update", "[UpdateManager] Manual installation may be required");
+		let Installer = std::env::var("LAND_RPM_INSTALLER")
+			.unwrap_or_else(|_| "pkexec".to_string());
 
-		Ok(())
+		match tokio::process::Command::new(&Installer)
+			.arg("rpm")
+			.arg("-Uvh")
+			.arg("--replacepkgs")
+			.arg(file_path)
+			.output()
+			.await
+		{
+			Ok(Output) if Output.status.success() => {
+				dev_log!("update", "[UpdateManager] RPM update installed: {:?}", file_path);
+
+				Ok(())
+			},
+
+			Ok(Output) => {
+				dev_log!(
+					"update",
+					"warn: [UpdateManager] '{} rpm -Uvh' failed: {}; package staged at {:?}",
+					Installer,
+					String::from_utf8_lossy(&Output.stderr),
+					file_path
+				);
+
+				Ok(())
+			},
+
+			Err(Error) => {
+				dev_log!(
+					"update",
+					"warn: [UpdateManager] '{}' is unavailable ({}); package staged at {:?} for manual installation",
+					Installer,
+					Error,
+					file_path
+				);
+
+				Ok(())
+			},
+		}
 	}
 
 	/// Record telemetry for update operations
@@ -1829,7 +2110,7 @@ impl UpdateManager {
 	fn CalculateSha256(&self, data:&[u8]) -> String {
 		// sha2 0.11 dropped `LowerHex` on digest outputs (moved to
 		// `hybrid_array::Array`). `hex::encode` restores the old
-		// `format!("{:x}", …)` behaviour byte-for-byte.
+		// `format!("{:x}", ...)` behaviour byte-for-byte.
 		let mut hasher = Sha256::new();
 
 		hasher.update(data);
