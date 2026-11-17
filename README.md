@@ -333,7 +333,7 @@ tonic_prost_build::configure()
 
 ## Project Structure 🗺️
 
-```
+```text
 Element/Air/
 ├── Cargo.toml                    # Package manifest with feature flags
 ├── build.rs                      # Build script (tonic/prost codegen)

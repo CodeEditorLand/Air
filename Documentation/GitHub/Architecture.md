@@ -94,7 +94,7 @@ files rather than a single large module.
 `Air` is structured around a central `gRPC` server that receives task delegation
 from `Mountain`. Internal modules handle distinct responsibilities.
 
-```
+```text
                     +------------------------------------------+
                     |               Mountain                    |
                     |  ProcessManagement/AirManagement.rs       |
@@ -533,7 +533,7 @@ sequenceDiagram
 
 ### Update Check Flow 🔄
 
-```
+```text
 Mountain triggers update check
     |
     v
@@ -562,7 +562,7 @@ Mountain displays update notification to user
 
 ### Download with Progress Flow 📥
 
-```
+```text
 Mountain calls PerformAction(StartDownload { url, target })
     |
     v
@@ -607,7 +607,7 @@ sequenceDiagram
 ```
 
 
-```
+```text
 1. Mountain spawns Air binary via ProcessManagement
    - Sets environment: VINE_PORT, MIST_PORT, DATA_DIR, LOG_LEVEL
    - Watches process health via heartbeat
