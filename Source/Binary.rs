@@ -218,8 +218,9 @@ macro_rules! Trace {
 /// Shutdown signal handler for graceful termination
 ///
 /// Waits for either Ctrl+C (SIGINT) or SIGTERM signals to initiate graceful
-/// shutdown. and then initiates the shutdown sequence. It provides a timeout
-/// to handle cases where signal handlers fail to install properly.
+/// shutdown, and then initiates the shutdown sequence. It has no wall-clock
+/// deadline: the wait ends when a signal arrives or a handler cannot be
+/// installed; a failed installation ends that arm rather than starting a timer.
 ///
 /// # FUTURE Enhancements
 /// - Add configurable shutdown timeout (currently infinite)

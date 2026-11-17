@@ -56,8 +56,9 @@ use crate::dev_log;
 /// Shutdown signal handler for graceful termination
 ///
 /// Waits for either Ctrl+C (SIGINT) or SIGTERM signals to initiate graceful
-/// shutdown. and then initiates the shutdown sequence. It provides a timeout
-/// to handle cases where signal handlers fail to install properly.
+/// shutdown, and then initiates the shutdown sequence. It has no wall-clock
+/// deadline: a failed handler installation ends its own arm rather than
+/// starting a timer.
 ///
 /// # Behavior
 ///
@@ -101,8 +102,9 @@ use crate::dev_log;
 /// - `tokio::select!` gives structured cancellation: dropping this future
 ///   cancels both arms safely, with no panic and no leaked handler.
 ///
-/// The function always completes; it cannot block forever on a closed channel.
-/// It returns `Ok(())` on completion so the daemon shuts down gracefully,
+/// The wait ends when a shutdown signal arrives, the signal channel closes,
+/// or a handler cannot be installed; there is no wall-clock deadline. It
+/// returns `Ok(())` once that happens so the daemon shuts down gracefully,
 /// preserving the behaviour of the original free function below.
 pub async fn wait() -> Result<(), String> {
 	dev_log!("lifecycle", "[Shutdown] Waiting for termination signal...");
@@ -111,7 +113,7 @@ pub async fn wait() -> Result<(), String> {
 		match tokio::signal::ctrl_c().await {
 			Ok(()) => dev_log!("lifecycle", "[Shutdown] Received Ctrl+C signal"),
 
-			Err(Error) => dev_log!("lifecycle", "warning: [Shutdown] Failed to install Ctrl+C handler; continuing to wait: {}", Error),
+			Err(Error) => dev_log!("lifecycle", "warning: [Shutdown] Failed to install Ctrl+C handler; ending the wait and initiating graceful shutdown: {}", Error),
 		}
 	};
 
@@ -124,7 +126,7 @@ pub async fn wait() -> Result<(), String> {
 				None => dev_log!("lifecycle", "warning: [Shutdown] SIGTERM channel closed before a signal arrived; returning gracefully"),
 			},
 
-			Err(Error) => dev_log!("lifecycle", "warning: [Shutdown] Failed to install SIGTERM handler; continuing to wait: {}", Error),
+			Err(Error) => dev_log!("lifecycle", "warning: [Shutdown] Failed to install SIGTERM handler; ending the wait and initiating graceful shutdown: {}", Error),
 		}
 	};
 
