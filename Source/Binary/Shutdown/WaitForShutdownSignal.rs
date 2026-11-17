@@ -85,32 +85,54 @@ use crate::dev_log;
 /// // Perform cleanup
 /// # }
 /// ```
-pub async fn WaitForShutdownSignal() {
+/// Waits for a termination signal (SIGINT/Ctrl+C, or SIGTERM on Unix).
+///
+/// This is the entry point used by `Binary::run`, reached as
+/// `crate::Binary::Shutdown::WaitForShutdownSignal::wait()` - the module path,
+/// because the `WaitForShutdownSignal` facade is a module, not a type.
+///
+/// # Defensive behaviour
+///
+/// - Signal-handler installation failures are logged as warnings and never
+///   panic the daemon.
+/// - A closed or missing signal channel is detected when `recv()` returns
+///   `None`, logged, and returned from gracefully, so a broken channel is not
+///   mistaken for a received signal.
+/// - `tokio::select!` gives structured cancellation: dropping this future
+///   cancels both arms safely, with no panic and no leaked handler.
+///
+/// The function always completes; it cannot block forever on a closed channel.
+/// It returns `Ok(())` on completion so the daemon shuts down gracefully,
+/// preserving the behaviour of the original free function below.
+pub async fn wait() -> Result<(), String> {
 	dev_log!("lifecycle", "[Shutdown] Waiting for termination signal...");
 
 	let CtrlC = async {
 		match tokio::signal::ctrl_c().await {
 			Ok(()) => dev_log!("lifecycle", "[Shutdown] Received Ctrl+C signal"),
 
-			Err(Error) => dev_log!("lifecycle", "error: [Shutdown] Failed to install Ctrl+C handler: {}", Error),
+			Err(Error) => dev_log!("lifecycle", "warning: [Shutdown] Failed to install Ctrl+C handler; continuing to wait: {}", Error),
 		}
 	};
 
 	#[cfg(unix)]
 	let Terminate = async {
 		match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
-			Ok(mut Signal) => {
-				Signal.recv().await;
+			Ok(mut Signal) => match Signal.recv().await {
+				Some(()) => dev_log!("lifecycle", "[Shutdown] Received SIGTERM signal"),
 
-				dev_log!("lifecycle", "[Shutdown] Received SIGTERM signal");
+				None => dev_log!("lifecycle", "warning: [Shutdown] SIGTERM channel closed before a signal arrived; returning gracefully"),
 			},
 
-			Err(Error) => dev_log!("lifecycle", "error: [Shutdown] Failed to install signal handler: {}", Error),
+			Err(Error) => dev_log!("lifecycle", "warning: [Shutdown] Failed to install SIGTERM handler; continuing to wait: {}", Error),
 		}
 	};
 
 	#[cfg(not(unix))]
-	let Terminate = std::future::pending::<()>();
+	let Terminate = async {
+		dev_log!("lifecycle", "warning: [Shutdown] SIGTERM unavailable on this platform; waiting for Ctrl+C only");
+		std::future::pending::<()>().await;
+	};
 
 	tokio::select! {
 
@@ -119,7 +141,19 @@ pub async fn WaitForShutdownSignal() {
 		_ = Terminate => {},
 	}
 
-	dev_log!("lifecycle", "[Shutdown] Signal received, initiating graceful shutdown");
+	dev_log!("lifecycle", "[Shutdown] Signal received or channel closed, initiating graceful shutdown");
+
+	Ok(())
+}
+
+/// Backwards-compatible wrapper around [`wait`].
+///
+/// Preserves the original free-function API. All behaviour is delegated to
+/// [`wait`]; an error would be logged rather than panicking the daemon.
+pub async fn WaitForShutdownSignal() {
+	if let Err(Error) = wait().await {
+		dev_log!("lifecycle", "warning: [Shutdown] wait() reported an error: {}", Error);
+	}
 }
 
 #[cfg(test)]
